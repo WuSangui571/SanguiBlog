@@ -2,19 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useBlog } from "./hooks/useBlogData";
 import { recordPageView } from "./api";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
-import { 
-  Code, User, Heart, MessageSquare, Share2, X, Menu, ChevronRight, 
-  Search, LogIn, LogOut, Settings, Eye, Github, Twitter, 
-  BarChart3, Filter, Tag, AlertTriangle, MessageCircle, 
-  Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles, 
+import {
+  Code, User, Heart, MessageSquare, Share2, X, Menu, ChevronRight,
+  Search, LogIn, LogOut, Settings, Eye, Github, Twitter,
+  BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
+  Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
   ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
   Home, TrendingUp, Edit, Send, Moon, Sun, Upload, Map,
 } from 'lucide-react';
 
-// --- 1. ???? & ???? ---
+// --- 1. 设计系统 & 基础数据 ---
 const THEME = {
   colors: {
-    bgLight: "bg-[#F0F0F0]", 
+    bgLight: "bg-[#F0F0F0]",
     surfaceLight: "bg-white",
     bgDark: "bg-[#111827]",
     surfaceDark: "bg-[#1f2937]",
@@ -26,18 +26,18 @@ const THEME = {
   },
 };
 
-// ????
+// 角色定义
 const ROLES = {
-  SUPER_ADMIN: { label: "?????", color: "bg-[#FF0080]" },
-  ADMIN: { label: "???", color: "bg-[#6366F1]" },
-  USER: { label: "??", color: "bg-[#00E096]" }
+  SUPER_ADMIN: { label: "超级管理员", color: "bg-[#FF0080]" },
+  ADMIN: { label: "管理员", color: "bg-[#6366F1]" },
+  USER: { label: "用户", color: "bg-[#00E096]" }
 };
 
 const CATEGORY_TREE = [
-  { id: "all", label: "??", children: [] },
-  { id: "programming", label: "????", children: [{ id: "java", label: "Java Core" }, { id: "frontend", label: "Modern Web" }, { id: "algo", label: "Algorithms" }] },
-  { id: "architecture", label: "????", children: [{ id: "cloud", label: "Cloud Native" }, { id: "system", label: "Distributed Sys" }] },
-  { id: "life", label: "????", children: [{ id: "gear", label: "???" }, { id: "think", label: "???" }] }
+  { id: "all", label: "全部", children: [] },
+  { id: "programming", label: "硬核编程", children: [{ id: "java", label: "Java Core" }, { id: "frontend", label: "Modern Web" }, { id: "algo", label: "算法进阶" }] },
+  { id: "architecture", label: "架构视角", children: [{ id: "cloud", label: "云原生" }, { id: "system", label: "分布式系统" }] },
+  { id: "life", label: "数字生活", children: [{ id: "gear", label: "装备控" }, { id: "think", label: "碎碎念" }] }
 ];
 
 const SITE_STATS = {
@@ -52,14 +52,14 @@ const SITE_STATS = {
 
 const MOCK_USER = {
   id: 1,
-  username: "?? SanGui",
+  username: "三桂 SanGui",
   title: "Fullstack Developer",
-  bio: "????????????????",
+  bio: "用代码构建现实，用逻辑解构虚无。",
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=SanGui&backgroundColor=FFD700",
   role: "SUPER_ADMIN",
   social: {
     github: "https://github.com/Wusangui571",
-    wechatQr: "/static/contact/wechat.jpg"
+    wechatQr: "http://localhost:8080/contact/wechat.jpg"
   }
 };
 
@@ -69,14 +69,14 @@ const GENERATE_POSTS = () => {
     { id: 102, title: "Vue3 Composition API: 逻辑复用的艺术", excerpt: "告别 Options API 的面条代码。", category: "Modern Web", parentCategory: "硬核编程", tags: ["Vue3", "Refactor"], color: "bg-[#FF0080]", likes: 89, comments: 12, date: "2023-11-20", views: 321 },
     { id: 103, title: "微服务的一致性困局：Saga 还是 TCC？", excerpt: "分布式事务没有银弹。", category: "Distributed Sys", parentCategory: "架构视角", tags: ["Microservices", "System Design"], color: "bg-[#00E096]", likes: 256, comments: 67, date: "2023-11-15", views: 890 }
   ];
-  
+
   let posts = [...base];
-  for(let i=0; i<15; i++) {
+  for (let i = 0; i < 15; i++) {
     posts.push({
       ...base[i % 3],
       id: 200 + i,
-      title: `${base[i%3].title} (Part ${i+1})`,
-      date: `2023-10-${10+i}`
+      title: `${base[i % 3].title} (Part ${i + 1})`,
+      date: `2023-10-${10 + i}`
     });
   }
   return posts;
@@ -87,22 +87,22 @@ const PAGE_SIZE = 5;
 
 // Mock Data for Analytics
 const MOCK_ANALYTICS = {
-    totalViews: 158450,
-    newUsers: 1200,
-    avgTime: 3.5,
-    bounceRate: 45,
-    recentActivity: [
-        { title: "The Future of AI in Web Development", ip: "192.168.1.1", time: "2025-11-21 15:30:12", referrer: "https://google.com", geo: "San Francisco, US" },
-        { title: "A Guide to Modern CSS Layouts", ip: "10.0.0.5", time: "2025-11-21 15:28:45", referrer: "https://x.com/techfeed", geo: "Shanghai, CN" },
-        { title: "My Favorite Productivity Apps", ip: "203.0.113.20", time: "2025-11-21 15:25:01", referrer: "(Direct)", geo: "London, UK" },
-        { title: "SpringBoot 3.0: 原生编译的终极奥义", ip: "203.0.113.20", time: "2025-11-21 15:25:01", referrer: "(Direct)", geo: "London, UK" },
-    ],
-    trafficSources: [
-        { label: "Search Engine", value: 45 },
-        { label: "Direct", value: 30 },
-        { label: "Social Media", value: 15 },
-        { label: "Referrals", value: 10 },
-    ]
+  totalViews: 158450,
+  newUsers: 1200,
+  avgTime: 3.5,
+  bounceRate: 45,
+  recentActivity: [
+    { title: "The Future of AI in Web Development", ip: "192.168.1.1", time: "2025-11-21 15:30:12", referrer: "https://google.com", geo: "San Francisco, US" },
+    { title: "A Guide to Modern CSS Layouts", ip: "10.0.0.5", time: "2025-11-21 15:28:45", referrer: "https://x.com/techfeed", geo: "Shanghai, CN" },
+    { title: "My Favorite Productivity Apps", ip: "203.0.113.20", time: "2025-11-21 15:25:01", referrer: "(Direct)", geo: "London, UK" },
+    { title: "SpringBoot 3.0: 原生编译的终极奥义", ip: "203.0.113.20", time: "2025-11-21 15:25:01", referrer: "(Direct)", geo: "London, UK" },
+  ],
+  trafficSources: [
+    { label: "Search Engine", value: 45 },
+    { label: "Direct", value: 30 },
+    { label: "Social Media", value: 15 },
+    { label: "Referrals", value: 10 },
+  ]
 };
 
 // --- 2. 炫酷 UI 组件库 (不变) ---
@@ -138,7 +138,7 @@ const PopButton = ({ children, onClick, variant = "primary", className = "", ico
 const TiltCard = ({ children, className = "", onClick }) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotateX = useTransform(y, [0, 1], [5, -5]); 
+  const rotateX = useTransform(y, [0, 1], [5, -5]);
   const rotateY = useTransform(x, [0, 1], [-5, 5]);
 
   function handleMouse(event) {
@@ -170,21 +170,21 @@ const EmergencyBar = ({ isOpen, content, onClose }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div 
+        <motion.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           className="bg-[#FF0080] border-b-4 border-black overflow-hidden relative z-[60]"
         >
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between text-white font-bold">
-             <div className="flex items-center gap-3 animate-pulse">
-               <AlertTriangle size={24} strokeWidth={3} className="text-[#FFD700]" />
-               <span className="uppercase tracking-widest">紧急广播 // SYSTEM ALERT</span>
-             </div>
-             <div className="flex items-center gap-4">
-               <span className="text-sm hidden md:inline">{content}</span>
-               <button onClick={onClose} className="bg-black p-1 hover:rotate-90 transition-transform border border-white"><X size={16}/></button>
-             </div>
+            <div className="flex items-center gap-3 animate-pulse">
+              <AlertTriangle size={24} strokeWidth={3} className="text-[#FFD700]" />
+              <span className="uppercase tracking-widest">紧急广播 // SYSTEM ALERT</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm hidden md:inline">{content}</span>
+              <button onClick={onClose} className="bg-black p-1 hover:rotate-90 transition-transform border border-white"><X size={16} /></button>
+            </div>
           </div>
         </motion.div>
       )}
@@ -198,7 +198,7 @@ const ClickRipple = () => {
   useEffect(() => {
     const handleClick = (e) => {
       const id = Date.now();
-      setRipples(prev => [...prev, { x: e.pageX, y: e.pageY, id }]);
+      setRipples(prev => [...prev, { x: e.clientX, y: e.clientY, id }]);
       setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 1000);
     };
     window.addEventListener('click', handleClick);
@@ -213,10 +213,10 @@ const ClickRipple = () => {
           initial={{ width: 0, height: 0, opacity: 0.8, borderWidth: 5 }}
           animate={{ width: 100, height: 100, opacity: 0, borderWidth: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          style={{ 
-            left: ripple.x, 
-            top: ripple.y, 
-            x: '-50%', 
+          style={{
+            left: ripple.x,
+            top: ripple.y,
+            x: '-50%',
             y: '-50%',
             borderColor: ['#6366F1', '#FF0080', '#FFD700'][Math.floor(Math.random() * 3)]
           }}
@@ -231,16 +231,16 @@ const ClickRipple = () => {
 const Navigation = ({ user, setView, handleLogout, toggleMenu, isDarkMode, setIsDarkMode }) => {
   const roleInfo = user ? ROLES[user.role] : null;
   const isFrontNav = true; // Use a flag for front-end vs back-end styling
-  
+
   return (
-    <motion.nav 
+    <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 h-20 flex items-center justify-between px-4 md:px-8 
         ${isDarkMode ? 'bg-gray-900 border-b-4 border-[#FF0080] text-white' : 'bg-white border-b-4 border-black text-black'}
       `}
     >
-      <div 
+      <div
         className="flex items-center gap-2 cursor-pointer group"
         onClick={() => setView('home')}
       >
@@ -255,7 +255,7 @@ const Navigation = ({ user, setView, handleLogout, toggleMenu, isDarkMode, setIs
 
       <div className="hidden md:flex items-center gap-8">
         {['home', 'archive', 'about'].map((key) => (
-          <button 
+          <button
             key={key}
             onClick={() => setView(key)}
             className={`text-lg font-bold uppercase hover:bg-black hover:text-white px-2 py-1 transition-all decoration-4 underline-offset-4 hover:underline ${isDarkMode ? 'decoration-[#FF0080]' : 'decoration-[#FFD700]'}`}
@@ -268,25 +268,25 @@ const Navigation = ({ user, setView, handleLogout, toggleMenu, isDarkMode, setIs
           <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('profile')}>
               <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
-                 <img src={user.avatar} className="w-full h-full object-cover"/>
+                <img src={user.avatar} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col items-start">
-                 <span className="font-black text-sm leading-none">{user.username}</span>
-                 <span className={`text-[10px] ${roleInfo?.color} text-white px-1 w-max mt-1 font-bold`}>
-                   {roleInfo?.label || "USER"}
-                 </span>
+                <span className="font-black text-sm leading-none">{user.username}</span>
+                <span className={`text-[10px] ${roleInfo?.color} text-white px-1 w-max mt-1 font-bold`}>
+                  {roleInfo?.label || "USER"}
+                </span>
               </div>
             </div>
             {(user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && (
-               <button onClick={() => setView('admin')} className="p-2 hover:bg-black hover:text-white border-2 border-transparent hover:border-black rounded-full transition-all"><Settings size={20}/></button>
+              <button onClick={() => setView('admin')} className="p-2 hover:bg-black hover:text-white border-2 border-transparent hover:border-black rounded-full transition-all"><Settings size={20} /></button>
             )}
-            <button onClick={handleLogout} className="p-2 hover:text-[#FF0080] transition-colors"><LogOut size={20}/></button>
+            <button onClick={handleLogout} className="p-2 hover:text-[#FF0080] transition-colors"><LogOut size={20} /></button>
           </div>
         ) : (
           <PopButton onClick={() => setView('login')} icon={LogIn}>Login</PopButton>
         )}
-         {/* Dark Mode Toggle */}
-        <button 
+        {/* Dark Mode Toggle */}
+        <button
           onClick={() => setIsDarkMode(!isDarkMode)}
           className={`p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-[#FFD700] text-black hover:bg-white' : 'bg-black text-white hover:bg-[#6366F1]'}`}
           title="Toggle Dark Mode"
@@ -313,46 +313,41 @@ const Hero = ({ setView, isDarkMode }) => {
 
   return (
     <div className={`relative min-h-[90vh] flex flex-col justify-center items-center pt-20 overflow-hidden ${bgClass} ${textClass}`}>
-      <div className="absolute inset-0 opacity-10 pointer-events-none" 
-           style={{ backgroundImage: `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px)`, backgroundSize: '40px 40px' }}>
+      <div className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{ backgroundImage: `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px)`, backgroundSize: '40px 40px' }}>
       </div>
+      <motion.div style={{ y: y1, rotate }} className="absolute top-32 left-[10%] text-[#FFD700]">
+        <Sparkles size={80} strokeWidth={1.5} className="drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] fill-current" />
+      </motion.div>
+      <motion.div style={{ y: y1, x: -50 }} className="absolute bottom-40 right-[10%] w-32 h-32 border-4 border-black bg-[#00E096] shadow-[8px_8px_0px_0px_#000] z-0 rounded-full flex items-center justify-center font-black text-2xl">
+        CODE
+      </motion.div>
 
       <div className="z-10 text-center max-w-5xl px-4 relative">
-        <motion.div 
-          initial={{ scale: 0 }} animate={{ scale: 1 }} 
+        <motion.div
+          initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          HELLO WORLD // V3.3
+          SANGUI BLOG // V1.0.0
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
           <motion.span initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="block">
-            <span className="inline-flex flex-wrap items-center justify-center gap-4">
-              <span>用</span>
-              <motion.span style={{ y: y1, rotate }} className="inline-flex text-[#FFD700] drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]">
-                <Sparkles size={80} strokeWidth={1.5} className="fill-current" />
-              </motion.span>
-              <span>代码记录</span>
-              <span className="text-[#6366F1] underline decoration-8 decoration-black underline-offset-8">探索</span>
-            </span>
+            用代码记录<span className="text-[#6366F1] underline decoration-8 decoration-black underline-offset-8 ml-4">探索</span>
           </motion.span>
           <motion.span initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="block">
-            <span className="inline-flex flex-wrap items-center justify-center gap-4">
-              <span>以分享照亮</span>
-              <span className="text-[#FF0080] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
-              <motion.div style={{ y: y1, x: -50 }} className="inline-flex w-32 h-32 border-4 border-black bg-[#00E096] shadow-[8px_8px_0px_0px_#000] rounded-full items-center justify-center font-black text-2xl">
-                CODE
-              </motion.div>
-            </span>
+            以分享照亮<span className="text-[#FF0080] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
           </motion.span>
         </h1>
         <p className={`text-xl md:text-2xl font-bold mb-12 max-w-2xl mx-auto border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-600'}`}>
-          拒绝平庸，在 SpringBoot 与 React 的边缘疯狂试探。
-          <br/><span className="text-sm font-mono text-[#FF0080]">{`>>`} PRESS START TO CONTINUE</span>
+          拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。
+          <br /><span className="text-sm font-mono text-[#FF0080]">{`>>`} PRESS START TO CONTINUE</span>
         </p>
 
+
+
         <div className="flex flex-wrap gap-6 justify-center">
-           <PopButton onClick={() => document.getElementById('posts').scrollIntoView({ behavior: 'smooth'})} icon={ArrowUpRight} className="text-xl px-8 py-4 bg-[#FFD700] text-black">
+          <PopButton onClick={() => document.getElementById('posts').scrollIntoView({ behavior: 'smooth' })} icon={ArrowUpRight} className="text-xl px-8 py-4 bg-[#FFD700] text-black">
             START READING
           </PopButton>
           <PopButton variant="secondary" icon={Github} onClick={() => window.open('https://github.com/Wusangui571')} className="text-xl px-8 py-4">
@@ -435,7 +430,7 @@ const AnalyticsView = ({ isDarkMode }) => {
   return (
     <div className="space-y-8">
       <h2 className="text-3xl font-bold text-indigo-500 flex items-center gap-2"><TrendingUp /> ????</h2>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <div className={`${surface} p-4 rounded-lg shadow-lg ${border} border`}>
           <p className="text-sm text-gray-500">???</p>
@@ -454,7 +449,7 @@ const AnalyticsView = ({ isDarkMode }) => {
           <p className={`text-2xl font-bold ${text}`}>2.1%</p>
         </div>
       </div>
-      
+
       <div className={`${surface} p-6 rounded-lg shadow-xl ${border} border overflow-x-auto`}>
         <h3 className={`text-xl font-bold mb-4 ${text}`}>????????</h3>
         <table className="min-w-full divide-y divide-gray-200 table-auto">
@@ -495,28 +490,28 @@ const CreatePostView = ({ isDarkMode }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
+
       {/* Left Column: Editor */}
       <div className="lg:col-span-2 space-y-6">
-      <h2 className="text-3xl font-bold text-pink-500 flex items-center gap-2"><Edit /> ????</h2>
-        
+        <h2 className="text-3xl font-bold text-pink-500 flex items-center gap-2"><Edit /> ????</h2>
+
         <input type="text" placeholder="????" className={`${inputClass} text-2xl font-bold`} defaultValue="The Future of Backend Development" />
-        
+
         <div className={`${surface} p-6 rounded-lg shadow-xl ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'} space-y-4`}>
           <div className="flex justify-between items-center border-b pb-2 mb-4">
-             <h3 className={`font-semibold ${text}`}>Markdown \u5185\u5bb9\u7f16\u8f91\u5668</h3>
-             <button className="text-sm text-indigo-500 flex items-center hover:text-indigo-400"><Upload size={16} className="mr-1"/> \u4e0a\u4f20 .md \u6587\u4ef6</button>
+            <h3 className={`font-semibold ${text}`}>Markdown \u5185\u5bb9\u7f16\u8f91\u5668</h3>
+            <button className="text-sm text-indigo-500 flex items-center hover:text-indigo-400"><Upload size={16} className="mr-1" /> \u4e0a\u4f20 .md \u6587\u4ef6</button>
           </div>
-          <textarea 
-            className={`${inputClass} min-h-[400px] font-mono`} 
-            value={content} 
+          <textarea
+            className={`${inputClass} min-h-[400px] font-mono`}
+            value={content}
             onChange={(e) => setContent(e.target.value)}
           />
         </div>
-        
+
         <PopButton variant="primary" icon={Send} className="w-full">????</PopButton>
       </div>
-      
+
       {/* Right Column: Settings */}
       <div className="lg:col-span-1 space-y-6">
         <div className={`${surface} p-6 rounded-lg shadow-xl ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'} space-y-4`}>
@@ -529,7 +524,7 @@ const CreatePostView = ({ isDarkMode }) => {
             <option>Modern Web</option>
             <option>Distributed Sys</option>
           </select>
-          
+
           <label className={`block text-sm font-medium ${text}`}>\u6807\u7b7e\uff08\u9017\u53f7\u5206\u9694\uff09</label>
           <input type="text" className={inputClass} placeholder="\u4f8b\uff1aSpringBoot, Cloud, Performance" />
 
@@ -546,7 +541,7 @@ const CreatePostView = ({ isDarkMode }) => {
 
           <label className={`block text-sm font-medium ${text}`}>\u5c01\u9762\u56fe\u4e0a\u4f20</label>
           <div className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer ${isDarkMode ? 'border-gray-600 hover:border-indigo-500' : 'border-gray-300 hover:border-indigo-500'}`}>
-            <Upload size={24} className={`mx-auto mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}/>
+            <Upload size={24} className={`mx-auto mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             <p className="text-sm text-gray-500">\u62d6\u62fd\u6216\u70b9\u51fb\u4e0a\u4f20</p>
           </div>
         </div>
@@ -602,7 +597,7 @@ const PermissionsView = ({ isDarkMode, user }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                   <button disabled={u.role === 'SUPER_ADMIN'} className={`text-indigo-600 hover:text-indigo-900 disabled:opacity-50 ${isDarkMode ? 'text-indigo-400' : ''}`}>\u8c03\u6574\u89d2\u8272</button>
                   <button disabled={u.role === 'SUPER_ADMIN'} className={`text-red-600 hover:text-red-900 disabled:opacity-50 ${isDarkMode ? 'text-red-400' : ''}`}>\u505c\u7528</button>
-            </td>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -616,7 +611,7 @@ const PermissionsView = ({ isDarkMode, user }) => {
 // 4.5 The main Admin Panel structure
 const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout }) => {
   const [activeTab, setActiveTab] = useState('Dashboard');
-  
+
   const tabs = [
     { key: 'Dashboard', label: '???', icon: Home, component: DashboardView },
     { key: 'CreatePost', label: '????', icon: Edit, component: CreatePostView },
@@ -639,69 +634,68 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
 
   return (
     <div className={`min-h-screen flex ${bgClass} ${textClass}`}>
-       {/* Sidebar */}
-       <aside className={`w-64 flex-shrink-0 ${sidebarBg} border-r ${sidebarBorder} flex flex-col fixed h-full z-40 transition-colors`}>
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="font-bold text-lg flex items-center gap-2 text-indigo-500"><Terminal className="text-pink-500"/> SANGUI // ADMIN</h2>
-          </div>
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-             {tabs.map(({ key, label, icon: Icon }) => (
-               <button 
-                 key={key} 
-                 onClick={() => setActiveTab(key)}
-                 className={`w-full text-left px-4 py-3 rounded text-sm font-medium flex items-center gap-3 transition-colors ${
-                   activeTab === key 
-                     ? 'bg-indigo-500 text-white shadow-lg' 
-                     : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800'}`
-                 }`}
-               >
-                 <Icon size={18}/> {label}
-               </button>
-             ))}
-          </nav>
-          <div className="p-4 border-t border-gray-100">
-             <button onClick={() => setView('home')} className="text-sm text-gray-500 hover:text-black flex items-center gap-2"><LogOut size={14}/> ????</button>
-          </div>
-       </aside>
+      {/* Sidebar */}
+      <aside className={`w-64 flex-shrink-0 ${sidebarBg} border-r ${sidebarBorder} flex flex-col fixed h-full z-40 transition-colors`}>
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="font-bold text-lg flex items-center gap-2 text-indigo-500"><Terminal className="text-pink-500" /> SANGUI // ADMIN</h2>
+        </div>
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {tabs.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`w-full text-left px-4 py-3 rounded text-sm font-medium flex items-center gap-3 transition-colors ${activeTab === key
+                ? 'bg-indigo-500 text-white shadow-lg'
+                : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800'}`
+                }`}
+            >
+              <Icon size={18} /> {label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-gray-100">
+          <button onClick={() => setView('home')} className="text-sm text-gray-500 hover:text-black flex items-center gap-2"><LogOut size={14} /> ????</button>
+        </div>
+      </aside>
 
-       {/* Main Content Area */}
-       <div className="flex-1 ml-64 flex flex-col">
-          {/* Top Bar */}
-          <header className={`sticky top-0 z-30 h-16 flex items-center justify-between px-8 ${topbarBg} border-b ${sidebarBorder} shadow-sm`}>
-             <h1 className="text-xl font-bold">{activeLabel}</h1>
-             <div className="flex items-center space-x-4">
-               <span className={`text-xs px-3 py-1 rounded font-bold text-white ${ROLES[user.role].color}`}>
-                 {ROLES[user.role].label}
-               </span>
-               <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500 flex items-center gap-1">
-                 <LogOut size={16}/> ?????
-               </button>
-             </div>
-          </header>
-          
-          <main className="flex-1 p-8">
-             <ActiveComponent isDarkMode={isDarkMode} user={user} />
-             {/* General Notification System for Super Admin */}
-             {(activeTab === 'Dashboard' || activeTab === 'Settings') && user.role === 'SUPER_ADMIN' && (
-                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-lg border shadow-sm mt-8`}>
-                   <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>\u7d27\u6025\u5e7f\u64ad\u8bbe\u7f6e</h3>
-                   <div className="flex gap-4">
-                      <input 
-                        className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                        value={notification.content}
-                        onChange={(e) => setNotification({...notification, content: e.target.value})}
-                      />
-                      <button 
-                        onClick={() => setNotification({...notification, isOpen: !notification.isOpen})}
-                        className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
-                      >
-                        {notification.isOpen ? '\u5173\u95ed' : '\u5f00\u542f'}
-                      </button>
-                   </div>
-                </div>
-             )}
-          </main>
-       </div>
+      {/* Main Content Area */}
+      <div className="flex-1 ml-64 flex flex-col">
+        {/* Top Bar */}
+        <header className={`sticky top-0 z-30 h-16 flex items-center justify-between px-8 ${topbarBg} border-b ${sidebarBorder} shadow-sm`}>
+          <h1 className="text-xl font-bold">{activeLabel}</h1>
+          <div className="flex items-center space-x-4">
+            <span className={`text-xs px-3 py-1 rounded font-bold text-white ${ROLES[user.role].color}`}>
+              {ROLES[user.role].label}
+            </span>
+            <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500 flex items-center gap-1">
+              <LogOut size={16} /> ?????
+            </button>
+          </div>
+        </header>
+
+        <main className="flex-1 p-8">
+          <ActiveComponent isDarkMode={isDarkMode} user={user} />
+          {/* General Notification System for Super Admin */}
+          {(activeTab === 'Dashboard' || activeTab === 'Settings') && user.role === 'SUPER_ADMIN' && (
+            <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-lg border shadow-sm mt-8`}>
+              <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>\u7d27\u6025\u5e7f\u64ad\u8bbe\u7f6e</h3>
+              <div className="flex gap-4">
+                <input
+                  className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                  value={notification.content}
+                  onChange={(e) => setNotification({ ...notification, content: e.target.value })}
+                />
+                <button
+                  onClick={() => setNotification({ ...notification, isOpen: !notification.isOpen })}
+                  className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                >
+                  {notification.isOpen ? '\u5173\u95ed' : '\u5f00\u542f'}
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
@@ -788,23 +782,23 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
   };
 
   const renderView = () => {
-    switch(view) {
+    switch (view) {
       case 'home':
         return (
           <>
-            <Hero setView={setView} isDarkMode={isDarkMode}/>
-            <ArticleList setView={setView} setArticleId={setArticleId} isDarkMode={isDarkMode} postsData={posts} categoriesData={categories} stats={meta?.stats}/>
+            <Hero setView={setView} isDarkMode={isDarkMode} />
+            <ArticleList setView={setView} setArticleId={setArticleId} isDarkMode={isDarkMode} postsData={posts} categoriesData={categories} stats={meta?.stats} />
             <footer className={`py-12 text-center mt-12 border-t-8 ${isDarkMode ? 'bg-gray-900 text-white border-[#FF0080]' : 'bg-black text-white border-[#FFD700]'}`}>
-               <h2 className="text-3xl font-black italic tracking-tighter mb-2">SANGUI BLOG</h2>
-               <p className="text-xs text-gray-500 font-mono">DESIGNED FOR THE BOLD · 2025</p>
+              <h2 className="text-3xl font-black italic tracking-tighter mb-2">SANGUI BLOG</h2>
+              <p className="text-xs text-gray-500 font-mono">DESIGNED FOR THE BOLD · 2025</p>
             </footer>
           </>
         );
       case 'article': return <ArticleDetail id={articleId} setView={setView} isDarkMode={isDarkMode} articleData={article} commentsData={comments} onSubmitComment={(payload) => submitComment && articleId && submitComment(articleId, payload)} />;
-      case 'login': return <LoginView setView={setView} setUser={setUser} isDarkMode={isDarkMode} doLogin={doLogin}/>;
-      case 'admin': 
-         if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) return <div className="p-20 text-center">Access Denied</div>;
-         return <AdminPanel setView={setView} notification={notification} setNotification={setNotification} user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} />;
+      case 'login': return <LoginView setView={setView} setUser={setUser} isDarkMode={isDarkMode} doLogin={doLogin} />;
+      case 'admin':
+        if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) return <div className="p-20 text-center">Access Denied</div>;
+        return <AdminPanel setView={setView} notification={notification} setNotification={setNotification} user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} />;
       default: return <div className="pt-32 text-center">404</div>;
     }
   };
@@ -813,9 +807,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
   return (
     <div className={`min-h-screen ${globalBg} text-black font-sans selection:bg-[#FF0080] selection:text-white overflow-x-hidden transition-colors duration-300`}>
-      <ClickRipple /> 
-      <EmergencyBar isOpen={notification.isOpen && view === 'home'} content={notification.content} onClose={() => setNotification({...notification, isOpen: false})}/>
-      
+      <ClickRipple />
+      <EmergencyBar isOpen={notification.isOpen && view === 'home'} content={notification.content} onClose={() => setNotification({ ...notification, isOpen: false })} />
+
       {view !== 'login' && view !== 'admin' && (
         <Navigation user={user} setView={setView} handleLogout={handleLogout} toggleMenu={() => setMenuOpen(!menuOpen)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
       )}
@@ -926,8 +920,8 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
   const totalPages = Math.ceil(filteredPosts.length / PAGE_SIZE);
   const displayPosts = filteredPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const socialButtonClass = isDarkMode 
-    ? '!text-white hover:!text-black hover:!bg-white' 
+  const socialButtonClass = isDarkMode
+    ? '!text-white hover:!text-black hover:!bg-white'
     : 'hover:bg-black hover:text-white';
   const wechatButtonClass = isDarkMode
     ? (showWechat ? '!bg-white !text-black' : '!text-white hover:!text-black hover:!bg-white')
@@ -951,187 +945,187 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
       <section id="posts" className="px-4 md:px-8 max-w-7xl mx-auto py-16 min-h-screen">
         <div className="flex flex-col lg:flex-row gap-12">
           <div className="w-full lg:w-1/4 space-y-8">
-             <div className={`${sidebarBg} border-2 border-black p-6 shadow-[8px_8px_0px_0px_#000] text-center relative ${text}`}>
-                <motion.div 
-                  animate={{ rotate: avatarClicks * 360 }}
-                  transition={{ duration: 0.5 }}
-                  onClick={() => setAvatarClicks(p => p + 1)}
-                  className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 bg-[#FFD700] rounded-full border-2 border-black flex items-center justify-center cursor-pointer"
+            <div className={`${sidebarBg} border-2 border-black p-6 shadow-[8px_8px_0px_0px_#000] text-center relative ${text}`}>
+              <motion.div
+                animate={{ rotate: avatarClicks * 360 }}
+                transition={{ duration: 0.5 }}
+                onClick={() => setAvatarClicks(p => p + 1)}
+                className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 bg-[#FFD700] rounded-full border-2 border-black flex items-center justify-center cursor-pointer"
+              >
+                <img src={MOCK_USER.avatar} className="w-full h-full object-cover rounded-full" />
+              </motion.div>
+              <h3 className="mt-12 font-black text-2xl">{MOCK_USER.username}</h3>
+              <p className={`text-sm font-bold mb-4 ${subText}`}>{MOCK_USER.title}</p>
+              <div className="flex justify-center gap-2">
+                <PopButton variant="ghost" className={`!p-2 border-2 border-black ${socialButtonClass}`} onClick={() => window.open(MOCK_USER.social.github)}><Github size={20} /></PopButton>
+
+                <div
+                  className="relative"
+                  onMouseEnter={() => setShowWechat(true)}
+                  onMouseLeave={() => setShowWechat(false)}
                 >
-                  <img src={MOCK_USER.avatar} className="w-full h-full object-cover rounded-full"/>
-                </motion.div>
-                <h3 className="mt-12 font-black text-2xl">{MOCK_USER.username}</h3>
-                <p className={`text-sm font-bold mb-4 ${subText}`}>{MOCK_USER.title}</p>
-                <div className="flex justify-center gap-2">
-                   <PopButton variant="ghost" className={`!p-2 border-2 border-black ${socialButtonClass}`} onClick={() => window.open(MOCK_USER.social.github)}><Github size={20}/></PopButton>
-
-                   <div
-                      className="relative"
-                      onMouseEnter={() => setShowWechat(true)}
-                      onMouseLeave={() => setShowWechat(false)}
-                   >
-                     <PopButton variant="ghost" className={`!p-2 border-2 border-black ${wechatButtonClass}`}>
-                        <MessageCircle size={20}/>
-                     </PopButton>
-                     <AnimatePresence>
-                        {showWechat && (
-                           <motion.div
-                              initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
-                           >
-                              <div className="bg-white p-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] w-40 h-40 flex flex-col items-center justify-center">
-                                 <img src={MOCK_USER.social.wechatQr} className="w-32 h-32 object-contain border border-gray-200 block"/>
-                                 <p className="text-center text-[10px] font-bold mt-1 bg-black text-white w-full">SCAN ME</p>
-                              </div>
-                              <div className="w-4 h-4 bg-black rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2"></div>
-                           </motion.div>
-                        )}
-                     </AnimatePresence>
-                   </div>
+                  <PopButton variant="ghost" className={`!p-2 border-2 border-black ${wechatButtonClass}`}>
+                    <MessageCircle size={20} />
+                  </PopButton>
+                  <AnimatePresence>
+                    {showWechat && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
+                      >
+                        <div className="bg-white p-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] w-40 h-40 flex flex-col items-center justify-center">
+                          <img src={MOCK_USER.social.wechatQr} className="w-32 h-32 object-contain border border-gray-200 block" />
+                          <p className="text-center text-[10px] font-bold mt-1 bg-black text-white w-full">SCAN ME</p>
+                        </div>
+                        <div className="w-4 h-4 bg-black rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2"></div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-             </div>
+              </div>
+            </div>
 
-             <div>
-                <h4 className="font-black text-xl mb-4 flex items-center gap-2 bg-black text-white p-2 transform -rotate-1 w-max">
-                  <Filter size={20}/> NAVIGATOR
-                </h4>
-                <div className="flex flex-col gap-3">
-                  {categories.map(cat => (
-                    <div key={cat.id} className="group">
-                      <button 
-                        onClick={() => {setActiveParent(cat.id); setActiveSub('all')}}
-                        className={`w-full text-left p-3 font-bold border-2 border-black transition-all flex justify-between items-center
+            <div>
+              <h4 className="font-black text-xl mb-4 flex items-center gap-2 bg-black text-white p-2 transform -rotate-1 w-max">
+                <Filter size={20} /> NAVIGATOR
+              </h4>
+              <div className="flex flex-col gap-3">
+                {categories.map(cat => (
+                  <div key={cat.id} className="group">
+                    <button
+                      onClick={() => { setActiveParent(cat.id); setActiveSub('all') }}
+                      className={`w-full text-left p-3 font-bold border-2 border-black transition-all flex justify-between items-center
                           ${activeParent === cat.id ? 'bg-[#6366F1] text-white shadow-[4px_4px_0px_0px_#000] -translate-y-1' : `${sidebarBg} ${text} hover:bg-gray-100`}
                         `}
-                      >
-                        {cat.label}
-                        <ChevronRight size={16} className={`transition-transform ${activeParent === cat.id ? 'rotate-90' : ''}`}/>
-                      </button>
-                      <AnimatePresence>
-                        {activeParent === cat.id && cat.children.length > 0 && (
-                          <motion.div 
-                            initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
-                            className={`overflow-hidden border-l-4 border-black ml-4 ${sidebarBg}`}
-                          >
-                            {cat.children.map(sub => (
-                               <button 
-                                 key={sub.id}
-                                 onClick={() => setActiveSub(sub.id)}
-                                 className={`block w-full text-left px-4 py-2 text-sm font-bold ${isDarkMode ? 'border-gray-700' : 'border-black'} border-b last:border-0
+                    >
+                      {cat.label}
+                      <ChevronRight size={16} className={`transition-transform ${activeParent === cat.id ? 'rotate-90' : ''}`} />
+                    </button>
+                    <AnimatePresence>
+                      {activeParent === cat.id && cat.children.length > 0 && (
+                        <motion.div
+                          initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
+                          className={`overflow-hidden border-l-4 border-black ml-4 ${sidebarBg}`}
+                        >
+                          {cat.children.map(sub => (
+                            <button
+                              key={sub.id}
+                              onClick={() => setActiveSub(sub.id)}
+                              className={`block w-full text-left px-4 py-2 text-sm font-bold ${isDarkMode ? 'border-gray-700' : 'border-black'} border-b last:border-0
                                    ${activeSub === sub.id ? 'bg-[#FFD700] text-black' : `${subText} hover:bg-black/10`}
                                  `}
-                               >
-                                 {sub.label}
-                               </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
-                </div>
-             </div>
+                            >
+                              {sub.label}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="flex-1 flex flex-col">
-             <div className="space-y-8 flex-1">
-                {displayPosts.length > 0 ? (
-                  displayPosts.map((post, idx) => (
-                    <motion.div
-                      key={post.id}
-                      initial={{ opacity: 0, y: 50 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: idx * 0.1 }}
-                    >
-                      <TiltCard onClick={() => { setArticleId(post.id); setView('article'); }}>
-                          <div className="flex flex-col md:flex-row">
-                            <div className={`md:w-1/3 h-48 md:h-auto ${post.color} border-b-2 md:border-b-0 md:border-r-2 border-black p-6 flex flex-col justify-between text-white relative overflow-hidden group`}>
-                                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity transform group-hover:scale-110 duration-500">
-                                  <Code size={120} />
-                                </div>
-                                <span className="relative z-10 font-black text-5xl opacity-50">
-                                  {(idx + 1 + (currentPage - 1) * PAGE_SIZE).toString().padStart(2, '0')}
-                                </span>
-                                <div className="relative z-10">
-                                  <span className="bg-black text-white px-2 py-1 text-xs font-bold uppercase mb-2 inline-block">{post.parentCategory}</span>
-                                  <h4 className="font-black text-2xl leading-none">{post.category}</h4>
-                                </div>
-                            </div>
-                            
-                            <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg}`}>
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                  {post.tags.map(t => (
-                                    <span key={t} className={`px-2 py-1 border border-black text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
-                                  ))}
-                                </div>
-                                <h2 className={`text-3xl font-black mb-4 group-hover:text-[#6366F1] transition-colors ${text}`}>{post.title}</h2>
-                                <p className={`text-lg font-medium mb-6 border-l-4 border-gray-300 pl-4 ${subText}`}>{post.excerpt}</p>
-                                
-                                <div className={`flex justify-between items-center border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-black'} pt-4 border-dashed`}>
-                                  <span className="font-mono font-bold text-xs bg-black text-white px-2 py-1">{post.date}</span>
-                                  <div className={`flex gap-4 font-bold text-sm ${text}`}>
-                                      <span className="flex items-center gap-1 hover:text-[#FF0080]"><Heart size={18}/> {post.likes}</span>
-                                      <span className="flex items-center gap-1 hover:text-[#6366F1]"><MessageSquare size={18}/> {post.comments}</span>
-                                  </div>
-                                </div>
+            <div className="space-y-8 flex-1">
+              {displayPosts.length > 0 ? (
+                displayPosts.map((post, idx) => (
+                  <motion.div
+                    key={post.id}
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <TiltCard onClick={() => { setArticleId(post.id); setView('article'); }}>
+                      <div className="flex flex-col md:flex-row">
+                        <div className={`md:w-1/3 h-48 md:h-auto ${post.color} border-b-2 md:border-b-0 md:border-r-2 border-black p-6 flex flex-col justify-between text-white relative overflow-hidden group`}>
+                          <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity transform group-hover:scale-110 duration-500">
+                            <Code size={120} />
+                          </div>
+                          <span className="relative z-10 font-black text-5xl opacity-50">
+                            {(idx + 1 + (currentPage - 1) * PAGE_SIZE).toString().padStart(2, '0')}
+                          </span>
+                          <div className="relative z-10">
+                            <span className="bg-black text-white px-2 py-1 text-xs font-bold uppercase mb-2 inline-block">{post.parentCategory}</span>
+                            <h4 className="font-black text-2xl leading-none">{post.category}</h4>
+                          </div>
+                        </div>
+
+                        <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg}`}>
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {post.tags.map(t => (
+                              <span key={t} className={`px-2 py-1 border border-black text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
+                            ))}
+                          </div>
+                          <h2 className={`text-3xl font-black mb-4 group-hover:text-[#6366F1] transition-colors ${text}`}>{post.title}</h2>
+                          <p className={`text-lg font-medium mb-6 border-l-4 border-gray-300 pl-4 ${subText}`}>{post.excerpt}</p>
+
+                          <div className={`flex justify-between items-center border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-black'} pt-4 border-dashed`}>
+                            <span className="font-mono font-bold text-xs bg-black text-white px-2 py-1">{post.date}</span>
+                            <div className={`flex gap-4 font-bold text-sm ${text}`}>
+                              <span className="flex items-center gap-1 hover:text-[#FF0080]"><Heart size={18} /> {post.likes}</span>
+                              <span className="flex items-center gap-1 hover:text-[#6366F1]"><MessageSquare size={18} /> {post.comments}</span>
                             </div>
                           </div>
-                      </TiltCard>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className={`p-12 border-4 border-black border-dashed text-center ${cardBg}`}>
-                      <p className={`text-2xl font-black ${subText}`}>NO DATA FOUND</p>
-                      <PopButton variant="primary" className="mt-4" onClick={() => {setActiveParent('all'); setActiveSub('all')}}>RESET FILTERS</PopButton>
-                  </div>
-                )}
-             </div>
+                        </div>
+                      </div>
+                    </TiltCard>
+                  </motion.div>
+                ))
+              ) : (
+                <div className={`p-12 border-4 border-black border-dashed text-center ${cardBg}`}>
+                  <p className={`text-2xl font-black ${subText}`}>NO DATA FOUND</p>
+                  <PopButton variant="primary" className="mt-4" onClick={() => { setActiveParent('all'); setActiveSub('all') }}>RESET FILTERS</PopButton>
+                </div>
+              )}
+            </div>
 
-             {totalPages > 1 && (
-               <div className="mt-12 flex justify-center items-center gap-4">
-                 <button 
-                    disabled={currentPage === 1}
-                    onClick={() => {setCurrentPage(p => Math.max(1, p - 1)); document.getElementById('posts').scrollIntoView({behavior: 'smooth'});}}
-                    className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
-                 >
-                    <ChevronLeft size={20} strokeWidth={3}/>
-                 </button>
-                 
-                 <div className="flex gap-2">
-                    {Array.from({length: totalPages}, (_, i) => i + 1).map(p => (
-                      <button
-                        key={p}
-                        onClick={() => {setCurrentPage(p); document.getElementById('posts').scrollIntoView({behavior: 'smooth'});}}
-                        className={`w-10 h-10 border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000]
+            {totalPages > 1 && (
+              <div className="mt-12 flex justify-center items-center gap-4">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); document.getElementById('posts').scrollIntoView({ behavior: 'smooth' }); }}
+                  className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
+                >
+                  <ChevronLeft size={20} strokeWidth={3} />
+                </button>
+
+                <div className="flex gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => { setCurrentPage(p); document.getElementById('posts').scrollIntoView({ behavior: 'smooth' }); }}
+                      className={`w-10 h-10 border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000]
                           ${currentPage === p ? 'bg-black text-white -translate-y-1 shadow-[6px_6px_0px_0px_#FF0080]' : `${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#6366F1] hover:text-white`}
                         `}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                 </div>
-
-                 <button 
-                    disabled={currentPage === totalPages}
-                    onClick={() => {setCurrentPage(p => Math.min(totalPages, p + 1)); document.getElementById('posts').scrollIntoView({behavior: 'smooth'});}}
-                    className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
-                 >
-                    <ChevronRight size={20} strokeWidth={3}/>
-                 </button>
-               </div>
-             )}
-
-             <div className="py-12 text-center mt-8">
-                <div className="inline-block relative">
-                   <div className="absolute inset-0 bg-[#FFD700] transform translate-x-2 translate-y-2 border-2 border-black"></div>
-                   <div className={`relative border-2 border-black px-8 py-4 text-2xl font-black italic ${cardBg} ${text}`}>
-                     "阻挡你的不是别人，而是你自己。"
-                   </div>
+                    >
+                      {p}
+                    </button>
+                  ))}
                 </div>
-             </div>
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); document.getElementById('posts').scrollIntoView({ behavior: 'smooth' }); }}
+                  className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
+                >
+                  <ChevronRight size={20} strokeWidth={3} />
+                </button>
+              </div>
+            )}
+
+            <div className="py-12 text-center mt-8">
+              <div className="inline-block relative">
+                <div className="absolute inset-0 bg-[#FFD700] transform translate-x-2 translate-y-2 border-2 border-black"></div>
+                <div className={`relative border-2 border-black px-8 py-4 text-2xl font-black italic ${cardBg} ${text}`}>
+                  "阻挡你的不是别人，而是你自己。"
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1159,52 +1153,52 @@ const CommentsSection = ({ commentsCount, comments = [], isDarkMode, onSubmit })
 
   return (
     <div className={`border-t-4 border-black pt-12 mt-12 ${text_cls}`}>
-       <h3 className="text-3xl font-black mb-8 flex items-center gap-3">
-         <MessageSquare size={32} className="text-[#6366F1]"/>
-         COMMENTS ({commentsCount || list.length})
-       </h3>
+      <h3 className="text-3xl font-black mb-8 flex items-center gap-3">
+        <MessageSquare size={32} className="text-[#6366F1]" />
+        COMMENTS ({commentsCount || list.length})
+      </h3>
 
-       <div className={`${inputBg} border-2 border-black p-6 mb-12 shadow-[8px_8px_0px_0px_#000]`}>
-          <div className="flex gap-4 mb-4">
-             <div className={`w-12 h-12 border-2 border-black ${commentBg} rounded-full flex items-center justify-center font-bold`}>ME</div>
-             <div className="flex-1">
-                <input
-                  className={`w-full mb-2 p-3 border-2 border-black font-bold focus:outline-none ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
-                  placeholder="????"
-                  value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                />
-                <textarea 
-                   placeholder="????????..." 
-                   className={`w-full min-h-[100px] p-4 border-2 border-black font-bold focus:outline-none focus:ring-4 focus:ring-[#FFD700] transition-shadow ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
-                   value={content}
-                   onChange={(e) => setContent(e.target.value)}
-                ></textarea>
-             </div>
+      <div className={`${inputBg} border-2 border-black p-6 mb-12 shadow-[8px_8px_0px_0px_#000]`}>
+        <div className="flex gap-4 mb-4">
+          <div className={`w-12 h-12 border-2 border-black ${commentBg} rounded-full flex items-center justify-center font-bold`}>ME</div>
+          <div className="flex-1">
+            <input
+              className={`w-full mb-2 p-3 border-2 border-black font-bold focus:outline-none ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+              placeholder="????"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+            />
+            <textarea
+              placeholder="????????..."
+              className={`w-full min-h-[100px] p-4 border-2 border-black font-bold focus:outline-none focus:ring-4 focus:ring-[#FFD700] transition-shadow ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            ></textarea>
           </div>
-          <div className="flex justify-end">
-             <PopButton onClick={handleSubmit}>????</PopButton>
-          </div>
-       </div>
+        </div>
+        <div className="flex justify-end">
+          <PopButton onClick={handleSubmit}>????</PopButton>
+        </div>
+      </div>
 
-       <div className="space-y-8">
-          {list.map((c, i) => (
-             <div key={c.id || i} className="flex gap-4">
-                <div className={`w-12 h-12 border-2 border-black rounded-full ${c.avatar || 'bg-gray-200'} shrink-0 flex items-center justify-center font-bold`}>
-                  {(c.authorName || c.user || 'U').toString().slice(0,2)}
-                </div>
-                <div className="flex-1">
-                   <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-black text-lg">{c.authorName || c.user}</span>
-                      <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
-                   </div>
-                   <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
-                      <p className="font-medium">{c.content || c.text}</p>
-                   </div>
-                </div>
-             </div>
-          ))}
-       </div>
+      <div className="space-y-8">
+        {list.map((c, i) => (
+          <div key={c.id || i} className="flex gap-4">
+            <div className={`w-12 h-12 border-2 border-black rounded-full ${c.avatar || 'bg-gray-200'} shrink-0 flex items-center justify-center font-bold`}>
+              {(c.authorName || c.user || 'U').toString().slice(0, 2)}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="font-black text-lg">{c.authorName || c.user}</span>
+                <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
+              </div>
+              <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
+                <p className="font-medium">{c.content || c.text}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -1224,39 +1218,39 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
     <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`min-h-screen pt-24 px-4 md:px-0 pb-20 ${surface} ${text}`}>
       <div className="max-w-4xl mx-auto">
         <PopButton onClick={() => setView('home')} variant="secondary" className="mb-8" icon={ChevronRight}>BACK TO LIST</PopButton>
-        
+
         <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-8 md:p-12 ${surface} relative overflow-hidden`}>
-           <div className={`absolute top-0 right-0 w-64 h-64 ${post.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 pointer-events-none`}></div>
-           
-           <div className={`flex gap-4 mb-6 border-b-4 ${isDarkMode ? 'border-gray-700' : 'border-black'} pb-6`}>
-              <span className={`bg-black text-white px-3 py-1 font-bold text-sm ${isDarkMode ? 'bg-gray-700' : ''}`}>{post.parentCategory}</span>
-              <span className={`px-3 py-1 font-bold text-sm border-2 border-black ${post.color} text-white`}>{post.category}</span>
-           </div>
-           
-           <h1 className="text-4xl md:text-6xl font-black mb-8 leading-tight">{post.title}</h1>
+          <div className={`absolute top-0 right-0 w-64 h-64 ${post.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 pointer-events-none`}></div>
 
-           <div className={`flex items-center justify-between p-4 border-2 border-black mb-12 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-              <div className="flex items-center gap-3">
-                <img src={post.avatar || MOCK_USER.avatar} className="w-12 h-12 border-2 border-black rounded-full bg-white"/>
-                <div>
-                   <p className="font-black text-lg leading-none">{post.author || post.authorName || post.parentCategory}</p>
-                   <p className="text-xs font-bold text-gray-500">{post.date} ? READ: {post.views}</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                 <PopButton variant="ghost" className={`!p-2 border-2 border-black ${surface}`}><Share2 size={20}/></PopButton>
-                 <PopButton variant="ghost" className={`!p-2 border-2 border-black ${surface}`}><Heart size={20}/></PopButton>
-              </div>
-           </div>
+          <div className={`flex gap-4 mb-6 border-b-4 ${isDarkMode ? 'border-gray-700' : 'border-black'} pb-6`}>
+            <span className={`bg-black text-white px-3 py-1 font-bold text-sm ${isDarkMode ? 'bg-gray-700' : ''}`}>{post.parentCategory}</span>
+            <span className={`px-3 py-1 font-bold text-sm border-2 border-black ${post.color} text-white`}>{post.category}</span>
+          </div>
 
-           <article className={`prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none ${isDarkMode ? 'prose-invert' : ''}`}>
-              <div className={`p-6 border-l-8 border-[#FFD700] font-serif italic text-xl mb-8 ${quoteBg} ${quoteText}`}>
-                {post.excerpt}
-              </div>
-              {contentHtml ? <div dangerouslySetInnerHTML={{ __html: contentHtml }} /> : <p>{contentMd || '?????????????????????????????'}</p>}
-           </article>
+          <h1 className="text-4xl md:text-6xl font-black mb-8 leading-tight">{post.title}</h1>
 
-           <CommentsSection commentsCount={post.comments} comments={comments} isDarkMode={isDarkMode} onSubmit={onSubmitComment} />
+          <div className={`flex items-center justify-between p-4 border-2 border-black mb-12 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+            <div className="flex items-center gap-3">
+              <img src={post.avatar || MOCK_USER.avatar} className="w-12 h-12 border-2 border-black rounded-full bg-white" />
+              <div>
+                <p className="font-black text-lg leading-none">{post.author || post.authorName || post.parentCategory}</p>
+                <p className="text-xs font-bold text-gray-500">{post.date} ? READ: {post.views}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <PopButton variant="ghost" className={`!p-2 border-2 border-black ${surface}`}><Share2 size={20} /></PopButton>
+              <PopButton variant="ghost" className={`!p-2 border-2 border-black ${surface}`}><Heart size={20} /></PopButton>
+            </div>
+          </div>
+
+          <article className={`prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none ${isDarkMode ? 'prose-invert' : ''}`}>
+            <div className={`p-6 border-l-8 border-[#FFD700] font-serif italic text-xl mb-8 ${quoteBg} ${quoteText}`}>
+              {post.excerpt}
+            </div>
+            {contentHtml ? <div dangerouslySetInnerHTML={{ __html: contentHtml }} /> : <p>{contentMd || '?????????????????????????????'}</p>}
+          </article>
+
+          <CommentsSection commentsCount={post.comments} comments={comments} isDarkMode={isDarkMode} onSubmit={onSubmitComment} />
         </div>
       </div>
     </motion.div>
@@ -1295,13 +1289,13 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
   return (
     <div className={`h-screen flex items-center justify-center ${bg} ${text}`}>
       <div className={`${surface} p-8 rounded shadow-sm border border-gray-200 w-96`}>
-         <h2 className="text-xl font-bold mb-6 text-center">Admin Access</h2>
-         <form onSubmit={handleLogin} className="space-y-4">
-            <input className={`w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-blue-500 ${inputBg}`} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名" />
-            <input className={`w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-blue-500 ${inputBg}`} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" />
-            {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
-            <button className="w-full bg-black text-white py-2 rounded text-sm font-bold hover:bg-gray-800" disabled={loading}>{loading ? '\u767b\u5f55\u4e2d...' : 'Login'}</button>
-         </form>
+        <h2 className="text-xl font-bold mb-6 text-center">Admin Access</h2>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <input className={`w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-blue-500 ${inputBg}`} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名" />
+          <input className={`w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-blue-500 ${inputBg}`} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" />
+          {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
+          <button className="w-full bg-black text-white py-2 rounded text-sm font-bold hover:bg-gray-800" disabled={loading}>{loading ? '\u767b\u5f55\u4e2d...' : 'Login'}</button>
+        </form>
       </div>
     </div>
   );
