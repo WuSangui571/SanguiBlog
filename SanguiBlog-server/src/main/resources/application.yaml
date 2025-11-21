@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: SanguiBlog-server
+  datasource:
+    url: jdbc:mysql://localhost:3306/sanguiblog_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
+    username: root
+    password: 333
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate.format_sql: true
+  jackson:
+    default-property-inclusion: non_null
+
+jwt:
+  secret: change-me-sangui-super-secret-256-bit-key
+  expiration-minutes: 180
+  issuer: sangui-blog
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+logging:
+  level:
+    com.sangui.sanguiblog: INFO

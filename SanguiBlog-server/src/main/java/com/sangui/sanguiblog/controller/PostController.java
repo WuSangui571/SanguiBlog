@@ -1,0 +1,63 @@
+package com.sangui.sanguiblog.controller;
+
+import com.sangui.sanguiblog.model.dto.ApiResponse;
+import com.sangui.sanguiblog.model.dto.PageResponse;
+import com.sangui.sanguiblog.model.dto.PostDetailDto;
+import com.sangui.sanguiblog.model.dto.PostSummaryDto;
+import com.sangui.sanguiblog.model.dto.SavePostRequest;
+import com.sangui.sanguiblog.security.UserPrincipal;
+import com.sangui.sanguiblog.service.PostService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/posts")
+@RequiredArgsConstructor
+public class PostController {
+
+    private final PostService postService;
+
+    @GetMapping
+    public ApiResponse<PageResponse<PostSummaryDto>> list(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long tagId,
+            @RequestParam(required = false) String keyword) {
+        return ApiResponse.ok(postService.listPublished(page, size, categoryId, tagId, keyword));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<PostDetailDto> detail(@PathVariable Long id) {
+        return ApiResponse.ok(postService.getPublishedDetail(id));
+    }
+
+    @GetMapping("/slug/{slug}")
+    public ApiResponse<PostDetailDto> detailBySlug(@PathVariable String slug) {
+        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug));
+    }
+
+    @PostMapping
+    public ApiResponse<PostDetailDto> create(@Valid @RequestBody SavePostRequest request,
+                                             @AuthenticationPrincipal UserPrincipal principal) {
+        Long uid = principal != null ? principal.getId() : null;
+        return ApiResponse.ok(postService.saveOrUpdate(request, uid));
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<PostDetailDto> update(@PathVariable Long id,
+                                             @Valid @RequestBody SavePostRequest request,
+                                             @AuthenticationPrincipal UserPrincipal principal) {
+        request.setId(id);
+        Long uid = principal != null ? principal.getId() : null;
+        return ApiResponse.ok(postService.saveOrUpdate(request, uid));
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete(@PathVariable Long id) {
+        postService.delete(id);
+        return ApiResponse.ok();
+    }
+}

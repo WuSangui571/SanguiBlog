@@ -1,0 +1,1 @@
+﻿将微信名片文件（wechat.jpg）放在此目录即可，路径：SanguiBlog-front/public/static/contact。

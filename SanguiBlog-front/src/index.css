@@ -1,0 +1,8 @@
+@import "tailwindcss";
+/* Typography 插件（用于 prose 那些类） */
+@plugin "@tailwindcss/typography";
+
+/* 你自己的全局样式 */
+body {
+  @apply bg-[#F0F0F0];
+}

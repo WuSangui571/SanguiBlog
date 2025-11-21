@@ -1,0 +1,88 @@
+# ==========================================
+# Java / Maven / Spring Boot Project Ignore
+# ==========================================
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Spring Boot log files
+*.log
+logs/
+log/
+*/log/
+*/logs/
+
+# Spring Boot temporary files
+*.pid
+*.seed
+*.tmp
+
+# Uploaded files (your blog's image uploads, markdown uploads etc)
+uploads/
+static/uploads/
+public/uploads/
+resources/static/uploads/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# ======================
+# IntelliJ IDEA / JetBrains
+# ======================
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# ======================
+# VSCode (optional)
+# ======================
+.vscode/
+
+# ======================
+# Node / Front-end (if future added)
+# ======================
+node_modules/
+dist/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# ======================
+# Environment files
+# ======================
+.env
+.env.*
+application-local.yml
+application-dev.yml
+
+# ======================
+# Misc
+# ======================
+*.class
+*.jar
+*.war
+*.ear
+*.orig
+*.rej
+*.patch
+
+# Backup files
+*~
+*.bak
+*.swp
+*.swo
+
+# =====================================
+# Git keep exceptions
+# (keep directories but ignore contents)
+# =====================================
+!src/main/resources/
+!src/main/java/
