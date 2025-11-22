@@ -19,7 +19,7 @@ const request = async (path, options = {}) => {
   return res.json();
 };
 
-export const fetchSiteMeta = () => request("/site/meta");
+export const fetchSiteMeta = () => request(`/site/meta?t=${Date.now()}`);
 
 export const fetchCategories = () => request("/categories/tree");
 
@@ -45,6 +45,12 @@ export const fetchComments = (postId) => request(`/posts/${postId}/comments`);
 
 export const createComment = (postId, payload) =>
   request(`/posts/${postId}/comments`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const updateBroadcast = (payload) =>
+  request("/site/broadcast", {
     method: "POST",
     body: JSON.stringify(payload),
   });

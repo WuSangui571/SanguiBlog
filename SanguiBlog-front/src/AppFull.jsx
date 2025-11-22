@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useBlog } from "./hooks/useBlogData";
-import { recordPageView } from "./api";
+import { recordPageView, updateBroadcast } from "./api";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
 import {
   Code, User, Heart, MessageSquare, Share2, X, Menu, ChevronRight,
@@ -8,7 +10,7 @@ import {
   BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
   Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
   ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
-  Home, TrendingUp, Edit, Send, Moon, Sun, Upload, Map,
+  Home, TrendingUp, Edit, Send, Moon, Sun, Upload, Map, ArrowUp
 } from 'lucide-react';
 
 // --- 1. 设计系统 & 基础数据 ---
@@ -59,7 +61,7 @@ const MOCK_USER = {
   role: "SUPER_ADMIN",
   social: {
     github: "https://github.com/Wusangui571",
-    wechatQr: "http://localhost:8080/contact/wechat.jpg"
+    wechatQr: "/contact/wechat.jpg"
   }
 };
 
@@ -328,7 +330,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.0.0
+          SANGUI BLOG // V1.1.1
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -433,33 +435,33 @@ const AnalyticsView = ({ isDarkMode }) => {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <div className={`${surface} p-4 rounded-lg shadow-lg ${border} border`}>
-          <p className="text-sm text-gray-500">???</p>
-          <p className={`text-2xl font-bold ${text}`}>{MOCK_ANALYTICS.avgTime} ??</p>
+          <p className="text-sm text-gray-500">平均停留时间</p>
+          <p className={`text-2xl font-bold ${text}`}>{MOCK_ANALYTICS.avgTime} 分钟</p>
         </div>
         <div className={`${surface} p-4 rounded-lg shadow-lg ${border} border`}>
-          <p className="text-sm text-gray-500">???</p>
+          <p className="text-sm text-gray-500">跳出率</p>
           <p className={`text-2xl font-bold ${text} ${MOCK_ANALYTICS.bounceRate > 50 ? 'text-red-500' : 'text-green-500'}`}>{MOCK_ANALYTICS.bounceRate}%</p>
         </div>
         <div className={`${surface} p-4 rounded-lg shadow-lg ${border} border`}>
-          <p className="text-sm text-gray-500">????</p>
+          <p className="text-sm text-gray-500">主要访客区域</p>
           <p className={`text-2xl font-bold ${text} flex items-center gap-2`}><Map size={24} /> USA</p>
         </div>
         <div className={`${surface} p-4 rounded-lg shadow-lg ${border} border`}>
-          <p className="text-sm text-gray-500">???\uff08\u793a\u4f8b\uff09</p>
+          <p className="text-sm text-gray-500">转化率 (模拟)</p>
           <p className={`text-2xl font-bold ${text}`}>2.1%</p>
         </div>
       </div>
 
       <div className={`${surface} p-6 rounded-lg shadow-xl ${border} border overflow-x-auto`}>
-        <h3 className={`text-xl font-bold mb-4 ${text}`}>????????</h3>
+        <h3 className={`text-xl font-bold mb-4 ${text}`}>近期文章访问日志</h3>
         <table className="min-w-full divide-y divide-gray-200 table-auto">
           <thead>
             <tr className={headerBg}>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>????</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>?? IP</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>??</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>??</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>????</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>文章标题</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>访客 IP</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>时间戳</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>来源 URL</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>地理位置</th>
             </tr>
           </thead>
           <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'} `}>
@@ -493,14 +495,14 @@ const CreatePostView = ({ isDarkMode }) => {
 
       {/* Left Column: Editor */}
       <div className="lg:col-span-2 space-y-6">
-        <h2 className="text-3xl font-bold text-pink-500 flex items-center gap-2"><Edit /> ????</h2>
+        <h2 className="text-3xl font-bold text-pink-500 flex items-center gap-2"><Edit /> 创建新文章</h2>
 
-        <input type="text" placeholder="????" className={`${inputClass} text-2xl font-bold`} defaultValue="The Future of Backend Development" />
+        <input type="text" placeholder="文章标题" className={`${inputClass} text-2xl font-bold`} defaultValue="The Future of Backend Development" />
 
         <div className={`${surface} p-6 rounded-lg shadow-xl ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'} space-y-4`}>
           <div className="flex justify-between items-center border-b pb-2 mb-4">
-            <h3 className={`font-semibold ${text}`}>Markdown \u5185\u5bb9\u7f16\u8f91\u5668</h3>
-            <button className="text-sm text-indigo-500 flex items-center hover:text-indigo-400"><Upload size={16} className="mr-1" /> \u4e0a\u4f20 .md \u6587\u4ef6</button>
+            <h3 className={`font-semibold ${text}`}>Markdown 内容编辑器</h3>
+            <button className="text-sm text-indigo-500 flex items-center hover:text-indigo-400"><Upload size={16} className="mr-1" /> 上传 .md 文件</button>
           </div>
           <textarea
             className={`${inputClass} min-h-[400px] font-mono`}
@@ -509,46 +511,12 @@ const CreatePostView = ({ isDarkMode }) => {
           />
         </div>
 
-        <PopButton variant="primary" icon={Send} className="w-full">????</PopButton>
-      </div>
-
-      {/* Right Column: Settings */}
-      <div className="lg:col-span-1 space-y-6">
-        <div className={`${surface} p-6 rounded-lg shadow-xl ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'} space-y-4`}>
-          <h3 className={`text-xl font-bold border-b pb-2 mb-4 ${text}`}>\u6587\u7ae0\u8bbe\u7f6e</h3>
-
-          <label className={`block text-sm font-medium ${text}`}>\u5206\u7c7b</label>
-          <select className={inputClass}>
-            <option>\u9009\u62e9\u5206\u7c7b...</option>
-            <option>Java Core</option>
-            <option>Modern Web</option>
-            <option>Distributed Sys</option>
-          </select>
-
-          <label className={`block text-sm font-medium ${text}`}>\u6807\u7b7e\uff08\u9017\u53f7\u5206\u9694\uff09</label>
-          <input type="text" className={inputClass} placeholder="\u4f8b\uff1aSpringBoot, Cloud, Performance" />
-
-          <label className={`block text-sm font-medium ${text}`}>Slug / \u6c38\u4e45\u94fe\u63a5</label>
-          <input type="text" className={inputClass} defaultValue="the-future-of-backend-development" />
-
-          <label className={`block text-sm font-medium ${text}`}>\u72b6\u6001</label>
-          <select className={inputClass} defaultValue="Draft">
-            <option>\u8349\u7a3f</option>
-            <option>\u5df2\u53d1\u5e03</option>
-            <option>\u5b9a\u65f6</option>
-            <option>\u9690\u85cf</option>
-          </select>
-
-          <label className={`block text-sm font-medium ${text}`}>\u5c01\u9762\u56fe\u4e0a\u4f20</label>
-          <div className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer ${isDarkMode ? 'border-gray-600 hover:border-indigo-500' : 'border-gray-300 hover:border-indigo-500'}`}>
-            <Upload size={24} className={`mx-auto mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-            <p className="text-sm text-gray-500">\u62d6\u62fd\u6216\u70b9\u51fb\u4e0a\u4f20</p>
-          </div>
-        </div>
+        <PopButton variant="primary" icon={Send} className="w-full">立即发布</PopButton>
       </div>
     </div>
   );
 };
+
 
 // 4.4 Sub-Component: Permissions View (Super Admin Only)
 const PermissionsView = ({ isDarkMode, user }) => {
@@ -580,10 +548,10 @@ const PermissionsView = ({ isDarkMode, user }) => {
         <table className="min-w-full divide-y divide-gray-200 table-auto">
           <thead>
             <tr className={headerBg}>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>\u7528\u6237\u540d</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>\u5f53\u524d\u89d2\u8272</th>
-              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>\u6700\u540e\u767b\u5f55</th>
-              <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${text}`}>\u64cd\u4f5c</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>用户名</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>当前角色</th>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>最后登录</th>
+              <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${text}`}>操作</th>
             </tr>
           </thead>
           <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'} `}>
@@ -595,8 +563,8 @@ const PermissionsView = ({ isDarkMode, user }) => {
                 </td>
                 <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500`}>{u.lastLogin}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                  <button disabled={u.role === 'SUPER_ADMIN'} className={`text-indigo-600 hover:text-indigo-900 disabled:opacity-50 ${isDarkMode ? 'text-indigo-400' : ''}`}>\u8c03\u6574\u89d2\u8272</button>
-                  <button disabled={u.role === 'SUPER_ADMIN'} className={`text-red-600 hover:text-red-900 disabled:opacity-50 ${isDarkMode ? 'text-red-400' : ''}`}>\u505c\u7528</button>
+                  <button disabled={u.role === 'SUPER_ADMIN'} className={`text-indigo-600 hover:text-indigo-900 disabled:opacity-50 ${isDarkMode ? 'text-indigo-400' : ''}`}>调整角色</button>
+                  <button disabled={u.role === 'SUPER_ADMIN'} className={`text-red-600 hover:text-red-900 disabled:opacity-50 ${isDarkMode ? 'text-red-400' : ''}`}>停用</button>
                 </td>
               </tr>
             ))}
@@ -613,14 +581,14 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
   const [activeTab, setActiveTab] = useState('Dashboard');
 
   const tabs = [
-    { key: 'Dashboard', label: '???', icon: Home, component: DashboardView },
-    { key: 'CreatePost', label: '????', icon: Edit, component: CreatePostView },
-    { key: 'Posts', label: '????', icon: FileText, component: () => <div className="text-xl p-8 text-center">????????</div> },
-    { key: 'Analytics', label: '????', icon: BarChart3, component: AnalyticsView },
-    { key: 'Comments', label: '????', icon: MessageCircle, component: () => <div className="text-xl p-8 text-center">????????</div> },
-    { key: 'Taxonomy', label: '?????', icon: Tag, component: () => <div className="text-xl p-8 text-center">?????????</div> },
-    { key: 'Permissions', label: '????', icon: Shield, component: PermissionsView, superAdmin: true },
-    { key: 'Settings', label: '????', icon: Settings, component: () => <div className="text-xl p-8 text-center">????????</div> },
+    { key: 'Dashboard', label: '仪表盘', icon: Home, component: DashboardView },
+    { key: 'CreatePost', label: '发布文章', icon: Edit, component: CreatePostView },
+    { key: 'Posts', label: '文章列表', icon: FileText, component: () => <div className="text-xl p-8 text-center">文章列表占位符</div> },
+    { key: 'Analytics', label: '数据分析', icon: BarChart3, component: AnalyticsView },
+    { key: 'Comments', label: '评论管理', icon: MessageCircle, component: () => <div className="text-xl p-8 text-center">评论审核占位符</div> },
+    { key: 'Taxonomy', label: '分类标签', icon: Tag, component: () => <div className="text-xl p-8 text-center">分类与标签占位符</div> },
+    { key: 'Permissions', label: '权限管理', icon: Shield, component: PermissionsView, superAdmin: true },
+    { key: 'Settings', label: '系统设置', icon: Settings, component: () => <div className="text-xl p-8 text-center">系统设置占位符</div> },
   ].filter(tab => !tab.superAdmin || user.role === 'SUPER_ADMIN');
 
   const ActiveComponent = tabs.find(t => t.key === activeTab)?.component || DashboardView;
@@ -654,7 +622,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
           ))}
         </nav>
         <div className="p-4 border-t border-gray-100">
-          <button onClick={() => setView('home')} className="text-sm text-gray-500 hover:text-black flex items-center gap-2"><LogOut size={14} /> ????</button>
+          <button onClick={() => setView('home')} className="text-sm text-gray-500 hover:text-black flex items-center gap-2"><LogOut size={14} /> 返回前台</button>
         </div>
       </aside>
 
@@ -668,7 +636,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
               {ROLES[user.role].label}
             </span>
             <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500 flex items-center gap-1">
-              <LogOut size={16} /> ?????
+              <LogOut size={16} /> 退出登录
             </button>
           </div>
         </header>
@@ -676,9 +644,10 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         <main className="flex-1 p-8">
           <ActiveComponent isDarkMode={isDarkMode} user={user} />
           {/* General Notification System for Super Admin */}
+          {/* General Notification System for Super Admin */}
           {(activeTab === 'Dashboard' || activeTab === 'Settings') && user.role === 'SUPER_ADMIN' && (
             <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-lg border shadow-sm mt-8`}>
-              <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>\u7d27\u6025\u5e7f\u64ad\u8bbe\u7f6e</h3>
+              <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>紧急广播设置</h3>
               <div className="flex gap-4">
                 <input
                   className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
@@ -686,10 +655,28 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                   onChange={(e) => setNotification({ ...notification, content: e.target.value })}
                 />
                 <button
-                  onClick={() => setNotification({ ...notification, isOpen: !notification.isOpen })}
+                  onClick={() => setNotification((prev) => ({ ...prev, isOpen: !prev.isOpen }))}
                   className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
                 >
-                  {notification.isOpen ? '\u5173\u95ed' : '\u5f00\u542f'}
+                  {notification.isOpen ? '关闭' : '开启'}
+                </button>
+                <button
+                  onClick={async () => {
+                    // Save content only
+                    try {
+                      await updateBroadcast({
+                        content: notification.content,
+                        active: notification.isOpen,
+                      });
+                      alert("广播内容已保存");
+                    } catch (error) {
+                      console.error("Failed to update broadcast", error);
+                      alert("保存广播设置失败");
+                    }
+                  }}
+                  className="px-4 py-2 rounded text-sm font-bold text-white bg-blue-500 hover:bg-blue-600 transition-colors"
+                >
+                  保存内容
                 </button>
               </div>
             </div>
@@ -700,6 +687,47 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
   );
 };
 
+
+// --- 6. Scroll To Top Component ---
+const ScrollToTop = ({ isDarkMode }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const toggleVisibility = () => {
+      if (window.pageYOffset > 300) {
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
+    };
+
+    window.addEventListener("scroll", toggleVisibility);
+    return () => window.removeEventListener("scroll", toggleVisibility);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  };
+
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          onClick={scrollToTop}
+          className={`fixed bottom-8 right-8 p-3 rounded-full shadow-lg z-50 transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-white hover:bg-gray-800'}`}
+        >
+          <ArrowUpRight size={24} />
+        </motion.button>
+      )}
+    </AnimatePresence>
+  );
+};
 
 // --- 5. Main App ---
 
@@ -809,6 +837,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     <div className={`min-h-screen ${globalBg} text-black font-sans selection:bg-[#FF0080] selection:text-white overflow-x-hidden transition-colors duration-300`}>
       <ClickRipple />
       <EmergencyBar isOpen={notification.isOpen && view === 'home'} content={notification.content} onClose={() => setNotification({ ...notification, isOpen: false })} />
+      <ScrollToTop isDarkMode={isDarkMode} />
 
       {view !== 'login' && view !== 'admin' && (
         <Navigation user={user} setView={setView} handleLogout={handleLogout} toggleMenu={() => setMenuOpen(!menuOpen)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
@@ -1213,6 +1242,10 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
   const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
   const quoteBg = isDarkMode ? 'bg-gray-800' : 'bg-[#FFFAF0]';
   const quoteText = isDarkMode ? 'text-gray-300' : 'text-black';
+  const codeBlockBg = isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900';
+  const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
+  const proseClass = `prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none ${isDarkMode ? 'prose-invert' : ''}`;
+  const shouldRenderMarkdown = Boolean(contentMd && contentMd.trim());
 
   return (
     <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`min-h-screen pt-24 px-4 md:px-0 pb-20 ${surface} ${text}`}>
@@ -1243,11 +1276,47 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
             </div>
           </div>
 
-          <article className={`prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none ${isDarkMode ? 'prose-invert' : ''}`}>
+          <article className={proseClass}>
             <div className={`p-6 border-l-8 border-[#FFD700] font-serif italic text-xl mb-8 ${quoteBg} ${quoteText}`}>
               {post.excerpt}
             </div>
-            {contentHtml ? <div dangerouslySetInnerHTML={{ __html: contentHtml }} /> : <p>{contentMd || '?????????????????????????????'}</p>}
+            {shouldRenderMarkdown ? (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ inline, className, children, ...props }) {
+                    const textContent = String(children).replace(/\n$/, '');
+                    if (inline) {
+                      return (
+                        <code
+                          className={`px-1.5 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+                          {...props}
+                        >
+                          {textContent}
+                        </code>
+                      );
+                    }
+                    return (
+                      <pre
+                        className={`my-4 p-4 border-2 border-black rounded overflow-auto ${codeBlockBg}`}
+                      >
+                        <code className={className} {...props}>
+                          {textContent}
+                        </code>
+                      </pre>
+                    );
+                  },
+                }}
+              >
+                {contentMd}
+              </ReactMarkdown>
+            ) : contentHtml ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: contentHtml }}
+              />
+            ) : (
+              <p className="font-semibold">暂无正文内容</p>
+            )}
           </article>
 
           <CommentsSection commentsCount={post.comments} comments={comments} isDarkMode={isDarkMode} onSubmit={onSubmitComment} />
@@ -1294,7 +1363,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
           <input className={`w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-blue-500 ${inputBg}`} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名" />
           <input className={`w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-blue-500 ${inputBg}`} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" />
           {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
-          <button className="w-full bg-black text-white py-2 rounded text-sm font-bold hover:bg-gray-800" disabled={loading}>{loading ? '\u767b\u5f55\u4e2d...' : 'Login'}</button>
+          <button className="w-full bg-black text-white py-2 rounded text-sm font-bold hover:bg-gray-800" disabled={loading}>{loading ? '登录中...' : 'Login'}</button>
         </form>
       </div>
     </div>
