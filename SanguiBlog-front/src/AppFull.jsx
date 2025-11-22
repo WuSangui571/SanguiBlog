@@ -330,7 +330,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.1
+          SANGUI BLOG // V1.1.2
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -579,6 +579,7 @@ const PermissionsView = ({ isDarkMode, user }) => {
 // 4.5 The main Admin Panel structure
 const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout }) => {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [broadcastSaving, setBroadcastSaving] = useState(false);
 
   const tabs = [
     { key: 'Dashboard', label: '仪表盘', icon: Home, component: DashboardView },
@@ -599,6 +600,29 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
   const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
   const sidebarBorder = isDarkMode ? 'border-gray-700' : 'border-gray-200';
   const topbarBg = isDarkMode ? 'bg-gray-900' : 'bg-white';
+
+  const handleBroadcastToggle = async () => {
+    if (broadcastSaving) return;
+    const previousState = notification.isOpen;
+    const nextState = !previousState;
+    const payloadContent = notification.content;
+
+    setNotification((prev) => ({ ...prev, isOpen: nextState }));
+    setBroadcastSaving(true);
+    try {
+      await updateBroadcast({
+        content: payloadContent,
+        active: nextState,
+      });
+      alert(nextState ? "紧急广播已开启并保存" : "紧急广播已关闭并保存");
+    } catch (error) {
+      console.error("Failed to toggle broadcast", error);
+      alert("同步广播状态失败，请稍后重试");
+      setNotification((prev) => ({ ...prev, isOpen: previousState }));
+    } finally {
+      setBroadcastSaving(false);
+    }
+  };
 
   return (
     <div className={`min-h-screen flex ${bgClass} ${textClass}`}>
@@ -655,28 +679,11 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                   onChange={(e) => setNotification({ ...notification, content: e.target.value })}
                 />
                 <button
-                  onClick={() => setNotification((prev) => ({ ...prev, isOpen: !prev.isOpen }))}
-                  className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                  onClick={handleBroadcastToggle}
+                  disabled={broadcastSaving}
+                  className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} ${broadcastSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  {notification.isOpen ? '关闭' : '开启'}
-                </button>
-                <button
-                  onClick={async () => {
-                    // Save content only
-                    try {
-                      await updateBroadcast({
-                        content: notification.content,
-                        active: notification.isOpen,
-                      });
-                      alert("广播内容已保存");
-                    } catch (error) {
-                      console.error("Failed to update broadcast", error);
-                      alert("保存广播设置失败");
-                    }
-                  }}
-                  className="px-4 py-2 rounded text-sm font-bold text-white bg-blue-500 hover:bg-blue-600 transition-colors"
-                >
-                  保存内容
+                  {notification.isOpen ? '关闭并保存' : '开启并保存'}
                 </button>
               </div>
             </div>
@@ -1285,11 +1292,15 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
                 remarkPlugins={[remarkGfm]}
                 components={{
                   code({ inline, className, children, ...props }) {
-                    const textContent = String(children).replace(/\n$/, '');
-                    if (inline) {
+                    const rawText = String(children);
+                    const textContent = rawText.replace(/\n$/, '');
+                    const hasLanguage = typeof className === 'string' && className.includes('language-');
+                    const isMultiline = textContent.includes('\n');
+                    const shouldInline = inline ?? (!hasLanguage && !isMultiline);
+                    if (shouldInline) {
                       return (
                         <code
-                          className={`px-1.5 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+                          className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
                           {...props}
                         >
                           {textContent}
@@ -1297,9 +1308,7 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
                       );
                     }
                     return (
-                      <pre
-                        className={`my-4 p-4 border-2 border-black rounded overflow-auto ${codeBlockBg}`}
-                      >
+                      <pre className={`my-4 p-4 border-2 border-black rounded overflow-auto ${codeBlockBg}`}>
                         <code className={className} {...props}>
                           {textContent}
                         </code>
