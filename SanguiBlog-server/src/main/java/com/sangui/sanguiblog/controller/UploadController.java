@@ -19,7 +19,7 @@ import java.util.UUID;
 @RequestMapping("/api/upload")
 public class UploadController {
 
-    private static final String STATIC_AVATAR_DIR = "src/main/resources/static/avatar";
+    private static final Path STATIC_AVATAR_DIR = Paths.get("src", "main", "resources", "static", "avatar");
 
     @PostMapping("/avatar")
     public ApiResponse<Map<String, String>> uploadAvatar(@RequestParam("avatar") MultipartFile file) {
@@ -29,10 +29,7 @@ public class UploadController {
 
         try {
             // Ensure directory exists
-            Path uploadPath = Paths.get(STATIC_AVATAR_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
+            Files.createDirectories(STATIC_AVATAR_DIR);
 
             // Generate unique filename
             String originalFilename = file.getOriginalFilename();
@@ -43,12 +40,12 @@ public class UploadController {
             String filename = UUID.randomUUID().toString() + extension;
 
             // Save file
-            Path filePath = uploadPath.resolve(filename);
+            Path filePath = STATIC_AVATAR_DIR.resolve(filename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Return URL (relative path)
             String url = "/avatar/" + filename;
-            return ApiResponse.ok(Map.of("url", url));
+            return ApiResponse.ok(Map.of("url", url, "filename", filename));
 
         } catch (IOException e) {
             throw new RuntimeException("文件上传失败: " + e.getMessage());

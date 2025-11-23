@@ -962,7 +962,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.45
+          SANGUI BLOG // V1.1.46
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2752,12 +2752,15 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
   const hoverBg = isDarkMode ? 'hover:bg-gray-900' : 'hover:bg-[#FFFAF0]';
 
   // Use API author data if available, otherwise fallback to MOCK_USER
-  const displayAuthor = author || MOCK_USER;
-  const authorAvatar = displayAuthor.avatar?.startsWith('http')
-    ? displayAuthor.avatar
-    : displayAuthor.avatar
-      ? `http://localhost:8080${displayAuthor.avatar}`
-      : MOCK_USER.avatar;
+const displayAuthor = author || MOCK_USER;
+const buildMediaUrl = (path, fallback) => {
+  if (!path) return fallback;
+  if (path.startsWith('http')) return path;
+  if (!path.startsWith('/')) return `http://localhost:8080/${path}`;
+  return `http://localhost:8080${path}`;
+};
+const authorAvatar = buildMediaUrl(displayAuthor.avatar, MOCK_USER.avatar);
+const authorWechat = buildMediaUrl(displayAuthor.wechatQr, "http://localhost:8080/contact/wechat.jpg");
 
   return (
     <>
@@ -2781,7 +2784,7 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
                 <img src={authorAvatar} className="w-full h-full object-cover rounded-full" />
               </motion.div>
               <h3 className="mt-12 font-black text-2xl">{displayAuthor.displayName || displayAuthor.username}</h3>
-              <p className={`text-sm font-bold mb-4 ${subText}`}>{displayAuthor.title}</p>
+              <p className={`text-sm font-bold mb-4 ${subText}`}>{displayAuthor.bio || displayAuthor.title || '保持热爱，持续创作。'}</p>
               <div className="flex justify-center gap-2">
                 <PopButton variant="ghost" className={`!p-2 border-2 border-black ${socialButtonClass}`} onClick={() => window.open(displayAuthor.github || MOCK_USER.social.github)}><Github size={20} /></PopButton>
 
@@ -2802,7 +2805,7 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
                         className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
                       >
                         <div className="bg-white p-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] w-40 h-40 flex flex-col items-center justify-center">
-                          <img src={displayAuthor.wechatQr?.startsWith('http') ? displayAuthor.wechatQr : (displayAuthor.wechatQr ? `http://localhost:8080${displayAuthor.wechatQr}` : MOCK_USER.social.wechatQr)} className="w-32 h-32 object-contain border border-gray-200 block" />
+                          <img src={authorWechat} className="w-32 h-32 object-contain border border-gray-200 block" />
                           <p className="text-center text-[10px] font-bold mt-1 bg-black text-white w-full">SCAN ME</p>
                         </div>
                         <div className="w-4 h-4 bg-black rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2"></div>
