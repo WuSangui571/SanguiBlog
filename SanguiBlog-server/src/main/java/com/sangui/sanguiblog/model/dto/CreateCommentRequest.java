@@ -9,5 +9,6 @@ public class CreateCommentRequest {
     private String authorName;
     @NotBlank
     private String content;
+    private Long parentId;
     private String avatarUrl;
 }

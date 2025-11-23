@@ -22,4 +22,11 @@ public class AuthController {
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.ok(authService.login(request));
     }
+
+    @org.springframework.web.bind.annotation.GetMapping("/me")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    public ApiResponse<com.sangui.sanguiblog.model.dto.UserProfileDto> me(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.sangui.sanguiblog.security.UserPrincipal userPrincipal) {
+        return ApiResponse.ok(authService.getCurrentUser(userPrincipal.getId()));
+    }
 }

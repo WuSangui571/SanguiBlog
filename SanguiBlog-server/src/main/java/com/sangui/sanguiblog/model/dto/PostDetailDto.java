@@ -9,4 +9,6 @@ public class PostDetailDto {
     private PostSummaryDto summary;
     private String contentMd;
     private String contentHtml;
+    private Long wordCount;
+    private String readingTime;
 }

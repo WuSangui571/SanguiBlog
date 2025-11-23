@@ -14,6 +14,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.fail(ex.getMessage()));
     }
 
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSecurityException(SecurityException ex) {
+        return ResponseEntity.status(403).body(ApiResponse.fail(ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         String msg = ex.getBindingResult().getFieldErrors().stream()
@@ -26,6 +31,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleOther(Exception ex) {
         ex.printStackTrace();
-        return ResponseEntity.internalServerError().body(ApiResponse.fail("服务器内部错误"));
+        // Return actual error message for better debugging
+        String message = ex.getMessage() != null ? ex.getMessage() : "服务器内部错误";
+        return ResponseEntity.internalServerError().body(ApiResponse.fail(message));
     }
 }

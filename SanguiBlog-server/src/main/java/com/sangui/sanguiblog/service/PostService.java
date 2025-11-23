@@ -8,6 +8,7 @@ import com.sangui.sanguiblog.model.entity.Category;
 import com.sangui.sanguiblog.model.entity.Post;
 import com.sangui.sanguiblog.model.entity.Tag;
 import com.sangui.sanguiblog.model.entity.User;
+import com.sangui.sanguiblog.model.repository.AnalyticsPageViewRepository;
 import com.sangui.sanguiblog.model.repository.CategoryRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
@@ -37,8 +38,12 @@ public class PostService {
     private final TagRepository tagRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final AnalyticsPageViewRepository analyticsPageViewRepository;
+    private static final java.util.concurrent.ConcurrentHashMap<String, Long> VIEW_RATE_LIMITER = new java.util.concurrent.ConcurrentHashMap<>();
 
-    public PageResponse<PostSummaryDto> listPublished(Integer page, Integer size, Long categoryId, Long tagId, String keyword) {
+    @Transactional(readOnly = true)
+    public PageResponse<PostSummaryDto> listPublished(Integer page, Integer size, Long categoryId, Long tagId,
+            String keyword) {
         int p = page == null || page < 1 ? 0 : page - 1;
         int s = size == null || size < 1 ? 10 : size;
         Specification<Post> spec = (root, query, cb) -> {
@@ -56,13 +61,13 @@ public class PostService {
                 String like = "%" + keyword.trim() + "%";
                 predicates.add(cb.or(
                         cb.like(root.get("title"), like),
-                        cb.like(root.get("excerpt"), like)
-                ));
+                        cb.like(root.get("excerpt"), like)));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        Page<Post> posts = postRepository.findAll(spec, PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "publishedAt", "createdAt")));
+        Page<Post> posts = postRepository.findAll(spec,
+                PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "publishedAt", "createdAt")));
         List<PostSummaryDto> list = posts.stream()
                 .map(this::toSummary)
                 .toList();
@@ -70,18 +75,20 @@ public class PostService {
         return new PageResponse<>(list, posts.getTotalElements(), posts.getNumber() + 1, posts.getSize());
     }
 
-    public PostDetailDto getPublishedDetail(Long id) {
+    @Transactional(readOnly = true)
+    public PostDetailDto getPublishedDetail(Long id, String ip) {
         Post post = postRepository.findById(id)
                 .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
                 .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
-        incrementViews(post);
+        incrementViews(post, ip);
         return toDetail(post);
     }
 
-    public PostDetailDto getPublishedDetailBySlug(String slug) {
+    @Transactional(readOnly = true)
+    public PostDetailDto getPublishedDetailBySlug(String slug, String ip) {
         Post post = postRepository.findBySlugAndStatus(slug, "PUBLISHED")
                 .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
-        incrementViews(post);
+        incrementViews(post, ip);
         return toDetail(post);
     }
 
@@ -103,17 +110,41 @@ public class PostService {
         post.setSlug(request.getSlug());
         post.setExcerpt(request.getExcerpt());
         post.setContentMd(request.getContentMd());
-        post.setContentHtml(request.getContentHtml());
+
+        // Convert Markdown to HTML
+        if (request.getContentMd() != null) {
+            List<org.commonmark.Extension> extensions = java.util.Arrays.asList(
+                    org.commonmark.ext.gfm.tables.TablesExtension.create(),
+                    org.commonmark.ext.gfm.strikethrough.StrikethroughExtension.create(),
+                    org.commonmark.ext.autolink.AutolinkExtension.create());
+            org.commonmark.parser.Parser parser = org.commonmark.parser.Parser.builder()
+                    .extensions(extensions)
+                    .build();
+            org.commonmark.renderer.html.HtmlRenderer renderer = org.commonmark.renderer.html.HtmlRenderer.builder()
+                    .extensions(extensions)
+                    .build();
+            post.setContentHtml(renderer.render(parser.parse(request.getContentMd())));
+        } else {
+            post.setContentHtml(request.getContentHtml());
+        }
+
         post.setThemeColor(request.getThemeColor());
         post.setStatus(request.getStatus());
 
-        if (post.getLikesCount() == null) post.setLikesCount(0);
-        if (post.getCommentsCount() == null) post.setCommentsCount(0);
-        if (post.getViewsCount() == null) post.setViewsCount(0L);
+        if (post.getLikesCount() == null) {
+            post.setLikesCount(0);
+        }
+        if (post.getCommentsCount() == null) {
+            post.setCommentsCount(0);
+        }
+        if (post.getViewsCount() == null) {
+            post.setViewsCount(0L);
+        }
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             Set<Tag> tags = request.getTagIds().stream()
-                    .map(id -> tagRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("标签不存在: " + id)))
+                    .map(id -> tagRepository.findById(id)
+                            .orElseThrow(() -> new IllegalArgumentException("标签不存在: " + id)))
                     .collect(Collectors.toSet());
             post.setTags(tags);
         }
@@ -126,7 +157,34 @@ public class PostService {
         postRepository.deleteById(id);
     }
 
-    private void incrementViews(Post post) {
+    private void incrementViews(Post post, String ip) {
+        // 1. Memory Check (Fast, handles race conditions/StrictMode)
+        String key = ip + "_" + post.getId();
+        long now = System.currentTimeMillis();
+        Long lastViewTime = VIEW_RATE_LIMITER.get(key);
+        if (lastViewTime != null && (now - lastViewTime) < 60000) { // 1 minute throttle
+            return;
+        }
+
+        // 2. DB Check (Persistence, handles server restarts)
+        // Check if this IP viewed this post in the last 10 minutes
+        boolean exists = analyticsPageViewRepository.existsByPostIdAndViewerIpAndViewedAtAfter(
+                post.getId(), ip, java.time.LocalDateTime.now().minusMinutes(10));
+
+        if (exists) {
+            // Update memory cache to avoid hitting DB again soon
+            VIEW_RATE_LIMITER.put(key, now);
+            return;
+        }
+
+        // Update Memory Cache
+        VIEW_RATE_LIMITER.put(key, now);
+        // Cleanup old entries occasionally (simple approach: if size > 10000, clear
+        // half? or just let it grow for this demo)
+        if (VIEW_RATE_LIMITER.size() > 5000) {
+            VIEW_RATE_LIMITER.clear(); // Simple brute-force cleanup for demo
+        }
+
         long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
         post.setViewsCount(current + 1);
         postRepository.save(post);
@@ -138,6 +196,13 @@ public class PostService {
         String parentName = category != null && category.getParent() != null
                 ? category.getParent().getName()
                 : (category != null ? category.getName() : "未分类");
+
+        String avatar = post.getAuthor() != null ? post.getAuthor().getAvatarUrl() : null;
+        if (avatar != null && avatar.isBlank()) {
+            avatar = null;
+        } else if (avatar != null) {
+            avatar = avatar.trim();
+        }
 
         return PostSummaryDto.builder()
                 .id(post.getId())
@@ -152,14 +217,44 @@ public class PostService {
                 .views(post.getViewsCount() == null ? 0 : post.getViewsCount())
                 .date(post.getPublishedAt() != null ? DATE_FMT.format(post.getPublishedAt()) : "")
                 .slug(post.getSlug())
+                .authorName(post.getAuthor() != null ? post.getAuthor().getDisplayName() : "Unknown")
+                .authorAvatar(avatar)
                 .build();
     }
 
     private PostDetailDto toDetail(Post post) {
+        String htmlContent = post.getContentHtml();
+        if (htmlContent == null || htmlContent.isEmpty()) {
+            if (post.getContentMd() != null) {
+                List<org.commonmark.Extension> extensions = java.util.Arrays.asList(
+                        org.commonmark.ext.gfm.tables.TablesExtension.create(),
+                        org.commonmark.ext.gfm.strikethrough.StrikethroughExtension.create(),
+                        org.commonmark.ext.autolink.AutolinkExtension.create());
+                org.commonmark.parser.Parser parser = org.commonmark.parser.Parser.builder()
+                        .extensions(extensions)
+                        .build();
+                org.commonmark.renderer.html.HtmlRenderer renderer = org.commonmark.renderer.html.HtmlRenderer.builder()
+                        .extensions(extensions)
+                        .build();
+                htmlContent = renderer.render(parser.parse(post.getContentMd()));
+            }
+        }
+
+        long wordCount = 0;
+        String readingTime = "1 分钟";
+        if (htmlContent != null) {
+            String plainText = htmlContent.replaceAll("<[^>]*>", "").replaceAll("\\s+", "");
+            wordCount = plainText.length();
+            long minutes = Math.max(1, wordCount / 250);
+            readingTime = minutes + " 分钟";
+        }
+
         return PostDetailDto.builder()
                 .summary(toSummary(post))
                 .contentMd(post.getContentMd())
-                .contentHtml(post.getContentHtml())
+                .contentHtml(htmlContent)
+                .wordCount(wordCount)
+                .readingTime(readingTime)
                 .build();
     }
 }

@@ -1,17 +1,442 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useBlog } from "./hooks/useBlogData";
 import { recordPageView, updateBroadcast } from "./api";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
+import AdminProfile from './pages/admin/Profile';
 import {
   Code, User, Heart, MessageSquare, Share2, X, Menu, ChevronRight,
   Search, LogIn, LogOut, Settings, Eye, Github, Twitter,
   BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
   Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
   ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
-  Home, TrendingUp, Edit, Send, Moon, Sun, Upload, Map, ArrowUp
+  Home, TrendingUp, Edit, Send, Moon, Sun, Upload, Map, ArrowUp, BookOpen, CheckCircle, PenTool
 } from 'lucide-react';
+
+// ... (keep existing code until CommentsSection)
+
+const CommentsSection = ({ list, isDarkMode, onSubmit, currentUser, setView, onDeleteComment, onUpdateComment, postAuthorName }) => {
+  const [content, setContent] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editContent, setEditContent] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  const handleSubmit = () => {
+    if (!content.trim()) return;
+    onSubmit({ content });
+    setContent("");
+  };
+
+  const inputBg = isDarkMode ? 'bg-gray-800 text-white' : 'bg-[#F0F0F0] text-black';
+  const commentBg = isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-black';
+
+  return (
+    <div className="mt-16">
+      <div className="flex items-center gap-3 mb-8">
+        <MessageSquare size={28} className="text-black dark:text-white" strokeWidth={3} />
+        <h2 className="text-3xl font-black uppercase">Comments ({list.length})</h2>
+      </div>
+
+      {currentUser ? (
+        <div className={`${inputBg} border-2 border-black p-6 mb-12 shadow-[8px_8px_0px_0px_#000]`}>
+          <div className="flex gap-4 mb-4">
+            <div className={`w-12 h-12 border-2 border-black ${commentBg} rounded-full flex items-center justify-center font-bold overflow-hidden`}>
+              {currentUser.avatar && currentUser.avatar.startsWith('http') ? (
+                <img src={currentUser.avatar} alt={currentUser.username} className="w-full h-full object-cover" />
+              ) : currentUser.avatar ? (
+                <img src={`http://localhost:8080${currentUser.avatar}`} alt={currentUser.username} className="w-full h-full object-cover" />
+              ) : (
+                currentUser.username?.slice(0, 2) || 'ME'
+              )}
+            </div>
+            <div className="flex-1">
+              <textarea
+                placeholder="写下你的想法..."
+                className={`w-full min-h-[120px] p-4 border-2 border-black font-bold focus:outline-none focus:ring-4 focus:ring-[#FFD700] transition-shadow ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              ></textarea>
+            </div>
+          </div>
+          <div className="flex justify-between items-center text-sm font-bold">
+            <span className="uppercase tracking-wide">{currentUser.username || 'ME'} 已登录</span>
+            <PopButton onClick={handleSubmit}>发布评论</PopButton>
+          </div>
+        </div>
+      ) : (
+        <div className={`${inputBg} border-2 border-black p-6 mb-12 shadow-[8px_8px_0px_0px_#000] flex flex-col md:flex-row items-center justify-between gap-4`}>
+          <div>
+            <p className="font-black text-lg">登录后参与讨论</p>
+            <p className="text-sm text-gray-500 font-mono">SIGN IN TO LEAVE A TRAIL.</p>
+          </div>
+          <PopButton onClick={() => setView('login')} icon={LogIn}>前往登录</PopButton>
+        </div>
+      )}
+
+      <div className="space-y-8">
+        {list.map((c, i) => (
+          <div key={c.id || i} className="flex gap-4">
+            <div className={`w-12 h-12 border-2 border-black rounded-full ${c.avatar && c.avatar.startsWith('http') ? 'bg-white' : (c.avatar || 'bg-gray-200')} shrink-0 flex items-center justify-center font-bold overflow-hidden`}>
+              {c.avatar && c.avatar.startsWith('http') ? (
+                <img src={c.avatar} alt={c.authorName} className="w-full h-full object-cover" />
+              ) : c.avatar ? (
+                <img src={`http://localhost:8080${c.avatar}`} alt={c.authorName} className="w-full h-full object-cover" />
+              ) : (
+                (c.authorName || c.user || 'U').toString().slice(0, 2)
+              )}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="font-black text-lg">{c.authorName || c.user}</span>
+
+                {/* Blogger Badge */}
+                {postAuthorName && (c.authorName === postAuthorName || c.user === postAuthorName) && (
+                  <span className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black border border-black rounded shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-pink-600 text-white' : 'bg-yellow-400 text-black'}`}>
+                    <PenTool size={10} strokeWidth={3} />
+                    博主
+                  </span>
+                )}
+
+                <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
+                {currentUser && c.userId === currentUser.id && (
+                  <div className="ml-auto flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingCommentId(c.id);
+                        setEditContent(c.content);
+                      }}
+                      className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-blue-500 hover:text-white' : 'hover:bg-blue-100'}`}
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(c.id)}
+                      className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-red-100'}`}
+                    >
+                      删除
+                    </button>
+                  </div>
+                )}
+              </div>
+              {editingCommentId === c.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className={`w-full p-2 border-2 border-black ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white'}`}
+                    rows={3}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        onUpdateComment && onUpdateComment(c.id, editContent);
+                        setEditingCommentId(null);
+                      }}
+                      className="px-3 py-1 bg-green-500 text-white font-bold border-2 border-black"
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={() => setEditingCommentId(null)}
+                      className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
+                  <p className="font-medium">{c.content || c.text}</p>
+                </div>
+              )}
+              {deleteConfirm === c.id && (
+                <div className={`mt-2 p-3 border-2 border-red-500 ${isDarkMode ? 'bg-red-900' : 'bg-red-50'}`}>
+                  <p className="font-bold text-sm mb-2">确认删除这条评论？</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        onDeleteComment && onDeleteComment(c.id);
+                        setDeleteConfirm(null);
+                      }}
+                      className="px-3 py-1 bg-red-500 text-white font-bold border-2 border-black text-xs"
+                    >
+                      确认删除
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(null)}
+                      className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black text-xs"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onSubmitComment, onDeleteComment, onUpdateComment, currentUser, onCategoryClick }) => {
+  const summary = articleData?.summary;
+
+  // The backend returns a PostDetailDto which contains a 'summary' field (PostSummaryDto).
+  // We should prioritize using 'summary' as the source of post metadata.
+  const postSource = summary || MOCK_POSTS.find(p => p.id === id) || MOCK_POSTS[0];
+
+  const post = {
+    ...postSource,
+    // Ensure fallback for fields that might be missing or named differently in Mock vs API
+    authorName: postSource.authorName || postSource.author || 'Unknown',
+    authorAvatar: postSource.authorAvatar || postSource.avatar,
+    // PostSummaryDto does not have 'authorTitle', so we default it. 
+    // If needed, we would need to update the backend DTO.
+    authorTitle: postSource.authorTitle || '博主',
+    date: postSource.date || (postSource.publishedAt ? new Date(postSource.publishedAt).toLocaleDateString() : 'Recently'),
+    views: postSource.views || postSource.viewsCount || 0,
+    color: postSource.color || postSource.themeColor || 'shadow-[8px_8px_0px_0px_#000]',
+  };
+
+  const contentHtml = articleData?.contentHtml;
+  const contentMd = articleData?.contentMd;
+  const comments = commentsData && commentsData.length ? commentsData : [];
+  const text = isDarkMode ? 'text-gray-100' : 'text-black';
+  const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
+
+  const quoteBg = isDarkMode ? 'bg-gray-800' : 'bg-[#FFFAF0]';
+  const quoteText = isDarkMode ? 'text-gray-300' : 'text-black';
+  const codeBlockBg = isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900';
+  const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
+  const proseClass = `prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none prose-code:before:content-none prose-code:after:content-none ${isDarkMode ? 'prose-invert' : ''}`;
+  const shouldRenderMarkdown = Boolean(contentMd && contentMd.trim());
+
+  const handleCommentSubmit = (payload) => {
+    onSubmitComment && onSubmitComment(payload);
+  };
+
+  const [showShareToast, setShowShareToast] = useState(false);
+
+  const handleShare = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 3000);
+    });
+  };
+
+  const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return MOCK_USER.avatar;
+    if (avatarPath.startsWith('http')) return avatarPath;
+
+    // Ensure it starts with /
+    let cleanPath = avatarPath.startsWith('/') ? avatarPath : `/${avatarPath}`;
+
+    // Fix for legacy static avatars: if it's not in /uploads/ or /avatar/, prepend /avatar
+    // This handles DB values like "/sangui.jpg" -> "/avatar/sangui.jpg"
+    if (!cleanPath.startsWith('/uploads/') && !cleanPath.startsWith('/avatar/')) {
+      cleanPath = `/avatar${cleanPath}`;
+    }
+
+    return `http://localhost:8080${cleanPath}`;
+  };
+
+  const avatarSrc = getAvatarUrl(post.authorAvatar);
+
+  return (
+    <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`min-h-screen pt-24 px-4 md:px-0 pb-20 ${surface} ${text}`}>
+      {/* Share Toast Notification */}
+      <AnimatePresence>
+        {showShareToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: -50, x: '-50%' }}
+            className={`fixed top-24 left-1/2 z-[60] px-6 py-3 border-2 border-black shadow-[4px_4px_0px_0px_#000] flex items-center gap-3 ${isDarkMode ? 'bg-green-600 text-white' : 'bg-green-400 text-black'}`}
+          >
+            <CheckCircle size={24} strokeWidth={3} />
+            <span className="font-black text-lg">链接已复制！</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Back Button - Aligned with article content */}
+      <div className="fixed top-24 left-0 right-0 z-50 pointer-events-none">
+        <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
+          <motion.button
+            onClick={() => setView('home')}
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.05 }}
+            className={`pointer-events-auto absolute -left-6 md:-left-40 px-4 py-2 font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+          >
+            <div className="flex items-center gap-2">
+              <ChevronRight size={20} className="rotate-180" />
+              <span>返回首页</span>
+            </div>
+          </motion.button>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto">
+
+        <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-8 md:p-12 ${surface} relative overflow-hidden`}>
+          <div className={`absolute top-0 right-0 w-64 h-64 ${post.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 pointer-events-none`}></div>
+
+          <div className={`flex items-center gap-2 mb-6 border-b-4 ${isDarkMode ? 'border-gray-700' : 'border-black'} pb-6`}>
+            <span
+              onClick={() => onCategoryClick && onCategoryClick(post.parentCategory)}
+              className={`bg-black text-white px-3 py-1 font-bold text-sm cursor-pointer transition-transform hover:scale-105 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'hover:bg-gray-800'}`}
+            >{post.parentCategory}</span>
+            <ChevronRight size={16} className={`${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} strokeWidth={3} />
+            <span
+              onClick={() => onCategoryClick && onCategoryClick(post.parentCategory, post.category)}
+              className={`px-3 py-1 font-bold text-sm border-2 border-black ${post.color} text-white shadow-[2px_2px_0px_0px_#000] cursor-pointer transition-transform hover:scale-105`}
+            >{post.category}</span>
+          </div>
+
+          <h1 className="text-4xl md:text-6xl font-black mb-4 leading-tight">{post.title}</h1>
+
+          {/* Article Meta: Date, Reading Time, Word Count */}
+          <div className="flex flex-wrap items-center gap-4 mb-8 text-sm font-bold text-gray-500">
+            <div className="flex items-center gap-1">
+              <Clock size={16} />
+              <span>{post.date}</span>
+            </div>
+            {articleData?.readingTime && (
+              <div className="flex items-center gap-1">
+                <BookOpen size={16} />
+                <span>{articleData.readingTime}</span>
+              </div>
+            )}
+            {articleData?.wordCount && (
+              <div className="flex items-center gap-1">
+                <FileText size={16} />
+                <span>{articleData.wordCount} 字</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <Eye size={16} />
+              <span>{post.views} 阅读</span>
+            </div>
+          </div>
+
+          <div className={`flex items-center justify-between p-4 border-2 border-black mb-12 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 border-2 border-black rounded-full bg-white overflow-hidden flex items-center justify-center">
+                <img
+                  src={avatarSrc}
+                  alt={post.authorName}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = MOCK_USER.avatar;
+                  }}
+                />
+              </div>
+              <div>
+                <p className="font-black text-lg leading-none">{post.authorName}</p>
+                <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-black border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-pink-600 text-white' : 'bg-yellow-400 text-black'}`}>
+                  {post.authorTitle ? post.authorTitle.toUpperCase() : '博主'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleShare}
+              className={`p-2 border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
+              title="复制链接"
+            >
+              <Share2 size={20} />
+            </button>
+          </div>
+
+          <article className={proseClass}>
+            <div className={`p-6 border-l-8 border-[#FFD700] font-serif italic text-xl mb-8 ${quoteBg} ${quoteText}`}>
+              {post.excerpt}
+            </div>
+            {shouldRenderMarkdown ? (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  pre: ({ children }) => <>{children}</>,
+                  code({ inline, className, children, ...props }) {
+                    const rawText = String(children);
+                    const textContent = rawText.replace(/\n$/, '');
+                    const hasLanguage = typeof className === 'string' && className.includes('language-');
+                    const isMultiline = textContent.includes('\n');
+                    const shouldInline = inline ?? (!hasLanguage && !isMultiline);
+                    if (shouldInline) {
+                      const backtickCount = (textContent.match(/`/g) || []).length;
+                      if (backtickCount > 0 && backtickCount % 2 === 0) {
+                        const parts = textContent.split('`');
+                        return (
+                          <>
+                            {parts.map((part, i) => {
+                              if (i % 2 === 0) {
+                                return <code key={i} className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`} {...props}>{part}</code>;
+                              } else {
+                                return <span key={i}>{part}</span>;
+                              }
+                            })}
+                          </>
+                        );
+                      }
+                      return (
+                        <code
+                          className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+                          {...props}
+                        >
+                          {textContent}
+                        </code>
+                      );
+                    }
+                    return (
+                      <div className={`not-prose my-6 rounded-lg border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'border-gray-600 shadow-none' : ''}`}>
+                        <div className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-[#F0F0F0]'}`}>
+                          <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-black/20"></div>
+                          <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-black/20"></div>
+                          <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-black/20"></div>
+                        </div>
+                        <pre className={`p-4 overflow-auto m-0 ${isDarkMode ? 'bg-[#1E1E1E] text-gray-200' : 'bg-[#282c34] text-white'}`}>
+                          <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
+                            {textContent}
+                          </code>
+                        </pre>
+                      </div>
+                    );
+                  },
+                }}
+              >
+                {contentMd}
+              </ReactMarkdown>
+            ) : contentHtml ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: contentHtml }}
+              />
+            ) : (
+              <p className="font-semibold">暂无正文内容</p>
+            )}
+          </article>
+
+          <CommentsSection
+            list={comments}
+            isDarkMode={isDarkMode}
+            onSubmit={handleCommentSubmit}
+            currentUser={currentUser}
+            setView={setView}
+            onDeleteComment={onDeleteComment}
+            onUpdateComment={onUpdateComment}
+            postAuthorName={post.authorName}
+          />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 // --- 1. 设计系统 & 基础数据 ---
 const THEME = {
@@ -194,6 +619,44 @@ const EmergencyBar = ({ isOpen, content, onClose }) => {
   );
 };
 
+const ErrorToast = ({ error, onClose }) => {
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(onClose, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, onClose]);
+
+  return (
+    <AnimatePresence>
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          className="fixed top-24 right-4 z-[70] max-w-md"
+        >
+          <div className="bg-red-500 border-4 border-black shadow-[8px_8px_0px_0px_#000] p-4">
+            <div className="flex items-start gap-3 text-white">
+              <AlertTriangle size={24} strokeWidth={3} className="flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h4 className="font-black text-lg mb-1">错误 // ERROR</h4>
+                <p className="font-bold text-sm">{error}</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="bg-black p-1 hover:rotate-90 transition-transform border border-white flex-shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 // ... (ClickRipple component is kept unchanged for brevity)
 const ClickRipple = () => {
   const [ripples, setRipples] = useState([]);
@@ -270,7 +733,7 @@ const Navigation = ({ user, setView, handleLogout, toggleMenu, isDarkMode, setIs
           <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('profile')}>
               <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
-                <img src={user.avatar} className="w-full h-full object-cover" />
+                <img src={user.avatar?.startsWith('http') ? user.avatar : `http://localhost:8080${user.avatar}`} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col items-start">
                 <span className="font-black text-sm leading-none">{user.username}</span>
@@ -330,7 +793,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.2
+          SANGUI BLOG // V1.1.28
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -577,23 +1040,29 @@ const PermissionsView = ({ isDarkMode, user }) => {
 
 
 // 4.5 The main Admin Panel structure
+// 4.5 The main Admin Panel structure
 const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout }) => {
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const location = useLocation();
   const [broadcastSaving, setBroadcastSaving] = useState(false);
 
+  // Extract the last part of the path to determine the active tab
+  const currentPath = location.pathname.split('/').pop();
+  // Default to 'dashboard' if path is just '/admin' or empty
+  const activeTab = currentPath === 'admin' || currentPath === '' ? 'dashboard' : currentPath;
+
   const tabs = [
-    { key: 'Dashboard', label: '仪表盘', icon: Home, component: DashboardView },
-    { key: 'CreatePost', label: '发布文章', icon: Edit, component: CreatePostView },
-    { key: 'Posts', label: '文章列表', icon: FileText, component: () => <div className="text-xl p-8 text-center">文章列表占位符</div> },
-    { key: 'Analytics', label: '数据分析', icon: BarChart3, component: AnalyticsView },
-    { key: 'Comments', label: '评论管理', icon: MessageCircle, component: () => <div className="text-xl p-8 text-center">评论审核占位符</div> },
-    { key: 'Taxonomy', label: '分类标签', icon: Tag, component: () => <div className="text-xl p-8 text-center">分类与标签占位符</div> },
-    { key: 'Permissions', label: '权限管理', icon: Shield, component: PermissionsView, superAdmin: true },
-    { key: 'Settings', label: '系统设置', icon: Settings, component: () => <div className="text-xl p-8 text-center">系统设置占位符</div> },
+    { key: 'dashboard', label: '仪表盘', icon: Home, component: DashboardView },
+    { key: 'create-post', label: '发布文章', icon: Edit, component: CreatePostView },
+    { key: 'posts', label: '文章列表', icon: FileText, component: () => <div className="text-xl p-8 text-center">文章列表占位符</div> },
+    { key: 'analytics', label: '数据分析', icon: BarChart3, component: AnalyticsView },
+    { key: 'comments', label: '评论管理', icon: MessageCircle, component: () => <div className="text-xl p-8 text-center">评论审核占位符</div> },
+    { key: 'taxonomy', label: '分类标签', icon: Tag, component: () => <div className="text-xl p-8 text-center">分类与标签占位符</div> },
+    { key: 'permissions', label: '权限管理', icon: Shield, component: PermissionsView, superAdmin: true },
+    { key: 'settings', label: '系统设置', icon: Settings, component: () => <div className="text-xl p-8 text-center">系统设置占位符</div> },
+    { key: 'profile', label: '个人资料', icon: User, component: AdminProfile },
   ].filter(tab => !tab.superAdmin || user.role === 'SUPER_ADMIN');
 
-  const ActiveComponent = tabs.find(t => t.key === activeTab)?.component || DashboardView;
-  const activeLabel = tabs.find(t => t.key === activeTab)?.label || activeTab;
+  const activeLabel = tabs.find(t => t.key === activeTab)?.label || '仪表盘';
 
   const bgClass = isDarkMode ? THEME.colors.bgDark : 'bg-gray-100';
   const sidebarBg = isDarkMode ? 'bg-gray-900' : 'bg-white';
@@ -633,16 +1102,16 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {tabs.map(({ key, label, icon: Icon }) => (
-            <button
+            <Link
               key={key}
-              onClick={() => setActiveTab(key)}
+              to={key === 'dashboard' ? '/admin' : `/admin/${key}`}
               className={`w-full text-left px-4 py-3 rounded text-sm font-medium flex items-center gap-3 transition-colors ${activeTab === key
                 ? 'bg-indigo-500 text-white shadow-lg'
                 : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800'}`
                 }`}
             >
               <Icon size={18} /> {label}
-            </button>
+            </Link>
           ))}
         </nav>
         <div className="p-4 border-t border-gray-100">
@@ -666,10 +1135,18 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         </header>
 
         <main className="flex-1 p-8">
-          <ActiveComponent isDarkMode={isDarkMode} user={user} />
+          <Routes>
+            <Route index element={<DashboardView isDarkMode={isDarkMode} user={user} />} />
+            <Route path="dashboard" element={<DashboardView isDarkMode={isDarkMode} user={user} />} />
+            <Route path="create-post" element={<CreatePostView isDarkMode={isDarkMode} user={user} />} />
+            <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user} />} />
+            <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} user={user} />} />
+            <Route path="profile" element={<AdminProfile />} />
+            <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
+          </Routes>
+
           {/* General Notification System for Super Admin */}
-          {/* General Notification System for Super Admin */}
-          {(activeTab === 'Dashboard' || activeTab === 'Settings') && user.role === 'SUPER_ADMIN' && (
+          {(activeTab === 'dashboard' || activeTab === 'settings') && user.role === 'SUPER_ADMIN' && (
             <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-lg border shadow-sm mt-8`}>
               <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>紧急广播设置</h3>
               <div className="flex gap-4">
@@ -722,15 +1199,19 @@ const ScrollToTop = ({ isDarkMode }) => {
   return (
     <AnimatePresence>
       {isVisible && (
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          onClick={scrollToTop}
-          className={`fixed bottom-8 right-8 p-3 rounded-full shadow-lg z-50 transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-white hover:bg-gray-800'}`}
-        >
-          <ArrowUpRight size={24} />
-        </motion.button>
+        <div className="fixed bottom-16 left-0 right-0 z-50 pointer-events-none">
+          <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              onClick={scrollToTop}
+              className={`pointer-events-auto absolute -right-6 md:-right-28 p-3 rounded-full shadow-lg transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-white hover:bg-gray-800'}`}
+            >
+              <ArrowUp size={24} />
+            </motion.button>
+          </div>
+        </div>
       )}
     </AnimatePresence>
   );
@@ -739,12 +1220,15 @@ const ScrollToTop = ({ isDarkMode }) => {
 // --- 5. Main App ---
 
 export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, onViewChange }) {
-  const { meta, categories, posts, article, comments, loadPosts, loadArticle, submitComment, doLogin, logout, user: blogUser } = useBlog();
+  const { meta, categories, posts, article, comments, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout, user: blogUser } = useBlog();
   const [view, setView] = useState(initialView);
-  const [user, setUser] = useState(MOCK_USER);
+  const [user, setUser] = useState(null);
   const [articleId, setArticleId] = useState(initialArticleId);
+  const [activeParent, setActiveParent] = useState("all");
+  const [activeSub, setActiveSub] = useState("all");
   const [menuOpen, setMenuOpen] = useState(false);
   const [notification, setNotification] = useState({ isOpen: false, content: "系统将于今晚 00:00 停机维护" });
+  const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('sangui-theme') === 'dark';
@@ -816,20 +1300,60 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     setView('home');
   };
 
+  const handleCategoryClick = (parentLabel, subLabel) => {
+    const categoriesList = categories && categories.length ? categories : CATEGORY_TREE;
+    const parent = categoriesList.find(c => c.label === parentLabel);
+    if (parent) {
+      setActiveParent(parent.id);
+      if (subLabel) {
+        const sub = parent.children.find(s => s.label === subLabel);
+        setActiveSub(sub ? sub.id : 'all');
+      } else {
+        setActiveSub('all');
+      }
+      setView('home');
+    }
+  };
+
   const renderView = () => {
     switch (view) {
       case 'home':
         return (
           <>
             <Hero setView={setView} isDarkMode={isDarkMode} />
-            <ArticleList setView={setView} setArticleId={setArticleId} isDarkMode={isDarkMode} postsData={posts} categoriesData={categories} stats={meta?.stats} />
+            <ArticleList
+              setView={setView}
+              setArticleId={setArticleId}
+              isDarkMode={isDarkMode}
+              postsData={posts}
+              categoriesData={categories}
+              stats={meta?.stats}
+              author={meta?.author}
+              activeParent={activeParent}
+              setActiveParent={setActiveParent}
+              activeSub={activeSub}
+              setActiveSub={setActiveSub}
+            />
             <footer className={`py-12 text-center mt-12 border-t-8 ${isDarkMode ? 'bg-gray-900 text-white border-[#FF0080]' : 'bg-black text-white border-[#FFD700]'}`}>
               <h2 className="text-3xl font-black italic tracking-tighter mb-2">SANGUI BLOG</h2>
               <p className="text-xs text-gray-500 font-mono">DESIGNED FOR THE BOLD · 2025</p>
             </footer>
           </>
         );
-      case 'article': return <ArticleDetail id={articleId} setView={setView} isDarkMode={isDarkMode} articleData={article} commentsData={comments} onSubmitComment={(payload) => submitComment && articleId && submitComment(articleId, payload)} />;
+      case 'article': return (
+        <ArticleDetail
+          id={articleId}
+          setView={setView}
+          isDarkMode={isDarkMode}
+          articleData={article}
+          commentsData={comments}
+          onSubmitComment={(payload) => submitComment && articleId && submitComment(articleId, payload)}
+          onDeleteComment={(commentId) => removeComment && articleId && removeComment(articleId, commentId)}
+          onUpdateComment={(commentId, content) => editComment && articleId && editComment(articleId, commentId, content)}
+          currentUser={user}
+          onCategoryClick={handleCategoryClick}
+        />
+      );
       case 'login': return <LoginView setView={setView} setUser={setUser} isDarkMode={isDarkMode} doLogin={doLogin} />;
       case 'admin':
         if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) return <div className="p-20 text-center">Access Denied</div>;
@@ -841,16 +1365,13 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
   const globalBg = isDarkMode ? THEME.colors.bgDark : THEME.colors.bgLight;
 
   return (
-    <div className={`min-h-screen ${globalBg} text-black font-sans selection:bg-[#FF0080] selection:text-white overflow-x-hidden transition-colors duration-300`}>
+    <div className={`min-h-screen relative ${globalBg}`}>
       <ClickRipple />
-      <EmergencyBar isOpen={notification.isOpen && view === 'home'} content={notification.content} onClose={() => setNotification({ ...notification, isOpen: false })} />
       <ScrollToTop isDarkMode={isDarkMode} />
+      <EmergencyBar isOpen={notification.isOpen} content={notification.content} onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))} />
+      <ErrorToast error={error} onClose={() => setError(null)} />
+      <Navigation user={user} setView={setView} handleLogout={handleLogout} toggleMenu={() => setMenuOpen(!menuOpen)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
 
-      {view !== 'login' && view !== 'admin' && (
-        <Navigation user={user} setView={setView} handleLogout={handleLogout} toggleMenu={() => setMenuOpen(!menuOpen)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
-      )}
-
-      {/* Admin Panel has its own navigation and background */}
       <AnimatePresence mode="wait">
         <motion.main key={view} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           {renderView()}
@@ -916,9 +1437,7 @@ const StatsStrip = ({ isDarkMode, stats }) => {
   );
 };
 
-const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesData, stats }) => {
-  const [activeParent, setActiveParent] = useState("all");
-  const [activeSub, setActiveSub] = useState("all");
+const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesData, stats, author, activeParent, setActiveParent, activeSub, setActiveSub }) => {
   const [showWechat, setShowWechat] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [konamiActive, setKonamiActive] = useState(false);
@@ -969,6 +1488,14 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
   const subText = isDarkMode ? 'text-gray-400' : 'text-gray-600';
   const hoverBg = isDarkMode ? 'hover:bg-gray-900' : 'hover:bg-[#FFFAF0]';
 
+  // Use API author data if available, otherwise fallback to MOCK_USER
+  const displayAuthor = author || MOCK_USER;
+  const authorAvatar = displayAuthor.avatar?.startsWith('http')
+    ? displayAuthor.avatar
+    : displayAuthor.avatar
+      ? `http://localhost:8080${displayAuthor.avatar}`
+      : MOCK_USER.avatar;
+
   return (
     <>
       <StatsStrip isDarkMode={isDarkMode} stats={stats} />
@@ -988,12 +1515,12 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
                 onClick={() => setAvatarClicks(p => p + 1)}
                 className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 bg-[#FFD700] rounded-full border-2 border-black flex items-center justify-center cursor-pointer"
               >
-                <img src={MOCK_USER.avatar} className="w-full h-full object-cover rounded-full" />
+                <img src={authorAvatar} className="w-full h-full object-cover rounded-full" />
               </motion.div>
-              <h3 className="mt-12 font-black text-2xl">{MOCK_USER.username}</h3>
-              <p className={`text-sm font-bold mb-4 ${subText}`}>{MOCK_USER.title}</p>
+              <h3 className="mt-12 font-black text-2xl">{displayAuthor.displayName || displayAuthor.username}</h3>
+              <p className={`text-sm font-bold mb-4 ${subText}`}>{displayAuthor.title}</p>
               <div className="flex justify-center gap-2">
-                <PopButton variant="ghost" className={`!p-2 border-2 border-black ${socialButtonClass}`} onClick={() => window.open(MOCK_USER.social.github)}><Github size={20} /></PopButton>
+                <PopButton variant="ghost" className={`!p-2 border-2 border-black ${socialButtonClass}`} onClick={() => window.open(displayAuthor.github || MOCK_USER.social.github)}><Github size={20} /></PopButton>
 
                 <div
                   className="relative"
@@ -1012,7 +1539,7 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
                         className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
                       >
                         <div className="bg-white p-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] w-40 h-40 flex flex-col items-center justify-center">
-                          <img src={MOCK_USER.social.wechatQr} className="w-32 h-32 object-contain border border-gray-200 block" />
+                          <img src={displayAuthor.wechatQr?.startsWith('http') ? displayAuthor.wechatQr : (displayAuthor.wechatQr ? `http://localhost:8080${displayAuthor.wechatQr}` : MOCK_USER.social.wechatQr)} className="w-32 h-32 object-contain border border-gray-200 block" />
                           <p className="text-center text-[10px] font-bold mt-1 bg-black text-white w-full">SCAN ME</p>
                         </div>
                         <div className="w-4 h-4 bg-black rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2"></div>
@@ -1169,172 +1696,6 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
   );
 };
 
-const CommentsSection = ({ commentsCount, comments = [], isDarkMode, onSubmit }) => {
-  const [authorName, setAuthorName] = useState('');
-  const [content, setContent] = useState('');
-  const mockComments = [
-    { user: "GeekOne", avatar: "bg-blue-500", text: "AOT ??????????????????????", time: "2 ???" },
-    { user: "JavaFan", avatar: "bg-green-500", text: "????????????????????", time: "5 ???" },
-  ];
-  const list = comments.length ? comments : mockComments;
-  const text_cls = isDarkMode ? 'text-gray-100' : 'text-black';
-  const inputBg = isDarkMode ? 'bg-gray-800' : 'bg-[#F0F0F0]';
-  const commentBg = isDarkMode ? 'bg-gray-800' : 'bg-white';
-
-  const handleSubmit = () => {
-    if (!content.trim()) return;
-    onSubmit?.({ authorName: authorName || '??', content });
-    setContent('');
-  };
-
-  return (
-    <div className={`border-t-4 border-black pt-12 mt-12 ${text_cls}`}>
-      <h3 className="text-3xl font-black mb-8 flex items-center gap-3">
-        <MessageSquare size={32} className="text-[#6366F1]" />
-        COMMENTS ({commentsCount || list.length})
-      </h3>
-
-      <div className={`${inputBg} border-2 border-black p-6 mb-12 shadow-[8px_8px_0px_0px_#000]`}>
-        <div className="flex gap-4 mb-4">
-          <div className={`w-12 h-12 border-2 border-black ${commentBg} rounded-full flex items-center justify-center font-bold`}>ME</div>
-          <div className="flex-1">
-            <input
-              className={`w-full mb-2 p-3 border-2 border-black font-bold focus:outline-none ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
-              placeholder="????"
-              value={authorName}
-              onChange={(e) => setAuthorName(e.target.value)}
-            />
-            <textarea
-              placeholder="????????..."
-              className={`w-full min-h-[100px] p-4 border-2 border-black font-bold focus:outline-none focus:ring-4 focus:ring-[#FFD700] transition-shadow ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            ></textarea>
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <PopButton onClick={handleSubmit}>????</PopButton>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        {list.map((c, i) => (
-          <div key={c.id || i} className="flex gap-4">
-            <div className={`w-12 h-12 border-2 border-black rounded-full ${c.avatar || 'bg-gray-200'} shrink-0 flex items-center justify-center font-bold`}>
-              {(c.authorName || c.user || 'U').toString().slice(0, 2)}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="font-black text-lg">{c.authorName || c.user}</span>
-                <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
-              </div>
-              <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
-                <p className="font-medium">{c.content || c.text}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onSubmitComment }) => {
-  const summary = articleData?.summary;
-  const post = summary || MOCK_POSTS.find(p => p.id === id) || MOCK_POSTS[0];
-  const contentHtml = articleData?.contentHtml;
-  const contentMd = articleData?.contentMd;
-  const comments = commentsData && commentsData.length ? commentsData : [];
-  const text = isDarkMode ? 'text-gray-100' : 'text-black';
-  const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
-  const quoteBg = isDarkMode ? 'bg-gray-800' : 'bg-[#FFFAF0]';
-  const quoteText = isDarkMode ? 'text-gray-300' : 'text-black';
-  const codeBlockBg = isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900';
-  const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
-  const proseClass = `prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none ${isDarkMode ? 'prose-invert' : ''}`;
-  const shouldRenderMarkdown = Boolean(contentMd && contentMd.trim());
-
-  return (
-    <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`min-h-screen pt-24 px-4 md:px-0 pb-20 ${surface} ${text}`}>
-      <div className="max-w-4xl mx-auto">
-        <PopButton onClick={() => setView('home')} variant="secondary" className="mb-8" icon={ChevronRight}>BACK TO LIST</PopButton>
-
-        <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-8 md:p-12 ${surface} relative overflow-hidden`}>
-          <div className={`absolute top-0 right-0 w-64 h-64 ${post.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 pointer-events-none`}></div>
-
-          <div className={`flex gap-4 mb-6 border-b-4 ${isDarkMode ? 'border-gray-700' : 'border-black'} pb-6`}>
-            <span className={`bg-black text-white px-3 py-1 font-bold text-sm ${isDarkMode ? 'bg-gray-700' : ''}`}>{post.parentCategory}</span>
-            <span className={`px-3 py-1 font-bold text-sm border-2 border-black ${post.color} text-white`}>{post.category}</span>
-          </div>
-
-          <h1 className="text-4xl md:text-6xl font-black mb-8 leading-tight">{post.title}</h1>
-
-          <div className={`flex items-center justify-between p-4 border-2 border-black mb-12 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-            <div className="flex items-center gap-3">
-              <img src={post.avatar || MOCK_USER.avatar} className="w-12 h-12 border-2 border-black rounded-full bg-white" />
-              <div>
-                <p className="font-black text-lg leading-none">{post.author || post.authorName || post.parentCategory}</p>
-                <p className="text-xs font-bold text-gray-500">{post.date} ? READ: {post.views}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <PopButton variant="ghost" className={`!p-2 border-2 border-black ${surface}`}><Share2 size={20} /></PopButton>
-              <PopButton variant="ghost" className={`!p-2 border-2 border-black ${surface}`}><Heart size={20} /></PopButton>
-            </div>
-          </div>
-
-          <article className={proseClass}>
-            <div className={`p-6 border-l-8 border-[#FFD700] font-serif italic text-xl mb-8 ${quoteBg} ${quoteText}`}>
-              {post.excerpt}
-            </div>
-            {shouldRenderMarkdown ? (
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  code({ inline, className, children, ...props }) {
-                    const rawText = String(children);
-                    const textContent = rawText.replace(/\n$/, '');
-                    const hasLanguage = typeof className === 'string' && className.includes('language-');
-                    const isMultiline = textContent.includes('\n');
-                    const shouldInline = inline ?? (!hasLanguage && !isMultiline);
-                    if (shouldInline) {
-                      return (
-                        <code
-                          className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
-                          {...props}
-                        >
-                          {textContent}
-                        </code>
-                      );
-                    }
-                    return (
-                      <pre className={`my-4 p-4 border-2 border-black rounded overflow-auto ${codeBlockBg}`}>
-                        <code className={className} {...props}>
-                          {textContent}
-                        </code>
-                      </pre>
-                    );
-                  },
-                }}
-              >
-                {contentMd}
-              </ReactMarkdown>
-            ) : contentHtml ? (
-              <div
-                dangerouslySetInnerHTML={{ __html: contentHtml }}
-              />
-            ) : (
-              <p className="font-semibold">暂无正文内容</p>
-            )}
-          </article>
-
-          <CommentsSection commentsCount={post.comments} comments={comments} isDarkMode={isDarkMode} onSubmit={onSubmitComment} />
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
 const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -1366,13 +1727,33 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
 
   return (
     <div className={`h-screen flex items-center justify-center ${bg} ${text}`}>
-      <div className={`${surface} p-8 rounded shadow-sm border border-gray-200 w-96`}>
-        <h2 className="text-xl font-bold mb-6 text-center">Admin Access</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input className={`w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-blue-500 ${inputBg}`} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名" />
-          <input className={`w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-blue-500 ${inputBg}`} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" />
-          {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
-          <button className="w-full bg-black text-white py-2 rounded text-sm font-bold hover:bg-gray-800" disabled={loading}>{loading ? '登录中...' : 'Login'}</button>
+      <div className={`${surface} p-8 rounded-none border-4 border-black shadow-[8px_8px_0px_0px_#000] w-96`}>
+        <h2 className="text-3xl font-black mb-6 text-center uppercase italic">System Access</h2>
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2">
+            <label className="font-bold text-sm uppercase">Username</label>
+            <input
+              className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter username"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="font-bold text-sm uppercase">Password</label>
+            <input
+              className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+            />
+          </div>
+          {error && <div className="bg-red-500 text-white p-2 font-bold text-sm border-2 border-black">{error}</div>}
+          <div className="flex gap-4">
+            <PopButton variant="primary" className="w-full justify-center" disabled={loading}>{loading ? 'Accessing...' : 'Login'}</PopButton>
+            <PopButton variant="ghost" type="button" onClick={() => setView('home')}>Cancel</PopButton>
+          </div>
         </form>
       </div>
     </div>

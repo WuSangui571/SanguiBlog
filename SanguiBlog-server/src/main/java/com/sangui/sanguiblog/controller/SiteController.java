@@ -19,4 +19,19 @@ public class SiteController {
     public ApiResponse<SiteMetaDto> meta() {
         return ApiResponse.ok(siteService.meta());
     }
+
+    @org.springframework.web.bind.annotation.PostMapping("/broadcast")
+    public ApiResponse<Void> updateBroadcast(
+            @org.springframework.web.bind.annotation.RequestBody BroadcastRequest request) {
+        System.out.println("Received broadcast update request: " + request);
+        siteService.updateBroadcast(request.getContent(), request.isActive());
+        return ApiResponse.ok();
+    }
+
+    @lombok.Data
+    @lombok.ToString
+    public static class BroadcastRequest {
+        private String content;
+        private boolean active;
+    }
 }

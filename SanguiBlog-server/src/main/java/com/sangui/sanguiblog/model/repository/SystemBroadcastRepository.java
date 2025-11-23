@@ -11,4 +11,6 @@ public interface SystemBroadcastRepository extends JpaRepository<SystemBroadcast
 
     @Query("select b from SystemBroadcast b where b.isActive = true and (b.activeFrom is null or b.activeFrom <= :now) and (b.activeTo is null or b.activeTo >= :now) order by b.activeFrom desc")
     Optional<SystemBroadcast> findActive(LocalDateTime now);
+
+    Optional<SystemBroadcast> findTopByOrderByCreatedAtDesc();
 }

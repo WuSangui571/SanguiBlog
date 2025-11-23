@@ -30,26 +30,29 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<PostDetailDto> detail(@PathVariable Long id) {
-        return ApiResponse.ok(postService.getPublishedDetail(id));
+    public ApiResponse<PostDetailDto> detail(@PathVariable Long id, jakarta.servlet.http.HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        return ApiResponse.ok(postService.getPublishedDetail(id, ip));
     }
 
     @GetMapping("/slug/{slug}")
-    public ApiResponse<PostDetailDto> detailBySlug(@PathVariable String slug) {
-        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug));
+    public ApiResponse<PostDetailDto> detailBySlug(@PathVariable String slug,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip));
     }
 
     @PostMapping
     public ApiResponse<PostDetailDto> create(@Valid @RequestBody SavePostRequest request,
-                                             @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal) {
         Long uid = principal != null ? principal.getId() : null;
         return ApiResponse.ok(postService.saveOrUpdate(request, uid));
     }
 
     @PutMapping("/{id}")
     public ApiResponse<PostDetailDto> update(@PathVariable Long id,
-                                             @Valid @RequestBody SavePostRequest request,
-                                             @AuthenticationPrincipal UserPrincipal principal) {
+            @Valid @RequestBody SavePostRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
         request.setId(id);
         Long uid = principal != null ? principal.getId() : null;
         return ApiResponse.ok(postService.saveOrUpdate(request, uid));

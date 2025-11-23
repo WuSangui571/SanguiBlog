@@ -41,18 +41,23 @@ public class SecurityConfig {
                                 "/api/tags/**",
                                 "/api/posts/**",
                                 "/api/analytics/page-view",
+                                "/avatar/**",
+                                "/contact/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/api-docs/**",
                                 "/v3/api-docs/**",
-                                "/error"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/posts/*/comments").permitAll()
+                                "/api-docs/**",
+                                "/v3/api-docs/**",
+                                "/uploads/**",
+                                "/error")
+                        .permitAll()
+                        .requestMatchers("/api/upload/**").authenticated()
+                        // .requestMatchers(HttpMethod.POST, "/api/posts/*/comments").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -70,7 +75,12 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:5174",
+                "http://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

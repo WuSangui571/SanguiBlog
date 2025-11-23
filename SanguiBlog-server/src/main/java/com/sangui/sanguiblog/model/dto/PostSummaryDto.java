@@ -20,4 +20,6 @@ public class PostSummaryDto {
     private Long views;
     private String date;
     private String slug;
+    private String authorName;
+    private String authorAvatar;
 }

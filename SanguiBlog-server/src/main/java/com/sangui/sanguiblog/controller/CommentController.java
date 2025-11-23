@@ -4,9 +4,12 @@ import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.CommentDto;
 import com.sangui.sanguiblog.model.dto.CreateCommentRequest;
 import com.sangui.sanguiblog.service.CommentService;
+import com.sangui.sanguiblog.security.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,10 +27,38 @@ public class CommentController {
     }
 
     @PostMapping("/{postId}/comments")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<CommentDto> create(@PathVariable Long postId,
-                                          @Valid @RequestBody CreateCommentRequest request,
-                                          HttpServletRequest servletRequest) {
+            @Valid @RequestBody CreateCommentRequest request,
+            HttpServletRequest servletRequest,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
         String ip = servletRequest.getRemoteAddr();
-        return ApiResponse.ok(commentService.create(postId, request, ip));
+        return ApiResponse.ok(commentService.create(postId, request, ip, userPrincipal.getId()));
+    }
+
+    @DeleteMapping("/{postId}/comments/{commentId}")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<Void> delete(@PathVariable Long postId,
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        boolean isAdmin = userPrincipal.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN")
+                        || auth.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        commentService.deleteComment(commentId, userPrincipal.getId(), isAdmin);
+        return ApiResponse.ok();
+    }
+
+    @PutMapping("/{postId}/comments/{commentId}")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<CommentDto> update(@PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestBody UpdateCommentRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return ApiResponse.ok(commentService.updateComment(commentId, userPrincipal.getId(), request.getContent()));
+    }
+
+    @lombok.Data
+    public static class UpdateCommentRequest {
+        private String content;
     }
 }

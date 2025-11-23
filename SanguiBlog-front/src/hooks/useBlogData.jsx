@@ -1,5 +1,16 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
-import { fetchSiteMeta, fetchCategories, fetchPosts, fetchPostDetail, fetchComments, createComment, login as apiLogin } from "../api";
+import {
+  fetchSiteMeta,
+  fetchCategories,
+  fetchPosts,
+  fetchPostDetail,
+  fetchComments,
+  createComment,
+  deleteComment,
+  updateComment,
+  login as apiLogin,
+  fetchCurrentUser,
+} from "../api";
 
 const BlogContext = createContext(null);
 
@@ -23,9 +34,22 @@ function useProvideBlog() {
       const res = await fetchSiteMeta();
       const data = res.data || res;
       setMeta(data);
-      if (data?.author) setUser(data.author);
+      // if (data?.author) setUser(data.author);
     } catch (e) {
       console.warn("load meta failed", e);
+    }
+  }, []);
+
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem("sg_token");
+    if (!token) return;
+    try {
+      const res = await import("../api").then(m => m.fetchCurrentUser());
+      const data = res.data || res;
+      if (data) setUser(data);
+    } catch (e) {
+      console.warn("restore auth failed", e);
+      localStorage.removeItem("sg_token");
     }
   }, []);
 
@@ -79,6 +103,17 @@ function useProvideBlog() {
     setComments((prev) => [data, ...(prev || [])]);
   }, []);
 
+  const removeComment = useCallback(async (postId, commentId) => {
+    await deleteComment(postId, commentId);
+    setComments((prev) => (prev || []).filter(c => c.id !== commentId));
+  }, []);
+
+  const editComment = useCallback(async (postId, commentId, content) => {
+    const res = await updateComment(postId, commentId, content);
+    const data = res.data || res;
+    setComments((prev) => (prev || []).map(c => c.id === commentId ? data : c));
+  }, []);
+
   const doLogin = useCallback(async (username, password) => {
     const res = await apiLogin(username, password);
     const data = res.data || res;
@@ -96,7 +131,8 @@ function useProvideBlog() {
     loadMeta();
     loadCategories();
     loadPosts();
-  }, [loadCategories, loadMeta, loadPosts]);
+    checkAuth();
+  }, [loadCategories, loadMeta, loadPosts, checkAuth]);
 
   return useMemo(
     () => ({
@@ -109,9 +145,11 @@ function useProvideBlog() {
       loadPosts,
       loadArticle,
       submitComment,
+      removeComment,
+      editComment,
       doLogin,
       logout,
     }),
-    [meta, categories, posts, article, comments, user, loadPosts, loadArticle, submitComment, doLogin, logout]
+    [meta, categories, posts, article, comments, user, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout]
   );
 }

@@ -41,12 +41,25 @@ export const login = (username, password) =>
     body: JSON.stringify({ username, password }),
   });
 
+export const fetchCurrentUser = () => request("/auth/me");
+
 export const fetchComments = (postId) => request(`/posts/${postId}/comments`);
 
 export const createComment = (postId, payload) =>
   request(`/posts/${postId}/comments`, {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+
+export const deleteComment = (postId, commentId) =>
+  request(`/posts/${postId}/comments/${commentId}`, {
+    method: "DELETE",
+  });
+
+export const updateComment = (postId, commentId, content) =>
+  request(`/posts/${postId}/comments/${commentId}`, {
+    method: "PUT",
+    body: JSON.stringify({ content }),
   });
 
 export const updateBroadcast = (payload) =>
@@ -62,3 +75,29 @@ export const recordPageView = (payload) =>
   }).catch(() => {
     // swallow tracking errors
   });
+
+export const updateProfile = (payload) =>
+  request("/users/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+export const uploadAvatar = async (file) => {
+  const token = localStorage.getItem("sg_token");
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const res = await fetch(`${API_BASE.replace('/api', '')}/api/upload/avatar`, {
+    method: "POST",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt || res.statusText);
+  }
+  return res.json();
+};

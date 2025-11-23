@@ -86,6 +86,28 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- Markdown -->
+    <dependency>
+      <groupId>org.commonmark</groupId>
+      <artifactId>commonmark</artifactId>
+      <version>0.21.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.commonmark</groupId>
+      <artifactId>commonmark-ext-gfm-tables</artifactId>
+      <version>0.21.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.commonmark</groupId>
+      <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+      <version>0.21.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.commonmark</groupId>
+      <artifactId>commonmark-ext-autolink</artifactId>
+      <version>0.21.0</version>
+    </dependency>
   </dependencies>
 
   <build>

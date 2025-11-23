@@ -38,8 +38,7 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getUsername(), Map.of(
                 "uid", user.getId(),
-                "role", user.getRole() != null ? user.getRole().getCode() : "USER"
-        ));
+                "role", user.getRole() != null ? user.getRole().getCode() : "USER"));
 
         user.setLastLoginAt(Instant.now());
         userRepository.save(user);
@@ -48,13 +47,18 @@ public class AuthService {
     }
 
     public UserProfileDto toProfile(User user) {
+        String avatarUrl = user.getAvatarUrl();
+        if (avatarUrl != null && !avatarUrl.isEmpty() && !avatarUrl.startsWith("http")) {
+            avatarUrl = "/avatar/" + avatarUrl;
+        }
+
         return UserProfileDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .displayName(user.getDisplayName())
                 .title(user.getTitle())
                 .bio(user.getBio())
-                .avatar(user.getAvatarUrl())
+                .avatar(avatarUrl)
                 .github(user.getGithubUrl())
                 .wechatQr(user.getWechatQrUrl())
                 .role(user.getRole() != null ? user.getRole().getCode() : "USER")
@@ -69,5 +73,32 @@ public class AuthService {
             user.setPasswordHash(passwordEncoder.encode(rawPassword));
             userRepository.save(user);
         }
+    }
+
+    public UserProfileDto getCurrentUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+        return toProfile(user);
+    }
+
+    public UserProfileDto updateProfile(Long userId, com.sangui.sanguiblog.model.dto.UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+
+        if (request.getDisplayName() != null)
+            user.setDisplayName(request.getDisplayName());
+        if (request.getTitle() != null)
+            user.setTitle(request.getTitle());
+        if (request.getBio() != null)
+            user.setBio(request.getBio());
+        if (request.getAvatarUrl() != null)
+            user.setAvatarUrl(request.getAvatarUrl());
+        if (request.getGithubUrl() != null)
+            user.setGithubUrl(request.getGithubUrl());
+        if (request.getWechatQrUrl() != null)
+            user.setWechatQrUrl(request.getWechatQrUrl());
+
+        userRepository.save(user);
+        return toProfile(user);
     }
 }

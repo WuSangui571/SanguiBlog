@@ -12,7 +12,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/article/:id" element={<ArticlePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/*" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BlogProvider>

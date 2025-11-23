@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPageView, Long> {
     List<AnalyticsPageView> findTop20ByOrderByViewedAtDesc();
+
+    boolean existsByPostIdAndViewerIpAndViewedAtAfter(Long postId, String viewerIp, java.time.LocalDateTime viewedAt);
 }
