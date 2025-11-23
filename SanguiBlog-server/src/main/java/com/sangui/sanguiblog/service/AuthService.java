@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.Map;
@@ -56,12 +57,15 @@ public class AuthService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .displayName(user.getDisplayName())
+                .email(user.getEmail())
                 .title(user.getTitle())
                 .bio(user.getBio())
                 .avatar(avatarUrl)
                 .github(user.getGithubUrl())
                 .wechatQr(user.getWechatQrUrl())
                 .role(user.getRole() != null ? user.getRole().getCode() : "USER")
+                .createdAt(user.getCreatedAt())
+                .lastLoginAt(user.getLastLoginAt())
                 .build();
     }
 
@@ -85,6 +89,38 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
 
+        if (Boolean.TRUE.equals(request.getVerifyOnly())) {
+            if (!StringUtils.hasText(request.getOldPassword())) {
+                throw new IllegalArgumentException("请提供原密码");
+            }
+            if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+                throw new IllegalArgumentException("原密码不正确");
+            }
+            return toProfile(user);
+        }
+
+        if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+            userRepository.findByUsernameIgnoreCase(request.getUsername())
+                    .filter(existing -> !existing.getId().equals(userId))
+                    .ifPresent(existing -> {
+                        throw new IllegalArgumentException("用户名已存在");
+                    });
+            user.setUsername(request.getUsername());
+        }
+
+        if (request.getEmail() != null) {
+            if (!request.getEmail().isBlank()) {
+                userRepository.findByEmailIgnoreCase(request.getEmail())
+                        .filter(existing -> !existing.getId().equals(userId))
+                        .ifPresent(existing -> {
+                            throw new IllegalArgumentException("邮箱已存在");
+                        });
+                user.setEmail(request.getEmail());
+            } else {
+                user.setEmail(null);
+            }
+        }
+
         if (request.getDisplayName() != null)
             user.setDisplayName(request.getDisplayName());
         if (request.getTitle() != null)
@@ -98,6 +134,17 @@ public class AuthService {
         if (request.getWechatQrUrl() != null)
             user.setWechatQrUrl(request.getWechatQrUrl());
 
+        if (StringUtils.hasText(request.getNewPassword())) {
+            if (!StringUtils.hasText(request.getOldPassword())) {
+                throw new IllegalArgumentException("请输入原密码");
+            }
+            if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+                throw new IllegalArgumentException("原密码不正确");
+            }
+            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        user.setUpdatedAt(Instant.now());
         userRepository.save(user);
         return toProfile(user);
     }

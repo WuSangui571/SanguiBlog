@@ -33,7 +33,7 @@ const InfoBadge = ({ label, value }) => (
   </div>
 );
 
-const buildAvatarUrl = (raw) => {
+const buildMediaUrl = (raw) => {
   if (!raw) return "";
   if (raw.startsWith("http")) return raw;
   return `http://localhost:8080${raw}`;
@@ -84,7 +84,7 @@ export default function AdminProfile({ isDarkMode = false }) {
       oldPassword: "",
       newPassword: "",
     }));
-    setAvatarPreview(buildAvatarUrl(currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url));
+    setAvatarPreview(buildMediaUrl(currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url));
     setMeta({
       role: mapRoleName(currentUser.role),
       id: currentUser.id ?? "-",
@@ -129,6 +129,7 @@ export default function AdminProfile({ isDarkMode = false }) {
     try {
       const response = await uploadAvatar(file);
       const newPath =
+        response?.url ||
         response?.avatar ||
         response?.avatarUrl ||
         response?.avatar_url ||
@@ -136,9 +137,9 @@ export default function AdminProfile({ isDarkMode = false }) {
         response?.data?.avatar ||
         response?.data?.path;
       if (!newPath) throw new Error("上传返回结果为空");
-      await updateProfile({ avatar: newPath });
+      await updateProfile({ avatarUrl: newPath });
       setForm((prev) => ({ ...prev, avatarUrl: newPath }));
-      setAvatarPreview(buildAvatarUrl(newPath));
+      setAvatarPreview(buildMediaUrl(newPath));
       setStatus({ type: "success", text: "头像上传成功" });
     } catch (err) {
       setStatus({ type: "error", text: `头像上传失败：${err.message}` });
@@ -154,7 +155,7 @@ export default function AdminProfile({ isDarkMode = false }) {
     }
     setVerifying(true);
     try {
-      await updateProfile({ old_password: form.oldPassword, verify_only: true });
+      await updateProfile({ oldPassword: form.oldPassword, verifyOnly: true });
       setPasswordVerified(true);
       setStatus({ type: "success", text: "原密码验证成功，请输入新密码" });
     } catch (err) {
@@ -176,17 +177,17 @@ export default function AdminProfile({ isDarkMode = false }) {
     try {
       const payload = {
         username: form.username,
-        display_name: form.displayName,
-        email: form.email || undefined,
+        displayName: form.displayName,
+        email: form.email || null,
         title: form.title,
         bio: form.bio,
-        avatar: form.avatarUrl,
-        github: form.github,
-        wechat_qr: form.wechatQr,
+        avatarUrl: form.avatarUrl,
+        githubUrl: form.github,
+        wechatQrUrl: form.wechatQr,
       };
       if (form.newPassword) {
-        payload.old_password = form.oldPassword;
-        payload.new_password = form.newPassword;
+        payload.oldPassword = form.oldPassword;
+        payload.newPassword = form.newPassword;
       }
       await updateProfile(payload);
       setStatus({ type: "success", text: "个人资料已更新" });
@@ -321,10 +322,30 @@ export default function AdminProfile({ isDarkMode = false }) {
               <FieldLabel icon={GithubIcon}>GitHub</FieldLabel>
               <input className={`${inputClass} mt-2`} name="github" value={form.github} onChange={handleChange} />
             </div>
-            <div>
-              <FieldLabel>微信二维码</FieldLabel>
-              <input className={`${inputClass} mt-2`} name="wechatQr" value={form.wechatQr} onChange={handleChange} />
+        <div>
+          <FieldLabel>微信二维码</FieldLabel>
+          <input className={`${inputClass} mt-2`} name="wechatQr" value={form.wechatQr} onChange={handleChange} />
+          {form.wechatQr && (
+            <div className="mt-2 flex items-center gap-3">
+              <div className="w-16 h-16 border border-dashed border-gray-400 rounded flex items-center justify-center overflow-hidden">
+                <img
+                  src={buildMediaUrl(form.wechatQr)}
+                  alt="微信二维码"
+                  className="w-full h-full object-cover"
+                  onError={(e) => (e.currentTarget.style.display = "none")}
+                />
+              </div>
+              <a
+                href={buildMediaUrl(form.wechatQr)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-indigo-500 underline break-all"
+              >
+                预览链接
+              </a>
             </div>
+          )}
+        </div>
           </div>
           <div className="mt-6">
             <FieldLabel>个人简介</FieldLabel>
