@@ -26,7 +26,14 @@ export const fetchSiteMeta = () => request(`/site/meta?t=${Date.now()}`);
 export const fetchCategories = () => request("/categories/tree");
 
 export const fetchTags = () => request("/tags");
-export const adminFetchTags = () => request("/admin/tags");
+export const adminFetchTags = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.keyword) search.append("keyword", params.keyword);
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/tags${query}`);
+};
 export const adminCreateTag = (payload) =>
   request("/admin/tags", {
     method: "POST",

@@ -1,5 +1,10 @@
 ﻿# AGENTS-EDIT
 
+## V1.1.37 (2025-11-23)
+- **标签分页搜索**: `/admin/taxonomy` 新增模糊搜索与分页控件，可按名称/slug 查询，每页 5/10/20/50 条灵活切换。
+- **API 扩展**: `/api/admin/tags` 支持 `keyword/page/size` 参数并返回 `PageResponse`，后端通过 `Pageable` + `findByNameContainingIgnoreCaseOrSlugContainingIgnoreCase` 实现模糊匹配。
+- **提升**: 删除标签时自动调整页码，创建/查询会置回第一页。首页 Banner 更新为 `SANGUI BLOG // V1.1.37`。
+
 ## V1.1.36 (2025-11-23)
 - **功能**: 后台“分类标签”页实现标签管理界面，可新增、编辑、删除并刷新真实接口数据，支持行内编辑/保存与输入校验。
 - **后端**: 新增 `/api/admin/tags` CRUD 接口与 `TagRequest` DTO，强化唯一性校验及 slug 自动生成，同时在 `SecurityConfig` 中限制为管理员可用。

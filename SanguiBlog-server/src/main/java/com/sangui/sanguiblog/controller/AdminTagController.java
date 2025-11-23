@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.controller;
 
 import com.sangui.sanguiblog.model.dto.ApiResponse;
+import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.TagDto;
 import com.sangui.sanguiblog.model.dto.TagRequest;
 import com.sangui.sanguiblog.service.TagService;
@@ -20,8 +21,10 @@ public class AdminTagController {
     private final TagService tagService;
 
     @GetMapping
-    public ApiResponse<List<TagDto>> list() {
-        return ApiResponse.ok(tagService.list());
+    public ApiResponse<PageResponse<TagDto>> list(@RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok(tagService.search(keyword, page, size));
     }
 
     @PostMapping

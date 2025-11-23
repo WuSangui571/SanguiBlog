@@ -948,7 +948,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.36
+          SANGUI BLOG // V1.1.37
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1144,20 +1144,25 @@ const TaxonomyView = ({ isDarkMode }) => {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", slug: "", description: "" });
   const [saving, setSaving] = useState(false);
+  const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const loadTags = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await adminFetchTags();
+      const res = await adminFetchTags({ keyword, page, size });
       const data = res.data || res;
-      setTags(data || []);
+      setTags(data?.records || []);
+      setTotal(data?.total || 0);
     } catch (err) {
       setError(err.message || "加载标签失败");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [keyword, page, size]);
 
   useEffect(() => {
     loadTags();
@@ -1178,6 +1183,7 @@ const TaxonomyView = ({ isDarkMode }) => {
     try {
       await adminCreateTag(normalizePayload(form));
       setForm({ name: "", slug: "", description: "" });
+      setPage(1);
       await loadTags();
       alert("标签创建成功");
     } catch (err) {
@@ -1225,6 +1231,11 @@ const TaxonomyView = ({ isDarkMode }) => {
     try {
       await adminDeleteTag(tagId);
       if (editingId === tagId) cancelEdit();
+      const newTotal = Math.max(total - 1, 0);
+      const maxPage = Math.max(Math.ceil(newTotal / size), 1);
+      if (page > maxPage) {
+        setPage(maxPage);
+      }
       await loadTags();
     } catch (err) {
       alert(err.message || "删除失败");
@@ -1234,6 +1245,8 @@ const TaxonomyView = ({ isDarkMode }) => {
   const cardBg = isDarkMode ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200";
   const inputClass = `border rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`;
   const formatDate = (value) => (value ? new Date(value).toLocaleString() : "—");
+
+  const totalPages = Math.max(Math.ceil(total / size), 1);
 
   return (
     <div className="space-y-8">
@@ -1279,17 +1292,44 @@ const TaxonomyView = ({ isDarkMode }) => {
       </div>
 
       <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
           <div>
             <h2 className="text-2xl font-bold">标签列表</h2>
-            <p className="text-sm text-gray-500 mt-1">共 {tags.length} 个标签</p>
+            <p className="text-sm text-gray-500 mt-1">共 {total} 个标签</p>
           </div>
-          <button
-            onClick={loadTags}
-            className="flex items-center gap-2 text-sm font-bold text-indigo-500 hover:text-indigo-400"
-          >
-            <RefreshCw size={16} /> 刷新
-          </button>
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="flex items-center gap-2">
+              <input
+                className={inputClass}
+                placeholder="输入关键词搜索"
+                value={keyword}
+                onChange={(e) => {
+                  setKeyword(e.target.value);
+                  setPage(1);
+                }}
+              />
+              <button
+                onClick={loadTags}
+                className="flex items-center gap-2 text-sm font-bold text-indigo-500 hover:text-indigo-400"
+              >
+                <RefreshCw size={16} /> 查询
+              </button>
+            </div>
+            <select
+              className={inputClass}
+              value={size}
+              onChange={(e) => {
+                setSize(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              {[5, 10, 20, 50].map((option) => (
+                <option key={option} value={option}>
+                  每页 {option} 条
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
         {loading ? (
@@ -1385,6 +1425,27 @@ const TaxonomyView = ({ isDarkMode }) => {
             </table>
           </div>
         )}
+        <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-3">
+          <p className="text-sm text-gray-500">
+            第 {page} / {totalPages} 页（共 {total} 条）
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-3 py-1 border-2 border-black font-bold disabled:opacity-50"
+            >
+              上一页
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+              disabled={page >= totalPages}
+              className="px-3 py-1 border-2 border-black font-bold disabled:opacity-50"
+            >
+              下一页
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,10 +1,15 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.TagDto;
 import com.sangui.sanguiblog.model.dto.TagRequest;
 import com.sangui.sanguiblog.model.entity.Tag;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,6 +30,24 @@ public class TagService {
         return tagRepository.findAll().stream()
                 .map(this::toDto)
                 .toList();
+    }
+
+    public PageResponse<TagDto> search(String keyword, int page, int size) {
+        int safePage = Math.max(page, 1) - 1;
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "updatedAt"));
+        Page<Tag> pageData;
+        if (StringUtils.hasText(keyword)) {
+            pageData = tagRepository.findByNameContainingIgnoreCaseOrSlugContainingIgnoreCase(keyword, keyword, pageable);
+        } else {
+            pageData = tagRepository.findAll(pageable);
+        }
+        return new PageResponse<>(
+                pageData.getContent().stream().map(this::toDto).toList(),
+                pageData.getTotalElements(),
+                pageData.getNumber() + 1,
+                pageData.getSize()
+        );
     }
 
     @Transactional
