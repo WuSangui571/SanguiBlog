@@ -182,7 +182,8 @@ public class PostService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         Page<Post> posts = postRepository.findAll(spec,
-                PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "updatedAt")));
+                PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "publishedAt")
+                        .and(Sort.by(Sort.Direction.DESC, "createdAt"))));
         List<PostAdminDto> dtos = posts.getContent().stream()
                 .map(this::toAdminDto)
                 .toList();
@@ -329,6 +330,9 @@ public class PostService {
                 .themeColor(post.getThemeColor())
                 .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
                 .categoryName(post.getCategory() != null ? post.getCategory().getName() : null)
+                .parentCategoryName(post.getCategory() != null && post.getCategory().getParent() != null
+                        ? post.getCategory().getParent().getName()
+                        : (post.getCategory() != null ? post.getCategory().getName() : null))
                 .authorName(post.getAuthor() != null ? post.getAuthor().getDisplayName() : null)
                 .publishedAt(post.getPublishedAt())
                 .tags(post.getTags().stream()

@@ -17,6 +17,7 @@ public class PostAdminDto {
     private String themeColor;
     private Long categoryId;
     private String categoryName;
+    private String parentCategoryName;
     private String authorName;
     private LocalDateTime publishedAt;
     private List<TagDto> tags;

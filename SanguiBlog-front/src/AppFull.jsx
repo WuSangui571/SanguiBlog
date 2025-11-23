@@ -962,7 +962,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.40
+          SANGUI BLOG // V1.1.41
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1886,13 +1886,12 @@ const PostsView = ({ isDarkMode }) => {
   const cardBg = isDarkMode ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200";
   const inputClass = `border rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`;
 
-  const flattenCategories = (tree, prefix = "") => {
+  const buildSecondLevelOptions = (tree) => {
     const result = [];
-    tree.forEach((node) => {
-      result.push({ id: node.id, label: prefix + node.label });
-      if (node.children && node.children.length) {
-        result.push(...flattenCategories(node.children, `${prefix}${node.label} / `));
-      }
+    tree.forEach((root) => {
+      (root.children || []).forEach((child) => {
+        result.push({ id: child.id, label: `${root.label}/${child.label}` });
+      });
     });
     return result;
   };
@@ -1901,7 +1900,7 @@ const PostsView = ({ isDarkMode }) => {
     try {
       const res = await fetchCategories();
       const data = res.data || res || [];
-      setCategoryOptions(flattenCategories(data));
+      setCategoryOptions(buildSecondLevelOptions(data));
     } catch (err) {
       console.warn("load categories failed", err);
     }
@@ -1997,18 +1996,19 @@ const PostsView = ({ isDarkMode }) => {
     updater(values);
   };
 
-  const statuses = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+  const STATUS_LABELS = { DRAFT: "草稿", PUBLISHED: "已发布", ARCHIVED: "已归档" };
+  const statuses = Object.keys(STATUS_LABELS);
   const totalPages = Math.max(Math.ceil(total / size), 1);
   const formatDate = (value) => (value ? new Date(value).toLocaleString() : "—");
 
   return (
     <div className="space-y-8">
       <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-          <div>
-            <h2 className="text-2xl font-bold">文章列表</h2>
-            <p className="text-sm text-gray-500 mt-1">共 {total} 篇文章，可在此修改标题、分类、标签、状态等信息。</p>
-          </div>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-2xl font-bold">文章列表</h2>
+              <p className="text-sm text-gray-500 mt-1">共 {total} 篇文章，可在此修改标题、分类、标签、状态等信息。</p>
+            </div>
           <div className="flex flex-col md:flex-row gap-3">
             <input
               className={inputClass}
@@ -2027,7 +2027,7 @@ const PostsView = ({ isDarkMode }) => {
                 setPage(1);
               }}
             >
-              <option value="all">所有分类</option>
+                <option value="all">所有分类</option>
               {categoryOptions.map((opt) => (
                 <option key={opt.id} value={opt.id}>{opt.label}</option>
               ))}
@@ -2065,7 +2065,7 @@ const PostsView = ({ isDarkMode }) => {
               <thead>
                 <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
                   <th className="px-4 py-2 text-left font-semibold">标题</th>
-                  <th className="px-4 py-2 text-left font-semibold">Slug</th>
+                  <th className="px-4 py-2 text-left font-semibold">摘要</th>
                   <th className="px-4 py-2 text-left font-semibold">分类</th>
                   <th className="px-4 py-2 text-left font-semibold">标签</th>
                   <th className="px-4 py-2 text-left font-semibold">状态</th>
@@ -2078,27 +2078,40 @@ const PostsView = ({ isDarkMode }) => {
                   <tr key={post.id} className={isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}>
                     <td className="px-4 py-3">
                       {editingId === post.id ? (
-                        <input
-                          className={inputClass}
-                          value={editForm.title}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-                        />
-                      ) : (
-                        <div>
-                          <p className="font-semibold">{post.title}</p>
-                          <p className="text-xs text-gray-500">{post.excerpt || "无摘要"}</p>
+                        <div className="space-y-2">
+                          <input
+                            className={inputClass}
+                            value={editForm.title}
+                            onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+                            placeholder="文章标题"
+                          />
+                          <input
+                            className={inputClass}
+                            value={editForm.slug}
+                            onChange={(e) => setEditForm((prev) => ({ ...prev, slug: e.target.value }))}
+                            placeholder="Slug（不在列表中展示）"
+                          />
+                          <input
+                            className={inputClass}
+                            value={editForm.themeColor}
+                            onChange={(e) => setEditForm((prev) => ({ ...prev, themeColor: e.target.value }))}
+                            placeholder="主题色（可选，如 #FF00FF）"
+                          />
                         </div>
+                      ) : (
+                        <p className="font-semibold">{post.title}</p>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       {editingId === post.id ? (
-                        <input
-                          className={inputClass}
-                          value={editForm.slug}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, slug: e.target.value }))}
+                        <textarea
+                          className={`${inputClass} min-h-[60px]`}
+                          value={editForm.excerpt}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, excerpt: e.target.value }))}
+                          placeholder="请输入摘要"
                         />
                       ) : (
-                        <code className="px-2 py-1 text-xs bg-black/5 dark:bg-white/10 rounded">{post.slug}</code>
+                        <span className="text-sm text-gray-600 dark:text-gray-300">{post.excerpt || "无摘要"}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -2114,7 +2127,9 @@ const PostsView = ({ isDarkMode }) => {
                           ))}
                         </select>
                       ) : (
-                        post.categoryName || "未分类"
+                        post.parentCategoryName && post.categoryName && post.parentCategoryName !== post.categoryName
+                          ? `${post.parentCategoryName}/${post.categoryName}`
+                          : (post.categoryName || "未分类")
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -2147,11 +2162,11 @@ const PostsView = ({ isDarkMode }) => {
                         >
                           <option value="">请选择</option>
                           {statuses.map((status) => (
-                            <option key={status} value={status}>{status}</option>
+                            <option key={status} value={status}>{STATUS_LABELS[status]}</option>
                           ))}
                         </select>
                       ) : (
-                        post.status || "未知"
+                        STATUS_LABELS[post.status] || "未知"
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{formatDate(post.publishedAt)}</td>
