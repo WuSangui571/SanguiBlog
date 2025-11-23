@@ -60,7 +60,7 @@ const CommentsSection = ({ list = [], isDarkMode, onSubmit, currentUser, setView
       authorName: resolvedAuthorName,
       avatarUrl: resolvedAvatar,
       content: replyContent.trim(),
-      parentId: replyTarget.id,
+      parentId: replyTarget.comment.id,
     });
     setReplyContent("");
     setReplyTarget(null);
@@ -69,7 +69,8 @@ const CommentsSection = ({ list = [], isDarkMode, onSubmit, currentUser, setView
   const renderComment = (c, depth = 0) => {
     const replies = Array.isArray(c.replies) ? c.replies : [];
     const avatarSrc = getAvatarSrc(c.avatar);
-    const isReplying = replyTarget?.id === c.id;
+    const isReplying = replyTarget?.comment?.id === c.id;
+    const canReply = depth < 1;
 
     return (
       <div key={c.id || `${depth}-${c.authorName}`} className={`flex gap-4 ${depth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
@@ -91,10 +92,10 @@ const CommentsSection = ({ list = [], isDarkMode, onSubmit, currentUser, setView
             )}
             <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
             <div className="ml-auto flex gap-2">
-              {currentUser && (
+              {currentUser && canReply && (
                 <button
                   onClick={() => {
-                    setReplyTarget(c);
+                    setReplyTarget({ comment: c, depth });
                     setReplyContent("");
                   }}
                   className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-purple-500 hover:text-white' : 'hover:bg-purple-100'}`}
@@ -872,7 +873,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.30
+          SANGUI BLOG // V1.1.31
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>

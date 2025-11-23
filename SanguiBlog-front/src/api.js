@@ -13,7 +13,7 @@ const request = async (path, options = {}) => {
     ...options,
   });
   if (!res.ok) {
-    const txt = await res.text();
+    const txt = await res.text();/
     throw new Error(txt || res.statusText);
   }
   return res.json();

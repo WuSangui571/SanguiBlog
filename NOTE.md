@@ -125,7 +125,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 ### 4.5 评论与楼中楼
 *   数据结构：`comments` 表含 `parent_comment_id` 外键（见 `sanguiblog_db.sql`），配合 `ON DELETE SET NULL` 可形成任意深度的树形结构。SQL 文件附带了多条带父级关系的测试评论，可直接导入 MySQL 验证联动效果。
 *   后端：`CommentService#listByPost` 会按 `parent_comment_id` 构建树形 `CommentDto.replies`，前端无需再次聚合；新增、删除、编辑均会触发 `loadComments(postId)` 重新拉取。
-*   前端：`AppFull.jsx` 中的 `CommentsSection` 递归渲染 `replies`，支持对任意节点点击“回复”并携带 `parentId` 提交，实现楼中楼展示；评论总数通过递归统计所有层级，UI 会同步显示。
+*   前端：`AppFull.jsx` 中的 `CommentsSection` 递归渲染 `replies`，支持楼中楼展示，但从交互上限制两层（顶层评论 + 一次回复），超过一层的节点不再出现“回复”按钮；评论总数通过递归统计所有层级，UI 会同步显示。
 
 ## 5. 易错点与注意事项 (Common Pitfalls & Gotchas)
 
