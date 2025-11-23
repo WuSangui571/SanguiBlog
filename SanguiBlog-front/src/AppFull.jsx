@@ -293,6 +293,128 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
   const proseClass = `prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none prose-code:before:content-none prose-code:after:content-none ${isDarkMode ? 'prose-invert' : ''}`;
   const shouldRenderMarkdown = Boolean(contentMd && contentMd.trim());
 
+  const headingSluggerRef = useRef({});
+  headingSluggerRef.current = {};
+
+  const extractText = (children) => {
+    if (typeof children === 'string' || typeof children === 'number') return String(children);
+    if (Array.isArray(children)) return children.map(extractText).join('');
+    if (children && typeof children === 'object' && 'props' in children) {
+      return extractText(children.props.children);
+    }
+    return '';
+  };
+
+  const slugifyHeading = (text) => {
+    const base = (text || '').trim();
+    if (!base) return 'heading';
+    const sanitized = base.replace(/[^A-Za-z0-9\u4e00-\u9fa5\s-]/g, '');
+    const hyphenated = sanitized.replace(/\s+/g, '-').toLowerCase();
+    return hyphenated || base;
+  };
+
+  const createHeading = (Tag) => ({ children, ...props }) => {
+    const rawText = extractText(children);
+    const baseSlug = slugifyHeading(rawText);
+    const count = headingSluggerRef.current[baseSlug] || 0;
+    const nextCount = count + 1;
+    headingSluggerRef.current[baseSlug] = nextCount;
+    const finalSlug = count === 0 ? baseSlug : `${baseSlug}-${nextCount}`;
+    return <Tag id={finalSlug} {...props}>{children}</Tag>;
+  };
+
+  const handleAnchorClick = (event, href) => {
+    if (!href || !href.startsWith('#')) return;
+    event.preventDefault();
+    const rawTarget = decodeURIComponent(href.slice(1));
+    const exactMatch = document.getElementById(rawTarget);
+    const slugMatch = exactMatch || document.getElementById(slugifyHeading(rawTarget));
+    if (slugMatch) {
+      slugMatch.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (window?.history?.replaceState) {
+        window.history.replaceState(null, '', `#${slugMatch.id}`);
+      } else {
+        window.location.hash = slugMatch.id;
+      }
+    } else {
+      window.location.hash = rawTarget;
+    }
+  };
+
+  const markdownComponents = {
+    pre: ({ children }) => <>{children}</>,
+    code({ inline, className, children, ...props }) {
+      const rawText = String(children);
+      const textContent = rawText.replace(/\n$/, '');
+      const hasLanguage = typeof className === 'string' && className.includes('language-');
+      const isMultiline = textContent.includes('\n');
+      const shouldInline = inline ?? (!hasLanguage && !isMultiline);
+      if (shouldInline) {
+        const backtickCount = (textContent.match(/`/g) || []).length;
+        if (backtickCount > 0 && backtickCount % 2 === 0) {
+          const parts = textContent.split('`');
+          return (
+            <>
+              {parts.map((part, i) => {
+                if (i % 2 === 0) {
+                  return <code key={i} className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`} {...props}>{part}</code>;
+                } else {
+                  return <span key={i}>{part}</span>;
+                }
+              })}
+            </>
+          );
+        }
+        return (
+          <code
+            className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+            {...props}
+          >
+            {textContent}
+          </code>
+        );
+      }
+      return (
+        <div className={`not-prose my-6 rounded-lg border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'border-gray-600 shadow-none' : ''}`}>
+          <div className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-[#F0F0F0]'}`}>
+            <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-black/20"></div>
+            <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-black/20"></div>
+            <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-black/20"></div>
+          </div>
+          <pre className={`p-4 overflow-auto m-0 ${isDarkMode ? 'bg-[#1E1E1E] text-gray-200' : 'bg-[#282c34] text-white'}`}>
+            <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
+              {textContent}
+            </code>
+          </pre>
+        </div>
+      );
+    },
+    h1: createHeading('h1'),
+    h2: createHeading('h2'),
+    h3: createHeading('h3'),
+    h4: createHeading('h4'),
+    h5: createHeading('h5'),
+    h6: createHeading('h6'),
+    a: ({ href, children, ...props }) => {
+      if (href && href.startsWith('#')) {
+        return (
+          <a
+            href={href}
+            {...props}
+            onClick={(event) => handleAnchorClick(event, href)}
+          >
+            {children}
+          </a>
+        );
+      }
+      return (
+        <a href={href} {...props} target="_blank" rel="noreferrer">
+          {children}
+        </a>
+      );
+    },
+  };
+
   const handleCommentSubmit = (payload) => {
     onSubmitComment && onSubmitComment(payload);
   };
@@ -441,55 +563,7 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeRaw, rehypeKatex]}
-                components={{
-                  pre: ({ children }) => <>{children}</>,
-                  code({ inline, className, children, ...props }) {
-                    const rawText = String(children);
-                    const textContent = rawText.replace(/\n$/, '');
-                    const hasLanguage = typeof className === 'string' && className.includes('language-');
-                    const isMultiline = textContent.includes('\n');
-                    const shouldInline = inline ?? (!hasLanguage && !isMultiline);
-                    if (shouldInline) {
-                      const backtickCount = (textContent.match(/`/g) || []).length;
-                      if (backtickCount > 0 && backtickCount % 2 === 0) {
-                        const parts = textContent.split('`');
-                        return (
-                          <>
-                            {parts.map((part, i) => {
-                              if (i % 2 === 0) {
-                                return <code key={i} className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`} {...props}>{part}</code>;
-                              } else {
-                                return <span key={i}>{part}</span>;
-                              }
-                            })}
-                          </>
-                        );
-                      }
-                      return (
-                        <code
-                          className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
-                          {...props}
-                        >
-                          {textContent}
-                        </code>
-                      );
-                    }
-                    return (
-                      <div className={`not-prose my-6 rounded-lg border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'border-gray-600 shadow-none' : ''}`}>
-                        <div className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-[#F0F0F0]'}`}>
-                          <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-black/20"></div>
-                          <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-black/20"></div>
-                          <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-black/20"></div>
-                        </div>
-                        <pre className={`p-4 overflow-auto m-0 ${isDarkMode ? 'bg-[#1E1E1E] text-gray-200' : 'bg-[#282c34] text-white'}`}>
-                          <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
-                            {textContent}
-                          </code>
-                        </pre>
-                      </div>
-                    );
-                  },
-                }}
+                components={markdownComponents}
               >
                 {contentMd}
               </ReactMarkdown>
@@ -873,7 +947,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.31
+          SANGUI BLOG // V1.1.34
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>

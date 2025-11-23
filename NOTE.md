@@ -80,6 +80,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   `remark-gfm`: 表格、任务列表、删除线等 GitHub 风格扩展。
     *   `remark-math` + `rehype-katex`: 支持 `$...$` 行内、`$$...$$` 块级公式，样式依赖 `katex/dist/katex.min.css`（在 `AppFull.jsx` 头部全局引入）。
     *   `rehype-raw`: 允许 Markdown 中的原生 HTML（如 `<p style="color:red">`）直接渲染，满足自定义排版需求。
+*   标题锚点：`AppFull.jsx` 自定义 `createHeading` 渲染器为 `h1-h6` 自动生成 `id`（兼容中文 slug 并支持重名去重），每次渲染都会重置 slug 映射，避免重复渲染导致 `xxx-2` 等随机锚点；同时拦截 Markdown 中 `href="#..."` 的点击事件，若直接匹配不到元素则自动尝试 slug 化后的 ID 并回退到原始 `#标题`，确保 `[目录](#某标题)` 语法能准确跳转。
 *   代码块渲染保持自定义的 Neo-Brutalism 包装（窗口按钮 + 阴影），行内代码继续使用定制逻辑裁剪反引号，保证视觉一致性。
 
 ---
