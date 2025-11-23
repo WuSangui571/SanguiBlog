@@ -12,6 +12,8 @@ import {
   adminCreateCategory,
   adminUpdateCategory,
   adminDeleteCategory,
+  adminFetchPosts,
+  adminUpdatePost,
   fetchCategories
 } from "./api";
 import ReactMarkdown from 'react-markdown';
@@ -960,7 +962,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.38
+          SANGUI BLOG // V1.1.40
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1866,6 +1868,349 @@ const CategoriesView = ({ isDarkMode }) => {
   );
 };
 
+const PostsView = ({ isDarkMode }) => {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [keyword, setKeyword] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ title: "", slug: "", status: "", excerpt: "", themeColor: "", categoryId: "", tagIds: [] });
+  const [saving, setSaving] = useState(false);
+  const [tagOptions, setTagOptions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+
+  const cardBg = isDarkMode ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200";
+  const inputClass = `border rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`;
+
+  const flattenCategories = (tree, prefix = "") => {
+    const result = [];
+    tree.forEach((node) => {
+      result.push({ id: node.id, label: prefix + node.label });
+      if (node.children && node.children.length) {
+        result.push(...flattenCategories(node.children, `${prefix}${node.label} / `));
+      }
+    });
+    return result;
+  };
+
+  const loadCategoryOptions = useCallback(async () => {
+    try {
+      const res = await fetchCategories();
+      const data = res.data || res || [];
+      setCategoryOptions(flattenCategories(data));
+    } catch (err) {
+      console.warn("load categories failed", err);
+    }
+  }, []);
+
+  const loadTagOptions = useCallback(async () => {
+    try {
+      const res = await adminFetchTags({ page: 1, size: 200 });
+      const data = res.data || res;
+      setTagOptions(data?.records || data || []);
+    } catch (err) {
+      console.warn("load tags failed", err);
+    }
+  }, []);
+
+  const loadPosts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = { keyword, page, size };
+      if (categoryFilter !== "all") params.categoryId = categoryFilter;
+      const res = await adminFetchPosts(params);
+      const data = res.data || res;
+      setPosts(data?.records || []);
+      setTotal(data?.total || 0);
+    } catch (err) {
+      setError(err.message || "加载文章失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [keyword, page, size, categoryFilter]);
+
+  useEffect(() => {
+    loadCategoryOptions();
+    loadTagOptions();
+  }, [loadCategoryOptions, loadTagOptions]);
+
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
+
+  const beginEdit = (post) => {
+    setEditingId(post.id);
+    setEditForm({
+      title: post.title || "",
+      slug: post.slug || "",
+      status: post.status || "",
+      excerpt: post.excerpt || "",
+      themeColor: post.themeColor || "",
+      categoryId: post.categoryId ?? "",
+      tagIds: (post.tags || []).map((tag) => String(tag.id)),
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({ title: "", slug: "", status: "", excerpt: "", themeColor: "", categoryId: "", tagIds: [] });
+  };
+
+  const handleUpdate = async () => {
+    if (!editingId) return;
+    if (!editForm.title.trim()) {
+      alert("请输入文章标题");
+      return;
+    }
+    if (!editForm.categoryId) {
+      alert("请选择分类");
+      return;
+    }
+    setSaving(true);
+    try {
+      await adminUpdatePost(editingId, {
+        title: editForm.title.trim(),
+        slug: editForm.slug.trim(),
+        status: editForm.status?.trim() || undefined,
+        excerpt: editForm.excerpt?.trim() || undefined,
+        themeColor: editForm.themeColor?.trim() || undefined,
+        categoryId: Number(editForm.categoryId),
+        tagIds: editForm.tagIds.map((id) => Number(id)),
+      });
+      cancelEdit();
+      await loadPosts();
+      alert("文章已更新");
+    } catch (err) {
+      alert(err.message || "更新失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTagMultiChange = (event, updater) => {
+    const values = Array.from(event.target.selectedOptions).map((opt) => opt.value);
+    updater(values);
+  };
+
+  const statuses = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+  const totalPages = Math.max(Math.ceil(total / size), 1);
+  const formatDate = (value) => (value ? new Date(value).toLocaleString() : "—");
+
+  return (
+    <div className="space-y-8">
+      <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold">文章列表</h2>
+            <p className="text-sm text-gray-500 mt-1">共 {total} 篇文章，可在此修改标题、分类、标签、状态等信息。</p>
+          </div>
+          <div className="flex flex-col md:flex-row gap-3">
+            <input
+              className={inputClass}
+              placeholder="输入关键词（标题/Slug）"
+              value={keyword}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(1);
+              }}
+            />
+            <select
+              className={inputClass}
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">所有分类</option>
+              {categoryOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>{opt.label}</option>
+              ))}
+            </select>
+            <select
+              className={inputClass}
+              value={size}
+              onChange={(e) => {
+                setSize(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              {[5, 10, 20, 50].map((option) => (
+                <option key={option} value={option}>
+                  每页 {option} 条
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={loadPosts}
+              className="flex items-center gap-2 text-sm font-bold text-indigo-500 hover:text-indigo-400"
+            >
+              <RefreshCw size={16} /> 刷新
+            </button>
+          </div>
+        </div>
+        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+        {loading ? (
+          <p className="text-center py-10 text-gray-500">加载中...</p>
+        ) : posts.length === 0 ? (
+          <p className="text-center py-10 text-gray-500">暂无文章</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto text-sm">
+              <thead>
+                <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
+                  <th className="px-4 py-2 text-left font-semibold">标题</th>
+                  <th className="px-4 py-2 text-left font-semibold">Slug</th>
+                  <th className="px-4 py-2 text-left font-semibold">分类</th>
+                  <th className="px-4 py-2 text-left font-semibold">标签</th>
+                  <th className="px-4 py-2 text-left font-semibold">状态</th>
+                  <th className="px-4 py-2 text-left font-semibold">发布时间</th>
+                  <th className="px-4 py-2 text-right font-semibold">操作</th>
+                </tr>
+              </thead>
+              <tbody className={isDarkMode ? "divide-y divide-gray-800" : "divide-y divide-gray-200"}>
+                {posts.map((post) => (
+                  <tr key={post.id} className={isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}>
+                    <td className="px-4 py-3">
+                      {editingId === post.id ? (
+                        <input
+                          className={inputClass}
+                          value={editForm.title}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+                        />
+                      ) : (
+                        <div>
+                          <p className="font-semibold">{post.title}</p>
+                          <p className="text-xs text-gray-500">{post.excerpt || "无摘要"}</p>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === post.id ? (
+                        <input
+                          className={inputClass}
+                          value={editForm.slug}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, slug: e.target.value }))}
+                        />
+                      ) : (
+                        <code className="px-2 py-1 text-xs bg-black/5 dark:bg-white/10 rounded">{post.slug}</code>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === post.id ? (
+                        <select
+                          className={inputClass}
+                          value={editForm.categoryId}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, categoryId: e.target.value }))}
+                        >
+                          <option value="">请选择分类</option>
+                          {categoryOptions.map((opt) => (
+                            <option key={opt.id} value={opt.id}>{opt.label}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        post.categoryName || "未分类"
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === post.id ? (
+                        <select
+                          multiple
+                          className={`${inputClass} min-h-[60px]`}
+                          value={editForm.tagIds}
+                          onChange={(e) => handleTagMultiChange(e, (values) => setEditForm((prev) => ({ ...prev, tagIds: values })))}
+                        >
+                          {tagOptions.map((tag) => (
+                            <option key={tag.id} value={String(tag.id)}>{tag.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {(post.tags || []).map((tag) => (
+                            <span key={tag.id} className="px-2 py-0.5 text-xs border border-black">{tag.name}</span>
+                          ))}
+                          {(!post.tags || post.tags.length === 0) && <span className="text-gray-400">无标签</span>}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === post.id ? (
+                        <select
+                          className={inputClass}
+                          value={editForm.status}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
+                        >
+                          <option value="">请选择</option>
+                          {statuses.map((status) => (
+                            <option key={status} value={status}>{status}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        post.status || "未知"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">{formatDate(post.publishedAt)}</td>
+                    <td className="px-4 py-3 text-right space-x-2">
+                      {editingId === post.id ? (
+                        <>
+                          <button
+                            onClick={handleUpdate}
+                            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-green-500 text-green-600 font-bold text-xs"
+                            disabled={saving}
+                          >
+                            <Save size={14} /> 保存
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-gray-400 text-gray-500 font-bold text-xs"
+                          >
+                            取消
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => beginEdit(post)}
+                          className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                        >
+                          <Edit size={14} /> 编辑
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-3">
+          <p className="text-sm text-gray-500">第 {page} / {totalPages} 页（共 {total} 篇）</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-3 py-1 border-2 border-black font-bold disabled:opacity-50"
+            >
+              上一页
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+              disabled={page >= totalPages}
+              className="px-3 py-1 border-2 border-black font-bold disabled:opacity-50"
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 4.4 Sub-Component: Permissions View (Super Admin Only)
 const PermissionsView = ({ isDarkMode, user }) => {
   const users = [
@@ -1938,7 +2283,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
   const tabs = [
     { key: 'dashboard', label: '仪表盘', icon: Home, component: DashboardView },
     { key: 'create-post', label: '发布文章', icon: Edit, component: CreatePostView },
-    { key: 'posts', label: '文章列表', icon: FileText, component: () => <div className="text-xl p-8 text-center">文章列表占位符</div> },
+    { key: 'posts', label: '文章列表', icon: FileText, component: PostsView },
     { key: 'analytics', label: '数据分析', icon: BarChart3, component: AnalyticsView },
     { key: 'comments', label: '评论管理', icon: MessageCircle, component: () => <div className="text-xl p-8 text-center">评论审核占位符</div> },
     { key: 'categories', label: '二级分类', icon: Layers, component: CategoriesView },
@@ -2028,6 +2373,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user} />} />
             <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode} />} />
             <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode} />} />
+            <Route path="posts" element={<PostsView isDarkMode={isDarkMode} />} />
             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} user={user} />} />
             <Route path="profile" element={<AdminProfile />} />
             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />

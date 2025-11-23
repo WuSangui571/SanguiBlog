@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificationExecutor<Post> {
     Optional<Post> findBySlugAndStatus(String slug, String status);
 
+    Optional<Post> findBySlug(String slug);
+
     Optional<Post> findFirstByStatusOrderByPublishedAtDesc(String status);
 
     @org.springframework.data.jpa.repository.Query("select coalesce(sum(p.viewsCount),0) from Post p")

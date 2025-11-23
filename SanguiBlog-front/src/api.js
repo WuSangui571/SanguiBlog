@@ -78,6 +78,22 @@ export const adminDeleteCategory = (id) =>
     method: "DELETE",
   });
 
+export const adminFetchPosts = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.keyword) search.append("keyword", params.keyword);
+  if (params.categoryId) search.append("categoryId", params.categoryId);
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/posts${query}`);
+};
+
+export const adminUpdatePost = (id, payload) =>
+  request(`/admin/posts/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
 export const fetchPosts = (params = {}) => {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {

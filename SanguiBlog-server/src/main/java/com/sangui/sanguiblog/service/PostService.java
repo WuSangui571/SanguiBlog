@@ -1,6 +1,8 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.model.dto.AdminPostUpdateRequest;
 import com.sangui.sanguiblog.model.dto.PageResponse;
+import com.sangui.sanguiblog.model.dto.PostAdminDto;
 import com.sangui.sanguiblog.model.dto.PostDetailDto;
 import com.sangui.sanguiblog.model.dto.PostSummaryDto;
 import com.sangui.sanguiblog.model.dto.SavePostRequest;
@@ -22,10 +24,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.text.Normalizer;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -157,6 +163,61 @@ public class PostService {
         postRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
+    public PageResponse<PostAdminDto> adminList(String keyword, Long categoryId, int page, int size) {
+        int p = Math.max(page, 1) - 1;
+        int s = Math.min(Math.max(size, 1), 100);
+        Specification<Post> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasText(keyword)) {
+                String like = "%" + keyword.trim() + "%";
+                predicates.add(cb.or(
+                        cb.like(root.get("title"), like),
+                        cb.like(root.get("slug"), like),
+                        cb.like(root.get("excerpt"), like)));
+            }
+            if (categoryId != null) {
+                predicates.add(cb.equal(root.get("category").get("id"), categoryId));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        Page<Post> posts = postRepository.findAll(spec,
+                PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "updatedAt")));
+        List<PostAdminDto> dtos = posts.getContent().stream()
+                .map(this::toAdminDto)
+                .toList();
+        return new PageResponse<>(dtos, posts.getTotalElements(), posts.getNumber() + 1, posts.getSize());
+    }
+
+    @Transactional
+    public PostAdminDto updateMeta(Long id, AdminPostUpdateRequest request) {
+        Post post = postRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("文章不存在"));
+        String title = request.getTitle().trim();
+        String slug = resolveSlug(request.getSlug(), title);
+        postRepository.findBySlug(slug)
+                .filter(existing -> !existing.getId().equals(id))
+                .ifPresent(existing -> {
+                    throw new IllegalArgumentException("Slug 已存在");
+                });
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("分类不存在"));
+        post.setTitle(title);
+        post.setSlug(slug);
+        post.setExcerpt(request.getExcerpt());
+        post.setStatus(request.getStatus());
+        post.setThemeColor(request.getThemeColor());
+        post.setCategory(category);
+        if (request.getTagIds() != null) {
+            Set<Tag> tags = request.getTagIds().stream()
+                    .map(tagId -> tagRepository.findById(tagId)
+                            .orElseThrow(() -> new IllegalArgumentException("标签不存在: " + tagId)))
+                    .collect(Collectors.toSet());
+            post.setTags(tags);
+        }
+        post.setUpdatedAt(Instant.now());
+        return toAdminDto(postRepository.save(post));
+    }
+
     private void incrementViews(Post post, String ip) {
         // 1. Memory Check (Fast, handles race conditions/StrictMode)
         String key = ip + "_" + post.getId();
@@ -256,5 +317,41 @@ public class PostService {
                 .wordCount(wordCount)
                 .readingTime(readingTime)
                 .build();
+    }
+
+    private PostAdminDto toAdminDto(Post post) {
+        return PostAdminDto.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .slug(post.getSlug())
+                .excerpt(post.getExcerpt())
+                .status(post.getStatus())
+                .themeColor(post.getThemeColor())
+                .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
+                .categoryName(post.getCategory() != null ? post.getCategory().getName() : null)
+                .authorName(post.getAuthor() != null ? post.getAuthor().getDisplayName() : null)
+                .publishedAt(post.getPublishedAt())
+                .tags(post.getTags().stream()
+                        .map(tag -> com.sangui.sanguiblog.model.dto.TagDto.builder()
+                                .id(tag.getId())
+                                .name(tag.getName())
+                                .slug(tag.getSlug())
+                                .build())
+                        .toList())
+                .build();
+    }
+
+    private String resolveSlug(String providedSlug, String title) {
+        String candidate = StringUtils.hasText(providedSlug) ? providedSlug : title;
+        String normalized = Normalizer.normalize(candidate, Normalizer.Form.NFD)
+                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+        normalized = normalized.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}\\s-]", "")
+                .trim()
+                .replaceAll("\\s+", "-")
+                .toLowerCase(Locale.ROOT);
+        if (!StringUtils.hasText(normalized)) {
+            normalized = "post-" + java.util.UUID.randomUUID();
+        }
+        return normalized;
     }
 }

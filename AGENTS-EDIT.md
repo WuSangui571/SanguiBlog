@@ -10,6 +10,14 @@
 - **后端支持**: `/api/admin/categories` 新增 CRUD + 分页搜索接口，限制只有管理员可用，并强制仅两级结构（父级必须为一级分类）。
 - **共享**: `CategoryService` 扩展 slug 自动生成、唯一性校验及删除保护；前端 API 同步扩展。首页版本号更新为 `SANGUI BLOG // V1.1.38`。
 
+## V1.1.39 (2025-11-23)
+- **文章管理页**: `/admin/posts` 新增文章列表视图，支持分页/搜索/分类筛选，行内编辑标题、Slug、状态、摘要、颜色、分类与标签。
+- **后端扩展**: 新建 `/api/admin/posts` 接口及 `PostAdminDto`/`AdminPostUpdateRequest`，`PostService` 提供分页查询和基础元数据更新并校验 slug、分类、标签。
+- **前端 API**: `api.js` 增加文章管理请求，AdminPanel Tab 改为真实的 PostsView。首页 Banner 更新为 `SANGUI BLOG // V1.1.39`。
+
+## V1.1.40 (2025-11-23)
+- **修复**: 文章管理页缺少 `adminFetchPosts`/`adminUpdatePost` 引入导致页面空白，现补充 API 引用并刷新 Banner 为 `SANGUI BLOG // V1.1.40`。
+
 ## V1.1.36 (2025-11-23)
 - **功能**: 后台“分类标签”页实现标签管理界面，可新增、编辑、删除并刷新真实接口数据，支持行内编辑/保存与输入校验。
 - **后端**: 新增 `/api/admin/tags` CRUD 接口与 `TagRequest` DTO，强化唯一性校验及 slug 自动生成，同时在 `SecurityConfig` 中限制为管理员可用。
