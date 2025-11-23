@@ -21,36 +21,209 @@ import {
 
 // ... (keep existing code until CommentsSection)
 
-const CommentsSection = ({ list, isDarkMode, onSubmit, currentUser, setView, onDeleteComment, onUpdateComment, postAuthorName }) => {
+const CommentsSection = ({ list = [], isDarkMode, onSubmit, currentUser, setView, onDeleteComment, onUpdateComment, postAuthorName }) => {
   const [content, setContent] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editContent, setEditContent] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-
-  const handleSubmit = () => {
-    if (!content.trim()) return;
-    onSubmit({ content });
-    setContent("");
-  };
+  const [replyTarget, setReplyTarget] = useState(null);
+  const [replyContent, setReplyContent] = useState("");
 
   const inputBg = isDarkMode ? 'bg-gray-800 text-white' : 'bg-[#F0F0F0] text-black';
   const commentBg = isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-black';
+  const resolvedAuthorName = currentUser?.displayName || currentUser?.nickname || currentUser?.username || '访客';
+  const resolvedAvatar = currentUser?.avatarUrl || currentUser?.avatar;
+  const normalizedList = Array.isArray(list) ? list : [];
+
+  const countAll = (items = []) => items.reduce((sum, item) => sum + 1 + countAll(item.replies || []), 0);
+  const totalComments = countAll(normalizedList);
+
+  const getAvatarSrc = (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith('http')) return avatarPath;
+    return `http://localhost:8080${avatarPath}`;
+  };
+
+  const handleSubmit = () => {
+    if (!content.trim()) return;
+    onSubmit && onSubmit({
+      authorName: resolvedAuthorName,
+      avatarUrl: resolvedAvatar,
+      content: content.trim(),
+    });
+    setContent("");
+  };
+
+  const handleReplySubmit = () => {
+    if (!replyTarget || !replyContent.trim()) return;
+    onSubmit && onSubmit({
+      authorName: resolvedAuthorName,
+      avatarUrl: resolvedAvatar,
+      content: replyContent.trim(),
+      parentId: replyTarget.id,
+    });
+    setReplyContent("");
+    setReplyTarget(null);
+  };
+
+  const renderComment = (c, depth = 0) => {
+    const replies = Array.isArray(c.replies) ? c.replies : [];
+    const avatarSrc = getAvatarSrc(c.avatar);
+    const isReplying = replyTarget?.id === c.id;
+
+    return (
+      <div key={c.id || `${depth}-${c.authorName}`} className={`flex gap-4 ${depth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
+        <div className={`w-12 h-12 border-2 border-black rounded-full shrink-0 flex items-center justify-center font-bold overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-200 text-black'}`}>
+          {avatarSrc ? (
+            <img src={avatarSrc} alt={c.authorName} className="w-full h-full object-cover" />
+          ) : (
+            (c.authorName || c.user || 'U').toString().slice(0, 2)
+          )}
+        </div>
+        <div className="flex-1">
+          <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+            <span className="font-black text-lg">{c.authorName || c.user}</span>
+            {postAuthorName && (c.authorName === postAuthorName || c.user === postAuthorName) && (
+              <span className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black border border-black rounded shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-pink-600 text-white' : 'bg-yellow-400 text-black'}`}>
+                <PenTool size={10} strokeWidth={3} />
+                博主
+              </span>
+            )}
+            <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
+            <div className="ml-auto flex gap-2">
+              {currentUser && (
+                <button
+                  onClick={() => {
+                    setReplyTarget(c);
+                    setReplyContent("");
+                  }}
+                  className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-purple-500 hover:text-white' : 'hover:bg-purple-100'}`}
+                >
+                  回复
+                </button>
+              )}
+              {currentUser && c.userId === currentUser.id && (
+                <>
+                  <button
+                    onClick={() => {
+                      setEditingCommentId(c.id);
+                      setEditContent(c.content);
+                    }}
+                    className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-blue-500 hover:text-white' : 'hover:bg-blue-100'}`}
+                  >
+                    编辑
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(c.id)}
+                    className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-red-100'}`}
+                  >
+                    删除
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          {editingCommentId === c.id ? (
+            <div className="space-y-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className={`w-full p-2 border-2 border-black ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white'}`}
+                rows={3}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    onUpdateComment && onUpdateComment(c.id, editContent);
+                    setEditingCommentId(null);
+                  }}
+                  className="px-3 py-1 bg-green-500 text-white font-bold border-2 border-black"
+                >
+                  保存
+                </button>
+                <button
+                  onClick={() => setEditingCommentId(null)}
+                  className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
+              <p className="font-medium">{c.content || c.text}</p>
+            </div>
+          )}
+
+          {deleteConfirm === c.id && (
+            <div className={`mt-2 p-3 border-2 border-red-500 ${isDarkMode ? 'bg-red-900' : 'bg-red-50'}`}>
+              <p className="font-bold text-sm mb-2">确认删除这条评论？</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    onDeleteComment && onDeleteComment(c.id);
+                    setDeleteConfirm(null);
+                  }}
+                  className="px-3 py-1 bg-red-500 text-white font-bold border-2 border-black text-xs"
+                >
+                  确认删除
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black text-xs"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isReplying && currentUser && (
+            <div className={`mt-4 border-2 border-black p-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+              <textarea
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                className={`w-full p-3 border-2 border-black font-bold focus:outline-none min-h-[100px] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                placeholder={`回复 ${c.authorName || c.user || 'Ta'}...`}
+              />
+              <div className="flex gap-2 mt-2">
+                <PopButton onClick={handleReplySubmit}>发送回复</PopButton>
+                <button
+                  onClick={() => {
+                    setReplyTarget(null);
+                    setReplyContent("");
+                  }}
+                  className="px-3 py-1 border-2 border-black font-bold shadow-[2px_2px_0px_0px_#000] bg-gray-200"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          )}
+
+          {replies.length > 0 && (
+            <div className="mt-6 space-y-6">
+              {replies.map((child) => renderComment(child, depth + 1))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="mt-16">
       <div className="flex items-center gap-3 mb-8">
         <MessageSquare size={28} className="text-black dark:text-white" strokeWidth={3} />
-        <h2 className="text-3xl font-black uppercase">Comments ({list.length})</h2>
+        <h2 className="text-3xl font-black uppercase">Comments ({totalComments})</h2>
       </div>
 
       {currentUser ? (
         <div className={`${inputBg} border-2 border-black p-6 mb-12 shadow-[8px_8px_0px_0px_#000]`}>
           <div className="flex gap-4 mb-4">
             <div className={`w-12 h-12 border-2 border-black ${commentBg} rounded-full flex items-center justify-center font-bold overflow-hidden`}>
-              {currentUser.avatar && currentUser.avatar.startsWith('http') ? (
-                <img src={currentUser.avatar} alt={currentUser.username} className="w-full h-full object-cover" />
-              ) : currentUser.avatar ? (
-                <img src={`http://localhost:8080${currentUser.avatar}`} alt={currentUser.username} className="w-full h-full object-cover" />
+              {resolvedAvatar ? (
+                <img src={resolvedAvatar.startsWith('http') ? resolvedAvatar : `http://localhost:8080${resolvedAvatar}`} alt={currentUser.username} className="w-full h-full object-cover" />
               ) : (
                 currentUser.username?.slice(0, 2) || 'ME'
               )}
@@ -64,8 +237,8 @@ const CommentsSection = ({ list, isDarkMode, onSubmit, currentUser, setView, onD
               ></textarea>
             </div>
           </div>
-          <div className="flex justify-between items-center text-sm font-bold">
-            <span className="uppercase tracking-wide">{currentUser.username || 'ME'} 已登录</span>
+          <div className="flex justify-between items-center text-sm font-bold flex-wrap gap-4">
+            <span className="uppercase tracking-wide">{resolvedAuthorName} 已登录</span>
             <PopButton onClick={handleSubmit}>发布评论</PopButton>
           </div>
         </div>
@@ -80,106 +253,7 @@ const CommentsSection = ({ list, isDarkMode, onSubmit, currentUser, setView, onD
       )}
 
       <div className="space-y-8">
-        {list.map((c, i) => (
-          <div key={c.id || i} className="flex gap-4">
-            <div className={`w-12 h-12 border-2 border-black rounded-full ${c.avatar && c.avatar.startsWith('http') ? 'bg-white' : (c.avatar || 'bg-gray-200')} shrink-0 flex items-center justify-center font-bold overflow-hidden`}>
-              {c.avatar && c.avatar.startsWith('http') ? (
-                <img src={c.avatar} alt={c.authorName} className="w-full h-full object-cover" />
-              ) : c.avatar ? (
-                <img src={`http://localhost:8080${c.avatar}`} alt={c.authorName} className="w-full h-full object-cover" />
-              ) : (
-                (c.authorName || c.user || 'U').toString().slice(0, 2)
-              )}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="font-black text-lg">{c.authorName || c.user}</span>
-
-                {/* Blogger Badge */}
-                {postAuthorName && (c.authorName === postAuthorName || c.user === postAuthorName) && (
-                  <span className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black border border-black rounded shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-pink-600 text-white' : 'bg-yellow-400 text-black'}`}>
-                    <PenTool size={10} strokeWidth={3} />
-                    博主
-                  </span>
-                )}
-
-                <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
-                {currentUser && c.userId === currentUser.id && (
-                  <div className="ml-auto flex gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingCommentId(c.id);
-                        setEditContent(c.content);
-                      }}
-                      className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-blue-500 hover:text-white' : 'hover:bg-blue-100'}`}
-                    >
-                      编辑
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(c.id)}
-                      className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-red-100'}`}
-                    >
-                      删除
-                    </button>
-                  </div>
-                )}
-              </div>
-              {editingCommentId === c.id ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className={`w-full p-2 border-2 border-black ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white'}`}
-                    rows={3}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        onUpdateComment && onUpdateComment(c.id, editContent);
-                        setEditingCommentId(null);
-                      }}
-                      className="px-3 py-1 bg-green-500 text-white font-bold border-2 border-black"
-                    >
-                      保存
-                    </button>
-                    <button
-                      onClick={() => setEditingCommentId(null)}
-                      className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black"
-                    >
-                      取消
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
-                  <p className="font-medium">{c.content || c.text}</p>
-                </div>
-              )}
-              {deleteConfirm === c.id && (
-                <div className={`mt-2 p-3 border-2 border-red-500 ${isDarkMode ? 'bg-red-900' : 'bg-red-50'}`}>
-                  <p className="font-bold text-sm mb-2">确认删除这条评论？</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        onDeleteComment && onDeleteComment(c.id);
-                        setDeleteConfirm(null);
-                      }}
-                      className="px-3 py-1 bg-red-500 text-white font-bold border-2 border-black text-xs"
-                    >
-                      确认删除
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black text-xs"
-                    >
-                      取消
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+        {normalizedList.map((comment) => renderComment(comment))}
       </div>
     </div>
   );
@@ -798,7 +872,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.29
+          SANGUI BLOG // V1.1.30
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>

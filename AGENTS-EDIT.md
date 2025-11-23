@@ -1,5 +1,10 @@
 ﻿# AGENTS-EDIT
 
+## V1.1.30 (2025-11-23)
+- **新增**: 评论区支持楼中楼交互。新增“回复”输入框、嵌套渲染与评论总数统计，用户可针对任意评论进行多级回复。
+- **联动**: `useBlogData` 的增删改操作改为完成后自动重新拉取 `/comments` 列表，确保前端树形结构实时映射后端 `parent_comment_id` 数据。
+- **文档**: `NOTE.md` 补充了评论树渲染流程，并标注 `sanguiblog_db.sql` 内含带 `parent_comment_id` 的测试数据。首页 Banner 版本号更新为 `SANGUI BLOG // V1.1.30`。
+
 ## V1.1.29 (2025-11-23)
 - **新增**: 文章详情页通过 `remark-math` + `rehype-katex` 支持 LaTeX 数学公式渲染，`rehype-raw` 允许渲染 Markdown 中的自定义 HTML（如 `<p style="color:red">`）。
 - **更新**: 在 `AppFull.jsx` 中引入 KaTeX 样式并配置 ReactMarkdown 插件链，确保数学公式与 HTML 正常展示。

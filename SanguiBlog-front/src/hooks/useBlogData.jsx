@@ -99,20 +99,20 @@ function useProvideBlog() {
 
   const submitComment = useCallback(async (postId, payload) => {
     const res = await createComment(postId, payload);
-    const data = res.data || res;
-    setComments((prev) => [data, ...(prev || [])]);
-  }, []);
+    await loadComments(postId);
+    return res.data || res;
+  }, [loadComments]);
 
   const removeComment = useCallback(async (postId, commentId) => {
     await deleteComment(postId, commentId);
-    setComments((prev) => (prev || []).filter(c => c.id !== commentId));
-  }, []);
+    await loadComments(postId);
+  }, [loadComments]);
 
   const editComment = useCallback(async (postId, commentId, content) => {
     const res = await updateComment(postId, commentId, content);
-    const data = res.data || res;
-    setComments((prev) => (prev || []).map(c => c.id === commentId ? data : c));
-  }, []);
+    await loadComments(postId);
+    return res.data || res;
+  }, [loadComments]);
 
   const doLogin = useCallback(async (username, password) => {
     const res = await apiLogin(username, password);
