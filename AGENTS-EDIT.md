@@ -1,310 +1,314 @@
-﻿# AGENTS-EDIT
+# AGENTS-EDIT
 
 ## V1.1.37 (2025-11-23)
-- **标签分页搜索**: `/admin/taxonomy` 新增模糊搜索与分页控件，可按名称/slug 查询，每页 5/10/20/50 条灵活切换。
-- **API 扩展**: `/api/admin/tags` 支持 `keyword/page/size` 参数并返回 `PageResponse`，后端通过 `Pageable` + `findByNameContainingIgnoreCaseOrSlugContainingIgnoreCase` 实现模糊匹配。
-- **提升**: 删除标签时自动调整页码，创建/查询会置回第一页。首页 Banner 更新为 `SANGUI BLOG // V1.1.37`。
+- **��ǩ��ҳ����**: `/admin/taxonomy` ����ģ���������ҳ�ؼ����ɰ�����/slug ��ѯ��ÿҳ 5/10/20/50 ������л���
+- **API ��չ**: `/api/admin/tags` ֧�� `keyword/page/size` ���������� `PageResponse`�����ͨ�� `Pageable` + `findByNameContainingIgnoreCaseOrSlugContainingIgnoreCase` ʵ��ģ��ƥ�䡣
+- **����**: ɾ����ǩʱ�Զ�����ҳ�룬����/��ѯ���ûص�һҳ����ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.37`��
 
 ## V1.1.38 (2025-11-23)
-- **分类管理页**: 新增后台“二级分类”页面，可增删改查分类、行内编辑父级与排序、分页展示并提供模糊搜索/父级筛选。
-- **后端支持**: `/api/admin/categories` 新增 CRUD + 分页搜索接口，限制只有管理员可用，并强制仅两级结构（父级必须为一级分类）。
-- **共享**: `CategoryService` 扩展 slug 自动生成、唯一性校验及删除保护；前端 API 同步扩展。首页版本号更新为 `SANGUI BLOG // V1.1.38`。
+- **�������ҳ**: ������̨���������ࡱҳ�棬����ɾ�Ĳ���ࡢ���ڱ༭���������򡢷�ҳչʾ���ṩģ������/����ɸѡ��
+- **���֧��**: `/api/admin/categories` ���� CRUD + ��ҳ�����ӿڣ�����ֻ�й���Ա���ã���ǿ�ƽ������ṹ����������Ϊһ�����ࣩ��
+- **����**: `CategoryService` ��չ slug �Զ����ɡ�Ψһ��У�鼰ɾ��������ǰ�� API ͬ����չ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.38`��
 
 ## V1.1.39 (2025-11-23)
-- **文章管理页**: `/admin/posts` 新增文章列表视图，支持分页/搜索/分类筛选，行内编辑标题、Slug、状态、摘要、颜色、分类与标签。
-- **后端扩展**: 新建 `/api/admin/posts` 接口及 `PostAdminDto`/`AdminPostUpdateRequest`，`PostService` 提供分页查询和基础元数据更新并校验 slug、分类、标签。
-- **前端 API**: `api.js` 增加文章管理请求，AdminPanel Tab 改为真实的 PostsView。首页 Banner 更新为 `SANGUI BLOG // V1.1.39`。
+- **���¹���ҳ**: `/admin/posts` ���������б���ͼ��֧�ַ�ҳ/����/����ɸѡ�����ڱ༭���⡢Slug��״̬��ժҪ����ɫ���������ǩ��
+- **�����չ**: �½� `/api/admin/posts` �ӿڼ� `PostAdminDto`/`AdminPostUpdateRequest`��`PostService` �ṩ��ҳ��ѯ�ͻ���Ԫ���ݸ��²�У�� slug�����ࡢ��ǩ��
+- **ǰ�� API**: `api.js` �������¹�������AdminPanel Tab ��Ϊ��ʵ�� PostsView����ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.39`��
 
 ## V1.1.40 (2025-11-23)
-- **修复**: 文章管理页缺少 `adminFetchPosts`/`adminUpdatePost` 引入导致页面空白，现补充 API 引用并刷新 Banner 为 `SANGUI BLOG // V1.1.40`。
+- **�޸�**: ���¹���ҳȱ�� `adminFetchPosts`/`adminUpdatePost` ���뵼��ҳ��հף��ֲ��� API ���ò�ˢ�� Banner Ϊ `SANGUI BLOG // V1.1.40`��
 
 ## V1.1.41 (2025-11-23)
-- **文章管理优化**: 仅展示二级分类供选择（下拉标记“一级/二级”），禁止设置为一级分类；分类列显示为 `一级/二级`，状态列改为中文（草稿/已发布/已归档），表格原 `Slug` 列改为“摘要”。
-- **交互细节**: 编辑态在标题单元格内附加 `Slug` 与主题色输入，分页默认按发布时间降序；`PostAdminDto` 增补父级名称，便于展示。
-- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.41`。
+- **���¹����Ż�**: ��չʾ�������๩ѡ��������ǡ�һ��/������������ֹ����Ϊһ�����ࣻ��������ʾΪ `һ��/����`��״̬�и�Ϊ���ģ��ݸ�/�ѷ���/�ѹ鵵��������ԭ `Slug` �и�Ϊ��ժҪ����
+- **����ϸ��**: �༭̬�ڱ��ⵥԪ���ڸ��� `Slug` ������ɫ���룬��ҳĬ�ϰ�����ʱ�併��`PostAdminDto` �����������ƣ�����չʾ��
+- **�汾**: ��ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.41`��
 
 ## V1.1.42 (2025-11-23)
-- **个人资料页重构**: 重新设计后台个人资料 UI，增加深色模式适配、完整的只读信息、改良的密码验证流程、头像实时上传并落库、社交字段与 Bio 输入体验。
-- **导航联动**: 顶部头像点击直接跳转到 `/admin/profile`，方便随时进入资料页。
-- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.42`。
+- **��������ҳ�ع�**: ������ƺ�̨�������� UI��������ɫģʽ���䡢������ֻ����Ϣ��������������֤���̡�ͷ��ʵʱ�ϴ�����⡢�罻�ֶ��� Bio �������顣
+- **��������**: ����ͷ����ֱ����ת�� `/admin/profile`��������ʱ��������ҳ��
+- **�汾**: ��ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.42`��
 
 ## V1.1.43 (2025-11-23)
-- **资料页修复**: 头像上传结果改为读取后端返回的 `url` 并立即写入资料，邮箱/微信字段完整展示且提供二维码预览。
-- **密码校验**: 后端 `updateProfile` 增加原密码验证与 `verifyOnly` 模式，前端调用改为 camelCase，只有验证通过才能设置新密码。
-- **只读信息**: DTO 现返回邮箱、创建时间、上次登录等元数据，页面在深色模式下正常展示。版本号更新为 `SANGUI BLOG // V1.1.43`。
+- **����ҳ�޸�**: ͷ���ϴ������Ϊ��ȡ��˷��ص� `url` ������д�����ϣ�����/΢���ֶ�����չʾ���ṩ��ά��Ԥ����
+- **����У��**: ��� `updateProfile` ����ԭ������֤�� `verifyOnly` ģʽ��ǰ�˵��ø�Ϊ camelCase��ֻ����֤ͨ���������������롣
+- **ֻ����Ϣ**: DTO �ַ������䡢����ʱ�䡢�ϴε�¼��Ԫ���ݣ�ҳ������ɫģʽ������չʾ���汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.43`��
 
 ## V1.1.44 (2025-11-23)
-- **资料页精简**: 移除微信二维码字段，保留 GitHub/Bio 等核心信息，头像上传改为读取 `data.url` 并即时生效。
-- **提示优化**: 通用状态信息会滚动到视区内，密码验证提示紧邻密码区域，白天模式的只读卡片使用纯白底色以提升对比度。
-- **后端增强**: `updateProfile` 支持用户名/邮箱更新与密码验证分支，响应中返回邮箱及时间元数据。首页版本号更新为 `SANGUI BLOG // V1.1.44`。
+- **����ҳ����**: �Ƴ�΢�Ŷ�ά���ֶΣ����� GitHub/Bio �Ⱥ�����Ϣ��ͷ���ϴ���Ϊ��ȡ `data.url` ����ʱ��Ч��
+- **��ʾ�Ż�**: ͨ��״̬��Ϣ������������ڣ�������֤��ʾ�����������򣬰���ģʽ��ֻ����Ƭʹ�ô��׵�ɫ�������Աȶȡ�
+- **�����ǿ**: `updateProfile` ֧���û���/���������������֤��֧����Ӧ�з������估ʱ��Ԫ���ݡ���ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.44`��
 
 ## V1.1.45 (2025-11-23)
-- **头像策略**: 上传接口改为写入 `static/avatar` 并仅在数据库存储文件名，更新头像时自动删除旧文件。
-- **只读信息可见性**: 资料页的只读字段在日间模式下改为黑色字体，避免白底白字无法查看。
-- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.45`。
+- **ͷ�����**: �ϴ��ӿڸ�Ϊд�� `static/avatar` ���������ݿ�洢�ļ���������ͷ��ʱ�Զ�ɾ�����ļ���
+- **ֻ����Ϣ�ɼ���**: ����ҳ��ֻ���ֶ����ռ�ģʽ�¸�Ϊ��ɫ���壬����׵װ����޷��鿴��
+- **�汾**: ��ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.45`��
 
 ## V1.1.46 (2025-11-23)
-- **首页信息**: 作者卡片展示 `bio`，微信二维码统一指向后端 `static/contact/wechat.jpg`，不再出现 Mock 图片。
-- **媒体助手**: 新增 `buildMediaUrl` 供头像/二维码复用，自动补齐 `http://localhost:8080` 前缀。
-- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.46`。
+- **��ҳ��Ϣ**: ���߿�Ƭչʾ `bio`��΢�Ŷ�ά��ͳһָ���� `static/contact/wechat.jpg`�����ٳ��� Mock ͼƬ��
+- **ý������**: ���� `buildMediaUrl` ��ͷ��/��ά�븴�ã��Զ����� `http://localhost:8080` ǰ׺��
+- **�汾**: ��ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.46`��
 
 ## V1.1.47 (2025-11-23)
-- **二维码修正**: 首页作者卡片彻底改为使用后端 `contact/wechat.jpg`，不再尝试加载 Mock 链接，避免闪烁。
-- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.47`。
+- **��ά������**: ��ҳ���߿�Ƭ���׸�Ϊʹ�ú�� `contact/wechat.jpg`�����ٳ��Լ��� Mock ���ӣ�������˸��
+- **�汾**: ��ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.47`��
 
 ## V1.1.48 (2025-11-23)
-- **文章卡片数据源**: 首页列表将原“爱心”指标改为浏览量（Eye 图标），并直接展示后端返回的 `viewsCount`；评论数同样读取 `commentsCount`，确保与数据库一致。
-- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.48`。
+- **���¿�Ƭ����Դ**: ��ҳ�б���ԭ�����ġ�ָ���Ϊ�������Eye ͼ�꣩����ֱ��չʾ��˷��ص� `viewsCount`��������ͬ����ȡ `commentsCount`��ȷ�������ݿ�һ�¡�
+- **�汾**: ��ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.48`��
 
 ## V1.1.49 (2025-11-23)
-- **评论统计**: 后端 `PostService` 通过 `commentRepository.countByPostIdAndStatus` 获取真实评论数量（仅统计批准评论），解决文章列表显示不准的问题。
-- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.49`。
+- **����ͳ��**: ��� `PostService` ͨ�� `commentRepository.countByPostIdAndStatus` ��ȡ��ʵ������������ͳ����׼���ۣ�����������б���ʾ��׼�����⡣
+- **�汾**: ��ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.49`��
 
 ## V1.1.36 (2025-11-23)
-- **功能**: 后台“分类标签”页实现标签管理界面，可新增、编辑、删除并刷新真实接口数据，支持行内编辑/保存与输入校验。
-- **后端**: 新增 `/api/admin/tags` CRUD 接口与 `TagRequest` DTO，强化唯一性校验及 slug 自动生成，同时在 `SecurityConfig` 中限制为管理员可用。
-- **前端**: `api.js` 扩展标签管理 API，`AdminPanel` 路由新增 `TaxonomyView`，UI 采用卡片 + 表格呈现标签详情。首页 Banner 更新为 `SANGUI BLOG // V1.1.36`。
+- **����**: ��̨�������ǩ��ҳʵ�ֱ�ǩ�������棬���������༭��ɾ����ˢ����ʵ�ӿ����ݣ�֧�����ڱ༭/����������У�顣
+- **���**: ���� `/api/admin/tags` CRUD �ӿ��� `TagRequest` DTO��ǿ��Ψһ��У�鼰 slug �Զ����ɣ�ͬʱ�� `SecurityConfig` ������Ϊ����Ա���á�
+- **ǰ��**: `api.js` ��չ��ǩ���� API��`AdminPanel` ·������ `TaxonomyView`��UI ���ÿ�Ƭ + ������ֱ�ǩ���顣��ҳ Banner ����Ϊ `SANGUI BLOG // V1.1.36`��
 
 ## V1.1.35 (2025-11-23)
-- **修复**: `api.js` 的通用请求方法在抛错时附带 `status`，`checkAuth` 只在后端返回 `401` 时才清理本地 Token，避免页面频繁刷新时因偶发网络错误而被误判为未登录。
-- **更新**: 首页 Banner 版本号为 `SANGUI BLOG // V1.1.35`，以记录本次认证行为修复。
+- **�޸�**: `api.js` ��ͨ�����󷽷����״�ʱ���� `status`��`checkAuth` ֻ�ں�˷��� `401` ʱ���������� Token������ҳ��Ƶ��ˢ��ʱ��ż����������������Ϊδ��¼��
+- **����**: ��ҳ Banner �汾��Ϊ `SANGUI BLOG // V1.1.35`���Լ�¼������֤��Ϊ�޸���
 
 ## V1.1.34 (2025-11-23)
-- **修复**: 重新初始化标题 slug 映射，避免组件多次渲染后生成 `xxx-2` 之类的随机 ID；并在目录跳转找不到目标时回退到原始 `#标题`，确保锚点永远可用。
-- **更新**: 首页 Banner 改为 `SANGUI BLOG // V1.1.34`。
+- **�޸�**: ���³�ʼ������ slug ӳ�䣬������������Ⱦ������ `xxx-2` ֮������ ID������Ŀ¼��ת�Ҳ���Ŀ��ʱ���˵�ԭʼ `#����`��ȷ��ê����Զ���á�
+- **����**: ��ҳ Banner ��Ϊ `SANGUI BLOG // V1.1.34`��
 
 ## V1.1.33 (2025-11-23)
-- **修复**: 在 `AppFull.jsx` 中为 Markdown 标题注入锚点 ID 的同时，拦截目录链接（`href="#xxx"`）点击行为，若未匹配到原文 ID 会自动尝试 slug 版本，确保 `[标题](#标题)` 可稳定滚动定位。
-- **更新**: 首页 Banner 版本号刷新为 `SANGUI BLOG // V1.1.33`。
+- **�޸�**: �� `AppFull.jsx` ��Ϊ Markdown ����ע��ê�� ID ��ͬʱ������Ŀ¼���ӣ�`href="#xxx"`�������Ϊ����δƥ�䵽ԭ�� ID ���Զ����� slug �汾��ȷ�� `[����](#����)` ���ȶ�������λ��
+- **����**: ��ҳ Banner �汾��ˢ��Ϊ `SANGUI BLOG // V1.1.33`��
 
 ## V1.1.32 (2025-11-23)
-- **优化**: 为 `ReactMarkdown` 的所有标题节点自动生成锚点 `id`（兼容中文），并处理同名标题的去重逻辑，确保 Markdown 目录链接如 `[标题](#标题)` 可正确定位。
-- **UI**: 首页 Banner 版本号更新为 `SANGUI BLOG // V1.1.32`，与 Markdown 渲染能力提升保持同步。
+- **�Ż�**: Ϊ `ReactMarkdown` �����б���ڵ��Զ�����ê�� `id`���������ģ���������ͬ�������ȥ���߼���ȷ�� Markdown Ŀ¼������ `[����](#����)` ����ȷ��λ��
+- **UI**: ��ҳ Banner �汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.32`���� Markdown ��Ⱦ������������ͬ����
 
 ## V1.1.31 (2025-11-23)
-- **优化**: 评论区新增“两层楼”限制，仅允许针对顶级评论进行回复，超出层级自动隐藏“回复”按钮，避免过深嵌套导致阅读困难。
-- **更新**: Hero Banner 版本号刷新为 `SANGUI BLOG // V1.1.31`，与本次交互策略保持一致。
+- **�Ż�**: ����������������¥�����ƣ���������Զ������۽��лظ��������㼶�Զ����ء��ظ�����ť���������Ƕ�׵����Ķ����ѡ�
+- **����**: Hero Banner �汾��ˢ��Ϊ `SANGUI BLOG // V1.1.31`���뱾�ν������Ա���һ�¡�
 
 ## V1.1.30 (2025-11-23)
-- **新增**: 评论区支持楼中楼交互。新增“回复”输入框、嵌套渲染与评论总数统计，用户可针对任意评论进行多级回复。
-- **联动**: `useBlogData` 的增删改操作改为完成后自动重新拉取 `/comments` 列表，确保前端树形结构实时映射后端 `parent_comment_id` 数据。
-- **文档**: `NOTE.md` 补充了评论树渲染流程，并标注 `sanguiblog_db.sql` 内含带 `parent_comment_id` 的测试数据。首页 Banner 版本号更新为 `SANGUI BLOG // V1.1.30`。
+- **����**: ������֧��¥��¥�������������ظ��������Ƕ����Ⱦ����������ͳ�ƣ��û�������������۽��ж༶�ظ���
+- **����**: `useBlogData` ����ɾ�Ĳ�����Ϊ��ɺ��Զ�������ȡ `/comments` �б���ȷ��ǰ�����νṹʵʱӳ���� `parent_comment_id` ���ݡ�
+- **�ĵ�**: `NOTE.md` ��������������Ⱦ���̣�����ע `sanguiblog_db.sql` �ں��� `parent_comment_id` �Ĳ������ݡ���ҳ Banner �汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.30`��
 
 ## V1.1.29 (2025-11-23)
-- **新增**: 文章详情页通过 `remark-math` + `rehype-katex` 支持 LaTeX 数学公式渲染，`rehype-raw` 允许渲染 Markdown 中的自定义 HTML（如 `<p style="color:red">`）。
-- **更新**: 在 `AppFull.jsx` 中引入 KaTeX 样式并配置 ReactMarkdown 插件链，确保数学公式与 HTML 正常展示。
-- **版本**: 首页 Banner 版本号更新为 `SANGUI BLOG // V1.1.29`。
+- **����**: ��������ҳͨ�� `remark-math` + `rehype-katex` ֧�� LaTeX ��ѧ��ʽ��Ⱦ��`rehype-raw` ������Ⱦ Markdown �е��Զ��� HTML���� `<p style="color:red">`����
+- **����**: �� `AppFull.jsx` ������ KaTeX ��ʽ������ ReactMarkdown �������ȷ����ѧ��ʽ�� HTML ����չʾ��
+- **�汾**: ��ҳ Banner �汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.29`��
 
 ## V1.1.28 (2025-11-23)
-- **修复**: 扩展 `SecurityConfig` 的跨域白名单，新增 `http://localhost:5174` 与 `http://127.0.0.1:5174`，确保结构管理浏览器在 5174 端口运行时能正常访问后端接口。
-- **更新**: 首页 Banner 版本号改为 `SANGUI BLOG // V1.1.28`。
+- **�޸�**: ��չ `SecurityConfig` �Ŀ�������������� `http://localhost:5174` �� `http://127.0.0.1:5174`��ȷ���ṹ����������� 5174 �˿�����ʱ���������ʺ�˽ӿڡ�
+- **����**: ��ҳ Banner �汾�Ÿ�Ϊ `SANGUI BLOG // V1.1.28`��
 
 ## V1.1.27 (2025-11-23)
-- **修复**: 修复了 `AppFull.jsx` 中因组件删除操作不当导致的严重 JSX 语法错误。
-    - **原因**: 在删除重复的 `CommentsSection` 和 `ArticleDetail` 组件时，意外删除了 `Hero` 组件的闭合标签（`</section>`, `</>`, `);`, `};`）以及 `LoginView` 组件的定义头和状态 Hook（`const LoginView = ...`, `useState`）。
-    - **解决**: 恢复了丢失的 `Hero` 组件闭合标签和 `LoginView` 组件的完整定义，确保页面能正常渲染且无语法报错。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.27`。
+- **�޸�**: �޸��� `AppFull.jsx` �������ɾ�������������µ����� JSX �﷨����
+    - **ԭ��**: ��ɾ���ظ��� `CommentsSection` �� `ArticleDetail` ���ʱ������ɾ���� `Hero` ����ıպϱ�ǩ��`</section>`, `</>`, `);`, `};`���Լ� `LoginView` ����Ķ���ͷ��״̬ Hook��`const LoginView = ...`, `useState`����
+    - **���**: �ָ��˶�ʧ�� `Hero` ����պϱ�ǩ�� `LoginView` ������������壬ȷ��ҳ����������Ⱦ�����﷨������
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.27`��
 
 ## V1.1.26 (2025-11-23)
-- **修复**: 再次修复 `AppFull.jsx` 中 `CommentsSection` 和 `ArticleDetail` 组件重复声明的错误。
-    - **原因**: 上一次修复尝试未能正确删除文件末尾的冗余代码，导致 `Identifier 'CommentsSection' has already been declared` 错误持续存在。
-    - **解决**: 彻底删除了文件末尾（行 1699-2111）的旧版本组件定义，确保全局只有一份包含最新功能（“博主”徽章）的组件代码。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.26`。
+- **�޸�**: �ٴ��޸� `AppFull.jsx` �� `CommentsSection` �� `ArticleDetail` ����ظ������Ĵ���
+    - **ԭ��**: ��һ���޸�����δ����ȷɾ���ļ�ĩβ��������룬���� `Identifier 'CommentsSection' has already been declared` ����������ڡ�
+    - **���**: ����ɾ�����ļ�ĩβ���� 1699-2111���ľɰ汾������壬ȷ��ȫ��ֻ��һ�ݰ������¹��ܣ������������£���������롣
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.26`��
 
 ## V1.1.25 (2025-11-23)
-- **修复**: 修复了 `AppFull.jsx` 中 `CommentsSection` 和 `ArticleDetail` 组件重复声明的错误。
-    - **原因**: 在上一次更新中，代码替换操作意外地在文件末尾追加了这两个组件的旧版本定义，导致与文件中部的新版本定义冲突，引发 `Identifier 'CommentsSection' has already been declared` 报错。
-    - **解决**: 删除了文件末尾多余的重复组件定义，保留了包含“博主”徽章逻辑的正确版本。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.25`。
+- **�޸�**: �޸��� `AppFull.jsx` �� `CommentsSection` �� `ArticleDetail` ����ظ������Ĵ���
+    - **ԭ��**: ����һ�θ����У������滻������������ļ�ĩβ׷��������������ľɰ汾���壬�������ļ��в����°汾�����ͻ������ `Identifier 'CommentsSection' has already been declared` ������
+    - **���**: ɾ�����ļ�ĩβ������ظ�������壬�����˰����������������߼�����ȷ�汾��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.25`��
 
 ## V1.1.24 (2025-11-23)
-- **UI 优化**: 
-    - 将文章详情页作者卡片中的默认头衔从英文 "CONTRIBUTOR" 改为中文 "**博主**"。
-    - **评论区增强**: 新增了博主身份标识功能。
-        - 当评论发布者为文章作者时，其名字旁会显示一个带有 **PenTool** 图标和“**博主**”文字的专属 Badge（徽章）。
-        - 徽章样式遵循 Neo-Brutalism 风格（粗边框、阴影、高亮背景），与全站设计语言保持一致。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.24`。
+- **UI �Ż�**: 
+    - ����������ҳ���߿�Ƭ�е�Ĭ��ͷ�δ�Ӣ�� "CONTRIBUTOR" ��Ϊ���� "**����**"��
+    - **��������ǿ**: �����˲������ݱ�ʶ���ܡ�
+        - �����۷�����Ϊ��������ʱ���������Ի���ʾһ������ **PenTool** ͼ��͡�**����**�����ֵ�ר�� Badge�����£���
+        - ������ʽ��ѭ Neo-Brutalism ��񣨴ֱ߿���Ӱ����������������ȫվ������Ա���һ�¡�
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.24`��
 
 ## V1.1.23 (2025-11-23)
-- **修复**: 修复了 `AppFull.jsx` 中因 UI 回滚操作不当导致的 JSX 语法错误（`Expected corresponding JSX closing tag for <div>`）。
-    - **原因**: 在将作者卡片回滚为简约风格时，替换操作意外覆盖了文章元数据区的结束标签和 `article` 容器的开始标签，导致 DOM 结构断裂。
-    - **解决**: 恢复了丢失的“阅读量”元数据显示、元数据区闭合标签、简约版作者卡片以及 `article` 容器的正确包裹结构。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.23`。
+- **�޸�**: �޸��� `AppFull.jsx` ���� UI �ع������������µ� JSX �﷨����`Expected corresponding JSX closing tag for <div>`����
+    - **ԭ��**: �ڽ����߿�Ƭ�ع�Ϊ��Լ���ʱ���滻�������⸲��������Ԫ�������Ľ�����ǩ�� `article` �����Ŀ�ʼ��ǩ������ DOM �ṹ���ѡ�
+    - **���**: �ָ��˶�ʧ�ġ��Ķ�����Ԫ������ʾ��Ԫ�������պϱ�ǩ����Լ�����߿�Ƭ�Լ� `article` ��������ȷ�����ṹ��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.23`��
 
 ## V1.1.22 (2025-11-23)
-- **回滚**: 响应用户反馈，将文章详情页的 **作者信息卡片 (Author Card)** 回滚到之前的简约风格。
-    - 用户认为新的 Neo-Brutalism 风格卡片过于复杂（"太丑了"），更倾向于之前的“空荡荡”的简约设计。
-    - **保留功能**: 尽管 UI 回滚，但 **分享功能**（复制链接 + Toast 提示）和 **作者头衔 Badge** 样式被保留。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.22`。
+- **�ع�**: ��Ӧ�û�����������������ҳ�� **������Ϣ��Ƭ (Author Card)** �ع���֮ǰ�ļ�Լ���
+    - �û���Ϊ�µ� Neo-Brutalism ���Ƭ���ڸ��ӣ�"̫����"������������֮ǰ�ġ��յ������ļ�Լ��ơ�
+    - **��������**: ���� UI �ع����� **��������**���������� + Toast ��ʾ���� **����ͷ�� Badge** ��ʽ��������
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.22`��
 
 ## V1.1.21 (2025-11-23)
-- **修复**: 修复了 `AppFull.jsx` 中的 JSX 语法错误（`Expected corresponding JSX closing tag for <div>`）。
-    - **原因**: 在上一次重构作者卡片时，自动替换工具未能正确识别代码块边界，导致文章元数据区域（Metadata）与正文内容（Content）的标签嵌套错乱，丢失了 `</article>` 闭合标签和作者卡片代码。
-    - **解决**: 重新构建了 `ArticleDetail` 组件的核心渲染部分，严格按顺序恢复了 `Metadata` -> `Author Card` -> `Article Content` 的结构，并确保所有 JSX 标签正确闭合。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.21`。
+- **�޸�**: �޸��� `AppFull.jsx` �е� JSX �﷨����`Expected corresponding JSX closing tag for <div>`����
+    - **ԭ��**: ����һ���ع����߿�Ƭʱ���Զ��滻����δ����ȷʶ������߽磬��������Ԫ��������Metadata�����������ݣ�Content���ı�ǩǶ�״��ң���ʧ�� `</article>` �պϱ�ǩ�����߿�Ƭ���롣
+    - **���**: ���¹����� `ArticleDetail` ����ĺ�����Ⱦ���֣��ϸ�˳��ָ��� `Metadata` -> `Author Card` -> `Article Content` �Ľṹ����ȷ������ JSX ��ǩ��ȷ�պϡ�
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.21`��
 
 ## V1.1.20 (2025-11-23)
-- **修复**: 修复了点击分享按钮时导致的白屏崩溃问题（`ReferenceError: CheckCircle is not defined`）。
-    - **原因**: 在实现分享 Toast 弹窗时，使用了 `CheckCircle` 图标但忘记从 `lucide-react` 库中导入。
-    - **解决**: 在 `AppFull.jsx` 头部添加了 `CheckCircle` 的导入。
-- **UI 重构**: 全面重新设计了文章详情页的 **作者信息卡片 (Author Card)**。
-    - **新样式**: 采用了更丰富的 Neo-Brutalism 风格卡片，包含粗边框、阴影和装饰性标签。
-    - **内容增强**:
-        - **头像**: 增大尺寸并添加了在线状态指示器。
-        - **简介**: 新增了作者简介（Bio）显示区域（支持默认文案回退）。
-        - **数据**: 新增了模拟的“文章数”和“粉丝数”统计，增加页面活跃感。
-        - **操作**: 集成了 **FOLLOW**（关注）、**SHARE**（分享）和 **Github** 按钮，操作区更集中。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.20`。
+- **�޸�**: �޸��˵��������ťʱ���µİ����������⣨`ReferenceError: CheckCircle is not defined`����
+    - **ԭ��**: ��ʵ�ַ��� Toast ����ʱ��ʹ���� `CheckCircle` ͼ�굫���Ǵ� `lucide-react` ���е��롣
+    - **���**: �� `AppFull.jsx` ͷ�������� `CheckCircle` �ĵ��롣
+- **UI �ع�**: ȫ�������������������ҳ�� **������Ϣ��Ƭ (Author Card)**��
+    - **����ʽ**: �����˸��ḻ�� Neo-Brutalism ���Ƭ�������ֱ߿���Ӱ��װ���Ա�ǩ��
+    - **������ǿ**:
+        - **ͷ��**: ����ߴ粢����������״ָ̬ʾ����
+        - **���**: ���������߼�飨Bio����ʾ����֧��Ĭ���İ����ˣ���
+        - **����**: ������ģ��ġ����������͡���˿����ͳ�ƣ�����ҳ���Ծ�С�
+        - **����**: ������ **FOLLOW**����ע����**SHARE**���������� **Github** ��ť�������������С�
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.20`��
 
 ## V1.1.19 (2025-11-23)
-- **修复**: 修复了 `AppFull.jsx` 中 `ArticleDetail` 组件的严重语法错误。
-    - **原因**: 上一次更新分享功能时，代码替换出现错误，导致 JSX 结构被破坏，出现了 `Unexpected token` 报错。
-    - **解决**: 完整重写了 `ArticleDetail` 组件，确保所有功能（头像、分享、Markdown 渲染）和语法结构正确无误。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.19`。
+- **�޸�**: �޸��� `AppFull.jsx` �� `ArticleDetail` ����������﷨����
+    - **ԭ��**: ��һ�θ��·�������ʱ�������滻���ִ��󣬵��� JSX �ṹ���ƻ��������� `Unexpected token` ������
+    - **���**: ������д�� `ArticleDetail` �����ȷ�����й��ܣ�ͷ�񡢷�����Markdown ��Ⱦ�����﷨�ṹ��ȷ����
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.19`��
 
 ## V1.1.18 (2025-11-23)
-- **文档**: 更新了 `NOTE.md`，详细记录了头像显示的完整技术逻辑（数据源、URL 解析、回退机制、后端配置）。
-- **优化**: 重新设计了文章详情页作者头衔（Title）的显示样式。
-    - 将原先普通的文本改为具有波普/新粗野主义风格的 **Badge（徽章）** 样式（粗边框、阴影、高亮背景），与全站风格保持一致。
-    - 默认显示 `AUTHOR`，或显示用户的自定义头衔。
-- **功能**: 实现了文章详情页的 **分享功能**。
-    - 点击分享按钮现在会将当前页面 URL 复制到剪贴板。
-    - 增加了一个风格化的 **Toast 弹窗**（粗边框、阴影、动画），提示用户“链接已复制”。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.18`。
+- **�ĵ�**: ������ `NOTE.md`����ϸ��¼��ͷ����ʾ�����������߼�������Դ��URL ���������˻��ơ�������ã���
+- **�Ż�**: �����������������ҳ����ͷ�Σ�Title������ʾ��ʽ��
+    - ��ԭ����ͨ���ı���Ϊ���в���/�´�Ұ������� **Badge�����£�** ��ʽ���ֱ߿���Ӱ����������������ȫվ��񱣳�һ�¡�
+    - Ĭ����ʾ `AUTHOR`������ʾ�û����Զ���ͷ�Ρ�
+- **����**: ʵ������������ҳ�� **��������**��
+    - ���������ť���ڻὫ��ǰҳ�� URL ���Ƶ������塣
+    - ������һ����񻯵� **Toast ����**���ֱ߿���Ӱ������������ʾ�û��������Ѹ��ơ���
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.18`��
 
 ## V1.1.17 (2025-11-23)
-- **修复**: 修复了 `AppFull.jsx` 中的 `'return' outside of function` 报错。
-    - **原因**: 在上一次修复语法错误时，误删了 `getAvatarUrl` 函数的定义行，导致函数体代码直接暴露在组件中，使组件提前返回并导致后续代码脱离函数作用域。
-    - **解决**: 恢复了 `const getAvatarUrl = (avatarPath) => {` 函数定义行。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.17`。
+- **�޸�**: �޸��� `AppFull.jsx` �е� `'return' outside of function` ������
+    - **ԭ��**: ����һ���޸��﷨����ʱ����ɾ�� `getAvatarUrl` �����Ķ����У����º��������ֱ�ӱ�¶������У�ʹ�����ǰ���ز����º����������뺯��������
+    - **���**: �ָ��� `const getAvatarUrl = (avatarPath) => {` ���������С�
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.17`��
 
 ## V1.1.16 (2025-11-23)
-- **修复**: 修复了 `AppFull.jsx` 中的语法错误（`Unexpected token`）。
-    - **原因**: 在上一次修复头像逻辑时，代码替换操作不当，导致 `ArticleDetail` 组件中出现了一个多余的 `return (` 语句，破坏了函数结构。
-    - **解决**: 删除了多余的 `return (`，恢复了正确的组件结构。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.16`。
+- **�޸�**: �޸��� `AppFull.jsx` �е��﷨����`Unexpected token`����
+    - **ԭ��**: ����һ���޸�ͷ���߼�ʱ�������滻�������������� `ArticleDetail` ����г�����һ������� `return (` ��䣬�ƻ��˺����ṹ��
+    - **���**: ɾ���˶���� `return (`���ָ�����ȷ������ṹ��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.16`��
 
 ## V1.1.15 (2025-11-23)
-- **修复**: 再次修复文章详情页作者头像显示为“破损图片”的问题。
-    - **原因**: 数据库中存储的旧头像路径（如 `/sangui.jpg`）不包含 `/avatar` 前缀，直接拼接 `http://localhost:8080` 导致 404 错误。且之前的简化逻辑移除了 `onError` 处理，导致加载失败时无法回退到 Mock 头像。
-    - **解决**:
-        1.  重新引入了 `getAvatarUrl` 辅助函数，增加了智能路径修正逻辑：如果路径不以 `/uploads/` 或 `/avatar/` 开头，自动添加 `/avatar` 前缀。
-        2.  在 `img` 标签中重新添加了 `onError` 事件处理，确保在图片加载失败（404）时能自动回退到 `MOCK_USER.avatar`。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.15`。
+- **�޸�**: �ٴ��޸���������ҳ����ͷ����ʾΪ������ͼƬ�������⡣
+    - **ԭ��**: ���ݿ��д洢�ľ�ͷ��·������ `/sangui.jpg`�������� `/avatar` ǰ׺��ֱ��ƴ�� `http://localhost:8080` ���� 404 ������֮ǰ�ļ��߼��Ƴ��� `onError` ���������¼���ʧ��ʱ�޷����˵� Mock ͷ��
+    - **���**:
+        1.  ���������� `getAvatarUrl` ��������������������·�������߼������·������ `/uploads/` �� `/avatar/` ��ͷ���Զ����� `/avatar` ǰ׺��
+        2.  �� `img` ��ǩ������������ `onError` �¼�������ȷ����ͼƬ����ʧ�ܣ�404��ʱ���Զ����˵� `MOCK_USER.avatar`��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.15`��
 
 ## V1.1.14 (2025-11-23)
-- **修复**: 修复了文章详情页 `ReferenceError: contentMd is not defined` 报错。
-    - **原因**: 在上一次重构头像逻辑时，意外删除了 `contentMd` 及其他样式变量（如 `text`, `surface`, `quoteBg` 等）的定义。
-    - **解决**: 恢复了所有丢失的变量定义，确保文章详情页能正常渲染 Markdown 内容及样式。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.14`。
+- **�޸�**: �޸�����������ҳ `ReferenceError: contentMd is not defined` ������
+    - **ԭ��**: ����һ���ع�ͷ���߼�ʱ������ɾ���� `contentMd` ��������ʽ�������� `text`, `surface`, `quoteBg` �ȣ��Ķ��塣
+    - **���**: �ָ������ж�ʧ�ı������壬ȷ����������ҳ��������Ⱦ Markdown ���ݼ���ʽ��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.14`��
 
 ## V1.1.13 (2025-11-23)
-- **修复**: 彻底修复文章详情页作者头像显示问题。
-    - **原因**: 之前的 `getAvatarUrl` 辅助函数逻辑过于复杂且可能存在判断漏洞，导致部分头像路径无法正确解析。
-    - **解决**: 弃用了 `getAvatarUrl` 函数，直接采用了与 `CommentsSection` 和 `Navbar` 完全一致的内联渲染逻辑。
-        - 如果头像路径以 `http` 开头，直接使用。
-        - 如果有头像路径但非 `http`，自动拼接 `http://localhost:8080` 前缀。
-        - 如果无头像路径，回退显示默认 Mock 头像。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.13`。
+- **�޸�**: �����޸���������ҳ����ͷ����ʾ���⡣
+    - **ԭ��**: ֮ǰ�� `getAvatarUrl` ���������߼����ڸ����ҿ��ܴ����ж�©�������²���ͷ��·���޷���ȷ������
+    - **���**: ������ `getAvatarUrl` ������ֱ�Ӳ������� `CommentsSection` �� `Navbar` ��ȫһ�µ�������Ⱦ�߼���
+        - ���ͷ��·���� `http` ��ͷ��ֱ��ʹ�á�
+        - �����ͷ��·������ `http`���Զ�ƴ�� `http://localhost:8080` ǰ׺��
+        - �����ͷ��·����������ʾĬ�� Mock ͷ��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.13`��
 
 ## V1.1.12 (2025-11-23)
-- **修复**: 进一步修复静态资源头像显示问题。
-    - **原因**: 虽然 Spring Boot 默认映射了 `static` 目录，但在某些部署环境或配置下，默认映射可能不生效或被覆盖。
-    - **解决**: 在 `WebConfig` 中显式添加了 `/avatar/**` 到 `classpath:/static/avatar/` 的映射，确保无论环境如何，头像路径都能正确解析。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.12`。
+- **�޸�**: ��һ���޸���̬��Դͷ����ʾ���⡣
+    - **ԭ��**: ��Ȼ Spring Boot Ĭ��ӳ���� `static` Ŀ¼������ĳЩ���𻷾��������£�Ĭ��ӳ����ܲ���Ч�򱻸��ǡ�
+    - **���**: �� `WebConfig` ����ʽ������ `/avatar/**` �� `classpath:/static/avatar/` ��ӳ�䣬ȷ�����ۻ�����Σ�ͷ��·��������ȷ������
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.12`��
 
 ## V1.1.11 (2025-11-23)
-- **修复**: 修复了静态资源头像（如 `/sangui.jpg`）无法显示的问题。
-    - **原因**: 数据库中存储的旧头像路径为 `/filename.jpg`，而实际文件位于后端的 `static/avatar/` 目录下，直接访问 `/filename.jpg` 会导致 404。
-    - **解决**: 更新了前端 `AppFull.jsx` 中的 `getAvatarUrl` 逻辑。现在，对于以 `/` 开头且不包含 `/avatar/` 或 `/uploads/` 的路径，会自动添加 `/avatar` 前缀，将其转换为正确的 URL（如 `http://localhost:8080/avatar/sangui.jpg`）。
-- **文档**: 更新了 `NOTE.md`，详细说明了静态资源与头像的存储规则及 URL 映射逻辑。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.11`。
+- **�޸�**: �޸��˾�̬��Դͷ���� `/sangui.jpg`���޷���ʾ�����⡣
+    - **ԭ��**: ���ݿ��д洢�ľ�ͷ��·��Ϊ `/filename.jpg`����ʵ���ļ�λ�ں�˵� `static/avatar/` Ŀ¼�£�ֱ�ӷ��� `/filename.jpg` �ᵼ�� 404��
+    - **���**: ������ǰ�� `AppFull.jsx` �е� `getAvatarUrl` �߼������ڣ������� `/` ��ͷ�Ҳ����� `/avatar/` �� `/uploads/` ��·�������Զ����� `/avatar` ǰ׺������ת��Ϊ��ȷ�� URL���� `http://localhost:8080/avatar/sangui.jpg`����
+- **�ĵ�**: ������ `NOTE.md`����ϸ˵���˾�̬��Դ��ͷ��Ĵ洢���� URL ӳ���߼���
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.11`��
 
 ## V1.1.10 (2025-11-23)
-- **新增**: 后端新增头像上传与静态资源服务功能。
-    - 创建 `UploadController`，提供 `/api/upload/avatar` 接口用于上传头像。
-    - 创建 `WebConfig`，配置静态资源映射，将 `/uploads/**` 路径映射到本地 `uploads/` 目录，确保上传的图片可以被访问。
-    - 更新 `SecurityConfig`，允许公开访问 `/uploads/**` 路径，并允许认证用户访问上传接口。
-- **修复**: 解决了本地存储的头像无法显示的问题（此前因缺少静态资源映射导致 404）。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.10`。
+- **����**: �������ͷ���ϴ��뾲̬��Դ�����ܡ�
+    - ���� `UploadController`���ṩ `/api/upload/avatar` �ӿ������ϴ�ͷ��
+    - ���� `WebConfig`�����þ�̬��Դӳ�䣬�� `/uploads/**` ·��ӳ�䵽���� `uploads/` Ŀ¼��ȷ���ϴ���ͼƬ���Ա����ʡ�
+    - ���� `SecurityConfig`�������������� `/uploads/**` ·������������֤�û������ϴ��ӿڡ�
+- **�޸�**: ����˱��ش洢��ͷ���޷���ʾ�����⣨��ǰ��ȱ�پ�̬��Դӳ�䵼�� 404����
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.10`��
 
 ## V1.1.9 (2025-11-23)
-- **修复**: 修复了文章详情页中元数据（发布时间、阅读时长、字数）丢失的问题。
-    - 在 `ArticleDetail` 组件中重新添加了元数据展示区域。
-    - 确保 `date` 从 `post` 对象读取，`readingTime` 和 `wordCount` 从 `articleData` 对象读取。
-- **修复**: 增强了作者头像的显示逻辑。
-    - 确保在 `post.authorAvatar` 为空时能正确回退到默认头像。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.9`。
+- **�޸�**: �޸�����������ҳ��Ԫ���ݣ�����ʱ�䡢�Ķ�ʱ������������ʧ�����⡣
+    - �� `ArticleDetail` ���������������Ԫ����չʾ����
+    - ȷ�� `date` �� `post` �����ȡ��`readingTime` �� `wordCount` �� `articleData` �����ȡ��
+- **�޸�**: ��ǿ������ͷ�����ʾ�߼���
+    - ȷ���� `post.authorAvatar` Ϊ��ʱ����ȷ���˵�Ĭ��ͷ��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.9`��
 
 ## V1.1.8 (2025-11-23)
-- **修复**: 再次修复文章详情页数据映射错误。
-    - 发现上一次修复的代码未正确应用，导致错误的“标准化”逻辑依然存在。
-    - 重新应用了简化后的数据映射逻辑，直接使用 `articleData.summary` 中的字段，移除了所有可能导致默认值（如“首页”、“Unknown”）的错误判断。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.8`。
+- **�޸�**: �ٴ��޸���������ҳ����ӳ�����
+    - ������һ���޸��Ĵ���δ��ȷӦ�ã����´���ġ���׼�����߼���Ȼ���ڡ�
+    - ����Ӧ���˼򻯺������ӳ���߼���ֱ��ʹ�� `articleData.summary` �е��ֶΣ��Ƴ������п��ܵ���Ĭ��ֵ���硰��ҳ������Unknown�����Ĵ����жϡ�
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.8`��
 
 ## V1.1.7 (2025-11-23)
-- **修复**: 再次修复文章详情页数据映射错误。
-    - 修正了 `ArticleDetail` 组件获取文章元数据（`summary`）的逻辑。
-    - 明确了后端 API 返回的是扁平化的 `PostSummaryDto`，移除了错误的多余标准化逻辑，确保 `category`、`authorName`、`excerpt` 等字段能正确从 `articleData.summary` 中读取。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.7`。
+- **�޸�**: �ٴ��޸���������ҳ����ӳ�����
+    - ������ `ArticleDetail` �����ȡ����Ԫ���ݣ�`summary`�����߼���
+    - ��ȷ�˺�� API ���ص��Ǳ�ƽ���� `PostSummaryDto`���Ƴ��˴���Ķ����׼���߼���ȷ�� `category`��`authorName`��`excerpt` ���ֶ�����ȷ�� `articleData.summary` �ж�ȡ��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.7`��
 
 ## V1.1.6 (2025-11-23)
-- **修复**: 修复了文章详情页中分类、作者名、发布时间等信息丢失的问题。
-    - 原因：后端 API 返回的原始数据结构（嵌套对象）与前端组件预期的扁平化结构不一致。
-    - 解决：在 `ArticleDetail` 组件中增加了数据标准化（Normalization）逻辑，将 `post.category.name` 映射为 `category`，`post.author.displayName` 映射为 `authorName` 等，确保 UI 正确渲染。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.6`。
+- **�޸�**: �޸�����������ҳ�з��ࡢ������������ʱ�����Ϣ��ʧ�����⡣
+    - ԭ�򣺺�� API ���ص�ԭʼ���ݽṹ��Ƕ�׶�����ǰ�����Ԥ�ڵı�ƽ���ṹ��һ�¡�
+    - ������� `ArticleDetail` ��������������ݱ�׼����Normalization���߼����� `post.category.name` ӳ��Ϊ `category`��`post.author.displayName` ӳ��Ϊ `authorName` �ȣ�ȷ�� UI ��ȷ��Ⱦ��
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.6`��
 
 ## V1.1.5 (2025-11-23)
-- **修复**: 彻底修复了 `ArticleDetail` 组件的结构问题。
-    - 恢复了意外丢失的“作者信息栏”（头像、作者名、分享按钮）。
-    - 修正了 DOM 嵌套结构，确保 `article` 和 `CommentsSection` 正确包裹在主卡片容器内，解决了布局错乱和 JSX 闭合标签报错的问题。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.5`。
+- **�޸�**: �����޸��� `ArticleDetail` ����Ľṹ���⡣
+    - �ָ������ⶪʧ�ġ�������Ϣ������ͷ����������������ť����
+    - ������ DOM Ƕ�׽ṹ��ȷ�� `article` �� `CommentsSection` ��ȷ����������Ƭ�����ڣ�����˲��ִ��Һ� JSX �պϱ�ǩ���������⡣
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.5`��
 
 ## V1.1.4 (2025-11-23)
-- **修复**: 修复了 `AppFull.jsx` 中 `ArticleDetail` 组件的 JSX 语法错误（多余的闭合标签 `</div>`），解决了前端编译报错的问题。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.4`。
+- **�޸�**: �޸��� `AppFull.jsx` �� `ArticleDetail` ����� JSX �﷨���󣨶���ıպϱ�ǩ `</div>`���������ǰ�˱��뱨�������⡣
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.4`��
 
 ## V1.1.3 (2025-11-23)
-- **修复**: 文章详情页作者头像显示异常的问题。
-    - 修改了 `ArticleDetail` 组件，优先使用 `articleData` 中的真实数据。
-    - 增加了对 `post.author.avatarUrl` 字段的支持，正确解析数据库返回的头像路径。
-    - 统一了头像 URL 的处理逻辑（处理相对路径 `http://localhost:8080` 前缀）。
-- **更新**: 将首页版本号更新为 `SANGUI BLOG // V1.1.3`。
+- **�޸�**: ��������ҳ����ͷ����ʾ�쳣�����⡣
+    - �޸��� `ArticleDetail` ���������ʹ�� `articleData` �е���ʵ���ݡ�
+    - �����˶� `post.author.avatarUrl` �ֶε�֧�֣���ȷ�������ݿⷵ�ص�ͷ��·����
+    - ͳһ��ͷ�� URL �Ĵ����߼����������·�� `http://localhost:8080` ǰ׺����
+- **����**: ����ҳ�汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.3`��
 
 ## V1.1.2 (2025-11-22)
-- **紧急广播操作简化**：后台设置区去掉“保存内容”按钮，点击“开启/关闭”即会立即写入最新内容与状态并提示结果。
-- **Markdown 行内代码优化**：文章详情页重新调整 `code` 渲染策略，普通 `` `code` `` 文本保持与段落同行，仅多行或显式语言块会单独换行。
-- **版本号刷新**：首页 Banner 版本号更新为 `SANGUI BLOG // V1.1.2`。
+- **�����㲥������**����̨������ȥ�����������ݡ���ť�����������/�رա���������д������������״̬����ʾ�����
+- **Markdown ���ڴ����Ż�**����������ҳ���µ��� `code` ��Ⱦ���ԣ���ͨ `` `code` `` �ı����������ͬ�У������л���ʽ���Կ�ᵥ�����С�
+- **�汾��ˢ��**����ҳ Banner �汾�Ÿ���Ϊ `SANGUI BLOG // V1.1.2`��
 
 ## V1.1.1 (2025-11-22)
-- **紧急广播联动数据库**：后台的开关按钮现在可以直接切换状态并调用统一接口，保存时通过封装的 updateBroadcast API 写入数据库，避免只改前端本地状态的情况。
-- **Markdown 渲染增强**：文章详情页改用 ReactMarkdown + GFM 解析 contentMd，并针对行内/块级代码做了样式处理，原先 `  ` 等符号无法正确渲染的问题已消失。
-- **版本号更新**：首页 Banner 显示为 SANGUI BLOG // V1.1.1。
+- **�����㲥�������ݿ�**����̨�Ŀ��ذ�ť���ڿ���ֱ���л�״̬������ͳһ�ӿڣ�����ʱͨ����װ�� updateBroadcast API д�����ݿ⣬����ֻ��ǰ�˱���״̬�������
+- **Markdown ��Ⱦ��ǿ**����������ҳ���� ReactMarkdown + GFM ���� contentMd�����������/�鼶����������ʽ������ԭ�� `  ` �ȷ����޷���ȷ��Ⱦ����������ʧ��
+- **�汾�Ÿ���**����ҳ Banner ��ʾΪ SANGUI BLOG // V1.1.1��
 
 ## V1.1.0 (2023-11-21)
 
-- **功能增强**：后台管理界面的“紧急广播设置”现已与数据库连通。管理员可以实时更新广播内容和开关状态，前端会自动同步。
-- **Bug修复**：修复了文章详情页 Markdown 内容无法正确渲染的问题。现在后端会自动将 Markdown 转换为 HTML 并返回给前端。
-- **版本更新**：首页版本号更新为 V1.1.0。
+- **������ǿ**����̨��������ġ������㲥���á����������ݿ���ͨ������Ա����ʵʱ���¹㲥���ݺͿ���״̬��ǰ�˻��Զ�ͬ����
+- **Bug�޸�**���޸�����������ҳ Markdown �����޷���ȷ��Ⱦ�����⡣���ں�˻��Զ��� Markdown ת��Ϊ HTML �����ظ�ǰ�ˡ�
+- **�汾����**����ҳ�汾�Ÿ���Ϊ V1.1.0��
 
 ## V1.0.2 (2025-11-21)
 
-本次更新包含以下内容：
-1. **修复 Unicode 乱码**：修复了后台管理界面（Admin Panel）中剩余的 Unicode 转义字符（如 `\u7d27\u6025...`），现在所有中文文案均正常显示。
-2. **修复微信二维码显示**：
-   - 将微信二维码图片从后端资源目录 `SanguiBlog-server/src/main/resources/static/contact/wechat.jpg` 复制到了前端公共目录 `SanguiBlog-front/public/contact/wechat.jpg`。
-   - 更新了前端代码中的图片引用路径为 `/contact/wechat.jpg`。
-   - 解决了在后端未启动或跨域情况下图片无法显示的问题。
-3. **版本号更新**：首页显示为 `SANGUI BLOG // V1.0.2`。
+���θ��°����������ݣ�
+1. **�޸� Unicode ����**���޸��˺�̨�������棨Admin Panel����ʣ��� Unicode ת���ַ����� `\u7d27\u6025...`�����������������İ���������ʾ��
+2. **�޸�΢�Ŷ�ά����ʾ**��
+   - ��΢�Ŷ�ά��ͼƬ�Ӻ����ԴĿ¼ `SanguiBlog-server/src/main/resources/static/contact/wechat.jpg` ���Ƶ���ǰ�˹���Ŀ¼ `SanguiBlog-front/public/contact/wechat.jpg`��
+   - ������ǰ�˴����е�ͼƬ����·��Ϊ `/contact/wechat.jpg`��
+   - ������ں��δ��������������ͼƬ�޷���ʾ�����⡣
+3. **�汾�Ÿ���**����ҳ��ʾΪ `SANGUI BLOG // V1.0.2`��
 
 ## V1.0.1 (2025-11-21)
-本次更新包含以下内容：
-1. **后台文案汉化**：修复了后台管理界面（Admin Panel）中的中文乱码和占位符，将 Dashboard、Analytics、Create Post 等页面的英文/占位符替换为正确的中文文案。
-2. **版本号更新**：首页显示为 `SANGUI BLOG // V1.0.1`。
+���θ��°����������ݣ�
+1. **��̨�İ�����**���޸��˺�̨�������棨Admin Panel���е����������ռλ������ Dashboard��Analytics��Create Post ��ҳ���Ӣ��/ռλ���滻Ϊ��ȷ�������İ���
+2. **�汾�Ÿ���**����ҳ��ʾΪ `SANGUI BLOG // V1.0.1`��
 
 ## V1.0.0 (2025-11-21)
-本次更新包含以下内容：
-1. **修复微信二维码显示问题**：修正了前端硬编码的图片路径，现在正确指向后端静态资源 `http://localhost:8080/contact/wechat.jpg`。
-2. **优化点击波纹动画**：将点击坐标获取方式从 `pageX/pageY` 改为 `clientX/clientY`，解决了动画跟随鼠标滞后/偏移的问题，提升了交互手感。
-3. **更新版本标识**：首页 Banner 文字已更新为 `SANGUI BLOG // V1.0.0`。
-4. **代码维护**：修复了 `AppFull.jsx` 中的 JSX 语法错误（多余的闭合标签）。
+���θ��°����������ݣ�
+1. **�޸�΢�Ŷ�ά����ʾ����**��������ǰ��Ӳ�����ͼƬ·����������ȷָ���˾�̬��Դ `http://localhost:8080/contact/wechat.jpg`��
+2. **�Ż�������ƶ���**������������ȡ��ʽ�� `pageX/pageY` ��Ϊ `clientX/clientY`������˶�����������ͺ�/ƫ�Ƶ����⣬�����˽����ָС�
+3. **���°汾��ʶ**����ҳ Banner �����Ѹ���Ϊ `SANGUI BLOG // V1.0.0`��
+4. **����ά��**���޸��� `AppFull.jsx` �е� JSX �﷨���󣨶���ıպϱ�ǩ����
+## V1.1.50 (2025-11-23)
+- **����ͳ��**: ��� PostService ͨ�� commentRepository.countByPostIdAndStatus ͳ������׼����������ȷ����ҳ�����б�����������ʵ�ɿ���
+- **�������**: ȡ�����������ֻ������ʹ��������¿ɼ�ʱ��⣬��ֹҳ��ˢ�º���ֵ���䡣
+- **�汾**: ��ҳ Banner ����Ϊ SANGUI BLOG // V1.1.50��

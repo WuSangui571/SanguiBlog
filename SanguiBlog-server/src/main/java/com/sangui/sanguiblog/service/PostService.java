@@ -83,7 +83,7 @@ public class PostService {
         return new PageResponse<>(list, posts.getTotalElements(), posts.getNumber() + 1, posts.getSize());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PostDetailDto getPublishedDetail(Long id, String ip) {
         Post post = postRepository.findById(id)
                 .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
@@ -92,7 +92,7 @@ public class PostService {
         return toDetail(post);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PostDetailDto getPublishedDetailBySlug(String slug, String ip) {
         Post post = postRepository.findBySlugAndStatus(slug, "PUBLISHED")
                 .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
