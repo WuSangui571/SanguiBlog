@@ -25,7 +25,7 @@ import 'katex/dist/katex.min.css';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
 import AdminProfile from './pages/admin/Profile';
 import {
-  Code, User, Heart, MessageSquare, Share2, X, Menu, ChevronRight,
+  Code, User, MessageSquare, Share2, X, Menu, ChevronRight,
   Search, LogIn, LogOut, Settings, Eye, Github, Twitter,
   BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
   Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
@@ -962,7 +962,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.46
+          SANGUI BLOG // V1.1.49
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2760,7 +2760,7 @@ const buildMediaUrl = (path, fallback) => {
   return `http://localhost:8080${path}`;
 };
 const authorAvatar = buildMediaUrl(displayAuthor.avatar, MOCK_USER.avatar);
-const authorWechat = buildMediaUrl(displayAuthor.wechatQr, "http://localhost:8080/contact/wechat.jpg");
+const authorWechat = "http://localhost:8080/contact/wechat.jpg";
 
   return (
     <>
@@ -2860,12 +2860,15 @@ const authorWechat = buildMediaUrl(displayAuthor.wechatQr, "http://localhost:808
 
           <div className="flex-1 flex flex-col">
             <div className="space-y-8 flex-1">
-              {displayPosts.length > 0 ? (
-                displayPosts.map((post, idx) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+        {displayPosts.length > 0 ? (
+          displayPosts.map((post, idx) => {
+            const viewCount = post.views ?? post.viewsCount ?? 0;
+            const commentCount = post.comments ?? post.commentsCount ?? 0;
+            return (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: idx * 0.1 }}
                   >
@@ -2896,16 +2899,17 @@ const authorWechat = buildMediaUrl(displayAuthor.wechatQr, "http://localhost:808
                           <div className={`flex justify-between items-center border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-black'} pt-4 border-dashed`}>
                             <span className="font-mono font-bold text-xs bg-black text-white px-2 py-1">{post.date}</span>
                             <div className={`flex gap-4 font-bold text-sm ${text}`}>
-                              <span className="flex items-center gap-1 hover:text-[#FF0080]"><Heart size={18} /> {post.likes}</span>
-                              <span className="flex items-center gap-1 hover:text-[#6366F1]"><MessageSquare size={18} /> {post.comments}</span>
+                              <span className="flex items-center gap-1 hover:text-[#FF0080]"><Eye size={18} /> {viewCount}</span>
+                              <span className="flex items-center gap-1 hover:text-[#6366F1]"><MessageSquare size={18} /> {commentCount}</span>
                             </div>
                           </div>
                         </div>
                       </div>
                     </TiltCard>
                   </motion.div>
-                ))
-              ) : (
+            );
+          })
+        ) : (
                 <div className={`p-12 border-4 border-black border-dashed text-center ${cardBg}`}>
                   <p className={`text-2xl font-black ${subText}`}>NO DATA FOUND</p>
                   <PopButton variant="primary" className="mt-4" onClick={() => { setActiveParent('all'); setActiveSub('all') }}>RESET FILTERS</PopButton>

@@ -48,6 +48,18 @@
 - **媒体助手**: 新增 `buildMediaUrl` 供头像/二维码复用，自动补齐 `http://localhost:8080` 前缀。
 - **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.46`。
 
+## V1.1.47 (2025-11-23)
+- **二维码修正**: 首页作者卡片彻底改为使用后端 `contact/wechat.jpg`，不再尝试加载 Mock 链接，避免闪烁。
+- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.47`。
+
+## V1.1.48 (2025-11-23)
+- **文章卡片数据源**: 首页列表将原“爱心”指标改为浏览量（Eye 图标），并直接展示后端返回的 `viewsCount`；评论数同样读取 `commentsCount`，确保与数据库一致。
+- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.48`。
+
+## V1.1.49 (2025-11-23)
+- **评论统计**: 后端 `PostService` 通过 `commentRepository.countByPostIdAndStatus` 获取真实评论数量（仅统计批准评论），解决文章列表显示不准的问题。
+- **版本**: 首页 Banner 更新为 `SANGUI BLOG // V1.1.49`。
+
 ## V1.1.36 (2025-11-23)
 - **功能**: 后台“分类标签”页实现标签管理界面，可新增、编辑、删除并刷新真实接口数据，支持行内编辑/保存与输入校验。
 - **后端**: 新增 `/api/admin/tags` CRUD 接口与 `TagRequest` DTO，强化唯一性校验及 slug 自动生成，同时在 `SecurityConfig` 中限制为管理员可用。

@@ -73,6 +73,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   统一封装 `fetch` 请求。
     *   自动携带 `localStorage` 中的 `sg_token`。
     *   `API_BASE`: 默认为 `http://localhost:8080/api`。
+*   首页文章卡片所展示的“浏览量 / 评论数”直接读取后端 `PostSummaryDto` 中的 `viewsCount` 与 `comments` 字段，其中评论数由后端实时统计 `APPROVED` 状态的评论数量。
 
 ### 3.3 Markdown 渲染策略
 *   `ArticleDetail` 组件优先使用 `contentMd`，通过 `ReactMarkdown` 渲染；若后端仅返回 `contentHtml` 则采用 `dangerouslySetInnerHTML` 兜底。
@@ -89,6 +90,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   公共 `/api/tags` 接口保留只读模式，前台依旧可以匿名获取标签列表；后台则通过新增的 admin API 获得包含描述、时间戳、分页信息的完整版数据。
 
 ### 3.5 后台文章管理
+
 *   `/admin/posts` 页面由 `PostsView` 负责，提供文章分页列表、关键字搜索、按分类筛选，并支持行内编辑文章标题、Slug、摘要、状态、主题色、所属分类及标签；无需修改正文。
 *   对应的 `/api/admin/posts` 接口提供分页查询与元数据更新（PUT），后端会校验 slug 唯一性、分类存在性，并在更新标签时重新绑定 `post_tags`。
 *   更新操作不触碰 Markdown/HTML 内容，聚焦于基础元数据，避免误修改正文；分类下拉仅显示二级分类（以 “一级/二级” 形式呈现），状态显示为中文描述（草稿/已发布/已归档）。

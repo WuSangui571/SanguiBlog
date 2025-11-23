@@ -12,6 +12,7 @@ import com.sangui.sanguiblog.model.entity.Tag;
 import com.sangui.sanguiblog.model.entity.User;
 import com.sangui.sanguiblog.model.repository.AnalyticsPageViewRepository;
 import com.sangui.sanguiblog.model.repository.CategoryRepository;
+import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
@@ -44,6 +45,7 @@ public class PostService {
     private final TagRepository tagRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
     private final AnalyticsPageViewRepository analyticsPageViewRepository;
     private static final java.util.concurrent.ConcurrentHashMap<String, Long> VIEW_RATE_LIMITER = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -266,6 +268,8 @@ public class PostService {
             avatar = avatar.trim();
         }
 
+        long commentCount = commentRepository.countByPostIdAndStatus(post.getId(), "APPROVED");
+
         return PostSummaryDto.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -275,7 +279,7 @@ public class PostService {
                 .tags(post.getTags().stream().map(Tag::getName).toList())
                 .color(post.getThemeColor() != null ? post.getThemeColor() : "bg-[#6366F1]")
                 .likes(post.getLikesCount() == null ? 0 : post.getLikesCount())
-                .comments(post.getCommentsCount() == null ? 0 : post.getCommentsCount())
+                .comments((int) commentCount)
                 .views(post.getViewsCount() == null ? 0 : post.getViewsCount())
                 .date(post.getPublishedAt() != null ? DATE_FMT.format(post.getPublishedAt()) : "")
                 .slug(post.getSlug())
