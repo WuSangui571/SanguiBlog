@@ -83,6 +83,11 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   标题锚点：`AppFull.jsx` 自定义 `createHeading` 渲染器为 `h1-h6` 自动生成 `id`（兼容中文 slug 并支持重名去重），每次渲染都会重置 slug 映射，避免重复渲染导致 `xxx-2` 等随机锚点；同时拦截 Markdown 中 `href="#..."` 的点击事件，若直接匹配不到元素则自动尝试 slug 化后的 ID 并回退到原始 `#标题`，确保 `[目录](#某标题)` 语法能准确跳转。
 *   代码块渲染保持自定义的 Neo-Brutalism 包装（窗口按钮 + 阴影），行内代码继续使用定制逻辑裁剪反引号，保证视觉一致性。
 
+### 3.4 后台标签管理
+*   `/admin/taxonomy` 页面由 `TaxonomyView` 负责，支持标签的新增、编辑、删除与刷新，界面提供实时表格与行内编辑体验。
+*   所有操作调用受保护的 `/api/admin/tags` 接口（POST/PUT/DELETE/GET），需 `ADMIN` 及以上权限；接口层会校验名称与 slug 唯一性，并在后端自动生成 slug（兼容中文）。
+*   公共 `/api/tags` 接口保留只读模式，前台依旧可以匿名获取标签列表；后台则通过新增的 admin API 获得包含描述与时间戳的完整版数据。
+
 ---
 
 ## 4. 数据存储与规则 (Data Storage & Rules)
@@ -101,7 +106,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 ### 4.2 认证规则
 1.  用户登录 -> 后端验证 -> 生成 JWT -> 返回 Token。
 2.  前端将 Token 存入 `localStorage` (`key: "sg_token"`).
-3.  前端每次请求 API 时，在 Header 中携带 `Authorization: Bearer <token>`。
+3.  前端每次请求 API 时，在 Header 中携带 `Authorization: Bearer <token>`；`checkAuth` 仅在后端明确返回 `401` 时才会清除本地 Token，避免偶发网络错误导致登录状态被误清空。
 
 ---
 

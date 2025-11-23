@@ -49,7 +49,10 @@ function useProvideBlog() {
       if (data) setUser(data);
     } catch (e) {
       console.warn("restore auth failed", e);
-      localStorage.removeItem("sg_token");
+      if (e?.status === 401) {
+        localStorage.removeItem("sg_token");
+        setUser(null);
+      }
     }
   }, []);
 

@@ -14,7 +14,9 @@ const request = async (path, options = {}) => {
   });
   if (!res.ok) {
     const txt = await res.text();
-    throw new Error(txt || res.statusText);
+    const error = new Error(txt || res.statusText);
+    error.status = res.status;
+    throw error;
   }
   return res.json();
 };
@@ -24,6 +26,23 @@ export const fetchSiteMeta = () => request(`/site/meta?t=${Date.now()}`);
 export const fetchCategories = () => request("/categories/tree");
 
 export const fetchTags = () => request("/tags");
+export const adminFetchTags = () => request("/admin/tags");
+export const adminCreateTag = (payload) =>
+  request("/admin/tags", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const adminUpdateTag = (id, payload) =>
+  request(`/admin/tags/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+export const adminDeleteTag = (id) =>
+  request(`/admin/tags/${id}`, {
+    method: "DELETE",
+  });
 
 export const fetchPosts = (params = {}) => {
   const search = new URLSearchParams();

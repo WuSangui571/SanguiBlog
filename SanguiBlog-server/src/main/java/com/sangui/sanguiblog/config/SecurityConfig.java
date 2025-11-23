@@ -53,6 +53,7 @@ public class SecurityConfig {
                                 "/error")
                         .permitAll()
                         .requestMatchers("/api/upload/**").authenticated()
+                        .requestMatchers("/api/admin/tags/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         // .requestMatchers(HttpMethod.POST, "/api/posts/*/comments").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
