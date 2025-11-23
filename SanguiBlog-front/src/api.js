@@ -51,6 +51,33 @@ export const adminDeleteTag = (id) =>
     method: "DELETE",
   });
 
+export const adminFetchCategories = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.keyword) search.append("keyword", params.keyword);
+  if (params.parentId !== undefined && params.parentId !== null) search.append("parentId", params.parentId);
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/categories${query}`);
+};
+
+export const adminCreateCategory = (payload) =>
+  request("/admin/categories", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const adminUpdateCategory = (id, payload) =>
+  request(`/admin/categories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+export const adminDeleteCategory = (id) =>
+  request(`/admin/categories/${id}`, {
+    method: "DELETE",
+  });
+
 export const fetchPosts = (params = {}) => {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {

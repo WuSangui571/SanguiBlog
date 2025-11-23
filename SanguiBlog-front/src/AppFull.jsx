@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useBlog } from "./hooks/useBlogData";
-import { recordPageView, updateBroadcast, adminFetchTags, adminCreateTag, adminUpdateTag, adminDeleteTag } from "./api";
+import {
+  recordPageView,
+  updateBroadcast,
+  adminFetchTags,
+  adminCreateTag,
+  adminUpdateTag,
+  adminDeleteTag,
+  adminFetchCategories,
+  adminCreateCategory,
+  adminUpdateCategory,
+  adminDeleteCategory,
+  fetchCategories
+} from "./api";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -948,7 +960,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.37
+          SANGUI BLOG // V1.1.38
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1451,6 +1463,409 @@ const TaxonomyView = ({ isDarkMode }) => {
   );
 };
 
+const CategoriesView = ({ isDarkMode }) => {
+  const [categories, setCategories] = useState([]);
+  const [parentOptions, setParentOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [form, setForm] = useState({ name: "", slug: "", description: "", parentId: "", sortOrder: "" });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", slug: "", description: "", parentId: "", sortOrder: "" });
+  const [saving, setSaving] = useState(false);
+  const [keyword, setKeyword] = useState("");
+  const [parentFilter, setParentFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  const loadParentOptions = useCallback(async () => {
+    try {
+      const res = await fetchCategories();
+      const data = res.data || res || [];
+      setParentOptions(data.map((item) => ({ id: item.id, label: item.label })));
+    } catch (err) {
+      console.warn("load parent categories failed", err);
+    }
+  }, []);
+
+  const loadCategories = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = { keyword, page, size };
+      if (parentFilter === "root") params.parentId = 0;
+      else if (parentFilter !== "all") params.parentId = parentFilter;
+      const res = await adminFetchCategories(params);
+      const data = res.data || res;
+      setCategories(data?.records || []);
+      setTotal(data?.total || 0);
+    } catch (err) {
+      setError(err.message || "加载分类失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [keyword, page, size, parentFilter]);
+
+  useEffect(() => {
+    loadParentOptions();
+  }, [loadParentOptions]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  const normalizePayload = (payload) => ({
+    name: payload.name.trim(),
+    slug: payload.slug.trim() || undefined,
+    description: payload.description.trim() || undefined,
+    parentId: payload.parentId === "" ? null : Number(payload.parentId),
+    sortOrder: payload.sortOrder === "" ? undefined : Number(payload.sortOrder),
+  });
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) {
+      alert("请输入分类名称");
+      return;
+    }
+    setSaving(true);
+    try {
+      await adminCreateCategory(normalizePayload(form));
+      setForm({ name: "", slug: "", description: "", parentId: "", sortOrder: "" });
+      setPage(1);
+      await loadParentOptions();
+      await loadCategories();
+      alert("分类创建成功");
+    } catch (err) {
+      alert(err.message || "创建失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEdit = (category) => {
+    setEditingId(category.id);
+    setEditForm({
+      name: category.name || "",
+      slug: category.slug || "",
+      description: category.description || "",
+      parentId: category.parentId ?? "",
+      sortOrder: category.sortOrder ?? "",
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({ name: "", slug: "", description: "", parentId: "", sortOrder: "" });
+  };
+
+  const handleUpdate = async () => {
+    if (!editingId) return;
+    if (!editForm.name.trim()) {
+      alert("请输入分类名称");
+      return;
+    }
+    setSaving(true);
+    try {
+      await adminUpdateCategory(editingId, normalizePayload(editForm));
+      cancelEdit();
+      await loadParentOptions();
+      await loadCategories();
+      alert("分类已更新");
+    } catch (err) {
+      alert(err.message || "更新失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (categoryId) => {
+    if (!window.confirm("确定要删除该分类吗？删除前请确保没有子分类。")) return;
+    try {
+      await adminDeleteCategory(categoryId);
+      if (editingId === categoryId) cancelEdit();
+      const newTotal = Math.max(total - 1, 0);
+      const maxPage = Math.max(Math.ceil(newTotal / size), 1);
+      if (page > maxPage) {
+        setPage(maxPage);
+      }
+      await loadCategories();
+    } catch (err) {
+      alert(err.message || "删除失败");
+    }
+  };
+
+  const totalPages = Math.max(Math.ceil(total / size), 1);
+  const cardBg = isDarkMode ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200";
+  const inputClass = `border rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`;
+  const formatDate = (value) => (value ? new Date(value).toLocaleString() : "—");
+
+  return (
+    <div className="space-y-8">
+      <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
+        <div className="flex items-center gap-3 mb-4">
+          <Layers className="text-[#6366F1]" />
+          <div>
+            <h2 className="text-2xl font-bold">新增/编辑分类</h2>
+            <p className="text-sm text-gray-500">支持两级分类，选择父级时仅可选择一级分类。</p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs uppercase tracking-wide text-gray-500">名称</label>
+            <input
+              className={inputClass}
+              value={form.name}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="例如：硬核编程"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs uppercase tracking-wide text-gray-500">别名 / Slug (可选)</label>
+            <input
+              className={inputClass}
+              value={form.slug}
+              onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
+              placeholder="例如：hardcore-dev"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs uppercase tracking-wide text-gray-500">父级分类</label>
+            <select
+              className={inputClass}
+              value={form.parentId}
+              onChange={(e) => setForm((prev) => ({ ...prev, parentId: e.target.value }))}
+            >
+              <option value="">一级分类（无父级）</option>
+              {parentOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs uppercase tracking-wide text-gray-500">排序值 (可选)</label>
+            <input
+              className={inputClass}
+              value={form.sortOrder}
+              onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
+              placeholder="数字越小越靠前"
+            />
+          </div>
+          <div className="flex flex-col gap-1 md:col-span-2 lg:col-span-3">
+            <label className="text-xs uppercase tracking-wide text-gray-500">描述</label>
+            <input
+              className={inputClass}
+              value={form.description}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="一句话说明分类用途"
+            />
+          </div>
+        </div>
+        <PopButton onClick={handleCreate} icon={Plus} disabled={saving} className="px-6">
+          {saving ? "保存中..." : "保存分类"}
+        </PopButton>
+      </div>
+
+      <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold">分类列表</h2>
+            <p className="text-sm text-gray-500 mt-1">共 {total} 个分类</p>
+          </div>
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="flex items-center gap-2">
+              <input
+                className={inputClass}
+                placeholder="输入关键词搜索"
+                value={keyword}
+                onChange={(e) => {
+                  setKeyword(e.target.value);
+                  setPage(1);
+                }}
+              />
+              <button
+                onClick={loadCategories}
+                className="flex items-center gap-2 text-sm font-bold text-indigo-500 hover:text-indigo-400"
+              >
+                <RefreshCw size={16} /> 查询
+              </button>
+            </div>
+            <select
+              className={inputClass}
+              value={parentFilter}
+              onChange={(e) => {
+                setParentFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">全部分类</option>
+              <option value="root">仅一级分类</option>
+              {parentOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>仅查看 {opt.label} 下的子分类</option>
+              ))}
+            </select>
+            <select
+              className={inputClass}
+              value={size}
+              onChange={(e) => {
+                setSize(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              {[5, 10, 20, 50].map((option) => (
+                <option key={option} value={option}>
+                  每页 {option} 条
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+        {loading ? (
+          <p className="text-center py-10 text-gray-500">加载中...</p>
+        ) : categories.length === 0 ? (
+          <p className="text-center py-10 text-gray-500">暂无分类</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto text-sm">
+              <thead>
+                <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
+                  <th className="px-4 py-2 text-left font-semibold">名称</th>
+                  <th className="px-4 py-2 text-left font-semibold">别名</th>
+                  <th className="px-4 py-2 text-left font-semibold">父级</th>
+                  <th className="px-4 py-2 text-left font-semibold">排序</th>
+                  <th className="px-4 py-2 text-left font-semibold">描述</th>
+                  <th className="px-4 py-2 text-left font-semibold">更新时间</th>
+                  <th className="px-4 py-2 text-right font-semibold">操作</th>
+                </tr>
+              </thead>
+              <tbody className={isDarkMode ? "divide-y divide-gray-800" : "divide-y divide-gray-200"}>
+                {categories.map((category) => (
+                  <tr key={category.id} className={isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}>
+                    <td className="px-4 py-3 font-semibold">
+                      {editingId === category.id ? (
+                        <input
+                          className={inputClass}
+                          value={editForm.name}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                        />
+                      ) : (
+                        category.name
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === category.id ? (
+                        <input
+                          className={inputClass}
+                          value={editForm.slug}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, slug: e.target.value }))}
+                        />
+                      ) : (
+                        <code className="px-2 py-1 text-xs bg-black/5 dark:bg-white/10 rounded">{category.slug}</code>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === category.id ? (
+                        <select
+                          className={inputClass}
+                          value={editForm.parentId}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, parentId: e.target.value }))}
+                        >
+                          <option value="">一级分类（无父级）</option>
+                          {parentOptions.map((opt) => (
+                            <option key={opt.id} value={opt.id}>{opt.label}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        category.parentName || "一级分类"
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === category.id ? (
+                        <input
+                          className={inputClass}
+                          value={editForm.sortOrder}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
+                        />
+                      ) : (
+                        category.sortOrder ?? "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3">{editingId === category.id ? (
+                      <input
+                        className={inputClass}
+                        value={editForm.description}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                      />
+                    ) : (
+                      category.description || "—"
+                    )}</td>
+                    <td className="px-4 py-3 text-gray-500">{formatDate(category.updatedAt || category.createdAt)}</td>
+                    <td className="px-4 py-3 text-right space-x-2">
+                      {editingId === category.id ? (
+                        <>
+                          <button
+                            onClick={handleUpdate}
+                            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-green-500 text-green-600 font-bold text-xs"
+                            disabled={saving}
+                          >
+                            <Save size={14} /> 保存
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-gray-400 text-gray-500 font-bold text-xs"
+                          >
+                            取消
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEdit(category)}
+                            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                          >
+                            <Edit size={14} /> 编辑
+                          </button>
+                          <button
+                            onClick={() => handleDelete(category.id)}
+                            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
+                          >
+                            <Trash2 size={14} /> 删除
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-3">
+          <p className="text-sm text-gray-500">
+            第 {page} / {totalPages} 页（共 {total} 条）
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-3 py-1 border-2 border-black font-bold disabled:opacity-50"
+            >
+              上一页
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+              disabled={page >= totalPages}
+              className="px-3 py-1 border-2 border-black font-bold disabled:opacity-50"
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 4.4 Sub-Component: Permissions View (Super Admin Only)
 const PermissionsView = ({ isDarkMode, user }) => {
   const users = [
@@ -1526,7 +1941,8 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     { key: 'posts', label: '文章列表', icon: FileText, component: () => <div className="text-xl p-8 text-center">文章列表占位符</div> },
     { key: 'analytics', label: '数据分析', icon: BarChart3, component: AnalyticsView },
     { key: 'comments', label: '评论管理', icon: MessageCircle, component: () => <div className="text-xl p-8 text-center">评论审核占位符</div> },
-    { key: 'taxonomy', label: '分类标签', icon: Tag, component: () => <div className="text-xl p-8 text-center">分类与标签占位符</div> },
+    { key: 'categories', label: '二级分类', icon: Layers, component: CategoriesView },
+    { key: 'taxonomy', label: '标签管理', icon: Tag, component: TaxonomyView },
     { key: 'permissions', label: '权限管理', icon: Shield, component: PermissionsView, superAdmin: true },
     { key: 'settings', label: '系统设置', icon: Settings, component: () => <div className="text-xl p-8 text-center">系统设置占位符</div> },
     { key: 'profile', label: '个人资料', icon: User, component: AdminProfile },
@@ -1610,6 +2026,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             <Route path="dashboard" element={<DashboardView isDarkMode={isDarkMode} user={user} />} />
             <Route path="create-post" element={<CreatePostView isDarkMode={isDarkMode} user={user} />} />
             <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user} />} />
+            <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode} />} />
             <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode} />} />
             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} user={user} />} />
             <Route path="profile" element={<AdminProfile />} />

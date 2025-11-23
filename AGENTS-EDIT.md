@@ -5,6 +5,11 @@
 - **API 扩展**: `/api/admin/tags` 支持 `keyword/page/size` 参数并返回 `PageResponse`，后端通过 `Pageable` + `findByNameContainingIgnoreCaseOrSlugContainingIgnoreCase` 实现模糊匹配。
 - **提升**: 删除标签时自动调整页码，创建/查询会置回第一页。首页 Banner 更新为 `SANGUI BLOG // V1.1.37`。
 
+## V1.1.38 (2025-11-23)
+- **分类管理页**: 新增后台“二级分类”页面，可增删改查分类、行内编辑父级与排序、分页展示并提供模糊搜索/父级筛选。
+- **后端支持**: `/api/admin/categories` 新增 CRUD + 分页搜索接口，限制只有管理员可用，并强制仅两级结构（父级必须为一级分类）。
+- **共享**: `CategoryService` 扩展 slug 自动生成、唯一性校验及删除保护；前端 API 同步扩展。首页版本号更新为 `SANGUI BLOG // V1.1.38`。
+
 ## V1.1.36 (2025-11-23)
 - **功能**: 后台“分类标签”页实现标签管理界面，可新增、编辑、删除并刷新真实接口数据，支持行内编辑/保存与输入校验。
 - **后端**: 新增 `/api/admin/tags` CRUD 接口与 `TagRequest` DTO，强化唯一性校验及 slug 自动生成，同时在 `SecurityConfig` 中限制为管理员可用。
