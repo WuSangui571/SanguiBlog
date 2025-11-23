@@ -9,7 +9,6 @@ import {
   FileText,
   Github as GithubIcon,
   Shield,
-  Calendar,
   Eye,
   EyeOff,
   Lock,
@@ -27,7 +26,7 @@ const FieldLabel = ({ icon: Icon, children }) => (
 const InfoBadge = ({ label, value }) => (
   <div className="flex flex-col gap-1">
     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{label}</span>
-    <span className="px-3 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded text-sm font-mono text-gray-800 dark:text-gray-100">
+    <span className="px-3 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded text-sm font-mono text-gray-900 dark:text-gray-100">
       {value || "—"}
     </span>
   </div>
@@ -48,7 +47,6 @@ export default function AdminProfile({ isDarkMode = false }) {
     title: "",
     bio: "",
     github: "",
-    wechatQr: "",
     avatarUrl: "",
     oldPassword: "",
     newPassword: "",
@@ -61,6 +59,8 @@ export default function AdminProfile({ isDarkMode = false }) {
   });
   const [avatarPreview, setAvatarPreview] = useState("");
   const [status, setStatus] = useState({ type: "", text: "" });
+  const [passwordStatus, setPasswordStatus] = useState({ type: "", text: "" });
+  const statusRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -79,22 +79,28 @@ export default function AdminProfile({ isDarkMode = false }) {
       title: currentUser.title || "",
       bio: currentUser.bio || "",
       github: currentUser.github || "",
-      wechatQr: currentUser.wechatQr || currentUser.wechat_qr || "",
       avatarUrl: currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url || "",
       oldPassword: "",
       newPassword: "",
     }));
     setAvatarPreview(buildMediaUrl(currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url));
     setMeta({
-      role: mapRoleName(currentUser.role),
+      role: mapRole(currentUser.role),
       id: currentUser.id ?? "-",
       createdAt: formatDate(currentUser.createdAt || currentUser.created_at),
       lastLogin: formatDate(currentUser.lastLoginAt || currentUser.last_login_at),
     });
     setStatus({ type: "", text: "" });
+    setPasswordStatus({ type: "", text: "" });
   }, [currentUser]);
 
-  const mapRoleName = (role) => {
+  useEffect(() => {
+    if (status.text) {
+      statusRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [status]);
+
+  const mapRole = (role) => {
     const map = {
       SUPER_ADMIN: "超级管理员",
       ADMIN: "管理员",
@@ -111,7 +117,10 @@ export default function AdminProfile({ isDarkMode = false }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (name === "oldPassword") setPasswordVerified(false);
+    if (name === "oldPassword") {
+      setPasswordVerified(false);
+      setPasswordStatus({ type: "", text: "" });
+    }
   };
 
   const handleAvatarUpload = async (event) => {
@@ -122,20 +131,19 @@ export default function AdminProfile({ isDarkMode = false }) {
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setStatus({ type: "error", text: "图片体积需小于 2MB" });
+      setStatus({ type: "error", text: "图片需小于 2MB" });
       return;
     }
     setUploadingAvatar(true);
     try {
       const response = await uploadAvatar(file);
       const newPath =
+        response?.data?.url ||
         response?.url ||
         response?.avatar ||
         response?.avatarUrl ||
         response?.avatar_url ||
-        response?.path ||
-        response?.data?.avatar ||
-        response?.data?.path;
+        response?.path;
       if (!newPath) throw new Error("上传返回结果为空");
       await updateProfile({ avatarUrl: newPath });
       setForm((prev) => ({ ...prev, avatarUrl: newPath }));
@@ -150,25 +158,24 @@ export default function AdminProfile({ isDarkMode = false }) {
 
   const handleVerifyPassword = async () => {
     if (!form.oldPassword) {
-      setStatus({ type: "error", text: "请先输入原密码" });
+      setPasswordStatus({ type: "error", text: "请输入原密码" });
       return;
     }
     setVerifying(true);
     try {
       await updateProfile({ oldPassword: form.oldPassword, verifyOnly: true });
       setPasswordVerified(true);
-      setStatus({ type: "success", text: "原密码验证成功，请输入新密码" });
+      setPasswordStatus({ type: "success", text: "原密码验证成功，可输入新密码" });
     } catch (err) {
       setPasswordVerified(false);
-      setStatus({ type: "error", text: `原密码验证失败：${err.message}` });
+      setPasswordStatus({ type: "error", text: `原密码验证失败：${err.message}` });
     } finally {
       setVerifying(false);
     }
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!currentUser) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (form.newPassword && !passwordVerified) {
       setStatus({ type: "error", text: "修改密码前请先验证原密码" });
       return;
@@ -183,7 +190,6 @@ export default function AdminProfile({ isDarkMode = false }) {
         bio: form.bio,
         avatarUrl: form.avatarUrl,
         githubUrl: form.github,
-        wechatQrUrl: form.wechatQr,
       };
       if (form.newPassword) {
         payload.oldPassword = form.oldPassword;
@@ -193,6 +199,7 @@ export default function AdminProfile({ isDarkMode = false }) {
       setStatus({ type: "success", text: "个人资料已更新" });
       setForm((prev) => ({ ...prev, oldPassword: "", newPassword: "" }));
       setPasswordVerified(false);
+      setPasswordStatus({ type: "", text: "" });
     } catch (err) {
       setStatus({ type: "error", text: `保存失败：${err.message}` });
     } finally {
@@ -217,14 +224,13 @@ export default function AdminProfile({ isDarkMode = false }) {
         </div>
         <div>
           <h1 className="text-3xl font-black tracking-tight">个人资料管理</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            更新头像、基本信息和账户安全设置，保持资料最新。
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">在此更新头像、基本信息及账户安全设置。</p>
         </div>
       </header>
 
       {status.text && (
         <div
+          ref={statusRef}
           className={`mb-6 flex items-center gap-3 border-l-4 p-4 ${
             status.type === "success"
               ? "border-green-500 bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-200"
@@ -244,7 +250,7 @@ export default function AdminProfile({ isDarkMode = false }) {
           </h2>
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="relative">
-              <div className="w-32 h-32 rounded-full border-4 border-black overflow-hidden bg-gray-200">
+              <div className="w-32 h-32 rounded-full border-4 border-black overflow-hidden bg-gray-200 dark:bg-gray-700">
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
@@ -260,13 +266,7 @@ export default function AdminProfile({ isDarkMode = false }) {
               )}
             </div>
             <div className="flex-1 space-y-2">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
+              <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
@@ -276,7 +276,7 @@ export default function AdminProfile({ isDarkMode = false }) {
                 {uploadingAvatar ? "上传中..." : "上传新头像"}
               </button>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                支持 JPG、PNG、GIF，文件大小不超过 2MB。上传成功后会自动保存至资料。
+                支持 JPG、PNG、GIF，文件大小不超过 2MB。上传成功即保存。
               </p>
               {form.avatarUrl && (
                 <p className="text-xs font-mono text-gray-500 break-all">当前路径：{form.avatarUrl}</p>
@@ -293,22 +293,11 @@ export default function AdminProfile({ isDarkMode = false }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <FieldLabel icon={User}>用户名</FieldLabel>
-              <input
-                className={`${inputClass} mt-2`}
-                name="username"
-                value={form.username}
-                onChange={handleChange}
-                required
-              />
+              <input className={`${inputClass} mt-2`} name="username" value={form.username} onChange={handleChange} required />
             </div>
             <div>
               <FieldLabel>显示名称</FieldLabel>
-              <input
-                className={`${inputClass} mt-2`}
-                name="displayName"
-                value={form.displayName}
-                onChange={handleChange}
-              />
+              <input className={`${inputClass} mt-2`} name="displayName" value={form.displayName} onChange={handleChange} />
             </div>
             <div>
               <FieldLabel icon={Mail}>邮箱</FieldLabel>
@@ -322,40 +311,10 @@ export default function AdminProfile({ isDarkMode = false }) {
               <FieldLabel icon={GithubIcon}>GitHub</FieldLabel>
               <input className={`${inputClass} mt-2`} name="github" value={form.github} onChange={handleChange} />
             </div>
-        <div>
-          <FieldLabel>微信二维码</FieldLabel>
-          <input className={`${inputClass} mt-2`} name="wechatQr" value={form.wechatQr} onChange={handleChange} />
-          {form.wechatQr && (
-            <div className="mt-2 flex items-center gap-3">
-              <div className="w-16 h-16 border border-dashed border-gray-400 rounded flex items-center justify-center overflow-hidden">
-                <img
-                  src={buildMediaUrl(form.wechatQr)}
-                  alt="微信二维码"
-                  className="w-full h-full object-cover"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                />
-              </div>
-              <a
-                href={buildMediaUrl(form.wechatQr)}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-indigo-500 underline break-all"
-              >
-                预览链接
-              </a>
-            </div>
-          )}
-        </div>
           </div>
           <div className="mt-6">
             <FieldLabel>个人简介</FieldLabel>
-            <textarea
-              className={`${inputClass} mt-2`}
-              rows={4}
-              name="bio"
-              value={form.bio}
-              onChange={handleChange}
-            />
+            <textarea className={`${inputClass} mt-2`} rows={4} name="bio" value={form.bio} onChange={handleChange} />
           </div>
         </section>
 
@@ -365,9 +324,7 @@ export default function AdminProfile({ isDarkMode = false }) {
             修改密码
           </h2>
           <div className={`p-4 rounded-xl ${isDarkMode ? "bg-gray-800/60" : "bg-yellow-50 border border-yellow-200"}`}>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              修改密码需要先验证原密码。验证成功后，在下方输入新密码并保存即可。
-            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">更改密码前请先验证原密码，验证成功后即可输入新密码。</p>
           </div>
           <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2">
@@ -401,6 +358,15 @@ export default function AdminProfile({ isDarkMode = false }) {
               </button>
             </div>
           </div>
+          {passwordStatus.text && (
+            <p
+              className={`mt-2 text-sm font-semibold ${
+                passwordStatus.type === "error" ? "text-red-500" : "text-green-500"
+              }`}
+            >
+              {passwordStatus.text}
+            </p>
+          )}
           {passwordVerified && (
             <div className="mt-4">
               <FieldLabel>新密码</FieldLabel>
@@ -427,7 +393,7 @@ export default function AdminProfile({ isDarkMode = false }) {
 
         <section
           className={`rounded-2xl shadow-lg p-6 border-2 ${
-            isDarkMode ? "bg-gray-900 border-gray-700" : "bg-gray-100 border-gray-300"
+            isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
           }`}
         >
           <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
@@ -437,8 +403,8 @@ export default function AdminProfile({ isDarkMode = false }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InfoBadge label="角色" value={meta.role} />
             <InfoBadge label="用户 ID" value={meta.id} />
-            <InfoBadge label="创建时间" value={meta.createdAt} />
-            <InfoBadge label="上次登录" value={meta.lastLogin} />
+            <InfoBadge label="账号创建时间" value={meta.createdAt} />
+            <InfoBadge label="上次登录时间" value={meta.lastLogin} />
           </div>
         </section>
 
