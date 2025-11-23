@@ -14,6 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Map;
 
@@ -49,7 +52,7 @@ public class AuthService {
 
     public UserProfileDto toProfile(User user) {
         String avatarUrl = user.getAvatarUrl();
-        if (avatarUrl != null && !avatarUrl.isEmpty() && !avatarUrl.startsWith("http")) {
+        if (avatarUrl != null && !avatarUrl.isBlank() && !avatarUrl.startsWith("http")) {
             avatarUrl = "/avatar/" + avatarUrl;
         }
 
@@ -121,18 +124,35 @@ public class AuthService {
             }
         }
 
-        if (request.getDisplayName() != null)
+        if (request.getDisplayName() != null) {
             user.setDisplayName(request.getDisplayName());
-        if (request.getTitle() != null)
+        }
+        if (request.getTitle() != null) {
             user.setTitle(request.getTitle());
-        if (request.getBio() != null)
+        }
+        if (request.getBio() != null) {
             user.setBio(request.getBio());
-        if (request.getAvatarUrl() != null)
-            user.setAvatarUrl(request.getAvatarUrl());
-        if (request.getGithubUrl() != null)
+        }
+        String previousAvatar = user.getAvatarUrl();
+        if (request.getAvatarUrl() != null) {
+            String incoming = request.getAvatarUrl();
+            String stored = incoming;
+            if (incoming.startsWith("/avatar/")) {
+                stored = incoming.substring("/avatar/".length());
+            } else if (incoming.contains("/avatar/")) {
+                stored = incoming.substring(incoming.indexOf("/avatar/") + "/avatar/".length());
+            } else if (incoming.startsWith("http")) {
+                String trimmed = incoming.substring(incoming.lastIndexOf("/") + 1);
+                stored = trimmed;
+            }
+            user.setAvatarUrl(stored);
+        }
+        if (request.getGithubUrl() != null) {
             user.setGithubUrl(request.getGithubUrl());
-        if (request.getWechatQrUrl() != null)
+        }
+        if (request.getWechatQrUrl() != null) {
             user.setWechatQrUrl(request.getWechatQrUrl());
+        }
 
         if (StringUtils.hasText(request.getNewPassword())) {
             if (!StringUtils.hasText(request.getOldPassword())) {
@@ -146,6 +166,30 @@ public class AuthService {
 
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
+        if (request.getAvatarUrl() != null
+                && previousAvatar != null
+                && !previousAvatar.equals(user.getAvatarUrl())) {
+            deleteLocalAvatar(previousAvatar);
+        }
         return toProfile(user);
+    }
+
+    private void deleteLocalAvatar(String avatarPath) {
+        if (avatarPath == null || avatarPath.isBlank()) {
+            return;
+        }
+        String relative = avatarPath;
+        if (relative.startsWith("/avatar/")) {
+            relative = relative.substring("/avatar/".length());
+        } else if (relative.startsWith("avatar/")) {
+            relative = relative.substring("avatar/".length());
+        }
+        Path path = Paths.get("src/main/resources/static/avatar", relative);
+        try {
+            if (Files.exists(path)) {
+                Files.delete(path);
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

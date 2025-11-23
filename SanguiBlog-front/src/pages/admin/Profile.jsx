@@ -25,7 +25,7 @@ const FieldLabel = ({ icon: Icon, children }) => (
 
 const InfoBadge = ({ label, value }) => (
   <div className="flex flex-col gap-1">
-    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{label}</span>
+    <span className="text-xs font-semibold text-gray-700 dark:text-gray-400">{label}</span>
     <span className="px-3 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded text-sm font-mono text-gray-900 dark:text-gray-100">
       {value || "—"}
     </span>

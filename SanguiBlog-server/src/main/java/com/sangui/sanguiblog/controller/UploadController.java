@@ -19,7 +19,7 @@ import java.util.UUID;
 @RequestMapping("/api/upload")
 public class UploadController {
 
-    private static final String UPLOAD_DIR = "uploads/avatars/";
+    private static final String STATIC_AVATAR_DIR = "src/main/resources/static/avatar";
 
     @PostMapping("/avatar")
     public ApiResponse<Map<String, String>> uploadAvatar(@RequestParam("avatar") MultipartFile file) {
@@ -29,7 +29,7 @@ public class UploadController {
 
         try {
             // Ensure directory exists
-            Path uploadPath = Paths.get(UPLOAD_DIR);
+            Path uploadPath = Paths.get(STATIC_AVATAR_DIR);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -47,7 +47,7 @@ public class UploadController {
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Return URL (relative path)
-            String url = "/uploads/avatars/" + filename;
+            String url = "/avatar/" + filename;
             return ApiResponse.ok(Map.of("url", url));
 
         } catch (IOException e) {
