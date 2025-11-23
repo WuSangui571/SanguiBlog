@@ -1,518 +1,436 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useBlog } from '../../hooks/useBlogData';
-import { updateProfile, uploadAvatar } from '../../api';
-import { Eye, EyeOff, User, Mail, Lock, FileText, Image, Shield, Calendar, CheckCircle, Upload, Github as GithubIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { useBlog } from "../../hooks/useBlogData";
+import { updateProfile, uploadAvatar } from "../../api";
+import {
+  User,
+  Image,
+  Upload,
+  Mail,
+  FileText,
+  Github as GithubIcon,
+  Shield,
+  Calendar,
+  Eye,
+  EyeOff,
+  Lock,
+  CheckCircle,
+  AlertTriangle,
+} from "lucide-react";
 
-export default function Profile() {
-    const { user: currentUser } = useBlog();
-    const [loading, setLoading] = useState(false);
-    const [uploadingAvatar, setUploadingAvatar] = useState(false);
-    const [validatingPassword, setValidatingPassword] = useState(false);
-    const [passwordVerified, setPasswordVerified] = useState(false);
-    const [message, setMessage] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [showOldPassword, setShowOldPassword] = useState(false);
-    const [avatarPreview, setAvatarPreview] = useState('');
-    const fileInputRef = useRef(null);
+const FieldLabel = ({ icon: Icon, children }) => (
+  <label className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">
+    {Icon && <Icon size={14} />}
+    {children}
+  </label>
+);
 
-    const [formData, setFormData] = useState({
-        username: '',
-        displayName: '',
-        email: '',
-        oldPassword: '',
-        newPassword: '',
-        bio: '',
-        title: '',
-        avatarUrl: '',
-        github: '',
-        wechatQr: ''
+const InfoBadge = ({ label, value }) => (
+  <div className="flex flex-col gap-1">
+    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{label}</span>
+    <span className="px-3 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded text-sm font-mono text-gray-800 dark:text-gray-100">
+      {value || "—"}
+    </span>
+  </div>
+);
+
+const buildAvatarUrl = (raw) => {
+  if (!raw) return "";
+  if (raw.startsWith("http")) return raw;
+  return `http://localhost:8080${raw}`;
+};
+
+export default function AdminProfile({ isDarkMode = false }) {
+  const { user: currentUser } = useBlog();
+  const [form, setForm] = useState({
+    username: "",
+    displayName: "",
+    email: "",
+    title: "",
+    bio: "",
+    github: "",
+    wechatQr: "",
+    avatarUrl: "",
+    oldPassword: "",
+    newPassword: "",
+  });
+  const [meta, setMeta] = useState({
+    role: "-",
+    id: "-",
+    createdAt: "-",
+    lastLogin: "-",
+  });
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [status, setStatus] = useState({ type: "", text: "" });
+  const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [passwordVerified, setPasswordVerified] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    setForm((prev) => ({
+      ...prev,
+      username: currentUser.username || "",
+      displayName: currentUser.displayName || currentUser.display_name || "",
+      email: currentUser.email || "",
+      title: currentUser.title || "",
+      bio: currentUser.bio || "",
+      github: currentUser.github || "",
+      wechatQr: currentUser.wechatQr || currentUser.wechat_qr || "",
+      avatarUrl: currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url || "",
+      oldPassword: "",
+      newPassword: "",
+    }));
+    setAvatarPreview(buildAvatarUrl(currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url));
+    setMeta({
+      role: mapRoleName(currentUser.role),
+      id: currentUser.id ?? "-",
+      createdAt: formatDate(currentUser.createdAt || currentUser.created_at),
+      lastLogin: formatDate(currentUser.lastLoginAt || currentUser.last_login_at),
     });
+    setStatus({ type: "", text: "" });
+  }, [currentUser]);
 
-    // 只读字段
-    const [readonlyData, setReadonlyData] = useState({
-        role: ''
-    });
-
-    useEffect(() => {
-        console.log('Current user data:', currentUser);
-
-        if (currentUser) {
-            setFormData({
-                username: currentUser.username || '',
-                displayName: currentUser.displayName || currentUser.display_name || '',
-                email: currentUser.email || '',
-                oldPassword: '',
-                newPassword: '',
-                bio: currentUser.bio || '',
-                title: currentUser.title || '',
-                avatarUrl: currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url || '',
-                github: currentUser.github || '',
-                wechatQr: currentUser.wechatQr || currentUser.wechat_qr || ''
-            });
-
-            setReadonlyData({
-                role: getRoleName(currentUser.role || currentUser.roleId || currentUser.role_id)
-            });
-
-            // 设置头像预览
-            const avatarPath = currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url;
-            if (avatarPath) {
-                const fullAvatarUrl = avatarPath.startsWith('http')
-                    ? avatarPath
-                    : `http://localhost:8080${avatarPath}`;
-                setAvatarPreview(fullAvatarUrl);
-            }
-        }
-    }, [currentUser]);
-
-    const getRoleName = (role) => {
-        const roleMap = {
-            'SUPER_ADMIN': '超级管理员',
-            'ADMIN': '管理员',
-            'USER': '普通用户',
-            1: '超级管理员',
-            2: '管理员',
-            3: '普通用户'
-        };
-        return roleMap[role] || role || '未知';
+  const mapRoleName = (role) => {
+    const map = {
+      SUPER_ADMIN: "超级管理员",
+      ADMIN: "管理员",
+      USER: "普通用户",
+      1: "超级管理员",
+      2: "管理员",
+      3: "普通用户",
     };
+    return map[role] || role || "未知";
+  };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+  const formatDate = (value) => (value ? new Date(value).toLocaleString() : "—");
 
-    const handleAvatarClick = () => {
-        fileInputRef.current?.click();
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "oldPassword") setPasswordVerified(false);
+  };
 
-    const handleAvatarChange = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setStatus({ type: "error", text: "请选择图片文件" });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setStatus({ type: "error", text: "图片体积需小于 2MB" });
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const response = await uploadAvatar(file);
+      const newPath =
+        response?.avatar ||
+        response?.avatarUrl ||
+        response?.avatar_url ||
+        response?.path ||
+        response?.data?.avatar ||
+        response?.data?.path;
+      if (!newPath) throw new Error("上传返回结果为空");
+      await updateProfile({ avatar: newPath });
+      setForm((prev) => ({ ...prev, avatarUrl: newPath }));
+      setAvatarPreview(buildAvatarUrl(newPath));
+      setStatus({ type: "success", text: "头像上传成功" });
+    } catch (err) {
+      setStatus({ type: "error", text: `头像上传失败：${err.message}` });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
-        if (!file.type.startsWith('image/')) {
-            setMessage('请选择图片文件');
-            return;
-        }
+  const handleVerifyPassword = async () => {
+    if (!form.oldPassword) {
+      setStatus({ type: "error", text: "请先输入原密码" });
+      return;
+    }
+    setVerifying(true);
+    try {
+      await updateProfile({ old_password: form.oldPassword, verify_only: true });
+      setPasswordVerified(true);
+      setStatus({ type: "success", text: "原密码验证成功，请输入新密码" });
+    } catch (err) {
+      setPasswordVerified(false);
+      setStatus({ type: "error", text: `原密码验证失败：${err.message}` });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
-        if (file.size > 2 * 1024 * 1024) {
-            setMessage('图片大小不能超过 2MB');
-            return;
-        }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!currentUser) return;
+    if (form.newPassword && !passwordVerified) {
+      setStatus({ type: "error", text: "修改密码前请先验证原密码" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const payload = {
+        username: form.username,
+        display_name: form.displayName,
+        email: form.email || undefined,
+        title: form.title,
+        bio: form.bio,
+        avatar: form.avatarUrl,
+        github: form.github,
+        wechat_qr: form.wechatQr,
+      };
+      if (form.newPassword) {
+        payload.old_password = form.oldPassword;
+        payload.new_password = form.newPassword;
+      }
+      await updateProfile(payload);
+      setStatus({ type: "success", text: "个人资料已更新" });
+      setForm((prev) => ({ ...prev, oldPassword: "", newPassword: "" }));
+      setPasswordVerified(false);
+    } catch (err) {
+      setStatus({ type: "error", text: `保存失败：${err.message}` });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setUploadingAvatar(true);
-        setMessage('');
+  const cardClass = isDarkMode
+    ? "bg-gray-900 border border-gray-700 text-gray-100"
+    : "bg-white border border-gray-200 text-gray-900";
+  const inputClass = `w-full px-4 py-3 border-2 rounded font-medium transition-colors ${
+    isDarkMode
+      ? "bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500 focus:border-[#6366F1]"
+      : "bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-[#6366F1]"
+  }`;
 
-        try {
-            console.log('Uploading avatar...');
-            const response = await uploadAvatar(file);
-            console.log('Upload response:', response);
-
-            const newAvatarUrl = response.avatar || response.avatarUrl || response.avatar_url || response.path || response.data?.avatar;
-            setFormData(prev => ({
-                ...prev,
-                avatarUrl: newAvatarUrl
-            }));
-
-            const fullAvatarUrl = newAvatarUrl.startsWith('http')
-                ? newAvatarUrl
-                : `http://localhost:8080${newAvatarUrl}`;
-            setAvatarPreview(fullAvatarUrl);
-
-            setMessage('头像上传成功！');
-        } catch (error) {
-            console.error('Avatar upload error:', error);
-            setMessage('头像上传失败：' + error.message);
-        } finally {
-            setUploadingAvatar(false);
-        }
-    };
-
-    // 验证原密码
-    const handleVerifyPassword = async () => {
-        if (!formData.oldPassword) {
-            setMessage('请先输入原密码');
-            return;
-        }
-
-        setValidatingPassword(true);
-        setMessage('');
-
-        try {
-            // 通过尝试更新一个空payload来验证密码
-            await updateProfile({
-                old_password: formData.oldPassword,
-                verify_only: true  // 告诉后端这只是验证
-            });
-
-            setPasswordVerified(true);
-            setMessage('原密码验证成功！现在可以输入新密码');
-        } catch (error) {
-            setMessage('原密码验证失败：' + error.message);
-            setPasswordVerified(false);
-        } finally {
-            setValidatingPassword(false);
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setMessage('');
-
-        // 如果要修改密码，必须先验证原密码
-        if (formData.newPassword) {
-            if (!passwordVerified) {
-                setMessage('请先验证原密码');
-                setLoading(false);
-                return;
-            }
-        }
-
-        try {
-            const payload = {
-                username: formData.username,
-                display_name: formData.displayName,
-                bio: formData.bio,
-                title: formData.title,
-                avatar: formData.avatarUrl,
-                github: formData.github,
-                wechat_qr: formData.wechatQr
-            };
-
-            // 只在有邮箱时才发送
-            if (formData.email) {
-                payload.email = formData.email;
-            }
-
-            // 如果要修改密码
-            if (formData.newPassword && passwordVerified) {
-                payload.old_password = formData.oldPassword;
-                payload.new_password = formData.newPassword;
-            }
-
-            console.log('Submitting payload:', payload);
-            await updateProfile(payload);
-            setMessage('个人资料更新成功！');
-
-            // 清空密码字段和验证状态
-            setFormData(prev => ({ ...prev, oldPassword: '', newPassword: '' }));
-            setPasswordVerified(false);
-        } catch (error) {
-            console.error('Update error:', error);
-            setMessage('更新失败：' + error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const inputClass = "w-full p-3 border-2 border-gray-300 rounded focus:outline-none focus:border-[#6366F1] transition-all";
-    const readonlyInputClass = "w-full p-3 border-2 border-gray-200 rounded bg-gray-50 text-gray-600 cursor-not-allowed";
-
-    return (
-        <div className="p-6 max-w-5xl mx-auto">
-            <div className="mb-8">
-                <h1 className="text-3xl font-black mb-2 flex items-center gap-2">
-                    <User className="text-[#6366F1]" />
-                    个人资料管理
-                </h1>
-                <p className="text-gray-600">管理您的个人信息和账户设置</p>
-            </div>
-
-            {!currentUser && (
-                <div className="mb-4 p-4 bg-yellow-50 border-2 border-yellow-500 rounded">
-                    <p className="font-bold text-yellow-800">警告：未检测到用户数据</p>
-                    <p className="text-sm text-yellow-700">请确保已登录并刷新页面</p>
-                </div>
-            )}
-
-            {message && (
-                <div className={`p-4 mb-6 rounded-lg border-2 ${message.includes('成功') ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800'}`}>
-                    <div className="flex items-center gap-2">
-                        {message.includes('成功') ? <CheckCircle size={20} /> : null}
-                        <span className="font-semibold">{message}</span>
-                    </div>
-                </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-8">
-                {/* 头像上传区域 */}
-                <div className="bg-white p-6 rounded-lg shadow-lg border-2 border-black">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-[#FF0080]">
-                        <Image size={20} />
-                        头像
-                    </h2>
-                    <div className="flex items-center gap-6">
-                        <div className="relative">
-                            <div className="w-32 h-32 rounded-full border-4 border-black overflow-hidden bg-gray-200">
-                                {avatarPreview ? (
-                                    <img
-                                        src={avatarPreview}
-                                        alt="Avatar Preview"
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            console.error('Image load error');
-                                            e.target.style.display = 'none';
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                        <User size={48} />
-                                    </div>
-                                )}
-                            </div>
-                            {uploadingAvatar && (
-                                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                                    <div className="text-white text-sm font-bold">上传中...</div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex-1">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleAvatarChange}
-                                className="hidden"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleAvatarClick}
-                                disabled={uploadingAvatar}
-                                className="px-6 py-3 bg-[#6366F1] text-white font-bold border-2 border-black rounded hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                <Upload size={20} />
-                                {uploadingAvatar ? '上传中...' : '上传头像'}
-                            </button>
-                            <p className="text-xs text-gray-500 mt-2">
-                                支持 JPG、PNG、GIF 格式，文件大小不超过 2MB
-                            </p>
-                            {formData.avatarUrl && (
-                                <p className="text-xs text-gray-600 mt-2 font-mono bg-gray-100 p-2 rounded">
-                                    当前路径: {formData.avatarUrl}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* 基本信息 */}
-                <div className="bg-white p-6 rounded-lg shadow-lg border-2 border-black">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-[#FF0080]">
-                        <FileText size={20} />
-                        基本信息
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold mb-2 flex items-center gap-1">
-                                <User size={16} />
-                                用户名 (Username) <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="username"
-                                value={formData.username}
-                                onChange={handleChange}
-                                required
-                                className={inputClass}
-                                placeholder="请输入用户名"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-2">显示名称 (Display Name)</label>
-                            <input
-                                type="text"
-                                name="displayName"
-                                value={formData.displayName}
-                                onChange={handleChange}
-                                className={inputClass}
-                                placeholder="请输入显示名称"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-2 flex items-center gap-1">
-                                <Mail size={16} />
-                                邮箱 (Email)
-                            </label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className={inputClass}
-                                placeholder="请输入邮箱地址（可选）"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-2">职位/头衔 (Title)</label>
-                            <input
-                                type="text"
-                                name="title"
-                                value={formData.title}
-                                onChange={handleChange}
-                                className={inputClass}
-                                placeholder="例如：全栈开发工程师"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-2 flex items-center gap-1">
-                                <GithubIcon size={16} />
-                                GitHub 链接
-                            </label>
-                            <input
-                                type="url"
-                                name="github"
-                                value={formData.github}
-                                onChange={handleChange}
-                                className={inputClass}
-                                placeholder="https://github.com/username"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-2">微信二维码链接</label>
-                            <input
-                                type="url"
-                                name="wechatQr"
-                                value={formData.wechatQr}
-                                onChange={handleChange}
-                                className={inputClass}
-                                placeholder="微信二维码图片URL"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="mt-6">
-                        <label className="block text-sm font-bold mb-2">个人简介 (Bio)</label>
-                        <textarea
-                            name="bio"
-                            value={formData.bio}
-                            onChange={handleChange}
-                            rows="4"
-                            className={inputClass}
-                            placeholder="介绍一下您自己..."
-                        />
-                    </div>
-                </div>
-
-                {/* 密码修改 */}
-                <div className="bg-white p-6 rounded-lg shadow-lg border-2 border-black">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-[#FF0080]">
-                        <Lock size={20} />
-                        修改密码
-                    </h2>
-                    <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
-                        <p className="text-sm text-yellow-800">
-                            <strong>注意：</strong>修改密码需要先验证原密码。如果不需要修改密码，请保持密码字段为空。
-                        </p>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="flex gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-bold mb-2">原密码 (Old Password)</label>
-                                <div className="relative">
-                                    <input
-                                        type={showOldPassword ? "text" : "password"}
-                                        name="oldPassword"
-                                        value={formData.oldPassword}
-                                        onChange={(e) => {
-                                            handleChange(e);
-                                            setPasswordVerified(false); // 改变密码时重置验证状态
-                                        }}
-                                        disabled={passwordVerified}
-                                        className={`${inputClass} pr-10 ${passwordVerified ? 'bg-green-50' : ''}`}
-                                        placeholder="请输入原密码"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowOldPassword(!showOldPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                    >
-                                        {showOldPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="flex items-end">
-                                <button
-                                    type="button"
-                                    onClick={handleVerifyPassword}
-                                    disabled={validatingPassword || passwordVerified || !formData.oldPassword}
-                                    className={`px-6 py-3 font-bold border-2 border-black rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed ${passwordVerified
-                                            ? 'bg-green-500 text-white'
-                                            : 'bg-[#FFD700] text-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                                        }`}
-                                >
-                                    {validatingPassword ? '验证中...' : passwordVerified ? '✓ 已验证' : '验证密码'}
-                                </button>
-                            </div>
-                        </div>
-
-                        {passwordVerified && (
-                            <div>
-                                <label className="block text-sm font-bold mb-2">新密码 (New Password)</label>
-                                <div className="relative">
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        name="newPassword"
-                                        value={formData.newPassword}
-                                        onChange={handleChange}
-                                        className={inputClass + " pr-10"}
-                                        placeholder="请输入新密码"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                    >
-                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* 只读信息 */}
-                <div className="bg-gray-50 p-6 rounded-lg shadow-lg border-2 border-gray-300">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-700">
-                        <Shield size={20} />
-                        账户信息（只读）
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold mb-2 text-gray-600">角色 (Role)</label>
-                            <input
-                                type="text"
-                                value={readonlyData.role}
-                                readOnly
-                                className={readonlyInputClass}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-2 text-gray-600">用户ID</label>
-                            <input
-                                type="text"
-                                value={currentUser?.id || '-'}
-                                readOnly
-                                className={readonlyInputClass}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* 提交按钮 */}
-                <div className="flex justify-end gap-4">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="px-8 py-3 bg-[#FF0080] text-white font-black border-2 border-black rounded hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {loading ? '保存中...' : '保存修改'}
-                    </button>
-                </div>
-            </form>
+  return (
+    <div className={`p-6 md:p-10 ${isDarkMode ? "bg-gray-950 text-gray-100" : "bg-gray-50 text-gray-900"}`}>
+      <header className="mb-8 flex items-center gap-3">
+        <div className="w-12 h-12 border-2 border-black rounded-full flex items-center justify-center bg-gradient-to-br from-[#FF0080] to-[#FFD700] text-white">
+          <User />
         </div>
-    );
+        <div>
+          <h1 className="text-3xl font-black tracking-tight">个人资料管理</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            更新头像、基本信息和账户安全设置，保持资料最新。
+          </p>
+        </div>
+      </header>
+
+      {status.text && (
+        <div
+          className={`mb-6 flex items-center gap-3 border-l-4 p-4 ${
+            status.type === "success"
+              ? "border-green-500 bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-200"
+              : "border-red-500 bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-200"
+          }`}
+        >
+          {status.type === "success" ? <CheckCircle /> : <AlertTriangle />}
+          <span className="font-semibold">{status.text}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <section className={`${cardClass} rounded-2xl shadow-lg p-6`}>
+          <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
+            <Image size={18} />
+            头像设置
+          </h2>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="relative">
+              <div className="w-32 h-32 rounded-full border-4 border-black overflow-hidden bg-gray-200">
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <User size={48} />
+                  </div>
+                )}
+              </div>
+              {uploadingAvatar && (
+                <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center text-white font-bold">
+                  上传中...
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="px-6 py-3 bg-[#6366F1] text-white font-black border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition disabled:opacity-50"
+              >
+                {uploadingAvatar ? "上传中..." : "上传新头像"}
+              </button>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                支持 JPG、PNG、GIF，文件大小不超过 2MB。上传成功后会自动保存至资料。
+              </p>
+              {form.avatarUrl && (
+                <p className="text-xs font-mono text-gray-500 break-all">当前路径：{form.avatarUrl}</p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className={`${cardClass} rounded-2xl shadow-lg p-6`}>
+          <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
+            <FileText size={18} />
+            基本信息
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <FieldLabel icon={User}>用户名</FieldLabel>
+              <input
+                className={`${inputClass} mt-2`}
+                name="username"
+                value={form.username}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <FieldLabel>显示名称</FieldLabel>
+              <input
+                className={`${inputClass} mt-2`}
+                name="displayName"
+                value={form.displayName}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <FieldLabel icon={Mail}>邮箱</FieldLabel>
+              <input className={`${inputClass} mt-2`} name="email" value={form.email} onChange={handleChange} />
+            </div>
+            <div>
+              <FieldLabel>头衔 / Title</FieldLabel>
+              <input className={`${inputClass} mt-2`} name="title" value={form.title} onChange={handleChange} />
+            </div>
+            <div>
+              <FieldLabel icon={GithubIcon}>GitHub</FieldLabel>
+              <input className={`${inputClass} mt-2`} name="github" value={form.github} onChange={handleChange} />
+            </div>
+            <div>
+              <FieldLabel>微信二维码</FieldLabel>
+              <input className={`${inputClass} mt-2`} name="wechatQr" value={form.wechatQr} onChange={handleChange} />
+            </div>
+          </div>
+          <div className="mt-6">
+            <FieldLabel>个人简介</FieldLabel>
+            <textarea
+              className={`${inputClass} mt-2`}
+              rows={4}
+              name="bio"
+              value={form.bio}
+              onChange={handleChange}
+            />
+          </div>
+        </section>
+
+        <section className={`${cardClass} rounded-2xl shadow-lg p-6`}>
+          <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
+            <Lock size={18} />
+            修改密码
+          </h2>
+          <div className={`p-4 rounded-xl ${isDarkMode ? "bg-gray-800/60" : "bg-yellow-50 border border-yellow-200"}`}>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              修改密码需要先验证原密码。验证成功后，在下方输入新密码并保存即可。
+            </p>
+          </div>
+          <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <FieldLabel>原密码</FieldLabel>
+              <div className="relative mt-2">
+                <input
+                  type={showOldPassword ? "text" : "password"}
+                  name="oldPassword"
+                  value={form.oldPassword}
+                  onChange={handleChange}
+                  className={`${inputClass} pr-10`}
+                  placeholder="请输入当前密码"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  onClick={() => setShowOldPassword((prev) => !prev)}
+                >
+                  {showOldPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={handleVerifyPassword}
+                disabled={!form.oldPassword || passwordVerified || verifying}
+                className="w-full px-4 py-3 font-black border-2 border-black rounded-full bg-[#FFD700] text-black hover:-translate-y-0.5 transition disabled:opacity-50"
+              >
+                {passwordVerified ? "已验证" : verifying ? "验证中..." : "验证原密码"}
+              </button>
+            </div>
+          </div>
+          {passwordVerified && (
+            <div className="mt-4">
+              <FieldLabel>新密码</FieldLabel>
+              <div className="relative mt-2">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="newPassword"
+                  value={form.newPassword}
+                  onChange={handleChange}
+                  className={`${inputClass} pr-10`}
+                  placeholder="请输入新密码"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section
+          className={`rounded-2xl shadow-lg p-6 border-2 ${
+            isDarkMode ? "bg-gray-900 border-gray-700" : "bg-gray-100 border-gray-300"
+          }`}
+        >
+          <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
+            <Shield size={18} />
+            只读信息
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InfoBadge label="角色" value={meta.role} />
+            <InfoBadge label="用户 ID" value={meta.id} />
+            <InfoBadge label="创建时间" value={meta.createdAt} />
+            <InfoBadge label="上次登录" value={meta.lastLogin} />
+          </div>
+        </section>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-10 py-3 bg-[#FF0080] text-white font-black border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition disabled:opacity-50"
+          >
+            {loading ? "保存中..." : "保存修改"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }

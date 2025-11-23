@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useBlog } from "./hooks/useBlogData";
 import {
   recordPageView,
@@ -862,7 +862,7 @@ const ClickRipple = () => {
 };
 
 // --- 3. 前台视图组件 (保持不变) ---
-const Navigation = ({ user, setView, handleLogout, toggleMenu, isDarkMode, setIsDarkMode }) => {
+const Navigation = ({ user, setView, handleLogout, toggleMenu, isDarkMode, setIsDarkMode, onProfileClick }) => {
   const roleInfo = user ? ROLES[user.role] : null;
   const isFrontNav = true; // Use a flag for front-end vs back-end styling
 
@@ -900,7 +900,7 @@ const Navigation = ({ user, setView, handleLogout, toggleMenu, isDarkMode, setIs
 
         {user ? (
           <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('profile')}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={onProfileClick || (() => setView('admin'))}>
               <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
                 <img src={user.avatar?.startsWith('http') ? user.avatar : `http://localhost:8080${user.avatar}`} className="w-full h-full object-cover" />
               </div>
@@ -962,7 +962,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.41
+          SANGUI BLOG // V1.1.42
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2390,7 +2390,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode} />} />
             <Route path="posts" element={<PostsView isDarkMode={isDarkMode} />} />
             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} user={user} />} />
-            <Route path="profile" element={<AdminProfile />} />
+            <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
           </Routes>
 
@@ -2470,6 +2470,7 @@ const ScrollToTop = ({ isDarkMode }) => {
 
 export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, onViewChange }) {
   const { meta, categories, posts, article, comments, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout, user: blogUser } = useBlog();
+  const navigate = useNavigate();
   const [view, setView] = useState(initialView);
   const [user, setUser] = useState(null);
   const [articleId, setArticleId] = useState(initialArticleId);
@@ -2549,6 +2550,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     setView('home');
   };
 
+  const handleProfileNav = () => {
+    setView('admin');
+    navigate('/admin/profile');
+  };
+
   const handleCategoryClick = (parentLabel, subLabel) => {
     const categoriesList = categories && categories.length ? categories : CATEGORY_TREE;
     const parent = categoriesList.find(c => c.label === parentLabel);
@@ -2619,7 +2625,15 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
       <ScrollToTop isDarkMode={isDarkMode} />
       <EmergencyBar isOpen={notification.isOpen} content={notification.content} onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))} />
       <ErrorToast error={error} onClose={() => setError(null)} />
-      <Navigation user={user} setView={setView} handleLogout={handleLogout} toggleMenu={() => setMenuOpen(!menuOpen)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
+      <Navigation
+        user={user}
+        setView={setView}
+        handleLogout={handleLogout}
+        toggleMenu={() => setMenuOpen(!menuOpen)}
+        isDarkMode={isDarkMode}
+        setIsDarkMode={setIsDarkMode}
+        onProfileClick={handleProfileNav}
+      />
 
       <AnimatePresence mode="wait">
         <motion.main key={view} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
