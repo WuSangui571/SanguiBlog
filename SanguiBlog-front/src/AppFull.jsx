@@ -4,6 +4,10 @@ import { useBlog } from "./hooks/useBlogData";
 import { recordPageView, updateBroadcast } from "./api";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeRaw from 'rehype-raw';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
 import AdminProfile from './pages/admin/Profile';
 import {
@@ -360,7 +364,8 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
             </div>
             {shouldRenderMarkdown ? (
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeRaw, rehypeKatex]}
                 components={{
                   pre: ({ children }) => <>{children}</>,
                   code({ inline, className, children, ...props }) {
@@ -793,7 +798,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.28
+          SANGUI BLOG // V1.1.29
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>

@@ -74,6 +74,14 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   自动携带 `localStorage` 中的 `sg_token`。
     *   `API_BASE`: 默认为 `http://localhost:8080/api`。
 
+### 3.3 Markdown 渲染策略
+*   `ArticleDetail` 组件优先使用 `contentMd`，通过 `ReactMarkdown` 渲染；若后端仅返回 `contentHtml` 则采用 `dangerouslySetInnerHTML` 兜底。
+*   插件链：
+    *   `remark-gfm`: 表格、任务列表、删除线等 GitHub 风格扩展。
+    *   `remark-math` + `rehype-katex`: 支持 `$...$` 行内、`$$...$$` 块级公式，样式依赖 `katex/dist/katex.min.css`（在 `AppFull.jsx` 头部全局引入）。
+    *   `rehype-raw`: 允许 Markdown 中的原生 HTML（如 `<p style="color:red">`）直接渲染，满足自定义排版需求。
+*   代码块渲染保持自定义的 Neo-Brutalism 包装（窗口按钮 + 阴影），行内代码继续使用定制逻辑裁剪反引号，保证视觉一致性。
+
 ---
 
 ## 4. 数据存储与规则 (Data Storage & Rules)

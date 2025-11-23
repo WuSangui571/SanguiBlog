@@ -1,5 +1,10 @@
 ﻿# AGENTS-EDIT
 
+## V1.1.29 (2025-11-23)
+- **新增**: 文章详情页通过 `remark-math` + `rehype-katex` 支持 LaTeX 数学公式渲染，`rehype-raw` 允许渲染 Markdown 中的自定义 HTML（如 `<p style="color:red">`）。
+- **更新**: 在 `AppFull.jsx` 中引入 KaTeX 样式并配置 ReactMarkdown 插件链，确保数学公式与 HTML 正常展示。
+- **版本**: 首页 Banner 版本号更新为 `SANGUI BLOG // V1.1.29`。
+
 ## V1.1.28 (2025-11-23)
 - **修复**: 扩展 `SecurityConfig` 的跨域白名单，新增 `http://localhost:5174` 与 `http://127.0.0.1:5174`，确保结构管理浏览器在 5174 端口运行时能正常访问后端接口。
 - **更新**: 首页 Banner 版本号改为 `SANGUI BLOG // V1.1.28`。
