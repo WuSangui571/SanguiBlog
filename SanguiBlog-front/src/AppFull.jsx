@@ -360,7 +360,8 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
     }
   };
 
-  const assetsBase = summary?.slug ? `/uploads/${summary.slug}` : null;
+  const slugPath = summary?.slug || articleData?.slug || null;
+  const assetsBase = slugPath ? `/uploads/${slugPath}` : null;
   const resolveAssetPath = useCallback(
     (input) => {
       if (!input) return input;
@@ -371,7 +372,7 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
           .replace(/^\.\/+/, '')
           .replace(/\.\.\//g, '')
           .replace(/\\/g, '/');
-        return `${assetsBase}/${normalized}`;
+        return encodeURI(`${assetsBase}/${normalized}`);
       }
       return trimmed;
     },
@@ -379,16 +380,17 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
   );
 
   const resolvedHtml = useMemo(() => {
-    if (!contentHtml) return contentHtml;
-    if (!assetsBase) return contentHtml;
-    return contentHtml.replace(/src="([^"]+)"/g, (_, src) => `src="${resolveAssetPath(src)}"`);
+    if (!contentHtml || !assetsBase) return contentHtml;
+    const doubleQuoteReplaced = contentHtml.replace(/src="([^"]+)"/g, (_, src) => `src="${resolveAssetPath(src)}"`);
+    return doubleQuoteReplaced.replace(/src='([^']+)'/g, (_, src) => `src='${resolveAssetPath(src)}'`);
   }, [contentHtml, assetsBase, resolveAssetPath]);
 
   const markdownComponents = {
     pre: ({ children }) => <>{children}</>,
-    img: ({ src, alt, ...props }) => (
-      <img src={resolveAssetPath(src)} alt={alt} {...props} />
-    ),
+    img: ({ src, alt, ...props }) => {
+      const resolved = resolveAssetPath(src);
+      return <img src={resolved} alt={alt} {...props} />;
+    },
     code({ inline, className, children, ...props }) {
       const rawText = String(children);
       const textContent = rawText.replace(/\n$/, '');
@@ -993,7 +995,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.1
+          SANGUI BLOG // V1.2.2
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>

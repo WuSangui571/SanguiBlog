@@ -77,7 +77,15 @@ public class PostAssetService {
         for (MultipartFile file : files) {
             String relativeName = file.getOriginalFilename() != null ? file.getOriginalFilename() : file.getName();
             relativeName = relativeName.replace("\\", "/");
+            relativeName = relativeName.replace("../", "");
+            relativeName = relativeName.replace("./", "");
             relativeName = relativeName.replaceAll("^/+", "");
+            if (relativeName.contains("/")) {
+                relativeName = relativeName.substring(relativeName.indexOf('/') + 1);
+            }
+            if (!StringUtils.hasText(relativeName)) {
+                continue;
+            }
             Path target = baseDir.resolve(relativeName).normalize();
             if (!target.startsWith(baseDir)) {
                 throw new IllegalArgumentException("非法文件路径: " + relativeName);
