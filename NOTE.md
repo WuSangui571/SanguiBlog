@@ -143,7 +143,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   **目录结构**：头像、文章图片、附件等均放置在根目录下的独立子目录，例如文章资源统一保存在 `<base-path>/posts/<slug>/`。后续扩展新的资源类型时只需在该根目录内再创建子目录即可，部署与备份流程保持一致。
 *   **数据库字段**：`users.avatar_url` 保存头像文件名或 `avatar/` 相对路径；`posts.slug` 现改为记录文章图片文件夹的相对路径（如 `posts/20241124/abc123`），后端返回数据时会携带该路径以便前端按需拼接。
 *   **静态映射**：`WebConfig` 将 `/avatar/**` 与 `/uploads/**` 映射到实际文件系统目录，无需重新打包 `static/` 资源即可即时读取最新上传内容。文章图片可直接通过 `http://<server>/uploads/<slug>/xxx.png` 访问。
-*   **前端处理**：`/admin/create-post` 的“插入图片”按钮会携带预留的 `slug` 调用 `/api/upload/post-assets`，后端在不清空目录的情况下追加文件并返回 `files`、`urls` 以及用分号拼接好的 `joined` 字符串；前端据此插入 Markdown，若需要把图片地址落库可直接使用 `joined`。即使暂未上传图片也会先预留唯一 `slug`，保证数据库与文件系统一一对应。
+*   **前端处理**：`/admin/create-post` 的“插入图片”按钮会携带预留的 `slug` 调用 `/api/upload/post-assets`，后端在不清空目录的情况下追加文件并返回 `files`、`urls` 以及用分号拼接好的 `joined` 字符串；前端据此插入 Markdown，若需要把图片地址落库可直接使用 `joined`。`slug` 现改为按需懒生成：仅在首次上传图片或点击“立即发布”时才调用 `/api/upload/post-assets/reserve`，生成后在同一编辑会话内复用，发布成功会清空该值以避免产生空目录。
+*   **静态资源域名**：前端通过 `VITE_ASSET_ORIGIN`（默认继承 `VITE_API_BASE` 的域名部分）来拼接 `/uploads/**` 与 `/avatar/**` 绝对地址，部署到 CDN 或反向代理节点时只需设置此变量即可确保 Markdown/HTML 图片与头像访问正确主机。
 
 ### 4.5 评论与楼中楼
 *   数据结构：`comments` 表含 `parent_comment_id` 外键（见 `sanguiblog_db.sql`），配合 `ON DELETE SET NULL` 可形成任意深度的树形结构。SQL 文件附带了多条带父级关系的测试评论，可直接导入 MySQL 验证联动效果。

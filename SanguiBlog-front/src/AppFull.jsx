@@ -1021,7 +1021,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.6
+          SANGUI BLOG // V1.2.7
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1242,12 +1242,6 @@ const CreatePostView = ({ isDarkMode }) => {
   }, [markdownEditorRef, title]);
 
   useEffect(() => {
-    ensureAssetsSlug().catch((error) => {
-      setImageUploadMessage(error.message || "预留图片目录失败");
-    });
-  }, [ensureAssetsSlug]);
-
-  useEffect(() => {
     const loadTags = async () => {
       try {
         const res = await fetchTags();
@@ -1351,8 +1345,7 @@ const CreatePostView = ({ isDarkMode }) => {
     title.trim() &&
     mdContent.trim() &&
     selectedCategoryId &&
-    selectedTags.length > 0 &&
-    assetsFolder
+    selectedTags.length > 0
   );
 
   const handlePublish = async () => {
@@ -1360,9 +1353,13 @@ const CreatePostView = ({ isDarkMode }) => {
     setSubmitting(true);
     setSubmitMessage("");
     try {
+      const slug = await ensureAssetsSlug();
+      if (!slug) {
+        throw new Error("未能生成资源目录");
+      }
       const payload = {
         title: title.trim(),
-        slug: assetsFolder,
+        slug,
         contentMd: mdContent,
         excerpt: excerpt.trim() || mdContent.replace(/\s+/g, " ").slice(0, 160),
         categoryId: selectedCategoryId,
@@ -1377,9 +1374,7 @@ const CreatePostView = ({ isDarkMode }) => {
       setMarkdownFileName("");
       setSelectedTags([]);
       setExcerpt("");
-      const folderRes = await reservePostAssetsFolder();
-      const folderData = folderRes.data || folderRes;
-      if (folderData?.folder) setAssetsFolder(folderData.folder);
+      setAssetsFolder("");
     } catch (error) {
       setSubmitMessage(error.message || "发布失败");
     } finally {
@@ -1502,7 +1497,7 @@ const CreatePostView = ({ isDarkMode }) => {
               </button>
             </div>
             <div className="text-xs text-gray-500 space-y-2">
-              <p>当前 slug：<code className="px-2 py-1 rounded bg-black/5 dark:bg-white/5 break-all">{assetsFolder ? `/uploads/${assetsFolder}` : "生成中..."}</code></p>
+              <p>当前 slug：<code className="px-2 py-1 rounded bg-black/5 dark:bg-white/5 break-all">{assetsFolder ? `/uploads/${assetsFolder}` : "尚未生成"}</code></p>
               <p>所有插入的图片文件都会写入该目录，Markdown 将直接引用 `/uploads/&lt;slug&gt;/xxx.png`。</p>
               <p>每次上传成功后接口会返回以分号拼接的图片地址串，可直接贴入需要存储地址的数据库字段。</p>
             </div>
