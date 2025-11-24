@@ -14,6 +14,12 @@ import {
   adminDeleteCategory,
   adminFetchPosts,
   adminFetchPostDetail,
+  adminFetchUsers,
+  adminFetchUserDetail,
+  adminCreateUser,
+  adminUpdateUser,
+  adminDeleteUser,
+  adminFetchRoles,
   fetchCategories,
   fetchTags,
   uploadPostAssets,
@@ -1131,7 +1137,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.11
+          SANGUI BLOG // V1.2.13
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -3243,6 +3249,417 @@ const PostsView = ({ isDarkMode }) => {
   );
 };
 
+
+const UserManagementView = ({ isDarkMode }) => {
+  const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [keyword, setKeyword] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [formMode, setFormMode] = useState("create");
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const emptyForm = {
+    username: "",
+    displayName: "",
+    email: "",
+    title: "",
+    bio: "",
+    githubUrl: "",
+    wechatQrUrl: "",
+    status: "ACTIVE",
+    roleCode: "",
+    password: "",
+  };
+  const [form, setForm] = useState(emptyForm);
+  const [meta, setMeta] = useState({ id: null, createdAt: null, lastLoginAt: null });
+  const [saving, setSaving] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const formRef = useRef(null);
+
+  const cardBg = isDarkMode ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200";
+  const inputClass = `w-full px-3 py-2 border-2 rounded font-medium outline-none transition-colors ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white focus:border-indigo-400' : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500'}`;
+  const STATUS_OPTIONS = [
+    { value: 'ACTIVE', label: '正常' },
+    { value: 'DISABLED', label: '已禁用' },
+  ];
+
+  const loadRoles = useCallback(async () => {
+    try {
+      const res = await adminFetchRoles();
+      const data = res.data || res || [];
+      setRoles(data);
+      setForm((prev) => ({ ...prev, roleCode: prev.roleCode || data[0]?.code || 'USER' }));
+    } catch (err) {
+      setFeedback({ type: 'error', text: err.message || '无法加载角色列表' });
+    }
+  }, []);
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { keyword, page, size };
+      if (roleFilter !== 'all') params.role = roleFilter;
+      const res = await adminFetchUsers(params);
+      const data = res.data || res;
+      setUsers(data?.records || []);
+      setTotal(data?.total || 0);
+    } catch (err) {
+      setFeedback({ type: 'error', text: err.message || '加载用户失败' });
+    } finally {
+      setLoading(false);
+    }
+  }, [keyword, page, size, roleFilter]);
+
+  useEffect(() => {
+    loadRoles();
+  }, [loadRoles]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  const resetForm = useCallback(() => {
+    setForm((prev) => ({
+      ...emptyForm,
+      roleCode: roles[0]?.code || prev.roleCode || 'USER',
+    }));
+    setMeta({ id: null, createdAt: null, lastLoginAt: null });
+    setSelectedUserId(null);
+    setFormMode('create');
+    setFeedback(null);
+  }, [roles]);
+
+  const formatDate = (value) => (value ? new Date(value).toLocaleString() : '—');
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEdit = async (id) => {
+    setFormMode('edit');
+    setSelectedUserId(id);
+    setFormLoading(true);
+    try {
+      const res = await adminFetchUserDetail(id);
+      const data = res.data || res;
+      setForm({
+        username: data.username || '',
+        displayName: data.displayName || '',
+        email: data.email || '',
+        title: data.title || '',
+        bio: data.bio || '',
+        githubUrl: data.githubUrl || '',
+        wechatQrUrl: data.wechatQrUrl || '',
+        status: data.status || 'ACTIVE',
+        roleCode: data.roleCode || roles[0]?.code || 'USER',
+        password: '',
+      });
+      setMeta({ id: data.id, createdAt: data.createdAt, lastLoginAt: data.lastLoginAt });
+      setFeedback(null);
+      requestAnimationFrame(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    } catch (err) {
+      setFeedback({ type: 'error', text: err.message || '加载用户详情失败' });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDelete = async (user) => {
+    if (!window.confirm(`确认删除 ${user.username} 吗？`)) return;
+    try {
+      await adminDeleteUser(user.id);
+      if (selectedUserId === user.id) {
+        resetForm();
+      }
+      setFeedback({ type: 'success', text: '用户已删除' });
+      loadUsers();
+    } catch (err) {
+      setFeedback({ type: 'error', text: err.message || '删除失败' });
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        username: form.username.trim(),
+        displayName: form.displayName.trim(),
+        email: form.email?.trim() || null,
+        title: form.title?.trim() || null,
+        bio: form.bio?.trim() || null,
+        githubUrl: form.githubUrl?.trim() || null,
+        wechatQrUrl: form.wechatQrUrl?.trim() || null,
+        status: form.status,
+        roleCode: form.roleCode,
+      };
+      if (form.password?.trim()) {
+        payload.password = form.password.trim();
+      }
+      let result;
+      if (formMode === 'create') {
+        if (!payload.password) {
+          throw new Error('请先设置初始密码');
+        }
+        result = await adminCreateUser(payload);
+        setFeedback({ type: 'success', text: '新用户已创建' });
+        resetForm();
+      } else if (selectedUserId) {
+        result = await adminUpdateUser(selectedUserId, payload);
+        const data = result.data || result;
+        setFeedback({ type: 'success', text: '用户资料已更新' });
+        setMeta({ id: data.id, createdAt: data.createdAt, lastLoginAt: data.lastLoginAt });
+        setForm((prev) => ({ ...prev, password: '' }));
+      }
+      loadUsers();
+    } catch (err) {
+      setFeedback({ type: 'error', text: err.message || '保存失败' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const InfoBadge = ({ label, value }) => (
+    <div className={`p-3 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
+      <p className="text-xs text-gray-500 mb-1">{label}</p>
+      <p className="text-sm font-mono">{value || '—'}</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-8">
+      <div className={`${cardBg} rounded-xl p-6 shadow-lg`}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2"><Users size={20} /> 用户列表</h2>
+            <p className="text-sm text-gray-500 mt-1">可筛选查看所有后台账号，对敏感操作前请仔细核对。</p>
+          </div>
+          <button
+            onClick={resetForm}
+            className="px-4 py-2 border-2 border-black font-bold text-sm bg-[#FFD700] text-black hover:-translate-y-0.5 transition"
+          >
+            新建用户
+          </button>
+        </div>
+        <div className="flex flex-col md:flex-row gap-3 mb-4">
+          <input
+            className={inputClass}
+            placeholder="搜索用户名或邮箱"
+            value={keyword}
+            onChange={(e) => {
+              setKeyword(e.target.value);
+              setPage(1);
+            }}
+          />
+          <select
+            className={inputClass}
+            value={roleFilter}
+            onChange={(e) => {
+              setRoleFilter(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="all">所有角色</option>
+            {roles.map((role) => (
+              <option key={role.code} value={role.code}>{role.name}</option>
+            ))}
+          </select>
+          <select
+            className={inputClass}
+            value={size}
+            onChange={(e) => {
+              setSize(Number(e.target.value));
+              setPage(1);
+            }}
+          >
+            {[5, 10, 20].map((option) => (
+              <option key={option} value={option}>每页 {option} 条</option>
+            ))}
+          </select>
+        </div>
+        {loading ? (
+          <p className="text-center py-10 text-gray-500">数据加载中...</p>
+        ) : users.length === 0 ? (
+          <p className="text-center py-10 text-gray-500">暂无用户</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className={isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-600'}>
+                  <th className="px-4 py-2 text-left">用户名</th>
+                  <th className="px-4 py-2 text-left">显示名</th>
+                  <th className="px-4 py-2 text-left">邮箱</th>
+                  <th className="px-4 py-2 text-left">角色</th>
+                  <th className="px-4 py-2 text-left">状态</th>
+                  <th className="px-4 py-2 text-left">最近登录</th>
+                  <th className="px-4 py-2 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className={isDarkMode ? 'divide-y divide-gray-800 text-gray-100' : 'divide-y divide-gray-200 text-gray-700'}>
+                {users.map((user) => (
+                  <tr
+                    key={user.id}
+                    className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} ${selectedUserId === user.id ? (isDarkMode ? 'bg-gray-800/60' : 'bg-indigo-50') : ''}`}
+                  >
+                    <td className="px-4 py-3">{user.username}</td>
+                    <td className="px-4 py-3">{user.displayName || '—'}</td>
+                    <td className="px-4 py-3">{user.email || '—'}</td>
+                    <td className="px-4 py-3">{user.roleName || user.roleCode}</td>
+                    <td className="px-4 py-3">{STATUS_OPTIONS.find((s) => s.value === user.status)?.label || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500">{formatDate(user.lastLoginAt)}</td>
+                    <td className="px-4 py-3 text-right space-x-2">
+                      <button
+                        onClick={() => handleEdit(user.id)}
+                        className="px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                      >
+                        编辑
+                      </button>
+                      <button
+                        onClick={() => handleDelete(user)}
+                        className="px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
+                      >
+                        删除
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-3">
+          <p className="text-sm text-gray-500">第 {page} / {Math.max(Math.ceil(total / size), 1)} 页（共 {total} 个账号）</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-3 py-1 border-2 border-black font-bold disabled:opacity-50"
+            >
+              上一页
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(p + 1, Math.max(Math.ceil(total / size), 1)))}
+              disabled={page >= Math.max(Math.ceil(total / size), 1)}
+              className="px-3 py-1 border-2 border-black font-bold disabled:opacity-50"
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className={`${cardBg} rounded-xl p-6 shadow-lg`} ref={formRef}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold">{formMode === 'create' ? '创建新用户' : '编辑用户'}</h2>
+            <p className="text-sm text-gray-500">参照个人资料页，可直接修改角色与密码。</p>
+          </div>
+          {formMode === 'edit' && (
+            <button
+              onClick={resetForm}
+              className="px-4 py-2 border-2 border-black font-bold text-sm bg-white text-black hover:-translate-y-0.5 transition"
+            >
+              切换到创建模式
+            </button>
+          )}
+        </div>
+        {feedback?.text && (
+          <div className={`mb-4 border-l-4 p-4 ${feedback.type === 'error' ? 'border-red-500 bg-red-50 text-red-600' : 'border-emerald-500 bg-emerald-50 text-emerald-600'}`}>
+            {feedback.text}
+          </div>
+        )}
+        {formLoading && <p className="mb-4 text-sm text-gray-500">正在加载用户详情...</p>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">用户名</label>
+              <input className={inputClass} name="username" value={form.username} onChange={handleInputChange} required />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">显示名</label>
+              <input className={inputClass} name="displayName" value={form.displayName} onChange={handleInputChange} required />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">邮箱</label>
+              <input className={inputClass} name="email" value={form.email} onChange={handleInputChange} type="email" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">头衔</label>
+              <input className={inputClass} name="title" value={form.title} onChange={handleInputChange} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">GitHub</label>
+              <input className={inputClass} name="githubUrl" value={form.githubUrl} onChange={handleInputChange} />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">微信二维码地址</label>
+              <input className={inputClass} name="wechatQrUrl" value={form.wechatQrUrl} onChange={handleInputChange} />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">个人简介</label>
+            <textarea className={`${inputClass} mt-2`} rows={3} name="bio" value={form.bio} onChange={handleInputChange} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">角色</label>
+              <select className={`${inputClass} mt-2`} name="roleCode" value={form.roleCode} onChange={handleInputChange}>
+                {roles.map((role) => (
+                  <option key={role.code} value={role.code}>{role.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">状态</label>
+              <select className={`${inputClass} mt-2`} name="status" value={form.status} onChange={handleInputChange}>
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">{formMode === 'create' ? '初始密码' : '重置密码（留空不改）'}</label>
+            <input
+              className={`${inputClass} mt-2`}
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleInputChange}
+              placeholder={formMode === 'create' ? '请设置初始密码' : '若需要重置请输入新密码'}
+            />
+          </div>
+          {formMode === 'edit' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <InfoBadge label="用户 ID" value={meta.id} />
+              <InfoBadge label="创建时间" value={formatDate(meta.createdAt)} />
+              <InfoBadge label="最近登录" value={formatDate(meta.lastLoginAt)} />
+            </div>
+          )}
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={saving || formLoading}
+              className="px-6 py-2 border-2 border-black font-bold bg-[#00E096] text-black rounded-full hover:-translate-y-0.5 transition disabled:opacity-50"
+            >
+              {saving ? '保存中...' : '保存设置'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // 4.4 Sub-Component: Permissions View (Super Admin Only)
 const PermissionsView = ({ isDarkMode, user }) => {
   const users = [
@@ -3322,6 +3739,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     { key: 'comments', label: '评论管理', icon: MessageCircle, component: () => <div className="text-xl p-8 text-center">评论审核占位符</div> },
     { key: 'categories', label: '二级分类', icon: Layers, component: CategoriesView },
     { key: 'taxonomy', label: '标签管理', icon: Tag, component: TaxonomyView },
+    { key: 'users', label: '用户管理', icon: Users, component: UserManagementView },
     { key: 'permissions', label: '权限管理', icon: Shield, component: PermissionsView, superAdmin: true },
     { key: 'settings', label: '系统设置', icon: Settings, component: () => <div className="text-xl p-8 text-center">系统设置占位符</div> },
     { key: 'profile', label: '个人资料', icon: User, component: AdminProfile },
@@ -3409,6 +3827,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode} />} />
             <Route path="posts" element={<PostsView isDarkMode={isDarkMode} />} />
             <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
+            <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} user={user} />} />
             <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />

@@ -226,3 +226,34 @@ export const updatePost = (id, payload) =>
     method: "PUT",
     body: JSON.stringify(payload),
   });
+
+export const adminFetchUsers = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.keyword) search.append("keyword", params.keyword);
+  if (params.role) search.append("role", params.role);
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/users${query}`);
+};
+
+export const adminFetchUserDetail = (id) => request(`/admin/users/${id}`);
+
+export const adminCreateUser = (payload) =>
+  request("/admin/users", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const adminUpdateUser = (id, payload) =>
+  request(`/admin/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+export const adminDeleteUser = (id) =>
+  request(`/admin/users/${id}`, {
+    method: "DELETE",
+  });
+
+export const adminFetchRoles = () => request("/admin/users/roles");

@@ -110,6 +110,15 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   仅支持选择二级分类（先点一级分类再点下方子类），以及至少一个标签；三项均完成后才能启用“立即发布”按钮，避免漏填元数据。
 *   发布会调用 `POST /api/posts`，其中 `slug` 必须传入预留得到的目录名称；后端会校验唯一性并在必要时创建空目录，确保数据库与磁盘一一对应。
 
+### 3.8 用户管理
+*   `/admin/users` 页面由 `UserManagementView` 渲染，左侧表格可按关键词、角色和分页浏览全部后台账号，右侧表单同时支持创建/编辑，密码字段无需原密码即可重置。
+*   创建/更新接口均允许填写基础资料（用户名、显示名、邮箱、头衔、简介、GitHub、微信二维码）并直接选择角色；只读信息（ID、创建时间、最近登录）在表单下方展示，仍不可手动修改。
+*   对应后端接口：
+    *   `GET /api/admin/users`（支持 `keyword`、`role`、`page`、`size`）返回 `PageResponse<AdminUserDto>`；
+    *   `GET /api/admin/users/{id}` / `POST /api/admin/users` / `PUT /api/admin/users/{id}` / `DELETE /api/admin/users/{id}` 完成完整 CRUD；
+    *   `GET /api/admin/users/roles` 返回可选角色列表（`code` + `name`），供前端下拉框使用。
+
+
 ---
 
 ## 4. 数据存储与规则 (Data Storage & Rules)
