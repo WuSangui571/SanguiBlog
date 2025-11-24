@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -73,7 +74,8 @@ public class PostAssetService {
         }
     }
 
-    public void storeFiles(Path baseDir, List<MultipartFile> files) {
+    public List<String> storeFiles(Path baseDir, List<MultipartFile> files) {
+        List<String> stored = new ArrayList<>();
         for (MultipartFile file : files) {
             String relativeName = sanitizeRelativePath(file.getOriginalFilename());
             if (!StringUtils.hasText(relativeName)) {
@@ -86,10 +88,12 @@ public class PostAssetService {
             try {
                 Files.createDirectories(target.getParent());
                 Files.copy(file.getInputStream(), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                stored.add(relativeName);
             } catch (IOException e) {
                 throw new IllegalStateException("保存文件失败: " + relativeName, e);
             }
         }
+        return stored;
     }
 
     private String sanitizeRelativePath(String raw) {

@@ -15,9 +15,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/upload")
@@ -58,7 +59,6 @@ public class UploadController {
         String slug = StringUtils.hasText(folder)
                 ? postAssetService.normalizeFolderSlug(folder)
                 : postAssetService.generateFolderSlug();
-        postAssetService.ensureFolder(slug);
         return ApiResponse.ok(Map.of("folder", slug));
     }
 
@@ -72,10 +72,16 @@ public class UploadController {
         String slug = StringUtils.hasText(folder)
                 ? postAssetService.normalizeFolderSlug(folder)
                 : postAssetService.generateFolderSlug();
-        Path baseDir = postAssetService.prepareCleanFolder(slug);
-        postAssetService.storeFiles(baseDir, files);
+        Path baseDir = postAssetService.ensureFolder(slug);
+        List<String> storedFiles = postAssetService.storeFiles(baseDir, files);
+        List<String> urls = storedFiles.stream()
+                .map(name -> "/uploads/" + slug + "/" + name)
+                .collect(Collectors.toList());
         return ApiResponse.ok(Map.of(
                 "folder", slug,
-                "count", files.size()));
+                "count", storedFiles.size(),
+                "files", storedFiles,
+                "urls", urls,
+                "joined", String.join(";", urls)));
     }
 }

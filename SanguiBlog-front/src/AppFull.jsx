@@ -18,7 +18,8 @@ import {
   fetchTags,
   uploadPostAssets,
   reservePostAssetsFolder,
-  createPost
+  createPost,
+  ASSET_ORIGIN
 } from "./api";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -35,7 +36,7 @@ import {
   Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
   ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
   Home, TrendingUp, Edit, Send, Moon, Sun, Upload, Map, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
-  RefreshCw, Plus, Trash2, Save
+  RefreshCw, Plus, Trash2, Save, ImagePlus
 } from 'lucide-react';
 
 // ... (keep existing code until CommentsSection)
@@ -360,30 +361,55 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
     }
   };
 
+  const assetOrigin = useMemo(() => {
+    if (ASSET_ORIGIN) return ASSET_ORIGIN.replace(/\/$/, "");
+    if (typeof window !== "undefined" && window.location?.origin) {
+      return window.location.origin.replace(/\/$/, "");
+    }
+    return "";
+  }, []);
+
+  const prefixAssetOrigin = useCallback(
+    (path = "") => {
+      if (!path) return path;
+      if (!assetOrigin) return path;
+      const normalized = path.startsWith("/") ? path : `/${path}`;
+      return `${assetOrigin}${normalized}`.replace(/([^:]\/)\/+/g, "$1");
+    },
+    [assetOrigin]
+  );
+
   const slugPath = summary?.slug || articleData?.slug || null;
-  const assetsBase = slugPath ? `/uploads/${slugPath}` : null;
+  const relativeAssetsBase = slugPath ? `/uploads/${slugPath}` : null;
+  const assetsBase = relativeAssetsBase ? prefixAssetOrigin(relativeAssetsBase) : null;
   const resolveAssetPath = useCallback(
     (input) => {
       if (!input) return input;
       const trimmed = input.trim();
-      if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith('/')) return trimmed;
+      if (/^(https?:)?\/\//i.test(trimmed)) return trimmed;
+      const normalized = trimmed
+        .replace(/^\.\/+/, '')
+        .replace(/\.\.\//g, '')
+        .replace(/\\/g, '/');
+      if (normalized.startsWith('/uploads/') || normalized.startsWith('/avatar/')) {
+        return prefixAssetOrigin(normalized);
+      }
+      if (normalized.startsWith('/')) {
+        return normalized;
+      }
       if (assetsBase) {
-        const normalized = trimmed
-          .replace(/^\.\/+/, '')
-          .replace(/\.\.\//g, '')
-          .replace(/\\/g, '/');
         return encodeURI(`${assetsBase}/${normalized}`);
       }
-      return trimmed;
+      return normalized;
     },
-    [assetsBase]
+    [assetsBase, prefixAssetOrigin]
   );
 
   const resolvedHtml = useMemo(() => {
-    if (!contentHtml || !assetsBase) return contentHtml;
+    if (!contentHtml) return contentHtml;
     const doubleQuoteReplaced = contentHtml.replace(/src="([^"]+)"/g, (_, src) => `src="${resolveAssetPath(src)}"`);
     return doubleQuoteReplaced.replace(/src='([^']+)'/g, (_, src) => `src='${resolveAssetPath(src)}'`);
-  }, [contentHtml, assetsBase, resolveAssetPath]);
+  }, [contentHtml, resolveAssetPath]);
 
   const markdownComponents = {
     pre: ({ children }) => <>{children}</>,
@@ -479,7 +505,7 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return MOCK_USER.avatar;
-    if (avatarPath.startsWith('http')) return avatarPath;
+    if (/^(https?:)?\/\//i.test(avatarPath)) return avatarPath;
 
     // Ensure it starts with /
     let cleanPath = avatarPath.startsWith('/') ? avatarPath : `/${avatarPath}`;
@@ -490,7 +516,7 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
       cleanPath = `/avatar${cleanPath}`;
     }
 
-    return `http://localhost:8080${cleanPath}`;
+    return prefixAssetOrigin(cleanPath);
   };
 
   const avatarSrc = getAvatarUrl(post.authorAvatar);
@@ -995,7 +1021,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.4
+          SANGUI BLOG // V1.2.6
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1165,25 +1191,61 @@ const CreatePostView = ({ isDarkMode }) => {
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const imageInputRef = useRef(null);
-  const markdownInputRef = useRef(null);
+  const markdownFileInputRef = useRef(null);
+  const markdownEditorRef = useRef(null);
+  const inlineImageInputRef = useRef(null);
 
   const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
   const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
   const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
 
-  useEffect(() => {
-    const initFolder = async () => {
-      try {
-        const res = await reservePostAssetsFolder();
-        const data = res.data || res;
-        if (data?.folder) setAssetsFolder(data.folder);
-      } catch (error) {
-        setImageUploadMessage(error.message || "预留图片目录失败");
+  const ensureAssetsSlug = useCallback(async () => {
+    if (assetsFolder) return assetsFolder;
+    const res = await reservePostAssetsFolder();
+    const data = res.data || res;
+    if (!data?.folder) {
+      throw new Error("未获取到资源标识");
+    }
+    setAssetsFolder(data.folder);
+    return data.folder;
+  }, [assetsFolder]);
+
+  const insertImagesAtCursor = useCallback((urls = []) => {
+    if (!urls.length) return;
+    const snippet = urls
+      .map((url, index) => `![${title || `插图${index + 1}`}](${url})`)
+      .join("\n") + "\n";
+    setMdContent((prev) => {
+      const textarea = markdownEditorRef.current;
+      if (!textarea) {
+        const prefix = prev.endsWith("\n") || prev.length === 0 ? prev : `${prev}\n`;
+        return `${prefix}${snippet}`;
       }
-    };
-    initFolder();
-  }, []);
+      const start = textarea.selectionStart ?? prev.length;
+      const end = textarea.selectionEnd ?? start;
+      const before = prev.slice(0, start);
+      const after = prev.slice(end);
+      const normalizedBefore = before && !before.endsWith("\n") ? `${before}\n` : before;
+      const normalizedAfter = after.startsWith("\n") || after.length === 0 ? after : `\n${after}`;
+      const nextContent = `${normalizedBefore}${snippet}${normalizedAfter}`;
+      const cursorPos = (normalizedBefore + snippet).length;
+      requestAnimationFrame(() => {
+        const el = markdownEditorRef.current;
+        if (el) {
+          el.focus();
+          el.selectionStart = cursorPos;
+          el.selectionEnd = cursorPos;
+        }
+      });
+      return nextContent;
+    });
+  }, [markdownEditorRef, title]);
+
+  useEffect(() => {
+    ensureAssetsSlug().catch((error) => {
+      setImageUploadMessage(error.message || "预留图片目录失败");
+    });
+  }, [ensureAssetsSlug]);
 
   useEffect(() => {
     const loadTags = async () => {
@@ -1221,28 +1283,37 @@ const CreatePostView = ({ isDarkMode }) => {
       const data = res.data || res;
       if (data?.folder) {
         setAssetsFolder(data.folder);
-        setImageUploadMessage("已生成全新资源目录");
+        setImageUploadMessage(`已生成资源 slug：${data.folder}`);
       }
     } catch (error) {
       setImageUploadMessage(error.message || "无法生成目录");
     }
   };
 
-  const handleImageUpload = async (event) => {
+  const handleInlineImageUpload = async (event) => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
     setUploadingImages(true);
     setImageUploadMessage("图片上传中...");
     try {
-      const res = await uploadPostAssets(files, assetsFolder);
+      const slug = await ensureAssetsSlug();
+      const res = await uploadPostAssets(files, slug);
       const data = res.data || res;
-      if (data?.folder) setAssetsFolder(data.folder);
-      setImageUploadMessage(`已上传 ${data?.count || files.length} 个文件`);
+      if (data?.folder && data.folder !== assetsFolder) setAssetsFolder(data.folder);
+      const urls = data?.urls || [];
+      if (urls.length) {
+        insertImagesAtCursor(urls);
+        setImageUploadMessage(data.joined || urls.join(";"));
+      } else {
+        setImageUploadMessage("上传成功");
+      }
     } catch (error) {
       setImageUploadMessage(error.message || "图片上传失败");
     } finally {
       setUploadingImages(false);
-      event.target.value = null;
+      if (event?.target) {
+        event.target.value = null;
+      }
     }
   };
 
@@ -1343,32 +1414,60 @@ const CreatePostView = ({ isDarkMode }) => {
           </div>
 
           <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
-            <div className="flex justify-between items-center border-b pb-3">
+            <div className="flex flex-col gap-3 border-b pb-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <h3 className={`font-semibold ${text}`}>Markdown 正文</h3>
-                <p className="text-xs text-gray-500">上传 .md 文件或直接粘贴内容并可修改</p>
+                <p className="text-xs text-gray-500">上传 .md、粘贴内容，或在当前光标处插入图片</p>
               </div>
-              <button
-                type="button"
-                className="text-sm text-indigo-500 flex items-center gap-1 hover:text-indigo-400"
-                onClick={() => markdownInputRef.current?.click()}
-              >
-                <Upload size={16} /> 上传 .md
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="text-sm text-indigo-500 flex items-center gap-1 hover:text-indigo-400"
+                  onClick={() => markdownFileInputRef.current?.click()}
+                >
+                  <Upload size={16} /> 上传 .md
+                </button>
+                <button
+                  type="button"
+                  disabled={uploadingImages}
+                  className={`text-sm flex items-center gap-1 ${uploadingImages ? 'text-gray-400 cursor-not-allowed' : 'text-pink-500 hover:text-pink-400'}`}
+                  onClick={() => inlineImageInputRef.current?.click()}
+                >
+                  <ImagePlus size={16} /> {uploadingImages ? "插图上传中..." : "插入图片"}
+                </button>
+              </div>
               <input
                 type="file"
                 accept=".md,.markdown,.txt"
-                ref={markdownInputRef}
+                ref={markdownFileInputRef}
                 className="hidden"
                 onChange={handleMarkdownUpload}
               />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                ref={inlineImageInputRef}
+                className="hidden"
+                onChange={handleInlineImageUpload}
+              />
             </div>
-            {markdownFileName && (
-              <div className="text-xs text-emerald-500 flex items-center gap-1">
-                <CheckCircle size={14} /> {markdownMessage || markdownFileName}
+            {(markdownFileName || imageUploadMessage) && (
+              <div className="text-xs space-y-1">
+                {markdownFileName && (
+                  <div className="text-emerald-500 flex items-center gap-1">
+                    <CheckCircle size={14} /> {markdownMessage || markdownFileName}
+                  </div>
+                )}
+                {imageUploadMessage && (
+                  <div className="text-indigo-500 flex items-center gap-1">
+                    <ImagePlus size={14} /> {imageUploadMessage}
+                  </div>
+                )}
               </div>
             )}
             <textarea
+              ref={markdownEditorRef}
               className={`${inputClass} min-h-[420px] font-mono text-sm`}
               value={mdContent}
               onChange={(e) => setMdContent(e.target.value)}
@@ -1392,7 +1491,7 @@ const CreatePostView = ({ isDarkMode }) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 1</p>
-                <h3 className="font-semibold flex items-center gap-2"><Upload size={16} /> 上传图片资源</h3>
+                <h3 className="font-semibold flex items-center gap-2"><FolderPlus size={16} /> 资源标识</h3>
               </div>
               <button
                 type="button"
@@ -1402,35 +1501,11 @@ const CreatePostView = ({ isDarkMode }) => {
                 <RefreshCw size={14} /> 重新生成
               </button>
             </div>
-            <div className="text-xs text-gray-500">
-              当前文件夹：<code className="px-2 py-1 rounded bg-black/5 dark:bg-white/5 break-all">/uploads/{assetsFolder}</code>
+            <div className="text-xs text-gray-500 space-y-2">
+              <p>当前 slug：<code className="px-2 py-1 rounded bg-black/5 dark:bg-white/5 break-all">{assetsFolder ? `/uploads/${assetsFolder}` : "生成中..."}</code></p>
+              <p>所有插入的图片文件都会写入该目录，Markdown 将直接引用 `/uploads/&lt;slug&gt;/xxx.png`。</p>
+              <p>每次上传成功后接口会返回以分号拼接的图片地址串，可直接贴入需要存储地址的数据库字段。</p>
             </div>
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              disabled={uploadingImages}
-              className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-xl py-4 text-sm ${uploadingImages ? 'opacity-60 cursor-not-allowed' : 'hover:border-pink-400'}`}
-            >
-              <FolderPlus size={18} /> {uploadingImages ? "上传中..." : "选择图片文件夹"}
-            </button>
-            <input
-              type="file"
-              ref={imageInputRef}
-              className="hidden"
-              multiple
-              directory=""
-              webkitdirectory="true"
-              mozdirectory="true"
-              onChange={handleImageUpload}
-            />
-            {imageUploadMessage && (
-              <p className="text-xs text-emerald-500 flex items-center gap-1">
-                <CheckCircle size={14} /> {imageUploadMessage}
-              </p>
-            )}
-            <p className="text-xs text-gray-500">
-              支持一次性上传整个图片文件夹，文件会落在 `/uploads/posts/...` 目录，可多次覆盖。
-            </p>
           </div>
 
           <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>

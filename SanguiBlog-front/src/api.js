@@ -1,5 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
-const API_ORIGIN = API_BASE.replace(/\/api$/, "");
+export const API_ORIGIN = API_BASE.replace(/\/api$/, "");
+export const ASSET_ORIGIN = (import.meta.env.VITE_ASSET_ORIGIN || API_ORIGIN).replace(/\/$/, "");
 
 const buildHeaders = () => {
   const token = localStorage.getItem("sg_token");
