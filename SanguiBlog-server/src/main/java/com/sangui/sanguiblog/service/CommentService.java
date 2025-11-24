@@ -9,6 +9,8 @@ import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class CommentService {
 
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public List<CommentDto> listByPost(Long postId) {
         List<Comment> comments = commentRepository.findByPostIdAndStatusOrderByCreatedAtDesc(postId, "APPROVED");
         List<CommentDto> allDtos = comments.stream().map(this::toDto).toList();
@@ -141,6 +144,19 @@ public class CommentService {
         return toDto(updated);
     }
 
+    @Transactional(readOnly = true)
+    public List<CommentDto> listRecent(int size) {
+        int limit = Math.min(Math.max(size, 1), 20);
+        Page<Comment> page = commentRepository.findByStatusOrderByCreatedAtDesc("APPROVED", PageRequest.of(0, limit));
+        return page.stream()
+                .map(comment -> {
+                    CommentDto dto = toDto(comment);
+                    dto.setReplies(null);
+                    return dto;
+                })
+                .toList();
+    }
+
     private CommentDto toDto(Comment comment) {
         String time = comment.getCreatedAt() != null
                 ? TIME_FMT.format(comment.getCreatedAt().atZone(ZoneId.systemDefault()))
@@ -172,6 +188,9 @@ public class CommentService {
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .replies(new java.util.ArrayList<>())
                 .time(time)
+                .postId(comment.getPost() != null ? comment.getPost().getId() : null)
+                .postTitle(comment.getPost() != null ? comment.getPost().getTitle() : null)
+                .postSlug(comment.getPost() != null ? comment.getPost().getSlug() : null)
                 .build();
     }
 }

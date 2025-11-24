@@ -162,6 +162,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   后端：`CommentService#listByPost` 会按 `parent_comment_id` 构建树形 `CommentDto.replies`，前端无需再次聚合；新增、删除、编辑均会触发 `loadComments(postId)` 重新拉取。
 *   头像：若评论由登录用户提交，渲染时优先读取用户当前 `avatar_url`，保证更新头像后历史评论也能展示最新形象；匿名评论则退回 `author_avatar_url` 字段。
 *   前端：`AppFull.jsx` 中的 `CommentsSection` 递归渲染 `replies`，支持楼中楼展示，但从交互上限制两层（顶层评论 + 一次回复），超过一层的节点不再出现“回复”按钮；评论总数通过递归统计所有层级，UI 会同步显示。
+*   接口补充：`GET /api/comments/recent?size=5` 会返回最近通过审核的若干条评论（默认 5 条，上限 20），每条带有 `postId/postTitle/postSlug` 便于前端跳转对应文章。首页左侧的“最新评论”模块直接消费该接口，并在评论增删改后由 `useBlogData` 自动刷新。
 
 ## 5. 易错点与注意事项 (Common Pitfalls & Gotchas)
 

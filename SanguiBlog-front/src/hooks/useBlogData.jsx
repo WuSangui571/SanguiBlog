@@ -6,6 +6,7 @@ import {
   fetchPosts,
   fetchPostDetail,
   fetchComments,
+  fetchRecentComments,
   createComment,
   deleteComment,
   updateComment,
@@ -29,6 +30,7 @@ function useProvideBlog() {
   const [tags, setTags] = useState([]);
   const [article, setArticle] = useState(null);
   const [comments, setComments] = useState([]);
+  const [recentComments, setRecentComments] = useState([]);
   const [user, setUser] = useState(null);
 
   const loadMeta = useCallback(async () => {
@@ -98,6 +100,16 @@ function useProvideBlog() {
     }
   }, []);
 
+  const loadRecentComments = useCallback(async (size = 5) => {
+    try {
+      const res = await fetchRecentComments(size);
+      const data = res.data || res;
+      setRecentComments(data || []);
+    } catch (e) {
+      console.warn("load recent comments failed", e);
+    }
+  }, []);
+
   const loadArticle = useCallback(async (id) => {
     setArticle(null);
     setComments([]);
@@ -115,19 +127,22 @@ function useProvideBlog() {
   const submitComment = useCallback(async (postId, payload) => {
     const res = await createComment(postId, payload);
     await loadComments(postId);
+    await loadRecentComments();
     return res.data || res;
-  }, [loadComments]);
+  }, [loadComments, loadRecentComments]);
 
   const removeComment = useCallback(async (postId, commentId) => {
     await deleteComment(postId, commentId);
     await loadComments(postId);
-  }, [loadComments]);
+    await loadRecentComments();
+  }, [loadComments, loadRecentComments]);
 
   const editComment = useCallback(async (postId, commentId, content) => {
     const res = await updateComment(postId, commentId, content);
     await loadComments(postId);
+    await loadRecentComments();
     return res.data || res;
-  }, [loadComments]);
+  }, [loadComments, loadRecentComments]);
 
   const doLogin = useCallback(async (username, password) => {
     const res = await apiLogin(username, password);
@@ -147,8 +162,9 @@ function useProvideBlog() {
     loadCategories();
     loadTags();
     loadPosts();
+    loadRecentComments();
     checkAuth();
-  }, [loadCategories, loadTags, loadMeta, loadPosts, checkAuth]);
+  }, [loadCategories, loadTags, loadMeta, loadPosts, loadRecentComments, checkAuth]);
 
   return useMemo(
     () => ({
@@ -158,15 +174,17 @@ function useProvideBlog() {
       posts,
       article,
       comments,
+       recentComments,
       user,
       loadPosts,
       loadArticle,
       submitComment,
       removeComment,
       editComment,
+      loadRecentComments,
       doLogin,
       logout,
     }),
-    [meta, categories, tags, posts, article, comments, user, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout]
+    [meta, categories, tags, posts, article, comments, recentComments, user, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, doLogin, logout]
   );
 }

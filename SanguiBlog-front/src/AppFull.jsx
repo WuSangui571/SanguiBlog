@@ -1137,7 +1137,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.18
+          SANGUI BLOG // V1.2.19
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -3925,7 +3925,7 @@ const ScrollToTop = ({ isDarkMode }) => {
 // --- 5. Main App ---
 
 export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, onViewChange }) {
-  const { meta, categories, tags, posts, article, comments, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout, user: blogUser } = useBlog();
+  const { meta, categories, tags, posts, article, comments, recentComments, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout, user: blogUser } = useBlog();
   const navigate = useNavigate();
   const [view, setView] = useState(initialView);
   const [user, setUser] = useState(null);
@@ -4039,6 +4039,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
               postsData={posts}
               categoriesData={categories}
               tagsData={tags}
+              recentComments={recentComments}
               stats={meta?.stats}
               author={meta?.author}
               activeParent={activeParent}
@@ -4157,7 +4158,7 @@ const StatsStrip = ({ isDarkMode, stats }) => {
   );
 };
 
-const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesData, tagsData, stats, author, activeParent, setActiveParent, activeSub, setActiveSub }) => {
+const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesData, tagsData, stats, author, activeParent, setActiveParent, activeSub, setActiveSub, recentComments }) => {
   const [showWechat, setShowWechat] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [konamiActive, setKonamiActive] = useState(false);
@@ -4251,6 +4252,8 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
     'bg-[#0EA5E9] text-white',
     'bg-[#F97316] text-black'
   ];
+  const recentList = useMemo(() => (Array.isArray(recentComments) ? recentComments.slice(0, 5) : []), [recentComments]);
+  const recentFallbackAvatar = 'https://api.dicebear.com/7.x/identicon/svg?seed=sanguicomment&backgroundColor=FFD700,6366F1';
 
   return (
     <>
@@ -4364,6 +4367,42 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
                   ))
                 ) : (
                   <span className={`text-sm font-bold ${subText}`}>暂无标签</span>
+                )}
+              </div>
+            </div>
+
+            <div className={`${sidebarBg} border-2 border-black p-5 shadow-[6px_6px_0px_0px_#000]`}>
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="font-black text-lg flex items-center gap-2"><MessageCircle size={18} /> 最新评论</h4>
+                <span className={`text-[10px] font-mono ${subText}`}>NEW X {recentList.length}</span>
+              </div>
+              <div className="mt-4 space-y-4">
+                {recentList.length ? recentList.map((comment) => {
+                  const avatar = buildMediaUrl(comment.avatar, recentFallbackAvatar);
+                  return (
+                    <div key={comment.id} className={`border-2 border-black p-3 rounded-xl ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-[4px_4px_0px_0px_#000]`}>
+                      <div className="flex items-center gap-3">
+                        <img src={avatar} alt={comment.authorName || '访客'} className="w-10 h-10 rounded-full border-2 border-black object-cover bg-[#FFD700]" />
+                        <div>
+                          <p className="font-black text-sm">{comment.authorName || '访客'}</p>
+                          <p className="text-[11px] text-gray-500">{comment.time || ''}</p>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-sm font-medium leading-relaxed max-h-20 overflow-hidden">{comment.content}</p>
+                      <button
+                        onClick={() => {
+                          if (!comment.postId) return;
+                          setArticleId(comment.postId);
+                          setView('article');
+                        }}
+                        className="mt-3 text-xs font-black uppercase tracking-widest border border-black px-3 py-1 bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform"
+                      >
+                        查看《{comment.postTitle || '文章'}》
+                      </button>
+                    </div>
+                  );
+                }) : (
+                  <p className={`text-sm font-bold ${subText}`}>暂无最新评论</p>
                 )}
               </div>
             </div>

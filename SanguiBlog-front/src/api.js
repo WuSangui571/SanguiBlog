@@ -118,6 +118,13 @@ export const fetchCurrentUser = () => request("/auth/me");
 
 export const fetchComments = (postId) => request(`/posts/${postId}/comments`);
 
+export const fetchRecentComments = (size = 5) => {
+  const search = new URLSearchParams();
+  if (size) search.append("size", size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/comments/recent${query}`);
+};
+
 export const createComment = (postId, payload) =>
   request(`/posts/${postId}/comments`, {
     method: "POST",

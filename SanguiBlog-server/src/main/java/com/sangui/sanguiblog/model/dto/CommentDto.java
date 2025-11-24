@@ -17,4 +17,7 @@ public class CommentDto {
     private Long parentId;
     private List<CommentDto> replies;
     private String time;
+    private Long postId;
+    private String postTitle;
+    private String postSlug;
 }
