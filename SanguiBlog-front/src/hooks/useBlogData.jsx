@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useCall
 import {
   fetchSiteMeta,
   fetchCategories,
+  fetchTags,
   fetchPosts,
   fetchPostDetail,
   fetchComments,
@@ -25,6 +26,7 @@ function useProvideBlog() {
   const [meta, setMeta] = useState(null);
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [tags, setTags] = useState([]);
   const [article, setArticle] = useState(null);
   const [comments, setComments] = useState([]);
   const [user, setUser] = useState(null);
@@ -63,6 +65,16 @@ function useProvideBlog() {
       setCategories([{ id: "all", label: "全部", children: [] }, ...(data || [])]);
     } catch (e) {
       console.warn("load categories failed", e);
+    }
+  }, []);
+
+  const loadTags = useCallback(async () => {
+    try {
+      const res = await fetchTags();
+      const data = res.data || res;
+      setTags(data || []);
+    } catch (e) {
+      console.warn("load tags failed", e);
     }
   }, []);
 
@@ -133,14 +145,16 @@ function useProvideBlog() {
   useEffect(() => {
     loadMeta();
     loadCategories();
+    loadTags();
     loadPosts();
     checkAuth();
-  }, [loadCategories, loadMeta, loadPosts, checkAuth]);
+  }, [loadCategories, loadTags, loadMeta, loadPosts, checkAuth]);
 
   return useMemo(
     () => ({
       meta,
       categories,
+      tags,
       posts,
       article,
       comments,
@@ -153,6 +167,6 @@ function useProvideBlog() {
       doLogin,
       logout,
     }),
-    [meta, categories, posts, article, comments, user, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout]
+    [meta, categories, tags, posts, article, comments, user, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout]
   );
 }

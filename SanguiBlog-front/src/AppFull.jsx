@@ -1137,7 +1137,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.17
+          SANGUI BLOG // V1.2.18
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -3925,7 +3925,7 @@ const ScrollToTop = ({ isDarkMode }) => {
 // --- 5. Main App ---
 
 export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, onViewChange }) {
-  const { meta, categories, posts, article, comments, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout, user: blogUser } = useBlog();
+  const { meta, categories, tags, posts, article, comments, loadPosts, loadArticle, submitComment, removeComment, editComment, doLogin, logout, user: blogUser } = useBlog();
   const navigate = useNavigate();
   const [view, setView] = useState(initialView);
   const [user, setUser] = useState(null);
@@ -4038,6 +4038,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
               isDarkMode={isDarkMode}
               postsData={posts}
               categoriesData={categories}
+              tagsData={tags}
               stats={meta?.stats}
               author={meta?.author}
               activeParent={activeParent}
@@ -4156,7 +4157,7 @@ const StatsStrip = ({ isDarkMode, stats }) => {
   );
 };
 
-const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesData, stats, author, activeParent, setActiveParent, activeSub, setActiveSub }) => {
+const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesData, tagsData, stats, author, activeParent, setActiveParent, activeSub, setActiveSub }) => {
   const [showWechat, setShowWechat] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [konamiActive, setKonamiActive] = useState(false);
@@ -4218,18 +4219,30 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
   const authorAvatar = buildMediaUrl(displayAuthor.avatar, MOCK_USER.avatar);
   const authorWechat = "http://localhost:8080/contact/wechat.jpg";
   const allTags = useMemo(() => {
+    if (Array.isArray(tagsData) && tagsData.length) {
+      const normalized = tagsData
+        .map((tag) => {
+          if (!tag) return null;
+          if (typeof tag === 'string') return tag;
+          return tag.name || tag.label || tag.slug || null;
+        })
+        .filter(Boolean);
+      return Array.from(new Set(normalized));
+    }
     const source = postsData && postsData.length ? postsData : MOCK_POSTS;
     const unique = [];
     const seen = new Set();
     source.forEach((post) => {
       (post.tags || []).forEach((tag) => {
-        if (!tag || seen.has(tag)) return;
-        seen.add(tag);
-        unique.push(tag);
+        if (!tag) return;
+        const name = typeof tag === 'string' ? tag : tag.name || tag.label;
+        if (!name || seen.has(name)) return;
+        seen.add(name);
+        unique.push(name);
       });
     });
     return unique;
-  }, [postsData]);
+  }, [tagsData, postsData]);
   const tagAccentClasses = [
     'bg-[#FFD700] text-black',
     'bg-[#FF0080] text-white',
