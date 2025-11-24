@@ -74,14 +74,11 @@ public class PostAssetService {
     }
 
     public void storeFiles(Path baseDir, List<MultipartFile> files) {
+        String commonPrefix = detectCommonPrefix(files);
         for (MultipartFile file : files) {
-            String relativeName = file.getOriginalFilename() != null ? file.getOriginalFilename() : file.getName();
-            relativeName = relativeName.replace("\\", "/");
-            relativeName = relativeName.replace("../", "");
-            relativeName = relativeName.replace("./", "");
-            relativeName = relativeName.replaceAll("^/+", "");
-            if (relativeName.contains("/")) {
-                relativeName = relativeName.substring(relativeName.indexOf('/') + 1);
+            String relativeName = sanitizeRelativePath(file.getOriginalFilename());
+            if (commonPrefix != null && relativeName.startsWith(commonPrefix + "/")) {
+                relativeName = relativeName.substring(commonPrefix.length() + 1);
             }
             if (!StringUtils.hasText(relativeName)) {
                 continue;
@@ -97,5 +94,40 @@ public class PostAssetService {
                 throw new IllegalStateException("保存文件失败: " + relativeName, e);
             }
         }
+    }
+
+    private String sanitizeRelativePath(String raw) {
+        String relativeName = raw != null ? raw : "";
+        relativeName = relativeName.replace("\\", "/");
+        relativeName = relativeName.replace("..", "");
+        relativeName = relativeName.replace("./", "");
+        relativeName = relativeName.replaceAll("^/+", "");
+        relativeName = relativeName.replaceAll("/{2,}", "/");
+        return relativeName;
+    }
+
+    private String detectCommonPrefix(List<MultipartFile> files) {
+        String prefix = null;
+        boolean hasPrefix = true;
+        for (MultipartFile file : files) {
+            String name = sanitizeRelativePath(file.getOriginalFilename());
+            int idx = name.indexOf('/');
+            if (idx <= 0) {
+                hasPrefix = false;
+                break;
+            }
+            String current = name.substring(0, idx);
+            if (!StringUtils.hasText(current)) {
+                hasPrefix = false;
+                break;
+            }
+            if (prefix == null) {
+                prefix = current;
+            } else if (!prefix.equals(current)) {
+                hasPrefix = false;
+                break;
+            }
+        }
+        return hasPrefix ? prefix : null;
     }
 }
