@@ -1137,7 +1137,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.15
+          SANGUI BLOG // V1.2.16
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -3280,6 +3280,11 @@ const UserManagementView = ({ isDarkMode }) => {
   const [feedback, setFeedback] = useState(null);
   const formRef = useRef(null);
   const usersFetchTokenRef = useRef(0);
+  const scrollFormIntoView = useCallback(() => {
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, []);
 
   const cardBg = isDarkMode ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200";
   const inputClass = `w-full px-3 py-2 border-2 rounded font-medium outline-none transition-colors ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white focus:border-indigo-400' : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500'}`;
@@ -3305,29 +3310,15 @@ const UserManagementView = ({ isDarkMode }) => {
     try {
       const params = { page, size };
       if (roleFilter !== 'all') params.role = roleFilter;
-      if (keyword.trim()) params.keyword = keyword.trim();
+      const trimmedKeyword = keyword.trim();
+      if (trimmedKeyword) params.keyword = trimmedKeyword;
       const res = await adminFetchUsers(params);
       const data = res.data || res;
-      let records = data?.records || [];
-      const kw = keyword.trim().toLowerCase();
-      if (kw) {
-        records = records.filter((user) =>
-          [user.username, user.displayName, user.email]
-            .filter(Boolean)
-            .some((field) => field.toLowerCase().includes(kw))
-        );
-      }
-      if (roleFilter !== 'all') {
-        records = records.filter(
-          (user) => (user.roleCode || '').toUpperCase() === roleFilter.toUpperCase()
-        );
-      }
       if (usersFetchTokenRef.current !== token) {
         return;
       }
-      setUsers(records);
-      const hasClientFilter = Boolean(kw) || roleFilter !== 'all';
-      setTotal(hasClientFilter ? records.length : (data?.total || records.length));
+      setUsers(data?.records || []);
+      setTotal(data?.total || 0);
     } catch (err) {
       if (usersFetchTokenRef.current === token) {
         setFeedback({ type: 'error', text: err.message || '加载用户失败' });
@@ -3356,7 +3347,8 @@ const UserManagementView = ({ isDarkMode }) => {
     setSelectedUserId(null);
     setFormMode('create');
     setFeedback(null);
-  }, [roles]);
+    scrollFormIntoView();
+  }, [roles, scrollFormIntoView]);
 
   const formatDate = (value) => (value ? new Date(value).toLocaleString() : '—');
 
