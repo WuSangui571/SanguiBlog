@@ -146,8 +146,19 @@ public class CommentService {
                 ? TIME_FMT.format(comment.getCreatedAt().atZone(ZoneId.systemDefault()))
                 : "";
 
-        String avatarUrl = comment.getAuthorAvatarUrl();
-        if (avatarUrl != null && !avatarUrl.isEmpty() && !avatarUrl.startsWith("http")) {
+        String avatarUrl = null;
+        if (comment.getUser() != null) {
+            avatarUrl = comment.getUser().getAvatarUrl();
+        }
+        if ((avatarUrl == null || avatarUrl.isBlank()) && comment.getAuthorAvatarUrl() != null) {
+            avatarUrl = comment.getAuthorAvatarUrl();
+        }
+        if (avatarUrl != null && !avatarUrl.isBlank() && !avatarUrl.startsWith("http")) {
+            if (avatarUrl.startsWith("/avatar/")) {
+                avatarUrl = avatarUrl.substring("/avatar/".length());
+            } else if (avatarUrl.startsWith("avatar/")) {
+                avatarUrl = avatarUrl.substring("avatar/".length());
+            }
             avatarUrl = "/avatar/" + avatarUrl;
         }
 
