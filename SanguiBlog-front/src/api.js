@@ -90,6 +90,8 @@ export const adminFetchPosts = (params = {}) => {
   return request(`/admin/posts${query}`);
 };
 
+export const adminFetchPostDetail = (id) => request(`/admin/posts/${id}`);
+
 export const adminUpdatePost = (id, payload) =>
   request(`/admin/posts/${id}`, {
     method: "PUT",
@@ -216,5 +218,11 @@ export const uploadPostAssets = async (files, folder) => {
 export const createPost = (payload) =>
   request("/posts", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const updatePost = (id, payload) =>
+  request(`/posts/${id}`, {
+    method: "PUT",
     body: JSON.stringify(payload),
   });

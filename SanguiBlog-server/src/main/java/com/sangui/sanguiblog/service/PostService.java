@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.model.dto.AdminPostDetailDto;
 import com.sangui.sanguiblog.model.dto.AdminPostUpdateRequest;
 import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.PostAdminDto;
@@ -202,6 +203,14 @@ public class PostService {
         return new PageResponse<>(dtos, posts.getTotalElements(), posts.getNumber() + 1, posts.getSize());
     }
 
+    @Transactional(readOnly = true)
+    public AdminPostDetailDto getAdminDetail(Long id) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("æ–‡ç« ä¸å­˜åœ?"
+                ));
+        return toAdminDetail(post);
+    }
+
     @Transactional
     public PostAdminDto updateMeta(Long id, AdminPostUpdateRequest request) {
         Post post = postRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("文章不存在"));
@@ -231,6 +240,38 @@ public class PostService {
             post.setTags(tags);
         }
         return toAdminDto(postRepository.save(post));
+    }
+
+    private AdminPostDetailDto toAdminDetail(Post post) {
+        List<Long> tagIds = post.getTags().stream().map(Tag::getId).toList();
+        List<com.sangui.sanguiblog.model.dto.TagDto> tagDtos = post.getTags().stream()
+                .map(tag -> com.sangui.sanguiblog.model.dto.TagDto.builder()
+                        .id(tag.getId())
+                        .name(tag.getName())
+                        .slug(tag.getSlug())
+                        .build())
+                .toList();
+        Long parentId = null;
+        if (post.getCategory() != null) {
+            parentId = post.getCategory().getParent() != null
+                    ? post.getCategory().getParent().getId()
+                    : post.getCategory().getId();
+        }
+        return AdminPostDetailDto.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .slug(post.getSlug())
+                .excerpt(post.getExcerpt())
+                .contentMd(post.getContentMd())
+                .contentHtml(post.getContentHtml())
+                .themeColor(post.getThemeColor())
+                .status(post.getStatus())
+                .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
+                .parentCategoryId(parentId)
+                .publishedAt(post.getPublishedAt())
+                .tagIds(tagIds)
+                .tags(tagDtos)
+                .build();
     }
 
     private void incrementViews(Post post, String ip) {

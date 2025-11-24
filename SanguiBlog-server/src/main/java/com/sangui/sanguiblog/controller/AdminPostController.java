@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.controller;
 
+import com.sangui.sanguiblog.model.dto.AdminPostDetailDto;
 import com.sangui.sanguiblog.model.dto.AdminPostUpdateRequest;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.PageResponse;
@@ -25,6 +26,11 @@ public class AdminPostController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.ok(postService.adminList(keyword, categoryId, page, size));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<AdminPostDetailDto> detail(@PathVariable Long id) {
+        return ApiResponse.ok(postService.getAdminDetail(id));
     }
 
     @PutMapping("/{id}")
