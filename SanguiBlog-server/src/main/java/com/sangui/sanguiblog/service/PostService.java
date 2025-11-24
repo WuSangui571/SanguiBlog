@@ -206,8 +206,7 @@ public class PostService {
     @Transactional(readOnly = true)
     public AdminPostDetailDto getAdminDetail(Long id) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("æ–‡ç« ä¸å­˜åœ?"
-                ));
+                .orElseThrow(() -> new IllegalArgumentException("文章不存在"));
         return toAdminDetail(post);
     }
 
