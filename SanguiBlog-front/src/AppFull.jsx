@@ -27,6 +27,7 @@ import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import { visit } from 'unist-util-visit';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
 import AdminProfile from './pages/admin/Profile';
 import {
@@ -40,6 +41,47 @@ import {
 } from 'lucide-react';
 
 // ... (keep existing code until CommentsSection)
+
+const escapeHtml = (value = "") =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const remarkHighlight = () => (tree) => {
+  visit(tree, 'text', (node, index, parent) => {
+    if (!parent || typeof node.value !== 'string') return;
+    if (!node.value.includes('==')) return;
+    const regex = /==([^=]+)==/g;
+    const newNodes = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(node.value)) !== null) {
+      if (match.index > lastIndex) {
+        newNodes.push({
+          type: 'text',
+          value: node.value.slice(lastIndex, match.index),
+        });
+      }
+      newNodes.push({
+        type: 'html',
+        value: `<mark>${escapeHtml(match[1])}</mark>`,
+      });
+      lastIndex = match.index + match[0].length;
+    }
+    if (!newNodes.length) return;
+    if (lastIndex < node.value.length) {
+      newNodes.push({
+        type: 'text',
+        value: node.value.slice(lastIndex),
+      });
+    }
+    parent.children.splice(index, 1, ...newNodes);
+    return [visit.SKIP, index + newNodes.length];
+  });
+};
 
 const CommentsSection = ({ list = [], isDarkMode, onSubmit, currentUser, setView, onDeleteComment, onUpdateComment, postAuthorName }) => {
   const [content, setContent] = useState("");
@@ -635,7 +677,7 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
             </div>
             {shouldRenderMarkdown ? (
               <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkMath]}
+                remarkPlugins={[remarkGfm, remarkMath, remarkHighlight]}
                 rehypePlugins={[rehypeRaw, rehypeKatex]}
                 components={markdownComponents}
               >
@@ -1021,7 +1063,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.7
+          SANGUI BLOG // V1.2.8
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
