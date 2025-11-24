@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
+const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 const buildHeaders = () => {
   const token = localStorage.getItem("sg_token");
@@ -156,7 +157,7 @@ export const uploadAvatar = async (file) => {
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const res = await fetch(`${API_BASE.replace('/api', '')}/api/upload/avatar`, {
+  const res = await fetch(`${API_ORIGIN}/api/upload/avatar`, {
     method: "POST",
     headers: {
       Authorization: token ? `Bearer ${token}` : "",
@@ -170,3 +171,49 @@ export const uploadAvatar = async (file) => {
   }
   return res.json();
 };
+
+export const reservePostAssetsFolder = async (folder) => {
+  const token = localStorage.getItem("sg_token");
+  const formData = new FormData();
+  if (folder) formData.append("folder", folder);
+  const res = await fetch(`${API_ORIGIN}/api/upload/post-assets/reserve`, {
+    method: "POST",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: formData,
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt || res.statusText);
+  }
+  return res.json();
+};
+
+export const uploadPostAssets = async (files, folder) => {
+  const token = localStorage.getItem("sg_token");
+  const formData = new FormData();
+  if (folder) formData.append("folder", folder);
+  files.forEach((file) => {
+    const name = file.webkitRelativePath || file.relativePath || file.name;
+    formData.append("files", file, name);
+  });
+  const res = await fetch(`${API_ORIGIN}/api/upload/post-assets`, {
+    method: "POST",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: formData,
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt || res.statusText);
+  }
+  return res.json();
+};
+
+export const createPost = (payload) =>
+  request("/posts", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });

@@ -2,7 +2,9 @@ package com.sangui.sanguiblog.controller;
 
 import com.sangui.sanguiblog.config.StoragePathResolver;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
+import com.sangui.sanguiblog.service.PostAssetService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,6 +25,7 @@ import java.util.UUID;
 public class UploadController {
 
     private final StoragePathResolver storagePathResolver;
+    private final PostAssetService postAssetService;
 
     @PostMapping("/avatar")
     public ApiResponse<Map<String, String>> uploadAvatar(@RequestParam("avatar") MultipartFile file) {
@@ -30,7 +34,6 @@ public class UploadController {
         }
 
         try {
-            // Generate unique filename
             String originalFilename = file.getOriginalFilename();
             String extension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
@@ -38,16 +41,41 @@ public class UploadController {
             }
             String filename = UUID.randomUUID().toString() + extension;
 
-            // Save file
             Path filePath = storagePathResolver.resolveAvatarFile(filename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Return URL (relative path)
             String url = "/avatar/" + filename;
             return ApiResponse.ok(Map.of("url", url, "filename", filename));
 
         } catch (IOException e) {
             throw new RuntimeException("文件上传失败: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/post-assets/reserve")
+    public ApiResponse<Map<String, String>> reservePostAssetsFolder(
+            @RequestParam(value = "folder", required = false) String folder) {
+        String slug = StringUtils.hasText(folder)
+                ? postAssetService.normalizeFolderSlug(folder)
+                : postAssetService.generateFolderSlug();
+        postAssetService.ensureFolder(slug);
+        return ApiResponse.ok(Map.of("folder", slug));
+    }
+
+    @PostMapping("/post-assets")
+    public ApiResponse<Map<String, Object>> uploadPostAssets(
+            @RequestParam(value = "folder", required = false) String folder,
+            @RequestParam("files") List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new IllegalArgumentException("请至少选择一张图片");
+        }
+        String slug = StringUtils.hasText(folder)
+                ? postAssetService.normalizeFolderSlug(folder)
+                : postAssetService.generateFolderSlug();
+        Path baseDir = postAssetService.prepareCleanFolder(slug);
+        postAssetService.storeFiles(baseDir, files);
+        return ApiResponse.ok(Map.of(
+                "folder", slug,
+                "count", files.size()));
     }
 }

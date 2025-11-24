@@ -46,7 +46,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 `Controller` (API 层) -> `Service` (业务逻辑) -> `Repository` (数据访问) -> `Database`
 
 *   **入口**: `com.sangui.sanguiblog.SanguiBlogServerApplication`
-*   **配置**: `src/main/resources/application.yaml`
+*   **配置**: `src/main/resources/application.yaml`
     *   **端口**: 8080
     *   **JPA**: `ddl-auto: none` (**注意**: 数据库表结构不会自动更新，需手动维护 SQL)
     *   **JWT**: 密钥配置在 `jwt.secret`，默认有效期 180 分钟。
@@ -102,6 +102,12 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   头像上传走 `/api/upload/avatar`，成功后立即调用 `updateProfile` 持久化路径；密码修改需先验证原密码，通过后输入新密码才可提交。
 *   页面支持暗色模式，并提供明确的状态提示与校验反馈。
 
+### 3.7 后台文章发布
+*   `/admin/create-post` 页面已升级为“Markdown + 资源文件夹”的流程：先通过“预留图片目录”获取唯一 `slug`，若需要上传图片可使用目录上传按钮将整包图片写入 `/uploads/posts/<slug>/`。
+*   Markdown 文件通过本地读取填充正文，若标题输入框仍为空会自动使用文件名（去除扩展名）；摘要可自定义，也可以在提交前由正文前 160 字自动生成。
+*   仅支持选择二级分类（先点一级分类再点下方子类），以及至少一个标签；三项均完成后才能启用“立即发布”按钮，避免漏填元数据。
+*   发布会调用 `POST /api/posts`，其中 `slug` 必须传入预留/上传得到的目录名称；后端会校验唯一性并在必要时创建空目录，确保数据库与磁盘一一对应。
+
 ---
 
 ## 4. 数据存储与规则 (Data Storage & Rules)
@@ -132,13 +138,12 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   **关键**: 文章的元数据（标题、作者、分类、摘要等）都在 `summary` 字段中，且为扁平化结构（如 `authorName`, `category` 为字符串），而非嵌套对象。
     *   前端 `ArticleDetail` 组件需优先从 `articleData.summary` 获取这些信息。
 
-### 4.4 ????????? (Static Resources & Avatars)
-
-*   **?????**?pplication.yaml ?? storage.base-path??????? STORAGE_BASE_PATH?????????????????????????? uploads?????????????? vatar/ ????
-*   **????**???????????????????????????? <base-path>/avatar/????????????????????????????????????
-*   **?????**?users.avatar_url ??????? vatar/ ?????????????????? /avatar/ ?????????????????
-*   **????**?WebConfig ????????? /avatar/** ? /uploads/** ?? storage.base-path?Jar ????????? static/ ?????????????
-*   **????**??????? http ???????????? http://<server-host>/avatar/<filename> ?????? CDN / ???????????????
+### 4.4 静态资源与头像存储 (Static Resources & Avatars)
+*   **根路径配置**：`application.yaml` 暴露 `storage.base-path`（支持环境变量 `STORAGE_BASE_PATH`），用于指定所有本地静态资源的根目录，默认值为仓库根目录下的 `uploads`。应用启动时会自动创建根目录以及 `avatar/`、`posts/` 等必要子目录。
+*   **目录结构**：头像、文章图片、附件等均放置在根目录下的独立子目录，例如文章资源统一保存在 `<base-path>/posts/<slug>/`。后续扩展新的资源类型时只需在该根目录内再创建子目录即可，部署与备份流程保持一致。
+*   **数据库字段**：`users.avatar_url` 保存头像文件名或 `avatar/` 相对路径；`posts.slug` 现改为记录文章图片文件夹的相对路径（如 `posts/20241124/abc123`），后端返回数据时会携带该路径以便前端按需拼接。
+*   **静态映射**：`WebConfig` 将 `/avatar/**` 与 `/uploads/**` 映射到实际文件系统目录，无需重新打包 `static/` 资源即可即时读取最新上传内容。文章图片可直接通过 `http://<server>/uploads/<slug>/xxx.png` 访问。
+*   **前端处理**：上传图片时需携带返回的 `slug`，后续渲染图片时直接拼接 `/uploads/${slug}/...`；即使对应文章未上传图片，也需要先预留唯一的 `slug` 以便数据库和文件系统占位。
 
 ### 4.5 评论与楼中楼
 *   数据结构：`comments` 表含 `parent_comment_id` 外键（见 `sanguiblog_db.sql`），配合 `ON DELETE SET NULL` 可形成任意深度的树形结构。SQL 文件附带了多条带父级关系的测试评论，可直接导入 MySQL 验证联动效果。

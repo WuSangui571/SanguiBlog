@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useBlog } from "./hooks/useBlogData";
 import {
@@ -14,7 +14,11 @@ import {
   adminDeleteCategory,
   adminFetchPosts,
   adminUpdatePost,
-  fetchCategories
+  fetchCategories,
+  fetchTags,
+  uploadPostAssets,
+  reservePostAssetsFolder,
+  createPost
 } from "./api";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -30,7 +34,7 @@ import {
   BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
   Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
   ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
-  Home, TrendingUp, Edit, Send, Moon, Sun, Upload, Map, ArrowUp, BookOpen, CheckCircle, PenTool,
+  Home, TrendingUp, Edit, Send, Moon, Sun, Upload, Map, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
   RefreshCw, Plus, Trash2, Save
 } from 'lucide-react';
 
@@ -962,7 +966,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.1.52
+          SANGUI BLOG // V1.2.1
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1117,33 +1121,372 @@ const AnalyticsView = ({ isDarkMode }) => {
 
 // 4.3 Sub-Component: Create New Post (The most important module)
 const CreatePostView = ({ isDarkMode }) => {
-  const [content, setContent] = useState('## Article Title\n\nThis is the content of the article, written in Markdown.');
+  const { categories } = useBlog();
+  const [tags, setTags] = useState([]);
+  const [assetsFolder, setAssetsFolder] = useState("");
+  const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [mdContent, setMdContent] = useState("");
+  const [markdownFileName, setMarkdownFileName] = useState("");
+  const [selectedParentId, setSelectedParentId] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [imageUploadMessage, setImageUploadMessage] = useState("");
+  const [markdownMessage, setMarkdownMessage] = useState("");
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const imageInputRef = useRef(null);
+  const markdownInputRef = useRef(null);
+
   const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
   const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
   const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
 
+  useEffect(() => {
+    const initFolder = async () => {
+      try {
+        const res = await reservePostAssetsFolder();
+        const data = res.data || res;
+        if (data?.folder) setAssetsFolder(data.folder);
+      } catch (error) {
+        setImageUploadMessage(error.message || "预留图片目录失败");
+      }
+    };
+    initFolder();
+  }, []);
+
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const res = await fetchTags();
+        const data = res.data || res;
+        setTags(data || []);
+      } catch (error) {
+        setSubmitMessage(error.message || "标签加载失败");
+      }
+    };
+    loadTags();
+  }, []);
+
+  const normalizedCategories = useMemo(() => {
+    return (categories || []).filter((cat) => typeof cat.id === "number");
+  }, [categories]);
+
+  const activeParent = normalizedCategories.find((cat) => Number(cat.id) === selectedParentId) || normalizedCategories[0];
+  useEffect(() => {
+    if (activeParent) {
+      const parentId = Number(activeParent.id);
+      if (selectedParentId !== parentId) {
+        setSelectedParentId(parentId);
+        setSelectedCategoryId(null);
+      }
+    }
+  }, [activeParent, selectedParentId]);
+
+  const secondLevelCategories = activeParent?.children || [];
+
+  const handleFolderReserve = async () => {
+    try {
+      const res = await reservePostAssetsFolder();
+      const data = res.data || res;
+      if (data?.folder) {
+        setAssetsFolder(data.folder);
+        setImageUploadMessage("已生成全新资源目录");
+      }
+    } catch (error) {
+      setImageUploadMessage(error.message || "无法生成目录");
+    }
+  };
+
+  const handleImageUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+    setUploadingImages(true);
+    setImageUploadMessage("图片上传中...");
+    try {
+      const res = await uploadPostAssets(files, assetsFolder);
+      const data = res.data || res;
+      if (data?.folder) setAssetsFolder(data.folder);
+      setImageUploadMessage(`已上传 ${data?.count || files.length} 个文件`);
+    } catch (error) {
+      setImageUploadMessage(error.message || "图片上传失败");
+    } finally {
+      setUploadingImages(false);
+      event.target.value = null;
+    }
+  };
+
+  const handleMarkdownUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      setMdContent(text);
+      setMarkdownFileName(file.name);
+      setMarkdownMessage(`已加载 ${file.name}`);
+      if (!title.trim()) {
+        const inferredTitle = file.name.replace(/\.(md|markdown|txt)$/i, "");
+        setTitle(inferredTitle);
+      }
+      if (!excerpt.trim()) {
+        const plain = text.replace(/[#>*_`-]/g, "").replace(/\s+/g, " ").trim();
+        setExcerpt(plain.slice(0, 160));
+      }
+    } catch (error) {
+      setMarkdownMessage(error.message || "读取 Markdown 失败");
+    } finally {
+      event.target.value = null;
+    }
+  };
+
+  const toggleTag = (id) => {
+    const tagId = Number(id);
+    setSelectedTags((prev) =>
+      prev.includes(tagId) ? prev.filter((value) => value !== tagId) : [...prev, tagId]
+    );
+  };
+
+  const canPublish = Boolean(
+    title.trim() &&
+    mdContent.trim() &&
+    selectedCategoryId &&
+    selectedTags.length > 0 &&
+    assetsFolder
+  );
+
+  const handlePublish = async () => {
+    if (!canPublish || submitting) return;
+    setSubmitting(true);
+    setSubmitMessage("");
+    try {
+      const payload = {
+        title: title.trim(),
+        slug: assetsFolder,
+        contentMd: mdContent,
+        excerpt: excerpt.trim() || mdContent.replace(/\s+/g, " ").slice(0, 160),
+        categoryId: selectedCategoryId,
+        tagIds: selectedTags,
+        status: "PUBLISHED",
+      };
+      const res = await createPost(payload);
+      const data = res.data || res;
+      setSubmitMessage(`发布成功（ID: ${data?.summary?.id || data?.id || "已创建"}）`);
+      setTitle("");
+      setMdContent("");
+      setMarkdownFileName("");
+      setSelectedTags([]);
+      setExcerpt("");
+      const folderRes = await reservePostAssetsFolder();
+      const folderData = folderRes.data || folderRes;
+      if (folderData?.folder) setAssetsFolder(folderData.folder);
+    } catch (error) {
+      setSubmitMessage(error.message || "发布失败");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
+          <h2 className="text-3xl font-black italic text-pink-500 flex items-center gap-2">
+            <Edit /> 发布新文章
+          </h2>
+        </div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          上传 Markdown + 资源图片，整理分类与标签后方可发布
+        </div>
+      </div>
 
-      {/* Left Column: Editor */}
-      <div className="lg:col-span-2 space-y-6">
-        <h2 className="text-3xl font-bold text-pink-500 flex items-center gap-2"><Edit /> 创建新文章</h2>
-
-        <input type="text" placeholder="文章标题" className={`${inputClass} text-2xl font-bold`} defaultValue="The Future of Backend Development" />
-
-        <div className={`${surface} p-6 rounded-lg shadow-xl ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'} space-y-4`}>
-          <div className="flex justify-between items-center border-b pb-2 mb-4">
-            <h3 className={`font-semibold ${text}`}>Markdown 内容编辑器</h3>
-            <button className="text-sm text-indigo-500 flex items-center hover:text-indigo-400"><Upload size={16} className="mr-1" /> 上传 .md 文件</button>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="xl:col-span-2 space-y-6">
+          <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+            <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章标题</label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="请输入文章标题"
+              className={`${inputClass} text-2xl font-bold`}
+            />
           </div>
-          <textarea
-            className={`${inputClass} min-h-[400px] font-mono`}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
+
+          <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+            <div className="flex justify-between items-center border-b pb-3">
+              <div>
+                <h3 className={`font-semibold ${text}`}>Markdown 正文</h3>
+                <p className="text-xs text-gray-500">上传 .md 文件或直接粘贴内容并可修改</p>
+              </div>
+              <button
+                type="button"
+                className="text-sm text-indigo-500 flex items-center gap-1 hover:text-indigo-400"
+                onClick={() => markdownInputRef.current?.click()}
+              >
+                <Upload size={16} /> 上传 .md
+              </button>
+              <input
+                type="file"
+                accept=".md,.markdown,.txt"
+                ref={markdownInputRef}
+                className="hidden"
+                onChange={handleMarkdownUpload}
+              />
+            </div>
+            {markdownFileName && (
+              <div className="text-xs text-emerald-500 flex items-center gap-1">
+                <CheckCircle size={14} /> {markdownMessage || markdownFileName}
+              </div>
+            )}
+            <textarea
+              className={`${inputClass} min-h-[420px] font-mono text-sm`}
+              value={mdContent}
+              onChange={(e) => setMdContent(e.target.value)}
+              placeholder="在此粘贴 Markdown 内容"
+            />
+          </div>
+
+          <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-3`}>
+            <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章摘要（可选）</label>
+            <textarea
+              className={`${inputClass} min-h-[120px]`}
+              value={excerpt}
+              onChange={(e) => setExcerpt(e.target.value)}
+              placeholder="用于首页卡片展示，若留空则自动截取正文前 160 字"
+            />
+          </div>
         </div>
 
-        <PopButton variant="primary" icon={Send} className="w-full">立即发布</PopButton>
+        <div className="space-y-6">
+          <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 1</p>
+                <h3 className="font-semibold flex items-center gap-2"><Upload size={16} /> 上传图片资源</h3>
+              </div>
+              <button
+                type="button"
+                onClick={handleFolderReserve}
+                className="text-xs text-indigo-500 hover:text-indigo-400 flex items-center gap-1"
+              >
+                <RefreshCw size={14} /> 重新生成
+              </button>
+            </div>
+            <div className="text-xs text-gray-500">
+              当前文件夹：<code className="px-2 py-1 rounded bg-black/5 dark:bg-white/5 break-all">/uploads/{assetsFolder}</code>
+            </div>
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={uploadingImages}
+              className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-xl py-4 text-sm ${uploadingImages ? 'opacity-60 cursor-not-allowed' : 'hover:border-pink-400'}`}
+            >
+              <FolderPlus size={18} /> {uploadingImages ? "上传中..." : "选择图片文件夹"}
+            </button>
+            <input
+              type="file"
+              ref={imageInputRef}
+              className="hidden"
+              multiple
+              directory=""
+              webkitdirectory="true"
+              mozdirectory="true"
+              onChange={handleImageUpload}
+            />
+            {imageUploadMessage && (
+              <p className="text-xs text-emerald-500 flex items-center gap-1">
+                <CheckCircle size={14} /> {imageUploadMessage}
+              </p>
+            )}
+            <p className="text-xs text-gray-500">
+              支持一次性上传整个图片文件夹，文件会落在 `/uploads/posts/...` 目录，可多次覆盖。
+            </p>
+          </div>
+
+          <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 2</p>
+            <h3 className="font-semibold flex items-center gap-2"><Layers size={16} /> 选择二级分类</h3>
+            <div className="flex flex-wrap gap-2">
+              {normalizedCategories.map((cat) => {
+                const catId = Number(cat.id);
+                return (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setSelectedParentId(catId);
+                    setSelectedCategoryId(null);
+                  }}
+                  className={`px-3 py-1 text-xs rounded-full border ${selectedParentId === catId ? 'bg-pink-500 text-white border-pink-500' : 'border-gray-300 dark:border-gray-600'}`}
+                >
+                  {cat.label}
+                </button>
+              )})}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {secondLevelCategories.map((child) => {
+                const childId = Number(child.id);
+                return (
+                <button
+                  key={child.id}
+                  onClick={() => setSelectedCategoryId(childId)}
+                  className={`p-3 rounded-xl border text-left text-sm ${selectedCategoryId === childId ? 'border-pink-500 bg-pink-50 dark:bg-pink-500/10 text-pink-500' : 'border-gray-200 dark:border-gray-700'}`}
+                >
+                  {child.label}
+                </button>
+              )})}
+            </div>
+            {!secondLevelCategories.length && (
+              <p className="text-xs text-amber-500 flex items-center gap-1">
+                <AlertTriangle size={14} /> 当前父级暂无二级分类，请先到分类管理中创建。
+              </p>
+            )}
+          </div>
+
+          <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 3</p>
+            <h3 className="font-semibold flex items-center gap-2"><Tag size={16} /> 选择标签</h3>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => toggleTag(tag.id)}
+                  className={`px-3 py-1 text-xs rounded-full border ${selectedTags.includes(tag.id) ? 'bg-indigo-500 text-white border-indigo-500' : 'border-gray-300 dark:border-gray-600'}`}
+                >
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+            {selectedTags.length === 0 && (
+              <p className="text-xs text-amber-500 flex items-center gap-1">
+                <AlertTriangle size={14} /> 至少选择一个标签，用于站内检索。
+              </p>
+            )}
+          </div>
+
+          <div className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+            <div className="flex items-center gap-2">
+              <Send /> <span>发布设置</span>
+            </div>
+            <p className="text-xs text-gray-500">
+              填写完成并确认分类/标签后可立即发布到线上。
+            </p>
+            <PopButton
+              variant={canPublish ? "primary" : "ghost"}
+              icon={Send}
+              className="w-full justify-center"
+              disabled={!canPublish || submitting}
+              onClick={handlePublish}
+            >
+              {submitting ? "发布中..." : "立即发布"}
+            </PopButton>
+            {submitMessage && (
+              <p className={`text-xs ${submitMessage.includes("成功") ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {submitMessage}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

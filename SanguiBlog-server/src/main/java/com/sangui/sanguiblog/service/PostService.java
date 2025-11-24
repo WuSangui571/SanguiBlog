@@ -27,12 +27,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.text.Normalizer;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,6 +46,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final AnalyticsPageViewRepository analyticsPageViewRepository;
+    private final PostAssetService postAssetService;
     private static final java.util.concurrent.ConcurrentHashMap<String, Long> VIEW_RATE_LIMITER = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
@@ -115,7 +115,9 @@ public class PostService {
         post.setAuthor(author);
         post.setCategory(category);
         post.setTitle(request.getTitle());
-        post.setSlug(request.getSlug());
+        String slug = resolveAssetSlug(request.getSlug(), post.getId());
+        post.setSlug(slug);
+        postAssetService.ensureFolder(slug);
         post.setExcerpt(request.getExcerpt());
         post.setContentMd(request.getContentMd());
 
@@ -138,6 +140,14 @@ public class PostService {
 
         post.setThemeColor(request.getThemeColor());
         post.setStatus(request.getStatus());
+        Instant now = Instant.now();
+        if (post.getCreatedAt() == null) {
+            post.setCreatedAt(now);
+        }
+        post.setUpdatedAt(now);
+        if ("PUBLISHED".equalsIgnoreCase(post.getStatus()) && post.getPublishedAt() == null) {
+            post.setPublishedAt(LocalDateTime.now());
+        }
 
         if (post.getLikesCount() == null) {
             post.setLikesCount(0);
@@ -196,18 +206,21 @@ public class PostService {
     public PostAdminDto updateMeta(Long id, AdminPostUpdateRequest request) {
         Post post = postRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("文章不存在"));
         String title = request.getTitle().trim();
-        String slug = resolveSlug(request.getSlug(), title);
-        postRepository.findBySlug(slug)
-                .filter(existing -> !existing.getId().equals(id))
-                .ifPresent(existing -> {
-                    throw new IllegalArgumentException("Slug 已存在");
-                });
+        String slug = resolveAssetSlug(request.getSlug(), post.getId());
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new IllegalArgumentException("分类不存在"));
         post.setTitle(title);
         post.setSlug(slug);
+        postAssetService.ensureFolder(slug);
         post.setExcerpt(request.getExcerpt());
         post.setStatus(request.getStatus());
+        Instant now = Instant.now();
+        post.setUpdatedAt(now);
+        if ("PUBLISHED".equalsIgnoreCase(post.getStatus()) && post.getPublishedAt() == null) {
+            post.setPublishedAt(LocalDateTime.now());
+        } else if (!"PUBLISHED".equalsIgnoreCase(post.getStatus())) {
+            post.setPublishedAt(null);
+        }
         post.setThemeColor(request.getThemeColor());
         post.setCategory(category);
         if (request.getTagIds() != null) {
@@ -217,7 +230,6 @@ public class PostService {
                     .collect(Collectors.toSet());
             post.setTags(tags);
         }
-        post.setUpdatedAt(Instant.now());
         return toAdminDto(postRepository.save(post));
     }
 
@@ -349,17 +361,14 @@ public class PostService {
                 .build();
     }
 
-    private String resolveSlug(String providedSlug, String title) {
-        String candidate = StringUtils.hasText(providedSlug) ? providedSlug : title;
-        String normalized = Normalizer.normalize(candidate, Normalizer.Form.NFD)
-                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
-        normalized = normalized.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}\\s-]", "")
-                .trim()
-                .replaceAll("\\s+", "-")
-                .toLowerCase(Locale.ROOT);
-        if (!StringUtils.hasText(normalized)) {
-            normalized = "post-" + java.util.UUID.randomUUID();
-        }
+    private String resolveAssetSlug(String providedSlug, Long currentPostId) {
+        String slugCandidate = StringUtils.hasText(providedSlug) ? providedSlug : postAssetService.generateFolderSlug();
+        String normalized = postAssetService.normalizeFolderSlug(slugCandidate);
+        postRepository.findBySlug(normalized)
+                .filter(existing -> currentPostId == null || !existing.getId().equals(currentPostId))
+                .ifPresent(existing -> {
+                    throw new IllegalArgumentException("图像目录标识已存在，请重新上传或生成新目录");
+                });
         return normalized;
     }
 }
