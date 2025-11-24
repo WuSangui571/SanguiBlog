@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.config.StoragePathResolver;
 import com.sangui.sanguiblog.model.dto.LoginRequest;
 import com.sangui.sanguiblog.model.dto.LoginResponse;
 import com.sangui.sanguiblog.model.dto.UserProfileDto;
@@ -16,7 +17,6 @@ import org.springframework.util.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Map;
 
@@ -28,6 +28,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final StoragePathResolver storagePathResolver;
 
     public LoginResponse login(LoginRequest request) {
         try {
@@ -184,7 +185,7 @@ public class AuthService {
         } else if (relative.startsWith("avatar/")) {
             relative = relative.substring("avatar/".length());
         }
-        Path path = Paths.get("src/main/resources/static/avatar", relative);
+        Path path = storagePathResolver.resolveAvatarFile(relative);
         try {
             if (Files.exists(path)) {
                 Files.delete(path);

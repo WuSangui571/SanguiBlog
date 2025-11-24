@@ -1,6 +1,8 @@
 package com.sangui.sanguiblog.controller;
 
+import com.sangui.sanguiblog.config.StoragePathResolver;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,16 +12,16 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/upload")
+@RequiredArgsConstructor
 public class UploadController {
 
-    private static final Path STATIC_AVATAR_DIR = Paths.get("src", "main", "resources", "static", "avatar");
+    private final StoragePathResolver storagePathResolver;
 
     @PostMapping("/avatar")
     public ApiResponse<Map<String, String>> uploadAvatar(@RequestParam("avatar") MultipartFile file) {
@@ -28,9 +30,6 @@ public class UploadController {
         }
 
         try {
-            // Ensure directory exists
-            Files.createDirectories(STATIC_AVATAR_DIR);
-
             // Generate unique filename
             String originalFilename = file.getOriginalFilename();
             String extension = "";
@@ -40,7 +39,7 @@ public class UploadController {
             String filename = UUID.randomUUID().toString() + extension;
 
             // Save file
-            Path filePath = STATIC_AVATAR_DIR.resolve(filename);
+            Path filePath = storagePathResolver.resolveAvatarFile(filename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Return URL (relative path)
