@@ -360,8 +360,35 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
     }
   };
 
+  const assetsBase = summary?.slug ? `/uploads/${summary.slug}` : null;
+  const resolveAssetPath = useCallback(
+    (input) => {
+      if (!input) return input;
+      const trimmed = input.trim();
+      if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith('/')) return trimmed;
+      if (assetsBase) {
+        const normalized = trimmed
+          .replace(/^\.\/+/, '')
+          .replace(/\.\.\//g, '')
+          .replace(/\\/g, '/');
+        return `${assetsBase}/${normalized}`;
+      }
+      return trimmed;
+    },
+    [assetsBase]
+  );
+
+  const resolvedHtml = useMemo(() => {
+    if (!contentHtml) return contentHtml;
+    if (!assetsBase) return contentHtml;
+    return contentHtml.replace(/src="([^"]+)"/g, (_, src) => `src="${resolveAssetPath(src)}"`);
+  }, [contentHtml, assetsBase, resolveAssetPath]);
+
   const markdownComponents = {
     pre: ({ children }) => <>{children}</>,
+    img: ({ src, alt, ...props }) => (
+      <img src={resolveAssetPath(src)} alt={alt} {...props} />
+    ),
     code({ inline, className, children, ...props }) {
       const rawText = String(children);
       const textContent = rawText.replace(/\n$/, '');
@@ -588,7 +615,7 @@ const ArticleDetail = ({ id, setView, isDarkMode, articleData, commentsData, onS
               </ReactMarkdown>
             ) : contentHtml ? (
               <div
-                dangerouslySetInnerHTML={{ __html: contentHtml }}
+                dangerouslySetInnerHTML={{ __html: resolvedHtml || contentHtml }}
               />
             ) : (
               <p className="font-semibold">暂无正文内容</p>
