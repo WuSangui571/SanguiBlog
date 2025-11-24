@@ -74,12 +74,8 @@ public class PostAssetService {
     }
 
     public void storeFiles(Path baseDir, List<MultipartFile> files) {
-        String commonPrefix = detectCommonPrefix(files);
         for (MultipartFile file : files) {
             String relativeName = sanitizeRelativePath(file.getOriginalFilename());
-            if (commonPrefix != null && relativeName.startsWith(commonPrefix + "/")) {
-                relativeName = relativeName.substring(commonPrefix.length() + 1);
-            }
             if (!StringUtils.hasText(relativeName)) {
                 continue;
             }
@@ -104,30 +100,5 @@ public class PostAssetService {
         relativeName = relativeName.replaceAll("^/+", "");
         relativeName = relativeName.replaceAll("/{2,}", "/");
         return relativeName;
-    }
-
-    private String detectCommonPrefix(List<MultipartFile> files) {
-        String prefix = null;
-        boolean hasPrefix = true;
-        for (MultipartFile file : files) {
-            String name = sanitizeRelativePath(file.getOriginalFilename());
-            int idx = name.indexOf('/');
-            if (idx <= 0) {
-                hasPrefix = false;
-                break;
-            }
-            String current = name.substring(0, idx);
-            if (!StringUtils.hasText(current)) {
-                hasPrefix = false;
-                break;
-            }
-            if (prefix == null) {
-                prefix = current;
-            } else if (!prefix.equals(current)) {
-                hasPrefix = false;
-                break;
-            }
-        }
-        return hasPrefix ? prefix : null;
     }
 }
