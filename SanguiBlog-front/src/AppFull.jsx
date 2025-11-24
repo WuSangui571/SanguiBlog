@@ -1137,7 +1137,7 @@ const Hero = ({ setView, isDarkMode }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
         >
-          SANGUI BLOG // V1.2.16
+          SANGUI BLOG // V1.2.17
         </motion.div>
 
         <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4217,6 +4217,27 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
   };
   const authorAvatar = buildMediaUrl(displayAuthor.avatar, MOCK_USER.avatar);
   const authorWechat = "http://localhost:8080/contact/wechat.jpg";
+  const allTags = useMemo(() => {
+    const source = postsData && postsData.length ? postsData : MOCK_POSTS;
+    const unique = [];
+    const seen = new Set();
+    source.forEach((post) => {
+      (post.tags || []).forEach((tag) => {
+        if (!tag || seen.has(tag)) return;
+        seen.add(tag);
+        unique.push(tag);
+      });
+    });
+    return unique;
+  }, [postsData]);
+  const tagAccentClasses = [
+    'bg-[#FFD700] text-black',
+    'bg-[#FF0080] text-white',
+    'bg-[#00E096] text-black',
+    'bg-[#6366F1] text-white',
+    'bg-[#0EA5E9] text-white',
+    'bg-[#F97316] text-black'
+  ];
 
   return (
     <>
@@ -4310,6 +4331,27 @@ const ArticleList = ({ setView, setArticleId, isDarkMode, postsData, categoriesD
                     </AnimatePresence>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className={`${sidebarBg} border-2 border-black p-5 shadow-[6px_6px_0px_0px_#000]`}>
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="font-black text-lg flex items-center gap-2"><Hash size={18} /> 全部标签</h4>
+                <span className={`text-[10px] font-mono ${subText}`}>{allTags.length} TAGS</span>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {allTags.length ? (
+                  allTags.map((tag, index) => (
+                    <span
+                      key={tag}
+                      className={`px-3 py-1 text-xs font-black border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] ${tagAccentClasses[index % tagAccentClasses.length]}`}
+                    >
+                      #{tag}
+                    </span>
+                  ))
+                ) : (
+                  <span className={`text-sm font-bold ${subText}`}>暂无标签</span>
+                )}
               </div>
             </div>
           </div>
