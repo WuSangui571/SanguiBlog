@@ -54,6 +54,19 @@ dist/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+coverage/
+SanguiBlog-front/node_modules/
+SanguiBlog-front/dist/
+SanguiBlog-front/.vite/
+SanguiBlog-front/.cache/
+SanguiBlog-front/.env.local
+SanguiBlog-front/.env.*
+SanguiBlog-front/npm-debug.log*
+SanguiBlog-front/yarn-debug.log*
+SanguiBlog-front/yarn-error.log*
 
 # ======================
 # Environment files
@@ -62,6 +75,9 @@ yarn-error.log
 .env.*
 application-local.yml
 application-dev.yml
+SanguiBlog-server/.env
+SanguiBlog-server/.env.*
+SanguiBlog-server/target/
 
 # ======================
 # Misc

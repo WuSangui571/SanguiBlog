@@ -175,10 +175,7 @@ const CommentsSection = ({
                              setView,
                              onDeleteComment,
                              onUpdateComment,
-                             postAuthorName,
-                             focusedCommentId,
-                             scrollToComments,
-                             onFocusConsumed
+                             postAuthorName
                          }) => {
     const [content, setContent] = useState("");
     const [editingCommentId, setEditingCommentId] = useState(null);
@@ -186,8 +183,6 @@ const CommentsSection = ({
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [replyTarget, setReplyTarget] = useState(null);
     const [replyContent, setReplyContent] = useState("");
-    const [highlightedCommentId, setHighlightedCommentId] = useState(null);
-    const sectionRef = useRef(null);
 
     const inputBg = isDarkMode ? 'bg-gray-800 text-white' : 'bg-[#F0F0F0] text-black';
     const commentBg = isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-black';
@@ -203,44 +198,6 @@ const CommentsSection = ({
         if (avatarPath.startsWith('http')) return avatarPath;
         return `http://localhost:8080${avatarPath}`;
     };
-
-    useEffect(() => {
-        if (!scrollToComments || typeof document === 'undefined') return;
-        let highlightTimer = null;
-        let retryTimer = null;
-        let attempts = 0;
-
-        const attemptScroll = () => {
-            if (focusedCommentId) {
-                const target = document.getElementById(`comment-${focusedCommentId}`);
-                if (!target) {
-                    if (attempts < 12) {
-                        attempts += 1;
-                        retryTimer = setTimeout(attemptScroll, 200);
-                    } else {
-                        onFocusConsumed && onFocusConsumed();
-                    }
-                    return;
-                }
-                target.scrollIntoView({behavior: 'smooth', block: 'center'});
-                setHighlightedCommentId(focusedCommentId);
-                highlightTimer = setTimeout(() => setHighlightedCommentId(null), 3000);
-                onFocusConsumed && onFocusConsumed();
-                return;
-            }
-            if (sectionRef.current) {
-                sectionRef.current.scrollIntoView({behavior: 'smooth', block: 'start'});
-                onFocusConsumed && onFocusConsumed();
-            }
-        };
-
-        attemptScroll();
-
-        return () => {
-            if (highlightTimer) clearTimeout(highlightTimer);
-            if (retryTimer) clearTimeout(retryTimer);
-        };
-    }, [focusedCommentId, scrollToComments, onFocusConsumed, normalizedList]);
 
     const handleSubmit = () => {
         if (!content.trim()) return;
@@ -269,16 +226,11 @@ const CommentsSection = ({
         const avatarSrc = getAvatarSrc(c.avatar);
         const isReplying = replyTarget?.comment?.id === c.id;
         const canReply = depth < 1;
-        const commentNodeId = c.id || c.commentId;
-        const commentDomId = commentNodeId ? `comment-${commentNodeId}` : undefined;
-        const commentKey = commentNodeId || `${depth}-${c.authorName || c.user || 'comment'}`;
-        const isHighlighted = commentNodeId && highlightedCommentId === commentNodeId;
 
         return (
             <div
-                key={commentKey}
-                id={commentDomId}
-                className={`flex gap-4 scroll-mt-32 ${depth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
+                key={c.id || `${depth}-${c.authorName || c.user || 'comment'}`}
+                className={`flex gap-4 ${depth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
                 <div
                     className={`w-12 h-12 border-2 border-black rounded-full shrink-0 flex items-center justify-center font-bold overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-200 text-black'}`}>
                     {avatarSrc ? (
@@ -358,8 +310,7 @@ const CommentsSection = ({
                             </div>
                         </div>
                     ) : (
-                        <div
-                            className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000] ${isHighlighted ? 'ring-4 ring-[#FFD700]' : ''}`}>
+                        <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
                             <p className="font-medium">{c.content || c.text}</p>
                         </div>
                     )}
@@ -421,7 +372,7 @@ const CommentsSection = ({
     };
 
     return (
-        <div className="mt-16" ref={sectionRef} id="comments-section">
+        <div className="mt-16">
             <div className="flex items-center gap-3 mb-8">
                 <MessageSquare size={28} className="text-black dark:text-white" strokeWidth={3}/>
                 <h2 className="text-3xl font-black uppercase">Comments ({totalComments})</h2>
@@ -482,10 +433,7 @@ const ArticleDetail = ({
                            onDeleteComment,
                            onUpdateComment,
                            currentUser,
-                           onCategoryClick,
-                           focusedCommentId,
-                           shouldScrollToComments,
-                           onCommentFocusClear
+                           onCategoryClick
                        }) => {
     const summary = articleData?.summary;
 
@@ -879,9 +827,6 @@ const ArticleDetail = ({
                         onDeleteComment={onDeleteComment}
                         onUpdateComment={onUpdateComment}
                         postAuthorName={post.authorName}
-                        focusedCommentId={focusedCommentId}
-                        scrollToComments={shouldScrollToComments}
-                        onFocusConsumed={onCommentFocusClear}
                     />
                 </div>
             </div>
@@ -1335,7 +1280,7 @@ const Hero = ({setView, isDarkMode}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.21
+                    SANGUI BLOG // V1.2.22
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4373,7 +4318,6 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     const [view, setView] = useState(initialView);
     const [user, setUser] = useState(null);
     const [articleId, setArticleId] = useState(initialArticleId);
-    const [commentFocusIntent, setCommentFocusIntent] = useState(null);
     const [activeParent, setActiveParent] = useState("all");
     const [activeSub, setActiveSub] = useState("all");
     const [menuOpen, setMenuOpen] = useState(false);
@@ -4433,10 +4377,11 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     }, [view, articleId]);
 
     useEffect(() => {
-        if (view !== 'article' && commentFocusIntent) {
-            setCommentFocusIntent(null);
+        if (typeof window === 'undefined') return;
+        if (view === 'article') {
+            window.scrollTo({top: 0, behavior: 'auto'});
         }
-    }, [view, commentFocusIntent]);
+    }, [view, articleId]);
 
     useEffect(() => {
         if (view === 'home') {
@@ -4485,7 +4430,6 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                         <ArticleList
                             setView={setView}
                             setArticleId={setArticleId}
-                            setCommentFocusIntent={setCommentFocusIntent}
                             isDarkMode={isDarkMode}
                             postsData={posts}
                             categoriesData={categories}
@@ -4513,9 +4457,6 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                         isDarkMode={isDarkMode}
                         articleData={article}
                         commentsData={comments}
-                        focusedCommentId={commentFocusIntent?.commentId ?? null}
-                        shouldScrollToComments={Boolean(commentFocusIntent)}
-                        onCommentFocusClear={() => setCommentFocusIntent(null)}
                         onSubmitComment={(payload) => submitComment && articleId && submitComment(articleId, payload)}
                         onDeleteComment={(commentId) => removeComment && articleId && removeComment(articleId, commentId)}
                         onUpdateComment={(commentId, content) => editComment && articleId && editComment(articleId, commentId, content)}
@@ -4637,8 +4578,7 @@ const ArticleList = ({
                          setActiveParent,
                          activeSub,
                          setActiveSub,
-                         recentComments,
-                         setCommentFocusIntent
+                         recentComments
                      }) => {
     const [showWechat, setShowWechat] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -4646,7 +4586,6 @@ const ArticleList = ({
     const konamiSequence = useRef([]);
     const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     const [avatarClicks, setAvatarClicks] = useState(0);
-    const [hoveredCommentKey, setHoveredCommentKey] = useState(null);
     const [expandedTags, setExpandedTags] = useState(false);
 
     useEffect(() => {
@@ -4867,23 +4806,14 @@ const ArticleList = ({
                             <div className="mt-4 space-y-4">
                                 {recentList.length ? recentList.map((comment, index) => {
                                     const avatar = buildMediaUrl(comment.avatar, recentFallbackAvatar);
-                                    const commentKey = comment.id || comment.commentId || `recent-${comment.postId || 'post'}-${index}`;
-                                    const targetCommentId = comment.id || comment.commentId || null;
                                     const articleLabel = comment.postTitle || '文章';
-                                    const isHovered = hoveredCommentKey === commentKey;
                                     const handleNavigate = () => {
                                         if (!comment.postId) return;
-                                        setCommentFocusIntent && setCommentFocusIntent({
-                                            commentId: targetCommentId || null,
-                                            ts: Date.now()
-                                        });
                                         setArticleId(comment.postId);
                                         setView('article');
                                     };
-                                    const handleMouseEnter = () => setHoveredCommentKey(commentKey);
-                                    const handleMouseLeave = () => setHoveredCommentKey(null);
                                     return (
-                                        <div key={commentKey}
+                                        <div key={comment.id || `recent-${comment.postId || 'post'}-${index}`}
                                              className={`border-2 border-black p-3 rounded-xl ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-[4px_4px_0px_0px_#000]`}>
                                             <div className="flex items-center gap-3">
                                                 <img src={avatar} alt={comment.authorName || '访客'}
@@ -4895,18 +4825,11 @@ const ArticleList = ({
                                             </div>
                                             <p
                                                 className={`mt-2 text-sm font-medium leading-relaxed max-h-20 overflow-hidden cursor-pointer ${isDarkMode ? 'hover:text-[#FFD700]' : 'hover:text-[#FF0080]'}`}
-                                                onMouseEnter={handleMouseEnter}
-                                                onMouseLeave={handleMouseLeave}
                                                 onClick={handleNavigate}
                                                 title={`来自《${articleLabel}》`}
                                             >
                                                 {comment.content}
                                             </p>
-                                            {isHovered && (
-                                                <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest border border-dashed border-black px-2 py-1 bg-[#FFD700] text-black">
-                                                    <MessageSquare size={12}/> 来自《{articleLabel}》
-                                                </span>
-                                            )}
                                         </div>
                                     );
                                 }) : (
@@ -4960,7 +4883,6 @@ const ArticleList = ({
                                             transition={{delay: idx * 0.1, duration: 0.5}}
                                         >
                                             <TiltCard onClick={() => {
-                                                setCommentFocusIntent && setCommentFocusIntent(null);
                                                 setArticleId(post.id);
                                                 setView('article');
                                             }}>
