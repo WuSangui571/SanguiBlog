@@ -177,6 +177,7 @@ const CommentsSection = ({
                              onUpdateComment,
                              postAuthorName,
                              focusedCommentId,
+                             scrollToComments,
                              onFocusConsumed
                          }) => {
     const [content, setContent] = useState("");
@@ -186,6 +187,7 @@ const CommentsSection = ({
     const [replyTarget, setReplyTarget] = useState(null);
     const [replyContent, setReplyContent] = useState("");
     const [highlightedCommentId, setHighlightedCommentId] = useState(null);
+    const sectionRef = useRef(null);
 
     const inputBg = isDarkMode ? 'bg-gray-800 text-white' : 'bg-[#F0F0F0] text-black';
     const commentBg = isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-black';
@@ -203,24 +205,33 @@ const CommentsSection = ({
     };
 
     useEffect(() => {
-        if (!focusedCommentId || typeof document === 'undefined') return;
+        if (!scrollToComments || typeof document === 'undefined') return;
         let highlightTimer = null;
         let retryTimer = null;
         let attempts = 0;
 
         const attemptScroll = () => {
-            const target = document.getElementById(`comment-${focusedCommentId}`);
-            if (!target) {
-                if (attempts < 10) {
-                    attempts += 1;
-                    retryTimer = setTimeout(attemptScroll, 200);
+            if (focusedCommentId) {
+                const target = document.getElementById(`comment-${focusedCommentId}`);
+                if (!target) {
+                    if (attempts < 12) {
+                        attempts += 1;
+                        retryTimer = setTimeout(attemptScroll, 200);
+                    } else {
+                        onFocusConsumed && onFocusConsumed();
+                    }
+                    return;
                 }
+                target.scrollIntoView({behavior: 'smooth', block: 'center'});
+                setHighlightedCommentId(focusedCommentId);
+                highlightTimer = setTimeout(() => setHighlightedCommentId(null), 3000);
+                onFocusConsumed && onFocusConsumed();
                 return;
             }
-            target.scrollIntoView({behavior: 'smooth', block: 'center'});
-            setHighlightedCommentId(focusedCommentId);
-            highlightTimer = setTimeout(() => setHighlightedCommentId(null), 3000);
-            onFocusConsumed && onFocusConsumed();
+            if (sectionRef.current) {
+                sectionRef.current.scrollIntoView({behavior: 'smooth', block: 'start'});
+                onFocusConsumed && onFocusConsumed();
+            }
         };
 
         attemptScroll();
@@ -229,7 +240,7 @@ const CommentsSection = ({
             if (highlightTimer) clearTimeout(highlightTimer);
             if (retryTimer) clearTimeout(retryTimer);
         };
-    }, [focusedCommentId, onFocusConsumed, normalizedList]);
+    }, [focusedCommentId, scrollToComments, onFocusConsumed, normalizedList]);
 
     const handleSubmit = () => {
         if (!content.trim()) return;
@@ -410,7 +421,7 @@ const CommentsSection = ({
     };
 
     return (
-        <div className="mt-16">
+        <div className="mt-16" ref={sectionRef} id="comments-section">
             <div className="flex items-center gap-3 mb-8">
                 <MessageSquare size={28} className="text-black dark:text-white" strokeWidth={3}/>
                 <h2 className="text-3xl font-black uppercase">Comments ({totalComments})</h2>
@@ -473,6 +484,7 @@ const ArticleDetail = ({
                            currentUser,
                            onCategoryClick,
                            focusedCommentId,
+                           shouldScrollToComments,
                            onCommentFocusClear
                        }) => {
     const summary = articleData?.summary;
@@ -868,6 +880,7 @@ const ArticleDetail = ({
                         onUpdateComment={onUpdateComment}
                         postAuthorName={post.authorName}
                         focusedCommentId={focusedCommentId}
+                        scrollToComments={shouldScrollToComments}
                         onFocusConsumed={onCommentFocusClear}
                     />
                 </div>
@@ -1322,7 +1335,7 @@ const Hero = ({setView, isDarkMode}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.20
+                    SANGUI BLOG // V1.2.21
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4173,7 +4186,55 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
 
 // --- 6. Scroll To Top Component ---
 const ScrollToTop = ({isDarkMode}) => {
+    const STORAGE_KEY = 'sangui-scroll-button';
+    const BUTTON_SIZE = 56;
     const [isVisible, setIsVisible] = useState(false);
+    const [position, setPosition] = useState(() => {
+        if (typeof window === 'undefined') return {x: 24, y: 24};
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return parsed;
+            }
+        } catch (e) {
+        }
+        return {
+            x: window.innerWidth - BUTTON_SIZE - 24,
+            y: window.innerHeight - BUTTON_SIZE - 120
+        };
+    });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragMetaRef = useRef({active: false, moved: false, ignoreClick: false, offsetX: 0, offsetY: 0});
+    const buttonRef = useRef(null);
+    const latestPositionRef = useRef(position);
+
+    const clampPosition = useCallback((pos) => {
+        if (typeof window === 'undefined') return pos;
+        const maxX = window.innerWidth - BUTTON_SIZE - 12;
+        const maxY = window.innerHeight - BUTTON_SIZE - 12;
+        return {
+            x: Math.min(Math.max(12, pos.x), maxX),
+            y: Math.min(Math.max(12, pos.y), maxY)
+        };
+    }, []);
+
+    const persistPosition = useCallback((pos) => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+        } catch (e) {
+            console.warn('无法保存滚动按钮位置', e);
+        }
+    }, []);
+
+    useEffect(() => {
+        latestPositionRef.current = position;
+    }, [position]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        setPosition(prev => clampPosition(prev));
+    }, [clampPosition]);
 
     useEffect(() => {
         const toggleVisibility = () => {
@@ -4188,6 +4249,54 @@ const ScrollToTop = ({isDarkMode}) => {
         return () => window.removeEventListener("scroll", toggleVisibility);
     }, []);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const handleResize = () => {
+            setPosition(prev => clampPosition(prev));
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [clampPosition]);
+
+    useEffect(() => {
+        const handlePointerMove = (event) => {
+            if (!dragMetaRef.current.active) return;
+            const point = event.touches ? event.touches[0] : event;
+            if (!point) return;
+            event.preventDefault();
+            dragMetaRef.current.moved = true;
+            const next = clampPosition({
+                x: point.clientX - dragMetaRef.current.offsetX,
+                y: point.clientY - dragMetaRef.current.offsetY
+            });
+            setPosition(next);
+        };
+
+        const handlePointerUp = () => {
+            if (!dragMetaRef.current.active) return;
+            const moved = dragMetaRef.current.moved;
+            dragMetaRef.current.active = false;
+            dragMetaRef.current.moved = false;
+            dragMetaRef.current.ignoreClick = moved;
+            setIsDragging(false);
+            if (moved) {
+                persistPosition(latestPositionRef.current);
+            }
+        };
+
+        window.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
+        window.addEventListener('touchmove', handlePointerMove, {passive: false});
+        window.addEventListener('touchend', handlePointerUp);
+
+        return () => {
+            window.removeEventListener('mousemove', handlePointerMove);
+            window.removeEventListener('mouseup', handlePointerUp);
+            window.removeEventListener('touchmove', handlePointerMove);
+            window.removeEventListener('touchend', handlePointerUp);
+        };
+    }, [clampPosition, persistPosition]);
+
     const scrollToTop = () => {
         window.scrollTo({
             top: 0,
@@ -4195,22 +4304,46 @@ const ScrollToTop = ({isDarkMode}) => {
         });
     };
 
+    const startDrag = (event) => {
+        const point = event.touches ? event.touches[0] : event;
+        if (!point) return;
+        event.preventDefault();
+        const rect = buttonRef.current?.getBoundingClientRect();
+        dragMetaRef.current = {
+            active: true,
+            moved: false,
+            ignoreClick: false,
+            offsetX: point.clientX - (rect?.left ?? 0),
+            offsetY: point.clientY - (rect?.top ?? 0)
+        };
+        setIsDragging(true);
+    };
+
+    const handleClick = (event) => {
+        if (dragMetaRef.current.ignoreClick || isDragging) {
+            event.preventDefault();
+            dragMetaRef.current.ignoreClick = false;
+            return;
+        }
+        scrollToTop();
+    };
+
     return (
         <AnimatePresence>
             {isVisible && (
-                <div className="fixed bottom-16 left-0 right-0 z-50 pointer-events-none">
-                    <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
-                        <motion.button
-                            initial={{opacity: 0, y: 20}}
-                            animate={{opacity: 1, y: 0}}
-                            exit={{opacity: 0, y: 20}}
-                            onClick={scrollToTop}
-                            className={`pointer-events-auto absolute -right-6 md:-right-28 p-3 rounded-full shadow-lg transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-white hover:bg-gray-800'}`}
-                        >
-                            <ArrowUp size={24}/>
-                        </motion.button>
-                    </div>
-                </div>
+                <motion.button
+                    ref={buttonRef}
+                    initial={{opacity: 0, scale: 0.8}}
+                    animate={{opacity: 1, scale: 1}}
+                    exit={{opacity: 0, scale: 0.8}}
+                    onMouseDown={startDrag}
+                    onTouchStart={startDrag}
+                    onClick={handleClick}
+                    style={{left: `${position.x}px`, top: `${position.y}px`}}
+                    className={`fixed z-50 p-3 rounded-full shadow-lg transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-white hover:bg-gray-800'} ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                >
+                    <ArrowUp size={24}/>
+                </motion.button>
             )}
         </AnimatePresence>
     );
@@ -4240,7 +4373,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     const [view, setView] = useState(initialView);
     const [user, setUser] = useState(null);
     const [articleId, setArticleId] = useState(initialArticleId);
-    const [focusedCommentId, setFocusedCommentId] = useState(null);
+    const [commentFocusIntent, setCommentFocusIntent] = useState(null);
     const [activeParent, setActiveParent] = useState("all");
     const [activeSub, setActiveSub] = useState("all");
     const [menuOpen, setMenuOpen] = useState(false);
@@ -4300,10 +4433,10 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     }, [view, articleId]);
 
     useEffect(() => {
-        if (view !== 'article' && focusedCommentId) {
-            setFocusedCommentId(null);
+        if (view !== 'article' && commentFocusIntent) {
+            setCommentFocusIntent(null);
         }
-    }, [view, focusedCommentId]);
+    }, [view, commentFocusIntent]);
 
     useEffect(() => {
         if (view === 'home') {
@@ -4352,7 +4485,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                         <ArticleList
                             setView={setView}
                             setArticleId={setArticleId}
-                            setFocusedCommentId={setFocusedCommentId}
+                            setCommentFocusIntent={setCommentFocusIntent}
                             isDarkMode={isDarkMode}
                             postsData={posts}
                             categoriesData={categories}
@@ -4380,8 +4513,9 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                         isDarkMode={isDarkMode}
                         articleData={article}
                         commentsData={comments}
-                        focusedCommentId={focusedCommentId}
-                        onCommentFocusClear={() => setFocusedCommentId(null)}
+                        focusedCommentId={commentFocusIntent?.commentId ?? null}
+                        shouldScrollToComments={Boolean(commentFocusIntent)}
+                        onCommentFocusClear={() => setCommentFocusIntent(null)}
                         onSubmitComment={(payload) => submitComment && articleId && submitComment(articleId, payload)}
                         onDeleteComment={(commentId) => removeComment && articleId && removeComment(articleId, commentId)}
                         onUpdateComment={(commentId, content) => editComment && articleId && editComment(articleId, commentId, content)}
@@ -4504,7 +4638,7 @@ const ArticleList = ({
                          activeSub,
                          setActiveSub,
                          recentComments,
-                         setFocusedCommentId
+                         setCommentFocusIntent
                      }) => {
     const [showWechat, setShowWechat] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -4739,7 +4873,10 @@ const ArticleList = ({
                                     const isHovered = hoveredCommentKey === commentKey;
                                     const handleNavigate = () => {
                                         if (!comment.postId) return;
-                                        setFocusedCommentId && setFocusedCommentId(targetCommentId || null);
+                                        setCommentFocusIntent && setCommentFocusIntent({
+                                            commentId: targetCommentId || null,
+                                            ts: Date.now()
+                                        });
                                         setArticleId(comment.postId);
                                         setView('article');
                                     };
@@ -4819,12 +4956,11 @@ const ArticleList = ({
                                         <motion.div
                                             key={post.id}
                                             initial={{opacity: 0, y: 50}}
-                                            whileInView={{opacity: 1, y: 0}}
-                                            viewport={{once: true}}
-                                            transition={{delay: idx * 0.1}}
+                                            animate={{opacity: 1, y: 0}}
+                                            transition={{delay: idx * 0.1, duration: 0.5}}
                                         >
                                             <TiltCard onClick={() => {
-                                                setFocusedCommentId && setFocusedCommentId(null);
+                                                setCommentFocusIntent && setCommentFocusIntent(null);
                                                 setArticleId(post.id);
                                                 setView('article');
                                             }}>
