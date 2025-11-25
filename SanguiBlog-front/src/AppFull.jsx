@@ -459,6 +459,13 @@ const ArticleDetail = ({
     const comments = commentsData && commentsData.length ? commentsData : [];
     const text = isDarkMode ? 'text-gray-100' : 'text-black';
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
+    const articleContentRef = useRef(null);
+    const [previewImage, setPreviewImage] = useState(null);
+    const handleImagePreview = useCallback((src) => {
+        if (!src) return;
+        setPreviewImage(src);
+    }, []);
+    const closeImagePreview = useCallback(() => setPreviewImage(null), []);
 
     const quoteBg = isDarkMode ? 'bg-gray-800' : 'bg-[#FFFAF0]';
     const quoteText = isDarkMode ? 'text-gray-300' : 'text-black';
@@ -565,11 +572,37 @@ const ArticleDetail = ({
         return doubleQuoteReplaced.replace(/src='([^']+)'/g, (_, src) => `src='${resolveAssetPath(src)}'`);
     }, [contentHtml, resolveAssetPath]);
 
-    const markdownComponents = {
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        const container = articleContentRef.current;
+        if (!container) return;
+        const images = container.querySelectorAll('img');
+        const handleClick = (event) => {
+            event.preventDefault();
+            handleImagePreview(event.currentTarget.src);
+        };
+        images.forEach((img) => {
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', handleClick);
+        });
+        return () => {
+            images.forEach((img) => img.removeEventListener('click', handleClick));
+        };
+    }, [resolvedHtml, contentMd, handleImagePreview]);
+
+    const markdownComponents = useMemo(() => ({
         pre: ({children}) => <>{children}</>,
-        img: ({src, alt, ...props}) => {
+        img: ({src, alt, className = '', ...props}) => {
             const resolved = resolveAssetPath(src);
-            return <img src={resolved} alt={alt} {...props} />;
+            return (
+                <img
+                    src={resolved}
+                    alt={alt}
+                    {...props}
+                    className={`cursor-zoom-in ${className}`.trim()}
+                    onClick={() => handleImagePreview(resolved)}
+                />
+            );
         },
         code({inline, className, children, ...props}) {
             const rawText = String(children);
@@ -585,11 +618,17 @@ const ArticleDetail = ({
                         <>
                             {parts.map((part, i) => {
                                 if (i % 2 === 0) {
-                                    return <code key={i}
-                                                 className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`} {...props}>{part}</code>;
-                                } else {
-                                    return <span key={i}>{part}</span>;
+                                    return (
+                                        <code
+                                            key={i}
+                                            className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+                                            {...props}
+                                        >
+                                            {part}
+                                        </code>
+                                    );
                                 }
+                                return <span key={i}>{part}</span>;
                             })}
                         </>
                     );
@@ -645,13 +684,22 @@ const ArticleDetail = ({
                 </a>
             );
         },
-    };
+    }), [handleImagePreview, inlineCodeBg, isDarkMode, resolveAssetPath]);
 
     const handleCommentSubmit = (payload) => {
         onSubmitComment && onSubmitComment(payload);
     };
 
     const [showShareToast, setShowShareToast] = useState(false);
+
+    useEffect(() => {
+        if (!previewImage || typeof document === 'undefined') return;
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [previewImage]);
 
     const handleShare = () => {
         const url = window.location.href;
@@ -796,7 +844,7 @@ const ArticleDetail = ({
                         </button>
                     </div>
 
-                    <article className={proseClass}>
+                    <article className={proseClass} ref={articleContentRef}>
                         <div
                             className={`p-6 border-l-8 border-[#FFD700] font-serif italic text-xl mb-8 ${quoteBg} ${quoteText}`}>
                             {post.excerpt}
@@ -830,6 +878,33 @@ const ArticleDetail = ({
                     />
                 </div>
             </div>
+
+            <AnimatePresence>
+                {previewImage && (
+                    <motion.div
+                        initial={{opacity: 0}}
+                        animate={{opacity: 1}}
+                        exit={{opacity: 0}}
+                        className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-6"
+                        onClick={closeImagePreview}
+                    >
+                        <motion.img
+                            src={previewImage}
+                            initial={{scale: 0.8, opacity: 0}}
+                            animate={{scale: 1, opacity: 1}}
+                            exit={{scale: 0.8, opacity: 0}}
+                            className="max-w-full max-h-full rounded-lg shadow-[8px_8px_0px_0px_#000] border-4 border-white cursor-zoom-out"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <button
+                            className="absolute top-6 right-6 text-white text-xl font-black border-2 border-white px-3 py-1"
+                            onClick={closeImagePreview}
+                        >
+                            关闭
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
@@ -1280,7 +1355,7 @@ const Hero = ({setView, isDarkMode}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.22
+                    SANGUI BLOG // V1.2.24
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4761,10 +4836,14 @@ const ArticleList = ({
                                         <button
                                             onClick={() => {
                                                 setActiveParent(cat.id);
-                                                setActiveSub('all')
+                                                setActiveSub('all');
                                             }}
                                             className={`w-full text-left p-3 font-bold border-2 border-black transition-all flex justify-between items-center
-                          ${activeParent === cat.id ? 'bg-[#6366F1] text-white shadow-[4px_4px_0px_0px_#000] -translate-y-1' : `${sidebarBg} ${text} hover:bg-gray-100`}
+                          ${activeParent === cat.id
+                            ? (isDarkMode
+                                ? 'bg-[#FFD700] text-black border-[#FFD700] shadow-[4px_4px_0px_0px_#000] -translate-y-1'
+                                : 'bg-[#6366F1] text-white shadow-[4px_4px_0px_0px_#000] -translate-y-1')
+                            : `${sidebarBg} ${text} ${isDarkMode ? 'hover:bg-gray-700 hover:text-white' : 'hover:bg-gray-100'}`}
                         `}
                                         >
                                             {cat.label}
@@ -4799,8 +4878,9 @@ const ArticleList = ({
 
                         <div className={`${sidebarBg} border-2 border-black p-5 shadow-[6px_6px_0px_0px_#000]`}>
                             <div className="flex items-center justify-between gap-3">
-                                <h4 className="font-black text-lg flex items-center gap-2"><MessageCircle
-                                    size={18}/> 最新评论</h4>
+                                <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                                    <MessageCircle size={18} className={isDarkMode ? 'text-white' : 'text-black'}/> 最新评论
+                                </h4>
                                 <span className={`text-[10px] font-mono ${subText}`}>NEW X {recentList.length}</span>
                             </div>
                             <div className="mt-4 space-y-4">
@@ -4840,7 +4920,8 @@ const ArticleList = ({
 
                         <div className={`${sidebarBg} border-2 border-black p-5 shadow-[6px_6px_0px_0px_#000]`}>
                             <div className="flex items-center justify-between gap-3">
-                                <h4 className="font-black text-lg flex items-center gap-2"><Hash size={18}/> 全部标签
+                                <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                                    <Hash size={18} className={isDarkMode ? 'text-white' : 'text-black'}/> 全部标签
                                 </h4>
                                 <span className={`text-[10px] font-mono ${subText}`}>{allTags.length} TAGS</span>
                             </div>
