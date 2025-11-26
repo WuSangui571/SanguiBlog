@@ -1355,7 +1355,7 @@ const Hero = ({setView, isDarkMode}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.25
+                    SANGUI BLOG // V1.2.26
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -3392,6 +3392,21 @@ const PostsView = ({isDarkMode}) => {
     const STATUS_LABELS = {DRAFT: '草稿', PUBLISHED: '已发布', ARCHIVED: '已归档'};
     const totalPages = Math.max(Math.ceil(total / size), 1);
     const formatDate = (value) => (value ? new Date(value).toLocaleString() : '—');
+    const rowHoverClass = isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50';
+    const statusRowTintClass = (status) => {
+        const darkPalette = {
+            PUBLISHED: 'bg-[rgba(16,185,129,0.22)]',
+            DRAFT: 'bg-[rgba(251,191,36,0.2)]',
+            ARCHIVED: 'bg-[rgba(148,163,184,0.2)]',
+        };
+        const lightPalette = {
+            PUBLISHED: 'bg-[rgba(16,185,129,0.12)]',
+            DRAFT: 'bg-[rgba(251,191,36,0.15)]',
+            ARCHIVED: 'bg-[rgba(148,163,184,0.15)]',
+        };
+        const palette = isDarkMode ? darkPalette : lightPalette;
+        return palette[status] || '';
+    };
 
     const goEdit = (id) => {
         navigate(`/admin/posts/edit?postId=${id}`);
@@ -3471,10 +3486,10 @@ const PostsView = ({isDarkMode}) => {
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
                             {posts.map((post) => (
-                                <tr key={post.id} className={isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}>
+                                <tr key={post.id}
+                                    className={`${statusRowTintClass(post.status)} ${rowHoverClass} transition-colors`}>
                                     <td className="px-4 py-3">
                                         <p className="font-semibold">{post.title}</p>
-                                        <p className="text-xs text-gray-500">Slug：{post.slug}</p>
                                     </td>
                                     <td className="px-4 py-3">
                                         <span
@@ -4662,6 +4677,16 @@ const ArticleList = ({
     const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     const [avatarClicks, setAvatarClicks] = useState(0);
     const [expandedTags, setExpandedTags] = useState(false);
+    const NEW_POST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const isPostNew = (dateStr) => {
+        if (!dateStr) return false;
+        const parsed = Date.parse(`${dateStr}T00:00:00`);
+        if (Number.isNaN(parsed)) return false;
+        const diff = now - parsed;
+        if (diff < 0) return false;
+        return diff <= NEW_POST_WINDOW_MS;
+    };
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -4991,7 +5016,16 @@ const ArticleList = ({
                                                                       className={`px-2 py-1 border border-black text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
                                                             ))}
                                                         </div>
-                                                        <h2 className={`text-3xl font-black mb-4 group-hover:text-[#6366F1] transition-colors ${text}`}>{post.title}</h2>
+                                                        <div className="flex flex-wrap items-center gap-3 mb-4">
+                                                            <h2 className={`text-3xl font-black flex-1 group-hover:text-[#6366F1] transition-colors ${text}`}>{post.title}</h2>
+                                                            {isPostNew(post.date) && (
+                                                                <span
+                                                                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-black uppercase tracking-widest border-2 border-black bg-[#FF0080] text-white shadow-[2px_2px_0px_0px_#000] animate-pulse">
+                                                                    <Sparkles size={14} strokeWidth={3}/>
+                                                                    NEW
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <p className={`text-lg font-medium mb-6 border-l-4 border-gray-300 pl-4 ${subText}`}>{post.excerpt}</p>
 
                                                         <div

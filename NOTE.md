@@ -74,6 +74,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   自动携带 `localStorage` 中的 `sg_token`。
     *   `API_BASE`: 默认为 `http://localhost:8080/api`。
 *   首页文章卡片所展示的“浏览量 / 评论数”直接读取后端 `PostSummaryDto` 中的 `viewsCount` 与 `comments` 字段，其中评论数由后端实时统计 `APPROVED` 状态的评论数量。
+*   首页文章卡片若发布时间在 7 天内，会在标题旁展示带有闪动效果的 “NEW” 徽章，提示访客这是近一周的新内容。
 
 ### 3.3 Markdown 渲染策略
 *   `ArticleDetail` 组件优先使用 `contentMd`，通过 `ReactMarkdown` 渲染；若后端仅返回 `contentHtml` 则采用 `dangerouslySetInnerHTML` 兜底。
@@ -94,6 +95,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 ### 3.5 后台文章管理
 
 *   `/admin/posts` 页面由 `PostsView` 负责，提供文章分页列表、关键字搜索、按分类筛选，并将“编辑”按钮跳转到独立的 `/admin/posts/edit` 页；列表侧仅做导航入口，不再行内修改正文或元信息。
+*   列表首列只显示标题，Slug 仅做后台检索用；同时根据 `status` 值为每行附加绿色/琥珀色/灰色底纹，分别对应“已发布 / 草稿 / 已归档”，管理员无需点进详情即可直观分辨状态。
 *   `/admin/posts/edit` 由 `EditPostView` 渲染，支持通过 URL 携带 `postId` 定位文章；若未携带参数，会先列出可选文章供管理员点选。页面可同步编辑标题、Slug、摘要、主题色、状态、分类、标签及 Markdown 正文，色盘/预设颜色会直接写入 `theme_color`（如 `bg-[#FF0080]`）。
 *   对应的 `GET /api/admin/posts/{id}` 返回 `AdminPostDetailDto`，包含 Markdown 正文与标签/分类 ID；保存时调用 `PUT /api/posts/{id}` 仍沿用 `SavePostRequest`，后端在更新主题色的同时继续校验 slug 唯一性、分类存在性并维护 `post_tags`。
 
