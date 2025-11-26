@@ -39,6 +39,7 @@ public class SecurityConfig {
                                 "/api/site/**",
                                 "/api/categories/**",
                                 "/api/tags/**",
+                                "/api/comments/**",
                                 "/api/posts/**",
                                 "/api/analytics/page-view",
                                 "/avatar/**",

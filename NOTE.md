@@ -164,6 +164,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   头像：若评论由登录用户提交，渲染时优先读取用户当前 `avatar_url`，保证更新头像后历史评论也能展示最新形象；匿名评论则退回 `author_avatar_url` 字段。
 *   前端：`AppFull.jsx` 中的 `CommentsSection` 递归渲染 `replies`，支持楼中楼展示，但从交互上限制两层（顶层评论 + 一次回复），超过一层的节点不再出现“回复”按钮；评论总数通过递归统计所有层级，UI 会同步显示。
 *   接口补充：`GET /api/comments/recent?size=5` 会返回最近通过审核的若干条评论（默认 5 条，上限 20），每条带有 `postId/postTitle/postSlug` 便于前端跳转对应文章。首页左侧的“最新评论”模块直接消费该接口，并在评论增删改后由 `useBlogData` 自动刷新。
+*   安全策略：`/api/comments/recent` 现已加入 Spring Security 的匿名白名单（`SecurityConfig` 中 `permitAll` 列表），未登录访客也可正常获取最新评论；评论的新增、编辑、删除仍受 `/api/posts/**` 写操作权限控制，不会被此调整放开。
 *   交互：从首页“最新评论”点击评论文本会直接跳转到对应文章详情的开头（不再锚定具体评论），提示文案通过 `title="来自《文章》"` 告知来源，保持体验一致且避免滚动失败。
 
 ## 5. 易错点与注意事项 (Common Pitfalls & Gotchas)
