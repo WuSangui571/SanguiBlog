@@ -8,6 +8,7 @@ import com.sangui.sanguiblog.model.entity.SystemBroadcast;
 import com.sangui.sanguiblog.model.entity.User;
 import com.sangui.sanguiblog.model.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -33,6 +34,16 @@ public class SiteService {
         private final SystemBroadcastRepository systemBroadcastRepository;
         private final UserRepository userRepository;
         private final AuthService authService;
+        @Value("${site.footer.year:2025}")
+        private int footerYear;
+        @Value("${site.footer.brand:三桂博客}")
+        private String footerBrand;
+        @Value("${site.footer.icp-number:浙ICP备2025167176号}")
+        private String footerIcpNumber;
+        @Value("${site.footer.icp-link:https://beian.miit.gov.cn/}")
+        private String footerIcpLink;
+        @Value("${site.footer.powered-by:Powered by Spring Boot 3 & React 19}")
+        private String footerPoweredBy;
 
         public SiteMetaDto meta() {
                 long postCount = postRepository.count();
@@ -113,6 +124,15 @@ public class SiteService {
                                 .author(author != null ? authService.toProfile(author) : null)
                                 .trafficSources(trafficSources)
                                 .recentActivity(activities)
+                                .footer(SiteMetaDto.FooterInfo.builder()
+                                                .year(footerYear)
+                                                .brand(footerBrand)
+                                                .icpNumber(footerIcpNumber)
+                                                .icpLink(footerIcpLink)
+                                                .poweredBy(footerPoweredBy)
+                                                .copyrightText(String.format("Copyright © %d %s All rights reserved.",
+                                                                footerYear, footerBrand))
+                                                .build())
                                 .build();
         }
 

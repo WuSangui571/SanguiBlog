@@ -13,6 +13,7 @@ public class SiteMetaDto {
     private UserProfileDto author;
     private List<TrafficSourceDto> trafficSources;
     private List<RecentActivityDto> recentActivity;
+    private FooterInfo footer;
 
     @Data
     @Builder
@@ -48,5 +49,16 @@ public class SiteMetaDto {
         private String time;
         private String referrer;
         private String geo;
+    }
+
+    @Data
+    @Builder
+    public static class FooterInfo {
+        private Integer year;
+        private String brand;
+        private String icpNumber;
+        private String icpLink;
+        private String poweredBy;
+        private String copyrightText;
     }
 }

@@ -1355,7 +1355,7 @@ const Hero = ({setView, isDarkMode}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.26
+                    SANGUI BLOG // V1.2.27
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4419,6 +4419,13 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
         }
         return false;
     }); // Persisted dark mode state
+    const footerInfo = meta?.footer || {};
+    const footerYear = footerInfo.year || new Date().getFullYear();
+    const footerBrand = footerInfo.brand || 'SANGUI BLOG';
+    const footerCopyright = footerInfo.copyrightText || `Copyright © ${footerYear} ${footerBrand} All rights reserved.`;
+    const footerIcpNumber = footerInfo.icpNumber;
+    const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
+    const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
 
     useEffect(() => {
         if (blogUser) setUser(blogUser);
@@ -4534,8 +4541,23 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                         />
                         <footer
                             className={`py-12 text-center mt-12 border-t-8 ${isDarkMode ? 'bg-gray-900 text-white border-[#FF0080]' : 'bg-black text-white border-[#FFD700]'}`}>
-                            <h2 className="text-3xl font-black italic tracking-tighter mb-2">SANGUI BLOG</h2>
-                            <p className="text-xs text-gray-500 font-mono">DESIGNED FOR THE BOLD · 2025</p>
+                            <h2 className="text-3xl font-black italic tracking-tighter mb-3">{footerBrand}</h2>
+                            <p className="text-sm font-mono text-gray-200">{footerCopyright}</p>
+                            {footerIcpNumber && (
+                                <a
+                                    href={footerIcpLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center text-xs font-bold text-[#FFD700] underline underline-offset-4 mt-2"
+                                >
+                                    {footerIcpNumber}
+                                </a>
+                            )}
+                            {footerPoweredBy && (
+                                <p className="text-xs text-gray-400 font-mono mt-3">
+                                    {footerPoweredBy}
+                                </p>
+                            )}
                         </footer>
                     </>
                 );

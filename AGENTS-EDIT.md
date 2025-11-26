@@ -449,3 +449,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **前端**：后台 `/admin/posts` 列表去掉标题下方的 Slug 文本，并按照“已发布/草稿/已归档”分别涂抹绿色、琥珀色、灰色底纹，管理员无需额外点击即可区分状态。
 - **文档**：NOTE.md 在“3.2 前端架构”“3.5 后台文章管理”补充以上前端行为，方便后续维护遵循同一逻辑。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.2.26`。
+
+## V1.2.27 (2025-11-26)
+- **后端**：新增 `site.footer.*` 配置项（年份、品牌、备案号、备案链接、Powered-by 文案），`SiteMetaDto` 输出 `footer` 信息供前端消费。
+- **前端**：首页 Footer 改为读取后端配置，展示 `Copyright © <year> <brand> All rights reserved.`，备案号使用动态超链接并默认跳转至工信部备案系统，同时追加 Powered by 文案。
+- **配置**：`application.yaml` 提供默认值，运营可通过环境覆盖年份、品牌名称、备案号及链接。
+- **文档**：NOTE.md “3.2 前端架构” 增补新 Footer 行为与 YAML 配置说明，避免后续接入遗漏。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.2.27`。

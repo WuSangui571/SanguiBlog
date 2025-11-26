@@ -37,3 +37,11 @@ logging:
 
 storage:
   base-path: ${STORAGE_BASE_PATH:uploads}
+
+site:
+  footer:
+    year: 2025
+    brand: 三桂博客
+    icp-number: 浙ICP备2025167176号
+    icp-link: https://beian.miit.gov.cn/
+    powered-by: Powered by Spring Boot 3 & React 19
