@@ -1355,7 +1355,7 @@ const Hero = ({setView, isDarkMode}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.27
+                    SANGUI BLOG // V1.2.29
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4799,14 +4799,11 @@ const ArticleList = ({
     }, [allTags.length]);
     const hasMoreTags = allTags.length > TAG_PREVIEW_COUNT;
     const visibleTags = expandedTags ? allTags : allTags.slice(0, TAG_PREVIEW_COUNT);
-    const tagAccentClasses = [
-        'bg-[#FFD700] text-black',
-        'bg-[#FF0080] text-white',
-        'bg-[#00E096] text-black',
-        'bg-[#6366F1] text-white',
-        'bg-[#0EA5E9] text-white',
-        'bg-[#F97316] text-black'
-    ];
+    const tagAccentClass = useMemo(() => (
+        isDarkMode
+            ? 'bg-[#1F2937] text-gray-100'
+            : 'bg-[#F3F4F6] text-gray-900'
+    ), [isDarkMode]);
     const recentList = useMemo(() => (Array.isArray(recentComments) ? recentComments.slice(0, 5) : []), [recentComments]);
     const recentFallbackAvatar = 'https://api.dicebear.com/7.x/identicon/svg?seed=sanguicomment&backgroundColor=FFD700,6366F1';
 
@@ -4977,7 +4974,7 @@ const ArticleList = ({
                                     visibleTags.map((tag, index) => (
                                         <span
                                             key={tag}
-                                            className={`px-3 py-1 text-xs font-black border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] ${tagAccentClasses[index % tagAccentClasses.length]}`}
+                                            className={`px-3 py-1 text-xs font-black border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] ${tagAccentClass}`}
                                         >
                       #{tag}
                     </span>
