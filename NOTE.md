@@ -76,6 +76,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   首页文章卡片所展示的“浏览量 / 评论数”直接读取后端 `PostSummaryDto` 中的 `viewsCount` 与 `comments` 字段，其中评论数由后端实时统计 `APPROVED` 状态的评论数量。
 *   首页文章卡片若发布时间在 7 天内，会在标题旁展示带有闪动效果的 “NEW” 徽章，提示访客这是近一周的新内容。
 *   首页底部版权信息来自 `/site/meta.footer`，支持在 `application.yaml` 的 `site.footer.*` 中自定义年份、品牌、备案号/链接以及 Powered by 文案；备案号始终以新窗口打开工信部或自定义链接。
+*   “全部标签”区展示真实标签列表，点击任意标签会立即过滤右侧文章列表，只保留包含该标签的文章，再次点击或点击“清除筛选”即可恢复全部文章。
 
 ### 3.3 Markdown 渲染策略
 *   `ArticleDetail` 组件优先使用 `contentMd`，通过 `ReactMarkdown` 渲染；若后端仅返回 `contentHtml` 则采用 `dangerouslySetInnerHTML` 兜底。

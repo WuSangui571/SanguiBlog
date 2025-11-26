@@ -1355,7 +1355,7 @@ const Hero = ({setView, isDarkMode}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.29
+                    SANGUI BLOG // V1.2.30
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4699,6 +4699,7 @@ const ArticleList = ({
     const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     const [avatarClicks, setAvatarClicks] = useState(0);
     const [expandedTags, setExpandedTags] = useState(false);
+    const [activeTag, setActiveTag] = useState('all');
     const NEW_POST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     const isPostNew = (dateStr) => {
@@ -4736,12 +4737,21 @@ const ArticleList = ({
     const filteredPosts = sourcePosts.filter(post => {
         if (activeParent !== "all" && post.parentCategory !== currentParentObj.label) return false;
         if (activeSub !== "all" && post.category !== subCategories.find(s => s.id === activeSub)?.label) return false;
+        if (activeTag !== 'all') {
+            const tags = Array.isArray(post.tags) ? post.tags : [];
+            const normalized = tags.map((tag) => {
+                if (!tag) return '';
+                if (typeof tag === 'string') return tag;
+                return tag.name || tag.label || '';
+            });
+            if (!normalized.includes(activeTag)) return false;
+        }
         return true;
     });
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [activeParent, activeSub]);
+    }, [activeParent, activeSub, activeTag]);
 
     const totalPages = Math.ceil(filteredPosts.length / PAGE_SIZE);
     const displayPosts = filteredPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -4796,7 +4806,10 @@ const ArticleList = ({
     }, [tagsData, postsData]);
     useEffect(() => {
         setExpandedTags(false);
-    }, [allTags.length]);
+        if (activeTag !== 'all' && !allTags.includes(activeTag)) {
+            setActiveTag('all');
+        }
+    }, [allTags, activeTag]);
     const hasMoreTags = allTags.length > TAG_PREVIEW_COUNT;
     const visibleTags = expandedTags ? allTags : allTags.slice(0, TAG_PREVIEW_COUNT);
     const tagAccentClass = useMemo(() => (
@@ -4804,6 +4817,9 @@ const ArticleList = ({
             ? 'bg-[#1F2937] text-gray-100'
             : 'bg-[#F3F4F6] text-gray-900'
     ), [isDarkMode]);
+    const handleTagClick = useCallback((tagName) => {
+        setActiveTag((prev) => prev === tagName ? 'all' : tagName);
+    }, []);
     const recentList = useMemo(() => (Array.isArray(recentComments) ? recentComments.slice(0, 5) : []), [recentComments]);
     const recentFallbackAvatar = 'https://api.dicebear.com/7.x/identicon/svg?seed=sanguicomment&backgroundColor=FFD700,6366F1';
 
@@ -4969,16 +4985,35 @@ const ArticleList = ({
                                 </h4>
                                 <span className={`text-[10px] font-mono ${subText}`}>{allTags.length} TAGS</span>
                             </div>
+                            {activeTag !== 'all' && (
+                                <div className="mt-2 flex items-center justify-between text-xs font-bold">
+                                    <span className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+                                        正在查看 #{activeTag}
+                                    </span>
+                                    <button
+                                        onClick={() => setActiveTag('all')}
+                                        className={`px-2 py-1 border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 transition-transform ${isDarkMode ? 'bg-[#111827] text-white' : 'bg-white text-black'}`}
+                                    >
+                                        清除筛选
+                                    </button>
+                                </div>
+                            )}
                             <div className="mt-4 flex flex-wrap gap-2">
                                 {visibleTags.length ? (
-                                    visibleTags.map((tag, index) => (
-                                        <span
-                                            key={tag}
-                                            className={`px-3 py-1 text-xs font-black border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] ${tagAccentClass}`}
-                                        >
-                      #{tag}
-                    </span>
-                                    ))
+                                    visibleTags.map((tag) => {
+                                        const isActive = activeTag === tag;
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={tag}
+                                                onClick={() => handleTagClick(tag)}
+                                                aria-pressed={isActive}
+                                                className={`px-3 py-1 text-xs font-black border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${isActive ? 'bg-[#FFD700] text-black' : tagAccentClass}`}
+                                            >
+                                                #{tag}
+                                            </button>
+                                        );
+                                    })
                                 ) : (
                                     <span className={`text-sm font-bold ${subText}`}>暂无标签</span>
                                 )}
