@@ -1324,7 +1324,7 @@ const Navigation = ({user, setView, handleLogout, toggleMenu, isDarkMode, setIsD
     );
 };
 // ... (Hero, StatsStrip, ArticleList, CommentsSection, ArticleDetail, LoginView components are kept unchanged in functionality, but are wrapped in the main App with the dark mode context.)
-const Hero = ({setView, isDarkMode}) => {
+const Hero = ({setView, isDarkMode, onStartReading}) => {
     const {scrollY} = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const rotate = useTransform(scrollY, [0, 500], [0, 45]);
@@ -1355,7 +1355,7 @@ const Hero = ({setView, isDarkMode}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.30
+                    SANGUI BLOG // V1.2.31
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1377,7 +1377,13 @@ const Hero = ({setView, isDarkMode}) => {
 
 
                 <div className="flex flex-wrap gap-6 justify-center">
-                    <PopButton onClick={() => document.getElementById('posts').scrollIntoView({behavior: 'smooth'})}
+                    <PopButton onClick={() => {
+                        if (onStartReading) {
+                            onStartReading();
+                        } else {
+                            document.getElementById('posts')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+                        }
+                    }}
                                icon={ArrowUpRight} className="text-xl px-8 py-4 bg-[#FFD700] text-black">
                         START READING
                     </PopButton>
@@ -4419,6 +4425,18 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
         }
         return false;
     }); // Persisted dark mode state
+    const scrollToPostsTop = useCallback(() => {
+        if (typeof window === 'undefined') return;
+        const element = document.getElementById('posts');
+        if (!element) return;
+        const headerOffset = 140;
+        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = elementPosition - headerOffset;
+        window.scrollTo({
+            top: offsetPosition > 0 ? offsetPosition : 0,
+            behavior: 'smooth'
+        });
+    }, []);
     const footerInfo = meta?.footer || {};
     const footerYear = footerInfo.year || new Date().getFullYear();
     const footerBrand = footerInfo.brand || 'SANGUI BLOG';
@@ -4523,7 +4541,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
             case 'home':
                 return (
                     <>
-                        <Hero setView={setView} isDarkMode={isDarkMode}/>
+                        <Hero setView={setView} isDarkMode={isDarkMode} onStartReading={scrollToPostsTop}/>
                         <ArticleList
                             setView={setView}
                             setArticleId={setArticleId}
@@ -4532,6 +4550,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                             categoriesData={categories}
                             tagsData={tags}
                             recentComments={recentComments}
+                            onScrollToPosts={scrollToPostsTop}
                             stats={meta?.stats}
                             author={meta?.author}
                             activeParent={activeParent}
@@ -4690,7 +4709,8 @@ const ArticleList = ({
                          setActiveParent,
                          activeSub,
                          setActiveSub,
-                         recentComments
+                         recentComments,
+                         onScrollToPosts
                      }) => {
     const [showWechat, setShowWechat] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -4734,6 +4754,14 @@ const ArticleList = ({
     const currentParentObj = categories.find(c => c.id === activeParent);
     const subCategories = currentParentObj ? currentParentObj.children : [];
     const sourcePosts = postsData && postsData.length ? postsData : MOCK_POSTS;
+    const scrollToPostsTop = useCallback(() => {
+        if (onScrollToPosts) {
+            onScrollToPosts();
+        } else {
+            document.getElementById('posts')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+    }, [onScrollToPosts]);
+
     const filteredPosts = sourcePosts.filter(post => {
         if (activeParent !== "all" && post.parentCategory !== currentParentObj.label) return false;
         if (activeSub !== "all" && post.category !== subCategories.find(s => s.id === activeSub)?.label) return false;
@@ -4818,8 +4846,9 @@ const ArticleList = ({
             : 'bg-[#F3F4F6] text-gray-900'
     ), [isDarkMode]);
     const handleTagClick = useCallback((tagName) => {
-        setActiveTag((prev) => prev === tagName ? 'all' : tagName);
-    }, []);
+        setActiveTag((prev) => (prev === tagName ? 'all' : tagName));
+        scrollToPostsTop();
+    }, [scrollToPostsTop]);
     const recentList = useMemo(() => (Array.isArray(recentComments) ? recentComments.slice(0, 5) : []), [recentComments]);
     const recentFallbackAvatar = 'https://api.dicebear.com/7.x/identicon/svg?seed=sanguicomment&backgroundColor=FFD700,6366F1';
 
@@ -4991,7 +5020,10 @@ const ArticleList = ({
                                         正在查看 #{activeTag}
                                     </span>
                                     <button
-                                        onClick={() => setActiveTag('all')}
+                                        onClick={() => {
+                                            setActiveTag('all');
+                                            scrollToPostsTop();
+                                        }}
                                         className={`px-2 py-1 border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 transition-transform ${isDarkMode ? 'bg-[#111827] text-white' : 'bg-white text-black'}`}
                                     >
                                         清除筛选
@@ -5118,7 +5150,7 @@ const ArticleList = ({
                                     disabled={currentPage === 1}
                                     onClick={() => {
                                         setCurrentPage(p => Math.max(1, p - 1));
-                                        document.getElementById('posts').scrollIntoView({behavior: 'smooth'});
+                                        scrollToPostsTop();
                                     }}
                                     className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
                                 >
@@ -5131,7 +5163,7 @@ const ArticleList = ({
                                             key={p}
                                             onClick={() => {
                                                 setCurrentPage(p);
-                                                document.getElementById('posts').scrollIntoView({behavior: 'smooth'});
+                                                scrollToPostsTop();
                                             }}
                                             className={`w-10 h-10 border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000]
                           ${currentPage === p ? 'bg-black text-white -translate-y-1 shadow-[6px_6px_0px_0px_#FF0080]' : `${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#6366F1] hover:text-white`}
@@ -5146,7 +5178,7 @@ const ArticleList = ({
                                     disabled={currentPage === totalPages}
                                     onClick={() => {
                                         setCurrentPage(p => Math.min(totalPages, p + 1));
-                                        document.getElementById('posts').scrollIntoView({behavior: 'smooth'});
+                                        scrollToPostsTop();
                                     }}
                                     className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
                                 >
