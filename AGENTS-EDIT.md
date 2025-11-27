@@ -513,3 +513,9 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **前端**：首页 Banner 再次同步为 `SANGUI BLOG // V1.3.2`，提示管理端本次 bugfix 已上线。
 - **文档**：NOTE.md “4.6 数据采集” 补充文章详情页由服务端兜底写入 PV 的策略，保证未来排查有据可循。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.2`。
+
+## V1.3.3 (2025-11-27)
+- **后端**：`PostService.incrementViews` 在调用 `AnalyticsService` 失败时增加直接写库兜底，并记录日志，确保 `analytics_page_views` 必定落地，同时说明 1 分钟内存限流 + 10 分钟 DB 去重的行为规则。
+- **前端**：首页 Banner 更新为 `SANGUI BLOG // V1.3.3`，提示最新统计修复已部署。
+- **文档**：NOTE.md 的“3.9/3.10/3.11/4.6/4.7” 重新写成可阅读的说明（暂以英文描述以避免乱码），并补充服务端 PV 兜底与密码配置指南。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.3`。

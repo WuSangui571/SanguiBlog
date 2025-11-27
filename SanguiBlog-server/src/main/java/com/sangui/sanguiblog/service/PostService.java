@@ -8,6 +8,7 @@ import com.sangui.sanguiblog.model.dto.PostAdminDto;
 import com.sangui.sanguiblog.model.dto.PostDetailDto;
 import com.sangui.sanguiblog.model.dto.PostSummaryDto;
 import com.sangui.sanguiblog.model.dto.SavePostRequest;
+import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
 import com.sangui.sanguiblog.model.entity.Category;
 import com.sangui.sanguiblog.model.entity.Post;
 import com.sangui.sanguiblog.model.entity.Tag;
@@ -21,6 +22,8 @@ import com.sangui.sanguiblog.model.repository.UserRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -40,6 +43,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PostService {
+
+    private static final Logger log = LoggerFactory.getLogger(PostService.class);
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final PostRepository postRepository;
@@ -310,15 +315,37 @@ public class PostService {
     }
 
     private void recordAnalyticsPageView(Post post, String ip) {
-        if (post == null || analyticsService == null) {
+        if (post == null) {
             return;
         }
+        boolean recorded = false;
+        if (analyticsService != null) {
+            try {
+                PageViewRequest request = new PageViewRequest();
+                request.setPostId(post.getId());
+                request.setPageTitle(post.getTitle());
+                analyticsService.recordPageView(request, ip, null, null);
+                recorded = true;
+            } catch (Exception ex) {
+                log.warn("调用 AnalyticsService.recordPageView 失败，将启用直接写库兜底, postId={}, ip={}", post.getId(), ip, ex);
+            }
+        }
+        if (!recorded) {
+            persistAnalyticsPageView(post, ip);
+        }
+    }
+
+    private void persistAnalyticsPageView(Post post, String ip) {
         try {
-            PageViewRequest request = new PageViewRequest();
-            request.setPostId(post.getId());
-            request.setPageTitle(post.getTitle());
-            analyticsService.recordPageView(request, ip, null, null);
-        } catch (Exception ignored) {
+            AnalyticsPageView pv = new AnalyticsPageView();
+            pv.setPost(post);
+            pv.setPageTitle(post.getTitle());
+            pv.setViewerIp(StringUtils.hasText(ip) ? ip : "0.0.0.0");
+            pv.setReferrerUrl("server-fallback");
+            pv.setViewedAt(LocalDateTime.now());
+            analyticsPageViewRepository.save(pv);
+        } catch (Exception ex) {
+            log.warn("直接写入 analytics_page_views 失败, postId={}, ip={}", post != null ? post.getId() : null, ip, ex);
         }
     }
 
