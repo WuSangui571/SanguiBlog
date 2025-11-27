@@ -273,3 +273,8 @@ export const adminFetchAnalyticsSummary = (params = {}) => {
   const query = search.toString() ? `?${search.toString()}` : "";
   return request(`/admin/analytics/summary${query}`);
 };
+
+export const adminDeleteMyAnalyticsLogs = () =>
+  request("/admin/analytics/page-views/me", {
+    method: "DELETE",
+  });

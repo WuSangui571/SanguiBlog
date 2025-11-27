@@ -21,6 +21,7 @@ import {
     adminDeleteUser,
     adminFetchRoles,
     adminFetchAnalyticsSummary,
+    adminDeleteMyAnalyticsLogs,
     fetchCategories,
     fetchTags,
     fetchComments,
@@ -1110,6 +1111,23 @@ const AnalyticsSummaryContext = React.createContext({
 
 const useAdminAnalytics = () => useContext(AnalyticsSummaryContext);
 
+const getReferrer = () => {
+    if (typeof document === 'undefined') return '';
+    return document.referrer || '';
+};
+
+const getGeoHint = () => {
+    if (typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function') {
+        try {
+            const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (zone) return zone;
+        } catch (e) {
+            return '';
+        }
+    }
+    return '';
+};
+
 // --- 2. 炫酷 UI 组件库 (不变) ---
 
 const PopButton = ({children, onClick, variant = "primary", className = "", icon: Icon, ...props}) => {
@@ -1641,7 +1659,7 @@ const DashboardView = ({isDarkMode}) => {
 };
 
 // 4.2 Sub-Component: Analytics View (Detailed Data)
-const AnalyticsView = ({isDarkMode}) => {
+const AnalyticsView = ({isDarkMode, user}) => {
     const {summary, loading, error, reload, rangeDays} = useAdminAnalytics();
     const overview = summary?.overview;
     const dailyTrends = summary?.dailyTrends || [];
@@ -1649,6 +1667,9 @@ const AnalyticsView = ({isDarkMode}) => {
     const topPosts = summary?.topPosts || [];
     const recentVisits = summary?.recentVisits || [];
     const rangeOptions = [7, 14, 30];
+    const [clearing, setClearing] = useState(false);
+    const [clearMessage, setClearMessage] = useState('');
+    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const border = isDarkMode ? 'border border-gray-700' : 'border border-gray-200';
@@ -1691,6 +1712,22 @@ const AnalyticsView = ({isDarkMode}) => {
         return referrer;
     };
 
+    const handleClearLogs = async () => {
+        if (!isSuperAdmin) return;
+        if (!window.confirm('确定要删除你在本站的所有访问日志吗？')) return;
+        setClearing(true);
+        setClearMessage('');
+        try {
+            await adminDeleteMyAnalyticsLogs();
+            setClearMessage('已清理当前账户的访问日志。');
+            reload(rangeDays);
+        } catch (err) {
+            setClearMessage(err.message || '清理失败，请稍后重试。');
+        } finally {
+            setClearing(false);
+        }
+    };
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -1698,7 +1735,7 @@ const AnalyticsView = ({isDarkMode}) => {
                     <h2 className="text-3xl font-black flex items-center gap-2"><TrendingUp/> 数据分析</h2>
                     <p className={`text-sm ${textMuted}`}>来自 `analytics_page_views` 与 `analytics_traffic_sources` 的实时统计</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {rangeOptions.map((size) => (
                         <button
                             key={size}
@@ -1709,9 +1746,20 @@ const AnalyticsView = ({isDarkMode}) => {
                             {size} 天
                         </button>
                     ))}
+                    {isSuperAdmin && (
+                        <button
+                            type="button"
+                            onClick={handleClearLogs}
+                            disabled={clearing}
+                            className="px-3 py-1 text-sm font-bold border-2 border-red-600 text-red-600 rounded-full hover:bg-red-50 disabled:opacity-50"
+                        >
+                            {clearing ? '清理中...' : '清理我的访问日志'}
+                        </button>
+                    )}
                 </div>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
+            {clearMessage && <p className="text-sm text-emerald-500">{clearMessage}</p>}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className={`${surface} ${border} p-5 rounded-2xl shadow-xl`}>
@@ -5354,6 +5402,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
         }
         return false;
     }); // Persisted dark mode state
+    const lastRecordedArticleRef = useRef(null);
     const scrollToPostsTop = useCallback(() => {
         if (typeof window === 'undefined') return;
         const element = document.getElementById('posts');
@@ -5430,14 +5479,41 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     useEffect(() => {
         if (view === 'home') {
             loadPosts && loadPosts();
-            recordPageView({page: "home"});
-        }
-        if (view === 'article' && articleId) {
+        } else if (view === 'article' && articleId) {
             loadArticle && loadArticle(articleId);
-            recordPageView({page: "article", pageId: articleId});
         }
-        if (view === 'admin') recordPageView({page: "admin"});
     }, [view, articleId, loadPosts, loadArticle]);
+
+    useEffect(() => {
+        if (view === 'home') {
+            recordPageView({
+                pageTitle: 'Home',
+                referrer: getReferrer(),
+                geo: getGeoHint()
+            });
+        } else if (view === 'admin') {
+            recordPageView({
+                pageTitle: 'Admin Panel',
+                referrer: getReferrer(),
+                geo: getGeoHint()
+            });
+        }
+    }, [view]);
+
+    useEffect(() => {
+        if (view === 'article' && articleId && article && article.id === articleId) {
+            if (lastRecordedArticleRef.current === articleId) return;
+            recordPageView({
+                postId: Number(articleId),
+                pageTitle: article.title || `Article #${articleId}`,
+                referrer: getReferrer(),
+                geo: getGeoHint()
+            });
+            lastRecordedArticleRef.current = articleId;
+        } else if (view !== 'article') {
+            lastRecordedArticleRef.current = null;
+        }
+    }, [view, articleId, article]);
 
     const handleLogout = () => {
         logout && logout();

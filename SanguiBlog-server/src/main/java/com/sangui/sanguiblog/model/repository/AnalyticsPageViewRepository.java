@@ -59,4 +59,6 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
     List<TopPostAggregation> findTopPostsSince(@Param("start") LocalDateTime start, Pageable pageable);
 
     List<AnalyticsPageView> findAllByOrderByViewedAtDesc(Pageable pageable);
+
+    long deleteByUser_Id(Long userId);
 }

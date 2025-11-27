@@ -38,23 +38,37 @@ public class AnalyticsService {
     private final CommentRepository commentRepository;
     private final AnalyticsTrafficSourceRepository analyticsTrafficSourceRepository;
 
+    @Transactional
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId) {
+        User viewer = null;
+        if (userId != null) {
+            viewer = userRepository.findById(userId).orElse(null);
+            if (viewer != null && viewer.getRole() != null
+                    && "SUPER_ADMIN".equalsIgnoreCase(viewer.getRole().getCode())) {
+                // 超级管理员默认不记录访问日志，避免污染统计
+                return;
+            }
+        }
+
         AnalyticsPageView pv = new AnalyticsPageView();
         if (request.getPostId() != null) {
             Post post = postRepository.findById(request.getPostId()).orElse(null);
             pv.setPost(post);
+            if (post != null && (request.getPageTitle() == null || request.getPageTitle().isBlank())) {
+                request.setPageTitle(post.getTitle());
+            }
         }
-        if (userId != null) {
-            User user = userRepository.findById(userId).orElse(null);
-            pv.setUser(user);
-        }
-        pv.setPageTitle(request.getPageTitle());
+
+        pv.setUser(viewer);
+        pv.setPageTitle(normalizePageTitle(request.getPageTitle()));
         pv.setViewerIp(ip);
-        pv.setReferrerUrl(request.getReferrer());
-        pv.setGeoLocation(request.getGeo());
-        pv.setUserAgent(userAgent);
+        pv.setReferrerUrl(trimToLength(request.getReferrer(), 512));
+        pv.setGeoLocation(trimToLength(request.getGeo(), 128));
+        pv.setUserAgent(trimToLength(userAgent, 512));
         pv.setViewedAt(LocalDateTime.now());
         analyticsPageViewRepository.save(pv);
+
+        updateTrafficSourceStat(request.getReferrer(), pv.getViewedAt());
     }
 
     @Transactional(readOnly = true)
@@ -137,6 +151,11 @@ public class AnalyticsService {
                 .build();
     }
 
+    @Transactional
+    public long deletePageViewsByUser(Long userId) {
+        return analyticsPageViewRepository.deleteByUser_Id(userId);
+    }
+
     private List<AdminAnalyticsSummaryDto.TrendPoint> buildTrendPoints(LocalDate startDate, int safeDays) {
         List<AnalyticsPageViewRepository.DailyViewAggregation> aggregations =
                 analyticsPageViewRepository.aggregateDailyViews(startDate.atStartOfDay());
@@ -183,5 +202,62 @@ public class AnalyticsService {
         return allSources.stream()
                 .filter(ts -> latestDate.equals(ts.getStatDate()))
                 .collect(Collectors.toList());
+    }
+
+    private void updateTrafficSourceStat(String referrer, LocalDateTime viewedAt) {
+        LocalDate statDate = viewedAt != null ? viewedAt.toLocalDate() : LocalDate.now();
+        String label = determineSourceLabel(referrer);
+        analyticsTrafficSourceRepository.findByStatDateAndSourceLabel(statDate, label)
+                .ifPresentOrElse(ts -> {
+                    ts.setVisits(ts.getVisits() == null ? 1 : ts.getVisits() + 1);
+                    analyticsTrafficSourceRepository.save(ts);
+                }, () -> {
+                    AnalyticsTrafficSource ts = new AnalyticsTrafficSource();
+                    ts.setStatDate(statDate);
+                    ts.setSourceLabel(label);
+                    ts.setVisits(1);
+                    analyticsTrafficSourceRepository.save(ts);
+                });
+    }
+
+    private String determineSourceLabel(String referrer) {
+        if (referrer == null || referrer.isBlank()) {
+            return "Direct / None";
+        }
+        String host = extractHost(referrer).toLowerCase();
+        if (host.isBlank()) {
+            return "Direct / None";
+        }
+        if (host.contains("google") || host.contains("bing") || host.contains("baidu") || host.contains("yahoo")) {
+            return "Search Engine";
+        }
+        if (host.contains("twitter") || host.contains("x.com") || host.contains("weibo")
+                || host.contains("wechat") || host.contains("facebook") || host.contains("douyin")
+                || host.contains("instagram")) {
+            return "Social Media";
+        }
+        return host;
+    }
+
+    private String extractHost(String referrer) {
+        try {
+            java.net.URI uri = new java.net.URI(referrer);
+            if (uri.getHost() != null) return uri.getHost();
+        } catch (Exception ignored) {
+        }
+        return referrer;
+    }
+
+    private String normalizePageTitle(String title) {
+        if (title == null || title.isBlank()) {
+            return "页面";
+        }
+        return title.length() > 255 ? title.substring(0, 255) : title;
+    }
+
+    private String trimToLength(String value, int maxLen) {
+        if (value == null) return null;
+        if (value.length() <= maxLen) return value;
+        return value.substring(0, maxLen);
     }
 }
