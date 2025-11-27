@@ -500,3 +500,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **前端**：重写 `/admin/comments`，支持文章范围、状态筛选、关键字搜索以及基于权限的回复/审核/删除，并以 `AdminNoticeBar` 提示结果；`PermissionsView` 读取真实矩阵，可勾选 ADMIN/USER 两列并保存。
 - **权限**：新增 `permissions_seed.sql`，同步 NOTE.md 说明，可用于初始化 `permissions`/`role_permissions`；超级管理员专属的权限矩阵页面成为唯一配置入口。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.0`。
+
+## V1.3.1 (2025-11-27)
+- **后端**：`DataInitializer` 支持 `app.bootstrap.*-password` 配置（Super Admin/Admin/Editor + default），启动时会检测旧的 `123456` 哈希并自动换成强密码，彻底消除浏览器弱密码告警。
+- **后端**：`AnalyticsService.recordPageView` 仅在 `pageTitle/referrer` 含 `admin` 时跳过 SUPER_ADMIN，访问首页或文章时仍会写入 `analytics_page_views` 与 `analytics_traffic_sources`，解决自测无数据的问题。
+- **前端**：首页 Hero Banner 版本标识更新为 `SANGUI BLOG // V1.3.1`，与本次补丁保持一致。
+- **文档**：NOTE.md “4.6 数据采集”“4.7 初始账号与默认密码” 说明新的统计规则和密码配置项，提醒上线前通过环境变量覆写。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.1`。

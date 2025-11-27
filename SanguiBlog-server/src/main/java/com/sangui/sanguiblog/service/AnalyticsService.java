@@ -23,6 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -44,8 +45,8 @@ public class AnalyticsService {
         if (userId != null) {
             viewer = userRepository.findById(userId).orElse(null);
             if (viewer != null && viewer.getRole() != null
-                    && "SUPER_ADMIN".equalsIgnoreCase(viewer.getRole().getCode())) {
-                // 超级管理员默认不记录访问日志，避免污染统计
+                    && "SUPER_ADMIN".equalsIgnoreCase(viewer.getRole().getCode())
+                    && shouldSkipForSuperAdmin(request)) {
                 return;
             }
         }
@@ -259,5 +260,16 @@ public class AnalyticsService {
         if (value == null) return null;
         if (value.length() <= maxLen) return value;
         return value.substring(0, maxLen);
+    }
+
+    private boolean shouldSkipForSuperAdmin(PageViewRequest request) {
+        if (request == null) {
+            return false;
+        }
+        String title = request.getPageTitle();
+        String referrer = request.getReferrer();
+        boolean adminTitle = title != null && title.toLowerCase(Locale.ROOT).contains("admin");
+        boolean adminReferrer = referrer != null && referrer.toLowerCase(Locale.ROOT).contains("/admin");
+        return adminTitle || adminReferrer;
     }
 }
