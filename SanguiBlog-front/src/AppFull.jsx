@@ -124,6 +124,69 @@ const ThemeColorSelector = ({value, onChange, inputClass, isDarkMode}) => {
     );
 };
 
+const useTimedNotice = (duration = 4000) => {
+    const [notice, setNotice] = useState({visible: false, message: '', tone: 'success'});
+    const timerRef = useRef(null);
+
+    const showNotice = useCallback((message, tone = 'success') => {
+        if (!message) return;
+        setNotice({visible: true, message, tone});
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+        }
+        timerRef.current = setTimeout(() => {
+            setNotice((prev) => ({...prev, visible: false}));
+        }, duration);
+    }, [duration]);
+
+    const hideNotice = useCallback(() => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        setNotice((prev) => ({...prev, visible: false}));
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+        };
+    }, []);
+
+    return {notice, showNotice, hideNotice};
+};
+
+const AdminNoticeBar = ({notice, onClose}) => {
+    if (!notice?.visible || !notice?.message) return null;
+    const tone = notice.tone === 'error' ? 'error' : 'success';
+    const toneStyles = tone === 'error'
+        ? 'bg-rose-50 border-rose-200 text-rose-700 shadow-[0_20px_45px_rgba(244,63,94,0.35)]'
+        : 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-[0_20px_45px_rgba(16,185,129,0.35)]';
+    const Icon = tone === 'error' ? AlertTriangle : CheckCircle;
+
+    return (
+        <div className="fixed top-24 right-8 z-50 w-[min(360px,calc(100vw-32px))] transition-all duration-300">
+            <div className={`flex items-start gap-3 rounded-2xl border px-5 py-4 ${toneStyles}`}>
+                <Icon size={20}/>
+                <div className="flex-1">
+                    <p className="font-semibold text-sm leading-5">{notice.message}</p>
+                    <p className="text-xs opacity-80 mt-1">提示栏会在 4 秒后自动收起。</p>
+                </div>
+                <button
+                    type="button"
+                    aria-label="关闭提示"
+                    onClick={onClose}
+                    className="text-xs text-current/70 hover:text-current transition-colors"
+                >
+                    <X size={16}/>
+                </button>
+            </div>
+        </div>
+    );
+};
+
 // ... (keep existing code until CommentsSection)
 
 const escapeHtml = (value = "") =>
@@ -1355,7 +1418,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.31
+                    SANGUI BLOG // V1.2.32
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1546,12 +1609,18 @@ const CreatePostView = ({isDarkMode}) => {
     const [selectedTags, setSelectedTags] = useState([]);
     const [imageUploadMessage, setImageUploadMessage] = useState("");
     const [markdownMessage, setMarkdownMessage] = useState("");
-    const [submitMessage, setSubmitMessage] = useState("");
+    const [submitNotice, setSubmitNotice] = useState("");
+    const [submitError, setSubmitError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
     const markdownFileInputRef = useRef(null);
     const markdownEditorRef = useRef(null);
     const inlineImageInputRef = useRef(null);
+    const {
+        notice: publishNotice,
+        showNotice: showPublishNotice,
+        hideNotice: hidePublishNotice
+    } = useTimedNotice(4200);
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
@@ -1606,7 +1675,8 @@ const CreatePostView = ({isDarkMode}) => {
                 const data = res.data || res;
                 setTags(data || []);
             } catch (error) {
-                setSubmitMessage(error.message || "标签加载失败");
+                setSubmitError(error.message || "标签加载失败");
+                setSubmitNotice("");
             }
         };
         loadTags();
@@ -1709,7 +1779,8 @@ const CreatePostView = ({isDarkMode}) => {
     const handlePublish = async () => {
         if (!canPublish || submitting) return;
         setSubmitting(true);
-        setSubmitMessage("");
+        setSubmitNotice("");
+        setSubmitError("");
         try {
             const slug = await ensureAssetsSlug();
             if (!slug) {
@@ -1727,7 +1798,7 @@ const CreatePostView = ({isDarkMode}) => {
             };
             const res = await createPost(payload);
             const data = res.data || res;
-            setSubmitMessage(`发布成功（ID: ${data?.summary?.id || data?.id || "已创建"}）`);
+            setSubmitNotice(`发布成功（ID: ${data?.summary?.id || data?.id || "已创建"}）`);
             setTitle("");
             setMdContent("");
             setMarkdownFileName("");
@@ -1736,14 +1807,21 @@ const CreatePostView = ({isDarkMode}) => {
             setAssetsFolder("");
             setThemeColor(DEFAULT_THEME_COLOR);
         } catch (error) {
-            setSubmitMessage(error.message || "发布失败");
+            setSubmitError(error.message || "发布失败");
+            setSubmitNotice("");
         } finally {
             setSubmitting(false);
         }
     };
 
+    useEffect(() => {
+        if (!submitNotice) return;
+        showPublishNotice(submitNotice);
+    }, [submitNotice, showPublishNotice]);
+
     return (
         <div className="space-y-8">
+            <AdminNoticeBar notice={publishNotice} onClose={hidePublishNotice}/>
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
@@ -1958,9 +2036,9 @@ const CreatePostView = ({isDarkMode}) => {
                         >
                             {submitting ? "发布中..." : "立即发布"}
                         </PopButton>
-                        {submitMessage && (
-                            <p className={`text-xs ${submitMessage.includes("成功") ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                {submitMessage}
+                        {submitError && (
+                            <p className="text-xs text-rose-500">
+                                {submitError}
                             </p>
                         )}
                     </div>
@@ -2749,13 +2827,18 @@ const EditPostView = ({isDarkMode}) => {
     const [uploadingImages, setUploadingImages] = useState(false);
     const [assetsFolder, setAssetsFolder] = useState('');
     const [saving, setSaving] = useState(false);
-    const [submitMessage, setSubmitMessage] = useState('');
+    const [submitNotice, setSubmitNotice] = useState('');
     const [submitError, setSubmitError] = useState('');
     const markdownEditorRef = useRef(null);
     const markdownFileInputRef = useRef(null);
     const inlineImageInputRef = useRef(null);
     const [postMeta, setPostMeta] = useState({publishedAt: null});
     const selectorPageSize = 8;
+    const {
+        notice: editNotice,
+        showNotice: showEditNotice,
+        hideNotice: hideEditNotice
+    } = useTimedNotice(4200);
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
@@ -2849,7 +2932,7 @@ const EditPostView = ({isDarkMode}) => {
             setSelectedTags((data.tagIds || []).map((tid) => Number(tid)));
             setAssetsFolder(data.slug || '');
             setPostMeta({publishedAt: data.publishedAt || null});
-            setSubmitMessage('');
+            setSubmitNotice('');
             setSubmitError('');
             setMarkdownFileName('');
             setMarkdownMessage('');
@@ -2867,6 +2950,11 @@ const EditPostView = ({isDarkMode}) => {
             setSearchParams({postId: selectedPostId});
         }
     }, [selectedPostId, loadPostDetail, setSearchParams]);
+
+    useEffect(() => {
+        if (!submitNotice) return;
+        showEditNotice(submitNotice);
+    }, [submitNotice, showEditNotice]);
 
     const ensureAssetsFolder = useCallback(async () => {
         if (assetsFolder) {
@@ -2980,7 +3068,7 @@ const EditPostView = ({isDarkMode}) => {
     const handleSave = async () => {
         if (!canSave || saving || !selectedPostId) return;
         setSaving(true);
-        setSubmitMessage('');
+        setSubmitNotice('');
         setSubmitError('');
         try {
             const payload = {
@@ -2995,7 +3083,7 @@ const EditPostView = ({isDarkMode}) => {
             };
             const res = await updatePost(selectedPostId, payload);
             const data = res.data || res;
-            setSubmitMessage(`已保存（ID: ${data?.summary?.id || selectedPostId}）`);
+            setSubmitNotice(`已保存（ID: ${data?.summary?.id || selectedPostId}）`);
             setPostMeta((prev) => ({...prev, publishedAt: data?.summary?.date || prev.publishedAt}));
         } catch (error) {
             setSubmitError(error.message || '保存失败');
@@ -3012,13 +3100,14 @@ const EditPostView = ({isDarkMode}) => {
         setSelectedParentId(null);
         setSelectedTags([]);
         setAssetsFolder('');
-        setSubmitMessage('');
+        setSubmitNotice('');
         setSubmitError('');
     };
 
     if (!selectedPostId) {
         return (
             <div className="space-y-6">
+                <AdminNoticeBar notice={editNotice} onClose={hideEditNotice}/>
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
@@ -3104,6 +3193,7 @@ const EditPostView = ({isDarkMode}) => {
 
     return (
         <div className="space-y-8">
+            <AdminNoticeBar notice={editNotice} onClose={hideEditNotice}/>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                     <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
@@ -3317,7 +3407,6 @@ const EditPostView = ({isDarkMode}) => {
 
                         <div
                             className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-3`}>
-                            {submitMessage && <div className="text-sm text-emerald-500">{submitMessage}</div>}
                             {submitError && <div className="text-sm text-red-500">{submitError}</div>}
                             <button
                                 onClick={handleSave}
