@@ -54,7 +54,10 @@ public class CommentController {
             @PathVariable Long commentId,
             @RequestBody UpdateCommentRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        return ApiResponse.ok(commentService.updateComment(commentId, userPrincipal.getId(), request.getContent()));
+        boolean isAdmin = userPrincipal.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN")
+                        || auth.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        return ApiResponse.ok(commentService.updateComment(commentId, userPrincipal.getId(), request.getContent(), isAdmin));
     }
 
     @lombok.Data

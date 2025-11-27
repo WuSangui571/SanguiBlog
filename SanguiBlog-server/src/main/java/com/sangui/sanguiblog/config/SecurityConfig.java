@@ -54,11 +54,13 @@ public class SecurityConfig {
                                 "/error")
                         .permitAll()
                         .requestMatchers("/api/upload/**").authenticated()
-                        .requestMatchers("/api/admin/tags/**", "/api/admin/categories/**", "/api/admin/posts/**", "/api/admin/users/**", "/api/admin/analytics/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/admin/permissions/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/tags/**", "/api/admin/categories/**", "/api/admin/posts/**", "/api/admin/users/**", "/api/admin/analytics/**", "/api/admin/comments/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         // .requestMatchers(HttpMethod.POST, "/api/posts/*/comments").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/permissions/me").authenticated()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

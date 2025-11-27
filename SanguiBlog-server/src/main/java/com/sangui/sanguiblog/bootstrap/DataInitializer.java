@@ -1,9 +1,9 @@
 package com.sangui.sanguiblog.bootstrap;
 
 import com.sangui.sanguiblog.model.entity.Role;
-import com.sangui.sanguiblog.model.entity.User;
 import com.sangui.sanguiblog.model.repository.RoleRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
+import com.sangui.sanguiblog.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +18,7 @@ public class DataInitializer implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PermissionService permissionService;
 
     @Override
     public void run(String... args) {
@@ -28,6 +29,8 @@ public class DataInitializer implements CommandLineRunner {
         ensureUserPassword("sangui", "123456", superAdmin);
         ensureUserPassword("admin_user1", "123456", admin);
         ensureUserPassword("editor_user2", "123456", userRole);
+
+        permissionService.ensureDefaultPermissions();
     }
 
     private Role ensureRole(String code, String name) {

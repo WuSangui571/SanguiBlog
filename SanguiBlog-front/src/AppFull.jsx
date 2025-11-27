@@ -22,12 +22,18 @@ import {
     adminFetchRoles,
     adminFetchAnalyticsSummary,
     adminDeleteMyAnalyticsLogs,
+    adminFetchPermissionMatrix,
+    adminUpdateRolePermissions,
+    fetchMyPermissions,
     fetchCategories,
     fetchTags,
     fetchComments,
     createComment,
     deleteComment,
     updateComment,
+    adminFetchComments,
+    adminUpdateComment,
+    adminDeleteComment,
     uploadPostAssets,
     reservePostAssetsFolder,
     createPost,
@@ -1109,7 +1115,25 @@ const AnalyticsSummaryContext = React.createContext({
     }
 });
 
+const PermissionContext = React.createContext({
+    permissions: [],
+    loading: true,
+    error: '',
+    hasPermission: () => false
+});
+
 const useAdminAnalytics = () => useContext(AnalyticsSummaryContext);
+const PermissionNotice = ({title = '权限不足', description = '请联系超级管理员分配权限'}) => (
+    <div
+        className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-10 text-center space-y-3 bg-white/60 dark:bg-gray-900/40">
+        <Lock size={32} className="mx-auto text-gray-400"/>
+        <h3 className="text-xl font-black">{title}</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 leading-6">{description}</p>
+    </div>
+);
+
+//const usePermissionContext = () => useContext(PermissionContext);
+const usePermissionContext = () => useContext(PermissionContext);
 
 const getReferrer = () => {
     if (typeof document === 'undefined') return '';
@@ -1408,7 +1432,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.2.34
+                    SANGUI BLOG // V1.3.0
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1899,6 +1923,7 @@ const AnalyticsView = ({isDarkMode, user}) => {
 // 4.3 Sub-Component: Create New Post (The most important module)
 const CreatePostView = ({isDarkMode}) => {
     const {categories} = useBlog();
+    const {hasPermission, loading: permLoading} = usePermissionContext();
     const [tags, setTags] = useState([]);
     const [assetsFolder, setAssetsFolder] = useState("");
     const [title, setTitle] = useState("");
@@ -2077,6 +2102,21 @@ const CreatePostView = ({isDarkMode}) => {
         selectedCategoryId &&
         selectedTags.length > 0
     );
+
+    if (permLoading) {
+        return (
+            <div className="p-10 text-center text-sm text-gray-500">权限信息加载中...</div>
+        );
+    }
+
+    if (!hasPermission('POST_CREATE')) {
+        return (
+            <PermissionNotice
+                title="无法访问发布文章功能"
+                description="当前角色未被授予“新建文章”权限，请联系超级管理员在权限管理页开启。"
+            />
+        );
+    }
 
     const handlePublish = async () => {
         if (!canPublish || submitting) return;
@@ -3099,6 +3139,7 @@ const CategoriesView = ({isDarkMode}) => {
 const EditPostView = ({isDarkMode}) => {
     const navigate = useNavigate();
     const {categories} = useBlog();
+    const {hasPermission, loading: permLoading} = usePermissionContext();
     const [searchParams, setSearchParams] = useSearchParams();
     const initialId = searchParams.get('postId');
     const normalizedInitialId = initialId && !Number.isNaN(Number(initialId)) ? Number(initialId) : null;
@@ -3405,6 +3446,19 @@ const EditPostView = ({isDarkMode}) => {
         setSubmitNotice('');
         setSubmitError('');
     };
+
+    if (permLoading) {
+        return <div className="p-10 text-center text-sm text-gray-500">权限信息加载中...</div>;
+    }
+
+    if (!hasPermission('POST_EDIT')) {
+        return (
+            <PermissionNotice
+                title="无法访问文章编辑"
+                description="当前账号未被授予“编辑文章”权限，请联系超级管理员在权限管理页开启。"
+            />
+        );
+    }
 
     if (!selectedPostId) {
         return (
@@ -3947,99 +4001,77 @@ const PostsView = ({isDarkMode}) => {
     );
 };
 
+const COMMENT_STATUS_OPTIONS = [
+    {value: 'ALL', label: '全部状态'},
+    {value: 'APPROVED', label: '已通过'},
+    {value: 'PENDING', label: '待审核'},
+    {value: 'REJECTED', label: '已拒绝'},
+    {value: 'SPAM', label: '垃圾'},
+];
+
 const CommentsAdminView = ({isDarkMode}) => {
     const cardBg = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
     const inputClass = `w-full px-3 py-2 border-2 rounded-md text-sm outline-none transition ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white focus:border-indigo-400' : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500'}`;
     const statsBg = isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-800';
+    const {hasPermission, loading: permLoading} = usePermissionContext();
+    const canView = hasPermission('COMMENT_VIEW');
+    const canCreate = hasPermission('COMMENT_CREATE');
+    const canReply = hasPermission('COMMENT_REPLY');
+    const canReview = hasPermission('COMMENT_REVIEW');
+    const canDelete = hasPermission('COMMENT_DELETE');
+
     const [postKeywordInput, setPostKeywordInput] = useState('');
-    const [postKeyword, setPostKeyword] = useState('');
     const [postPage, setPostPage] = useState(1);
-    const postSize = 10;
+    const postPageSize = 8;
     const [postTotal, setPostTotal] = useState(0);
     const [postOptions, setPostOptions] = useState([]);
     const [postLoading, setPostLoading] = useState(false);
-    const [postError, setPostError] = useState('');
-    const [postCache, setPostCache] = useState({});
     const [selectedPostId, setSelectedPostId] = useState('all');
 
+    const [commentKeywordInput, setCommentKeywordInput] = useState('');
+    const [commentKeyword, setCommentKeyword] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
+    const [total, setTotal] = useState(0);
     const [comments, setComments] = useState([]);
     const [loadingComments, setLoadingComments] = useState(false);
     const [commentsError, setCommentsError] = useState('');
-    const [refreshVersion, setRefreshVersion] = useState(0);
 
     const [form, setForm] = useState({postId: '', authorName: '', content: '', parentId: ''});
     const [formError, setFormError] = useState('');
     const [formSuccess, setFormSuccess] = useState('');
-    const [savingForm, setSavingForm] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [replyTarget, setReplyTarget] = useState(null);
 
-    const [editContext, setEditContext] = useState(null);
+    const [editingId, setEditingId] = useState(null);
     const [editContent, setEditContent] = useState('');
+    const [editStatus, setEditStatus] = useState('APPROVED');
     const [editError, setEditError] = useState('');
-    const [editing, setEditing] = useState(false);
+    const [savingEdit, setSavingEdit] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
 
-    const normalizedSelectedPostId = selectedPostId === 'all' ? null : Number(selectedPostId) || null;
-    const totalPostPages = Math.max(Math.ceil(postTotal / postSize), 1);
-
-    const flattenCommentTree = useCallback((nodes = [], meta) => {
-        const result = [];
-        const walk = (list, depth = 0) => {
-            list.forEach((node) => {
-                const payload = {
-                    id: node.id,
-                    authorName: node.authorName,
-                    content: node.content,
-                    parentId: node.parentId,
-                    postId: meta?.id || node.postId,
-                    postTitle: meta?.title || node.postTitle,
-                    postSlug: meta?.slug || node.postSlug,
-                    likes: node.likes,
-                    time: node.time,
-                    depth,
-                };
-                result.push(payload);
-                if (Array.isArray(node.replies) && node.replies.length) {
-                    walk(node.replies, depth + 1);
-                }
-            });
-        };
-        walk(Array.isArray(nodes) ? nodes : [], 0);
-        return result;
-    }, []);
+    const normalizedPostId = selectedPostId === 'all' ? null : Number(selectedPostId) || null;
+    const totalPostPages = Math.max(Math.ceil(postTotal / postPageSize), 1);
+    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
 
     const loadPosts = useCallback(async () => {
         setPostLoading(true);
-        setPostError('');
         try {
             const res = await adminFetchPosts({
-                keyword: postKeyword || undefined,
+                keyword: postKeywordInput.trim() || undefined,
                 page: postPage,
-                size: postSize
+                size: postPageSize
             });
             const data = res.data || res;
-            const records = data?.records || [];
-            setPostOptions(records);
+            setPostOptions(data?.records || []);
             setPostTotal(data?.total || 0);
-            setPostCache((prev) => {
-                const next = {...prev};
-                records.forEach((item) => {
-                    if (item?.id) {
-                        next[item.id] = item;
-                    }
-                });
-                return next;
-            });
-            setForm((prev) => {
-                if (prev.postId || !records.length) return prev;
-                return {...prev, postId: String(records[0].id)};
-            });
         } catch (error) {
-            setPostError(error.message || '文章加载失败');
+            console.warn('load posts failed', error);
         } finally {
             setPostLoading(false);
         }
-    }, [postKeyword, postPage, postSize]);
+    }, [postKeywordInput, postPage, postPageSize]);
 
     useEffect(() => {
         loadPosts();
@@ -4047,15 +4079,15 @@ const CommentsAdminView = ({isDarkMode}) => {
 
     useEffect(() => {
         if (!form.postId && postOptions.length) {
-            setForm((prev) => (prev.postId ? prev : {...prev, postId: String(postOptions[0].id)}));
+            setForm((prev) => ({...prev, postId: prev.postId || String(postOptions[0].id)}));
         }
     }, [postOptions, form.postId]);
 
     useEffect(() => {
-        if (normalizedSelectedPostId) {
-            setForm((prev) => ({...prev, postId: String(normalizedSelectedPostId)}));
+        if (selectedPostId !== 'all') {
+            setForm((prev) => ({...prev, postId: String(selectedPostId)}));
         }
-    }, [normalizedSelectedPostId]);
+    }, [selectedPostId]);
 
     useEffect(() => {
         if (replyTarget && form.postId && Number(form.postId) !== replyTarget.postId) {
@@ -4064,91 +4096,68 @@ const CommentsAdminView = ({isDarkMode}) => {
         }
     }, [form.postId, replyTarget]);
 
-    const selectOptions = useMemo(() => {
-        if (!normalizedSelectedPostId) return postOptions;
-        const exists = postOptions.some((post) => post.id === normalizedSelectedPostId);
-        if (exists) return postOptions;
-        const cached = postCache[normalizedSelectedPostId];
-        if (cached) {
-            return [cached, ...postOptions];
-        }
-        return postOptions;
-    }, [postOptions, normalizedSelectedPostId, postCache]);
-
     const loadComments = useCallback(async () => {
-        if (selectedPostId === 'all' && postOptions.length === 0) {
-            setComments([]);
-            setCommentsError('');
-            return;
-        }
-        if (selectedPostId !== 'all' && !normalizedSelectedPostId) {
-            setComments([]);
-            setCommentsError('');
-            return;
-        }
+        if (!canView) return;
         setLoadingComments(true);
         setCommentsError('');
         try {
-            let targets = [];
-            if (selectedPostId === 'all') {
-                targets = postOptions;
-            } else if (normalizedSelectedPostId) {
-                const cached = postCache[normalizedSelectedPostId];
-                if (cached) {
-                    targets = [cached];
-                } else {
-                    const detail = await adminFetchPostDetail(normalizedSelectedPostId);
-                    targets = [detail];
-                    setPostCache((prev) => ({...prev, [detail.id]: detail}));
-                }
-            }
-            if (!targets.length) {
-                setComments([]);
-                return;
-            }
-            const chunks = await Promise.all(targets.map(async (post) => {
-                try {
-                    const res = await fetchComments(post.id);
-                    const data = res.data || res || [];
-                    return flattenCommentTree(data, post);
-                } catch (error) {
-                    console.warn('加载评论失败', error);
-                    return [];
-                }
-            }));
-            setComments(chunks.flat());
+            const res = await adminFetchComments({
+                postId: normalizedPostId || undefined,
+                keyword: commentKeyword || undefined,
+                status: statusFilter,
+                page,
+                size: pageSize
+            });
+            const data = res.data || res;
+            setComments(data?.records || []);
+            setTotal(data?.total || 0);
         } catch (error) {
             setComments([]);
             setCommentsError(error.message || '加载评论失败');
         } finally {
             setLoadingComments(false);
         }
-    }, [selectedPostId, normalizedSelectedPostId, postOptions, postCache, refreshVersion, flattenCommentTree]);
+    }, [canView, normalizedPostId, commentKeyword, statusFilter, page, pageSize]);
 
     useEffect(() => {
         loadComments();
     }, [loadComments]);
 
-    const commentStats = useMemo(() => {
-        const total = comments.length;
-        const replies = comments.filter((item) => item.parentId).length;
-        const roots = total - replies;
-        const scope = selectedPostId === 'all'
-            ? '全部文章（当前列表）'
-            : (postCache[normalizedSelectedPostId]?.title || `#${normalizedSelectedPostId}`);
-        return {total, replies, roots, scope};
-    }, [comments, selectedPostId, postCache, normalizedSelectedPostId]);
+    useEffect(() => {
+        setPage(1);
+    }, [statusFilter, normalizedPostId]);
 
-    const handleSearchPosts = () => {
-        setPostKeyword(postKeywordInput.trim());
-        setPostPage(1);
+    const scopeSummary = useMemo(() => {
+        const scope = normalizedPostId ? `文章 #${normalizedPostId}` : '全部文章';
+        const status = COMMENT_STATUS_OPTIONS.find((item) => item.value === statusFilter)?.label || '全部状态';
+        return {scope, status};
+    }, [normalizedPostId, statusFilter]);
+
+    const renderStatusBadge = (status) => {
+        const map = {
+            APPROVED: {label: '已通过', className: 'bg-emerald-100 text-emerald-700'},
+            PENDING: {label: '待审核', className: 'bg-amber-100 text-amber-700'},
+            REJECTED: {label: '已拒绝', className: 'bg-red-100 text-red-600'},
+            SPAM: {label: '垃圾', className: 'bg-gray-200 text-gray-700'},
+        };
+        const info = map[status] || {label: status || '未知', className: 'bg-gray-200 text-gray-700'};
+        return <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${info.className}`}>{info.label}</span>;
     };
 
-    const handleCreateComment = async (event) => {
+    const handleCommentSearch = () => {
+        setCommentKeyword(commentKeywordInput.trim());
+        setPage(1);
+    };
+
+    const handleSubmitForm = async (event) => {
         event.preventDefault();
         setFormError('');
         setFormSuccess('');
-        const postId = Number(form.postId || normalizedSelectedPostId);
+        if (!canCreate) {
+            setFormError('当前账号无权发布后台评论');
+            return;
+        }
+        const postId = Number(form.postId || normalizedPostId);
         if (!postId) {
             setFormError('请先选择文章');
             return;
@@ -4157,35 +4166,60 @@ const CommentsAdminView = ({isDarkMode}) => {
             setFormError('请输入评论内容');
             return;
         }
-        setSavingForm(true);
+        setSubmitting(true);
         try {
             await createComment(postId, {
-                authorName: form.authorName.trim() || 'ADMIN',
+                authorName: form.authorName.trim() || undefined,
                 content: form.content.trim(),
                 parentId: form.parentId ? Number(form.parentId) : undefined,
             });
             setForm((prev) => ({...prev, content: '', parentId: ''}));
             setReplyTarget(null);
             setFormSuccess('评论已提交');
-            setRefreshVersion((prev) => prev + 1);
+            loadComments();
         } catch (error) {
             setFormError(error.message || '提交失败');
         } finally {
-            setSavingForm(false);
+            setSubmitting(false);
         }
     };
 
     const handlePickReply = (comment) => {
+        if (!canReply) return;
         setReplyTarget(comment);
         setForm((prev) => ({...prev, postId: String(comment.postId), parentId: String(comment.id)}));
     };
 
+    const handleSaveEdit = async () => {
+        if (!editingId || !canReview) return;
+        if (!editContent.trim()) {
+            setEditError('内容不能为空');
+            return;
+        }
+        setSavingEdit(true);
+        setEditError('');
+        try {
+            await adminUpdateComment(editingId, {
+                content: editContent.trim(),
+                status: editStatus
+            });
+            setEditingId(null);
+            setEditContent('');
+            loadComments();
+        } catch (error) {
+            setEditError(error.message || '更新失败');
+        } finally {
+            setSavingEdit(false);
+        }
+    };
+
     const handleDeleteComment = async (comment) => {
+        if (!canDelete) return;
         if (!window.confirm(`确认删除评论 #${comment.id} 吗？`)) return;
         setDeletingId(comment.id);
         try {
-            await deleteComment(comment.postId, comment.id);
-            setRefreshVersion((prev) => prev + 1);
+            await adminDeleteComment(comment.id);
+            loadComments();
         } catch (error) {
             setCommentsError(error.message || '删除失败');
         } finally {
@@ -4193,303 +4227,73 @@ const CommentsAdminView = ({isDarkMode}) => {
         }
     };
 
-    const handleStartEdit = (comment) => {
-        setEditContext({id: comment.id, postId: comment.postId});
-        setEditContent(comment.content || '');
-        setEditError('');
-    };
+    if (permLoading) {
+        return <div className="p-10 text-center text-sm text-gray-500">权限信息加载中...</div>;
+    }
 
-    const handleCancelEdit = () => {
-        setEditContext(null);
-        setEditContent('');
-        setEditError('');
-    };
-
-    const handleSubmitEdit = async () => {
-        if (!editContext?.id || !editContext?.postId) return;
-        if (!editContent.trim()) {
-            setEditError('内容不能为空');
-            return;
-        }
-        setEditing(true);
-        setEditError('');
-        try {
-            await updateComment(editContext.postId, editContext.id, editContent.trim());
-            setEditContext(null);
-            setEditContent('');
-            setRefreshVersion((prev) => prev + 1);
-        } catch (error) {
-            setEditError(error.message || '更新失败');
-        } finally {
-            setEditing(false);
-        }
-    };
-
-    const editingId = editContext?.id;
+    if (!canView) {
+        return (
+            <PermissionNotice
+                title="无法访问评论管理"
+                description="当前账号未被授予“评论管理”权限，请联系超级管理员调整权限配置。"
+            />
+        );
+    }
 
     return (
         <div className="space-y-8">
-            <div className={`${cardBg} p-6 rounded-2xl shadow-lg`}>
-                <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                    <div className="flex-1 space-y-2">
+            <div className={`${cardBg} p-6 rounded-2xl shadow-lg space-y-4`}>
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
                         <label className="text-xs uppercase tracking-[0.3em] text-gray-400">评论来源</label>
                         <select
                             className={inputClass}
                             value={selectedPostId}
                             onChange={(e) => setSelectedPostId(e.target.value)}
                         >
-                            <option value="all">全部文章（当前列表）</option>
-                            {selectOptions.map((post) => (
+                            <option value="all">全部文章</option>
+                            {postOptions.map((post) => (
                                 <option key={post.id} value={post.id}>{post.title}</option>
                             ))}
                         </select>
-                        <p className="text-[11px] text-gray-500">若列表中未找到目标文章，可通过搜索或翻页加载。</p>
+                        <p className="text-[11px] text-gray-500">可通过下方列表加载更多文章后再刷新评论。</p>
                     </div>
-                    <div className="flex-1 space-y-2">
-                        <label className="text-xs uppercase tracking-[0.3em] text-gray-400">搜索文章</label>
-                        <div className="flex gap-2">
+                    <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.3em] text-gray-400">状态筛选</label>
+                        <select
+                            className={inputClass}
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            {COMMENT_STATUS_OPTIONS.map((item) => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-[2fr_1fr] items-end">
+                    <div>
+                        <label className="text-xs uppercase tracking-[0.3em] text-gray-400">关键字</label>
+                        <div className="flex gap-2 mt-1">
                             <input
                                 className={inputClass}
-                                placeholder="输入标题或 Slug"
-                                value={postKeywordInput}
-                                onChange={(e) => setPostKeywordInput(e.target.value)}
+                                placeholder="按内容或作者搜索"
+                                value={commentKeywordInput}
+                                onChange={(e) => setCommentKeywordInput(e.target.value)}
                             />
                             <button
                                 type="button"
-                                onClick={handleSearchPosts}
+                                onClick={handleCommentSearch}
                                 className="px-4 py-2 border-2 border-black font-bold text-sm hover:-translate-y-0.5 transition"
                             >
-                                查询
+                                搜索
                             </button>
                         </div>
                     </div>
-                </div>
-                <div className="flex flex-wrap items-center justify-between text-xs text-gray-500 mt-4 gap-3">
-                    <span>共 {postTotal} 篇文章 / 第 {postPage} / {totalPostPages} 页</span>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setPostPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={postPage === 1 || postLoading}
-                            className="px-3 py-1 border border-black rounded disabled:opacity-40"
-                        >
-                            上一页
-                        </button>
-                        <button
-                            onClick={() => setPostPage((prev) => Math.min(prev + 1, totalPostPages))}
-                            disabled={postPage >= totalPostPages || postLoading}
-                            className="px-3 py-1 border border-black rounded disabled:opacity-40"
-                        >
-                            下一页
-                        </button>
-                    </div>
-                </div>
-                {(postLoading || postError) && (
-                    <p className={`text-xs mt-3 ${postError ? 'text-red-500' : 'text-gray-500'}`}>
-                        {postError || '文章列表加载中...'}
-                    </p>
-                )}
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-                <div className={`${cardBg} rounded-2xl shadow-lg overflow-hidden`}>
-                    <div
-                        className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-                        <div>
-                            <h3 className="text-lg font-semibold flex items-center gap-2">
-                                <MessageCircle size={18}/> 评论列表
-                            </h3>
-                            <p className="text-xs text-gray-500 mt-1">{commentStats.scope}</p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setRefreshVersion((prev) => prev + 1)}
-                            className="text-xs flex items-center gap-1 text-indigo-500 hover:text-indigo-400"
-                        >
-                            <RefreshCw size={14}/> 刷新
-                        </button>
-                    </div>
-                    {loadingComments ? (
-                        <div className="p-6 text-sm text-gray-500">评论加载中...</div>
-                    ) : comments.length === 0 ? (
-                        <div className="p-6 text-sm text-gray-500">暂无评论</div>
-                    ) : (
-                        <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                            {comments.map((comment) => (
-                                <div
-                                    key={comment.id}
-                                    className={`p-5 ${editingId === comment.id ? (isDarkMode ? 'bg-gray-800/60' : 'bg-indigo-50') : ''}`}
-                                >
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                        <div>
-                                            <p className="font-semibold flex items-center gap-2">
-                                                {comment.authorName || '访客'}
-                                                {comment.parentId && (
-                                                    <span
-                                                        className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                                                        回复
-                                                    </span>
-                                                )}
-                                            </p>
-                                            <p className="text-xs text-gray-500">{comment.time || '—'}</p>
-                                        </div>
-                                        <div className="text-right text-xs text-gray-500">
-                                            <p>{comment.postTitle || `#${comment.postId}`}</p>
-                                            <p>ID：{comment.id}</p>
-                                        </div>
-                                    </div>
-                                    <div className="mt-3 text-sm" style={{paddingLeft: `${comment.depth * 16}px`}}>
-                                        {editingId === comment.id ? (
-                                            <>
-                                                <textarea
-                                                    value={editContent}
-                                                    onChange={(e) => setEditContent(e.target.value)}
-                                                    className={`${inputClass} min-h-[90px]`}
-                                                />
-                                                {editError && (
-                                                    <p className="text-xs text-red-500 mt-1">{editError}</p>
-                                                )}
-                                                <div className="flex gap-2 mt-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleSubmitEdit}
-                                                        disabled={editing}
-                                                        className="px-4 py-1.5 text-xs font-bold border-2 border-green-500 text-green-600 rounded disabled:opacity-50"
-                                                    >
-                                                        {editing ? '保存中...' : '保存'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleCancelEdit}
-                                                        className="px-4 py-1.5 text-xs font-bold border-2 border-gray-400 text-gray-500 rounded"
-                                                    >
-                                                        取消
-                                                    </button>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <p className={`${isDarkMode ? 'text-gray-100' : 'text-gray-800'} leading-relaxed`}>
-                                                {comment.content || '（无内容）'}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-wrap gap-3 text-xs mt-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => handlePickReply(comment)}
-                                            className="text-indigo-500 hover:text-indigo-400"
-                                        >
-                                            回复
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleStartEdit(comment)}
-                                            className="text-blue-500 hover:text-blue-400"
-                                        >
-                                            编辑
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeleteComment(comment)}
-                                            disabled={deletingId === comment.id}
-                                            className="text-red-500 hover:text-red-400 disabled:opacity-50"
-                                        >
-                                            {deletingId === comment.id ? '删除中...' : '删除'}
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="space-y-6">
-                    <div className={`${cardBg} rounded-2xl shadow-lg p-6 space-y-4`}>
-                        <h3 className="font-semibold flex items-center gap-2"><Activity size={16}/> 评论概览</h3>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className={`${statsBg} p-3 rounded-xl`}>
-                                <p className="text-xs text-gray-500">全部</p>
-                                <p className="text-2xl font-bold">{commentStats.total}</p>
-                            </div>
-                            <div className={`${statsBg} p-3 rounded-xl`}>
-                                <p className="text-xs text-gray-500">根评论</p>
-                                <p className="text-2xl font-bold">{commentStats.roots}</p>
-                            </div>
-                            <div className={`${statsBg} p-3 rounded-xl`}>
-                                <p className="text-xs text-gray-500">回复数</p>
-                                <p className="text-2xl font-bold">{commentStats.replies}</p>
-                            </div>
-                            <div className={`${statsBg} p-3 rounded-xl`}>
-                                <p className="text-xs text-gray-500">当前范围</p>
-                                <p className="text-sm font-semibold leading-5">{commentStats.scope}</p>
-                            </div>
-                        </div>
-                        {commentsError && <p className="text-xs text-red-500">{commentsError}</p>}
-                        {selectedPostId === 'all' && (
-                            <p className="text-[11px] text-gray-500">
-                                “全部文章” 会针对当前文章列表批量抓取评论，可通过翻页加载更多文章再刷新评论。
-                            </p>
-                        )}
-                    </div>
-
-                    <div className={`${cardBg} rounded-2xl shadow-lg p-6 space-y-4`}>
-                        <h3 className="font-semibold flex items-center gap-2"><Send size={16}/> 发布 / 回复评论</h3>
-                        <form className="space-y-3" onSubmit={handleCreateComment}>
-                            <div className="space-y-1">
-                                <label className="text-xs text-gray-500">目标文章</label>
-                                <select
-                                    className={inputClass}
-                                    value={form.postId}
-                                    onChange={(e) => setForm((prev) => ({...prev, postId: e.target.value}))}
-                                >
-                                    <option value="">请选择文章</option>
-                                    {selectOptions.map((post) => (
-                                        <option key={post.id} value={post.id}>{post.title}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs text-gray-500">署名（可选）</label>
-                                <input
-                                    className={inputClass}
-                                    value={form.authorName}
-                                    onChange={(e) => setForm((prev) => ({...prev, authorName: e.target.value}))}
-                                    placeholder="默认使用当前账号昵称"
-                                />
-                            </div>
-                            {replyTarget && (
-                                <div className="text-xs text-amber-500 flex items-center justify-between gap-2">
-                                    <span>当前将回复 #{replyTarget.id}（{replyTarget.authorName || '访客'}）</span>
-                                    <button type="button" className="underline" onClick={() => {
-                                        setReplyTarget(null);
-                                        setForm((prev) => ({...prev, parentId: ''}));
-                                    }}>取消
-                                    </button>
-                                </div>
-                            )}
-                            <textarea
-                                className={`${inputClass} min-h-[120px]`}
-                                value={form.content}
-                                onChange={(e) => setForm((prev) => ({...prev, content: e.target.value}))}
-                                placeholder="输入评论内容"
-                            />
-                            {formError && <p className="text-xs text-red-500">{formError}</p>}
-                            {formSuccess && <p className="text-xs text-emerald-500">{formSuccess}</p>}
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    disabled={savingForm}
-                                    className="px-6 py-2 border-2 border-black font-bold bg-[#FFD700] text-black rounded-full hover:-translate-y-0.5 transition disabled:opacity-50"
-                                >
-                                    {savingForm ? '提交中...' : '提交评论'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
+                    <button
+                        type="button"
+                        onClick={() => loadComments()}
+*** End Patch
 
 
 const UserManagementView = ({isDarkMode}) => {
@@ -4934,66 +4738,164 @@ const UserManagementView = ({isDarkMode}) => {
 
 // 4.4 Sub-Component: Permissions View (Super Admin Only)
 const PermissionsView = ({isDarkMode, user}) => {
-    const users = [
-        {name: "AdminUser1", role: "ADMIN", lastLogin: "2025-11-20", id: 2},
-        {name: "EditorUser2", role: "USER", lastLogin: "2025-11-18", id: 3},
-        {name: "GuestUser3", role: "USER", lastLogin: "2025-11-15", id: 4},
-        {name: user.username, role: "SUPER_ADMIN", lastLogin: "2025-11-21", id: 1}
-    ];
-    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
+    const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
-    const headerBg = isDarkMode ? 'bg-gray-700' : 'bg-gray-100';
+    const [matrix, setMatrix] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [roleSelections, setRoleSelections] = useState({
+        ADMIN: new Set(),
+        USER: new Set()
+    });
+    const [savingRole, setSavingRole] = useState(null);
+    const {notice, showNotice, hideNotice} = useTimedNotice();
 
-    const getRoleColor = (role) => {
-        switch (role) {
-            case 'SUPER_ADMIN':
-                return 'bg-[#FF0080]';
-            case 'ADMIN':
-                return 'bg-[#6366F1]';
-            case 'USER':
-                return 'bg-[#00E096]';
-            default:
-                return 'bg-gray-500';
+    const fetchMatrix = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const res = await adminFetchPermissionMatrix();
+            const data = res.data || res;
+            setMatrix(data?.modules || []);
+            const adminSet = new Set();
+            const userSet = new Set();
+            (data?.modules || []).forEach((module) => {
+                module.actions.forEach((action) => {
+                    if (action.admin) adminSet.add(action.code);
+                    if (action.user) userSet.add(action.code);
+                });
+            });
+            setRoleSelections({ADMIN: adminSet, USER: userSet});
+        } catch (err) {
+            setError(err.message || '加载权限矩阵失败');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchMatrix();
+    }, [fetchMatrix]);
+
+    const togglePermission = (role, code) => {
+        setRoleSelections((prev) => {
+            const next = new Set(prev[role]);
+            if (next.has(code)) {
+                next.delete(code);
+            } else {
+                next.add(code);
+            }
+            return {...prev, [role]: next};
+        });
+    };
+
+    const handleSaveRole = async (role) => {
+        setSavingRole(role);
+        setError('');
+        try {
+            await adminUpdateRolePermissions(role, Array.from(roleSelections[role]));
+            showNotice(`${role === 'ADMIN' ? '管理员' : '用户'}权限已更新`);
+        } catch (err) {
+            setError(err.message || '保存失败');
+        } finally {
+            setSavingRole(null);
         }
     };
 
+    const roleCards = [
+        {role: 'SUPER_ADMIN', label: '超级管理员', description: '拥有所有模块的最高权限，可配置其余角色权限。'},
+        {role: 'ADMIN', label: '管理员', description: '负责内容与互动管理，可通过矩阵勾选需要开放的模块动作。'},
+        {role: 'USER', label: '用户', description: '普通登录用户，通常仅开放浏览与发表评论。'}
+    ];
+
+    if (user?.role !== 'SUPER_ADMIN') {
+        return (
+            <PermissionNotice
+                title="仅超级管理员可访问"
+                description="只有超级管理员才能调整权限矩阵，请使用拥有最高权限的账号登录。"
+            />
+        );
+    }
+
     return (
         <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-[#FF0080] flex items-center gap-2"><Shield/> 角色与权限管理</h2>
-            <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>作为超级管理员，你可以管理其他角色（管理员/用户）的核心权限。用户列表：</p>
+            <AdminNoticeBar notice={notice} onClose={hideNotice}/>
+            <div className="grid gap-4 md:grid-cols-3">
+                {roleCards.map((item) => (
+                    <div key={item.role} className={`${surface} rounded-2xl shadow-lg p-5`}>
+                        <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{item.role}</p>
+                        <h3 className="text-xl font-bold mt-1">{item.label}</h3>
+                        <p className="text-sm text-gray-500 mt-2 leading-6">{item.description}</p>
+                    </div>
+                ))}
+            </div>
 
-            <div
-                className={`${surface} p-6 rounded-lg shadow-xl ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'} overflow-x-auto`}>
-                <table className="min-w-full divide-y divide-gray-200 table-auto">
-                    <thead>
-                    <tr className={headerBg}>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>用户名</th>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>当前角色</th>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${text}`}>最后登录</th>
-                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${text}`}>操作</th>
-                    </tr>
-                    </thead>
-                    <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'} `}>
-                    {users.map((u) => (
-                        <tr key={u.id} className={isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${text}`}>{u.name}</td>
-                            <td className={`px-6 py-4 whitespace-nowrap`}>
-                                <span
-                                    className={`text-[10px] font-bold text-white px-2 py-1 rounded ${getRoleColor(u.role)}`}>{u.role}</span>
-                            </td>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500`}>{u.lastLogin}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                <button disabled={u.role === 'SUPER_ADMIN'}
-                                        className={`text-indigo-600 hover:text-indigo-900 disabled:opacity-50 ${isDarkMode ? 'text-indigo-400' : ''}`}>调整角色
-                                </button>
-                                <button disabled={u.role === 'SUPER_ADMIN'}
-                                        className={`text-red-600 hover:text-red-900 disabled:opacity-50 ${isDarkMode ? 'text-red-400' : ''}`}>停用
-                                </button>
-                            </td>
-                        </tr>
+            {error && <div className="text-sm text-red-500">{error}</div>}
+            {loading ? (
+                <div className="p-10 text-center text-sm text-gray-500">权限矩阵加载中...</div>
+            ) : (
+                <div className="space-y-6">
+                    {matrix.map((module) => (
+                        <div key={module.module} className={`${surface} rounded-2xl shadow-lg`}>
+                            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-semibold">{module.label}</h3>
+                                    <p className="text-xs text-gray-500 mt-1">{module.description}</p>
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    可配置：管理员 / 用户
+                                </div>
+                            </div>
+                            <div className="divide-y divide-gray-200 dark:divide-gray-800">
+                                {module.actions.map((action) => (
+                                    <div key={action.code} className="grid grid-cols-[2fr_1fr_1fr] items-center gap-4 px-6 py-4 text-sm">
+                                        <div>
+                                            <p className="font-semibold">{action.label}</p>
+                                            <p className="text-xs text-gray-500 mt-1">{action.description}</p>
+                                        </div>
+                                        <label className="flex items-center justify-center gap-2 font-mono text-xs">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 accent-indigo-500"
+                                                checked={roleSelections.ADMIN.has(action.code)}
+                                                onChange={() => togglePermission('ADMIN', action.code)}
+                                            />
+                                            管理员
+                                        </label>
+                                        <label className="flex items-center justify-center gap-2 font-mono text-xs">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 accent-emerald-500"
+                                                checked={roleSelections.USER.has(action.code)}
+                                                onChange={() => togglePermission('USER', action.code)}
+                                            />
+                                            用户
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     ))}
-                    </tbody>
-                </table>
+                </div>
+            )}
+
+            <div className="flex flex-wrap gap-4">
+                <button
+                    type="button"
+                    onClick={() => handleSaveRole('ADMIN')}
+                    disabled={savingRole === 'ADMIN'}
+                    className="px-6 py-2 border-2 border-black font-bold bg-[#6366F1] text-white rounded-full hover:-translate-y-0.5 transition disabled:opacity-50"
+                >
+                    {savingRole === 'ADMIN' ? '保存中...' : '保存管理员权限'}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleSaveRole('USER')}
+                    disabled={savingRole === 'USER'}
+                    className="px-6 py-2 border-2 border-black font-bold bg-[#00E096] text-black rounded-full hover:-translate-y-0.5 transition disabled:opacity-50"
+                >
+                    {savingRole === 'USER' ? '保存中...' : '保存用户权限'}
+                </button>
             </div>
         </div>
     );
@@ -5009,6 +4911,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [analyticsError, setAnalyticsError] = useState('');
     const [analyticsRange, setAnalyticsRange] = useState(14);
+    const [permissionState, setPermissionState] = useState({permissions: [], loading: false, error: ''});
 
     const pathSegments = location.pathname.split('/').filter(Boolean);
     const lastSegment = pathSegments[pathSegments.length - 1] || 'dashboard';
@@ -5068,6 +4971,28 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
         fetchAnalyticsSummary(analyticsRange);
     }, [analyticsRange, fetchAnalyticsSummary]);
 
+    useEffect(() => {
+        if (!user) {
+            setPermissionState({permissions: [], loading: false, error: ''});
+            return;
+        }
+        let active = true;
+        setPermissionState((prev) => ({...prev, loading: true, error: ''}));
+        fetchMyPermissions()
+            .then((res) => {
+                if (!active) return;
+                const data = res.data || res || [];
+                setPermissionState({permissions: data, loading: false, error: ''});
+            })
+            .catch((err) => {
+                if (!active) return;
+                setPermissionState({permissions: [], loading: false, error: err.message || '获取权限失败'});
+            });
+        return () => {
+            active = false;
+        };
+    }, [user]);
+
     const reloadAnalytics = useCallback((daysValue) => {
         if (daysValue && daysValue !== analyticsRange) {
             setAnalyticsRange(daysValue);
@@ -5083,6 +5008,17 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
         rangeDays: analyticsRange,
         reload: reloadAnalytics
     }), [analyticsSummary, analyticsLoading, analyticsError, analyticsRange, reloadAnalytics]);
+
+    const permissionContextValue = useMemo(() => ({
+        permissions: permissionState.permissions,
+        loading: permissionState.loading,
+        error: permissionState.error,
+        hasPermission: (code) => {
+            if (!code) return true;
+            if (user?.role === 'SUPER_ADMIN') return true;
+            return permissionState.permissions.includes(code);
+        }
+    }), [permissionState, user]);
 
     const handleBroadcastToggle = async () => {
         if (broadcastSaving) return;
@@ -5156,23 +5092,31 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                 </header>
 
                 <main className="flex-1 p-8">
-                    <AnalyticsSummaryContext.Provider value={analyticsContextValue}>
-                        <Routes>
-                            <Route index element={<DashboardView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="dashboard" element={<DashboardView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="create-post" element={<CreatePostView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="comments" element={<CommentsAdminView isDarkMode={isDarkMode}/>}/>
-                            <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode}/>}/>
-                            <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode}/>}/>
-                            <Route path="posts" element={<PostsView isDarkMode={isDarkMode}/>}/>
-                            <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode}/>}/>
-                            <Route path="users" element={<UserManagementView isDarkMode={isDarkMode}/>}/>
-                            <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode}/>}/>
-                            <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>}/>
-                        </Routes>
-                    </AnalyticsSummaryContext.Provider>
+                    <PermissionContext.Provider value={permissionContextValue}>
+                        <AnalyticsSummaryContext.Provider value={analyticsContextValue}>
+                            {permissionState.error && (
+                                <div
+                                    className="mb-4 border-l-4 border-amber-500 bg-amber-50 text-amber-700 px-4 py-3 text-sm">
+                                    权限数据加载失败：{permissionState.error}
+                                </div>
+                            )}
+                            <Routes>
+                                <Route index element={<DashboardView isDarkMode={isDarkMode} user={user}/>}/>
+                                <Route path="dashboard" element={<DashboardView isDarkMode={isDarkMode} user={user}/>}/>
+                                <Route path="create-post" element={<CreatePostView isDarkMode={isDarkMode} user={user}/>}/>
+                                <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user}/>}/>
+                                <Route path="comments" element={<CommentsAdminView isDarkMode={isDarkMode}/>}/>
+                                <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode}/>}/>
+                                <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode}/>}/>
+                                <Route path="posts" element={<PostsView isDarkMode={isDarkMode}/>}/>
+                                <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode}/>}/>
+                                <Route path="users" element={<UserManagementView isDarkMode={isDarkMode}/>}/>
+                                <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} user={user}/>}/>
+                                <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode}/>}/>
+                                <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>}/>
+                            </Routes>
+                        </AnalyticsSummaryContext.Provider>
+                    </PermissionContext.Provider>
 
                     {/* General Notification System for Super Admin */}
                     {(activeTab === 'dashboard' || activeTab === 'settings') && user.role === 'SUPER_ADMIN' && (

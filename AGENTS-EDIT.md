@@ -494,3 +494,9 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **前端**：`/admin/analytics` 数据分析页支持 7/14/30 天切换，提供趋势图、流量来源、热门文章表格以及详细访问日志（文章、IP、时间、来源、Geo、用户状态），满足“可查看最近访客访问了哪些文章、何时访问、是否登录”的需求。
 - **文档**：NOTE.md 新增“3.10 后台仪表盘与数据分析”记录接口结构、前端行为及可配置项。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.2.34`。
+
+## V1.3.0 (2025-11-27)
+- **后端**：`CommentService` 新增后台搜索/编辑能力，`/api/admin/comments` 支持分页、审核与删除；`AnalyticsService` 写入真实 `analytics_page_views`/`analytics_traffic_sources` 并默认跳过超级管理员，同时暴露 `/api/admin/analytics/page-views/me` 清理自身日志。
+- **前端**：重写 `/admin/comments`，支持文章范围、状态筛选、关键字搜索以及基于权限的回复/审核/删除，并以 `AdminNoticeBar` 提示结果；`PermissionsView` 读取真实矩阵，可勾选 ADMIN/USER 两列并保存。
+- **权限**：新增 `permissions_seed.sql`，同步 NOTE.md 说明，可用于初始化 `permissions`/`role_permissions`；超级管理员专属的权限矩阵页面成为唯一配置入口。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.0`。

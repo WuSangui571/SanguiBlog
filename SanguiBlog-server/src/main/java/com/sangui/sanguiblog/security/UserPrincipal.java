@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -15,14 +16,24 @@ public class UserPrincipal implements UserDetails {
     private final Long id;
     private final String username;
     private final String password;
+    private final String roleCode;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserPrincipal(User user) {
+    public UserPrincipal(User user, Collection<String> permissionCodes) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.password = Objects.toString(user.getPasswordHash(), "");
-        String roleCode = user.getRole() != null ? user.getRole().getCode() : "USER";
-        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleCode));
+        this.roleCode = user.getRole() != null ? user.getRole().getCode() : "USER";
+        List<GrantedAuthority> grants = new ArrayList<>();
+        grants.add(new SimpleGrantedAuthority("ROLE_" + roleCode));
+        if (permissionCodes != null) {
+            permissionCodes.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(code -> !code.isBlank())
+                    .forEach(code -> grants.add(new SimpleGrantedAuthority("PERM_" + code)));
+        }
+        this.authorities = grants;
     }
 
     @Override

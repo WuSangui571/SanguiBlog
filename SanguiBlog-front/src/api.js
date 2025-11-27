@@ -142,6 +142,28 @@ export const updateComment = (postId, commentId, content) =>
     body: JSON.stringify({ content }),
   });
 
+export const adminFetchComments = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.postId) search.append("postId", params.postId);
+  if (params.keyword) search.append("keyword", params.keyword);
+  if (params.status && params.status !== "ALL") search.append("status", params.status);
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/comments${query}`);
+};
+
+export const adminUpdateComment = (commentId, payload = {}) =>
+  request(`/admin/comments/${commentId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+export const adminDeleteComment = (commentId) =>
+  request(`/admin/comments/${commentId}`, {
+    method: "DELETE",
+  });
+
 export const updateBroadcast = (payload) =>
   request("/site/broadcast", {
     method: "POST",
@@ -278,3 +300,13 @@ export const adminDeleteMyAnalyticsLogs = () =>
   request("/admin/analytics/page-views/me", {
     method: "DELETE",
   });
+
+export const adminFetchPermissionMatrix = () => request("/admin/permissions");
+
+export const adminUpdateRolePermissions = (roleCode, permissions) =>
+  request(`/admin/permissions/${roleCode}`, {
+    method: "PUT",
+    body: JSON.stringify({ permissions }),
+  });
+
+export const fetchMyPermissions = () => request("/permissions/me");

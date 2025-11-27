@@ -1,7 +1,9 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.model.dto.AdminCommentItemDto;
 import com.sangui.sanguiblog.model.dto.CommentDto;
 import com.sangui.sanguiblog.model.dto.CreateCommentRequest;
+import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.entity.Comment;
 import com.sangui.sanguiblog.model.entity.Post;
 import com.sangui.sanguiblog.model.entity.User;
@@ -11,19 +13,27 @@ import com.sangui.sanguiblog.model.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Predicate;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class CommentService {
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final Set<String> REVIEWABLE_STATUS = Set.of("APPROVED", "PENDING", "REJECTED", "SPAM");
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
 
@@ -62,6 +72,40 @@ public class CommentService {
         }
 
         return rootComments;
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AdminCommentItemDto> searchComments(Long postId,
+            String keyword,
+            String status,
+            int page,
+            int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+
+        Specification<Comment> specification = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (postId != null) {
+                predicates.add(cb.equal(root.get("post").get("id"), postId));
+            }
+            if (status != null && !status.isBlank()) {
+                predicates.add(cb.equal(root.get("status"), status.trim().toUpperCase(Locale.ROOT)));
+            }
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.trim().toLowerCase(Locale.ROOT) + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("content")), pattern),
+                        cb.like(cb.lower(root.get("authorName")), pattern)));
+            }
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        PageRequest pageable = PageRequest.of(safePage - 1, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Comment> result = commentRepository.findAll(specification, pageable);
+        List<AdminCommentItemDto> records = result.stream()
+                .map(this::toAdminItem)
+                .toList();
+        return new PageResponse<>(records, result.getTotalElements(), safePage, safeSize);
     }
 
     @Transactional
@@ -130,18 +174,19 @@ public class CommentService {
 
     @Transactional
     public CommentDto updateComment(Long commentId, Long userId, String newContent) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("评论不存在"));
+        return updateComment(commentId, userId, newContent, false);
+    }
 
-        // Check permission: user must own the comment
-        if (comment.getUser() == null || !comment.getUser().getId().equals(userId)) {
-            throw new SecurityException("无权编辑此评论");
-        }
-
-        comment.setContent(newContent);
-        comment.setUpdatedAt(new Timestamp(System.currentTimeMillis()).toInstant());
-        Comment updated = commentRepository.save(comment);
+    @Transactional
+    public CommentDto updateComment(Long commentId, Long userId, String newContent, boolean isAdmin) {
+        Comment updated = updateCommentInternal(commentId, userId, isAdmin, newContent, null);
         return toDto(updated);
+    }
+
+    @Transactional
+    public AdminCommentItemDto updateCommentAsAdmin(Long commentId, String newContent, String status, Long operatorId) {
+        Comment updated = updateCommentInternal(commentId, operatorId, true, newContent, status);
+        return toAdminItem(updated);
     }
 
     @Transactional(readOnly = true)
@@ -155,6 +200,51 @@ public class CommentService {
                     return dto;
                 })
                 .toList();
+    }
+
+    private Comment updateCommentInternal(Long commentId, Long userId, boolean isAdmin, String newContent, String status) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("评论不存在"));
+        if (!isAdmin) {
+            if (comment.getUser() == null || userId == null || !comment.getUser().getId().equals(userId)) {
+                throw new SecurityException("无权编辑此评论");
+            }
+        }
+        boolean hasContent = newContent != null && !newContent.trim().isEmpty();
+        if (!hasContent && (status == null || status.isBlank())) {
+            throw new IllegalArgumentException("内容不能为空");
+        }
+        if (hasContent) {
+            comment.setContent(newContent.trim());
+        }
+        if (status != null && !status.isBlank()) {
+            String normalized = status.trim().toUpperCase(Locale.ROOT);
+            if (!REVIEWABLE_STATUS.contains(normalized)) {
+                throw new IllegalArgumentException("不支持的评论状态：" + status);
+            }
+            comment.setStatus(normalized);
+        }
+        comment.setUpdatedAt(Instant.now());
+        return commentRepository.save(comment);
+    }
+
+    private AdminCommentItemDto toAdminItem(Comment comment) {
+        String createdAt = comment.getCreatedAt() != null
+                ? TIME_FMT.format(comment.getCreatedAt().atZone(ZoneId.systemDefault()))
+                : "";
+        return AdminCommentItemDto.builder()
+                .id(comment.getId())
+                .postId(comment.getPost() != null ? comment.getPost().getId() : null)
+                .postTitle(comment.getPost() != null ? comment.getPost().getTitle() : null)
+                .postSlug(comment.getPost() != null ? comment.getPost().getSlug() : null)
+                .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
+                .userId(comment.getUser() != null ? comment.getUser().getId() : null)
+                .authorName(comment.getAuthorName())
+                .authorIp(comment.getAuthorIp())
+                .status(comment.getStatus())
+                .content(comment.getContent())
+                .createdAt(createdAt)
+                .build();
     }
 
     private CommentDto toDto(Comment comment) {
