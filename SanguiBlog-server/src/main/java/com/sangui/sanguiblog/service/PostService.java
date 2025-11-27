@@ -3,6 +3,7 @@ package com.sangui.sanguiblog.service;
 import com.sangui.sanguiblog.model.dto.AdminPostDetailDto;
 import com.sangui.sanguiblog.model.dto.AdminPostUpdateRequest;
 import com.sangui.sanguiblog.model.dto.PageResponse;
+import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.model.dto.PostAdminDto;
 import com.sangui.sanguiblog.model.dto.PostDetailDto;
 import com.sangui.sanguiblog.model.dto.PostSummaryDto;
@@ -48,6 +49,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final AnalyticsPageViewRepository analyticsPageViewRepository;
     private final PostAssetService postAssetService;
+    private final AnalyticsService analyticsService;
     private static final java.util.concurrent.ConcurrentHashMap<String, Long> VIEW_RATE_LIMITER = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
@@ -304,6 +306,20 @@ public class PostService {
         long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
         post.setViewsCount(current + 1);
         postRepository.save(post);
+        recordAnalyticsPageView(post, ip);
+    }
+
+    private void recordAnalyticsPageView(Post post, String ip) {
+        if (post == null || analyticsService == null) {
+            return;
+        }
+        try {
+            PageViewRequest request = new PageViewRequest();
+            request.setPostId(post.getId());
+            request.setPageTitle(post.getTitle());
+            analyticsService.recordPageView(request, ip, null, null);
+        } catch (Exception ignored) {
+        }
     }
 
     private PostSummaryDto toSummary(Post post) {

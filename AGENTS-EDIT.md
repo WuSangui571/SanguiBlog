@@ -507,3 +507,9 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **前端**：首页 Hero Banner 版本标识更新为 `SANGUI BLOG // V1.3.1`，与本次补丁保持一致。
 - **文档**：NOTE.md “4.6 数据采集”“4.7 初始账号与默认密码” 说明新的统计规则和密码配置项，提醒上线前通过环境变量覆写。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.1`。
+
+## V1.3.2 (2025-11-27)
+- **后端**：`PostService.incrementViews` 在每次成功 +1 浏览量后直接构造 `PageViewRequest` 调用 `AnalyticsService.recordPageView`，以文章真实标题落地 `analytics_page_views`/`analytics_traffic_sources`，避免前端记录异常导致后台无数据。
+- **前端**：首页 Banner 再次同步为 `SANGUI BLOG // V1.3.2`，提示管理端本次 bugfix 已上线。
+- **文档**：NOTE.md “4.6 数据采集” 补充文章详情页由服务端兜底写入 PV 的策略，保证未来排查有据可循。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.2`。
