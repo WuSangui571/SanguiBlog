@@ -194,7 +194,7 @@ public class PermissionService {
     }
 
     private LinkedHashSet<String> defaultCodesForRole(String roleCode) {
-        return PermissionDefinition.streamOrdered().stream()
+        return PermissionDefinition.streamOrdered()
                 .filter(def -> def.getDefaultRoles().contains(roleCode))
                 .map(PermissionDefinition::getCode)
                 .collect(Collectors.toCollection(LinkedHashSet::new));

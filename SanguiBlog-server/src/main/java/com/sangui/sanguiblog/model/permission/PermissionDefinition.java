@@ -57,13 +57,12 @@ public enum PermissionDefinition {
         this.actionOrder = actionOrder;
     }
 
-    public static List<PermissionDefinition> streamOrdered() {
+    public static Stream<PermissionDefinition> streamOrdered() {
         return Stream.of(values())
                 .sorted((a, b) -> {
                     int moduleCompare = Integer.compare(a.moduleOrder, b.moduleOrder);
                     if (moduleCompare != 0) return moduleCompare;
                     return Integer.compare(a.actionOrder, b.actionOrder);
-                })
-                .toList();
+                });
     }
 }

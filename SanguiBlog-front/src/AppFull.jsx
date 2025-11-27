@@ -4293,8 +4293,56 @@ const CommentsAdminView = ({isDarkMode}) => {
                     <button
                         type="button"
                         onClick={() => loadComments()}
-*** End Patch
+                        className="w-full md:w-auto px-4 py-2 border-2 border-black font-bold bg-[#FFD700] text-black rounded-full flex items-center justify-center gap-2 hover:-translate-y-0.5 transition"
+                    >
+                        <RefreshCw size={14}/> 刷新
+                    </button>
+                </div>
+            </div>
 
+            <div className={`${cardBg} p-6 rounded-2xl shadow-lg space-y-3`}>
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                    <span>文章共 {postTotal} 篇 · 第 {postPage} / {totalPostPages} 页</span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPostPage((prev) => Math.max(prev - 1, 1))}
+                            disabled={postPage === 1 || postLoading}
+                            className="px-3 py-1 border border-black rounded disabled:opacity-40"
+                        >
+                            上一页
+                        </button>
+                        <button
+                            onClick={() => setPostPage((prev) => Math.min(prev + 1, totalPostPages))}
+                            disabled={postPage >= totalPostPages || postLoading}
+                            className="px-3 py-1 border border-black rounded disabled:opacity-40"
+                        >
+                            下一页
+                        </button>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <input
+                        className={inputClass}
+                        placeholder="输入标题或 Slug"
+                        value={postKeywordInput}
+                        onChange={(e) => setPostKeywordInput(e.target.value)}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPostPage(1);
+                            loadPosts();
+                        }}
+                        className="px-4 py-2 border-2 border-black font-bold text-sm hover:-translate-y-0.5 transition"
+                    >
+                        查询文章
+                    </button>
+                </div>
+                {postLoading && <p className="text-xs text-gray-500">文章列表加载中...</p>}
+            </div>
+        </div>
+    );
+};
 
 const UserManagementView = ({isDarkMode}) => {
     const [users, setUsers] = useState([]);
