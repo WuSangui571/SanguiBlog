@@ -130,6 +130,12 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   右侧表单可手动指定文章、署名与内容，新评论或回复均复用 `/api/posts/{postId}/comments` POST 接口，成功后自动刷新当前筛选范围内的评论。
 *   “全部文章” 模式会针对当前文章列表（含搜索/分页结果）批量拉取评论，避免一次性遍历全部文章；如需遍历更多文章，先通过筛选加载目标文章再点击刷新即可。
 
+### 3.10 后台仪表盘与数据分析
+*   新增 `/api/admin/analytics/summary?days=<7|14|30>&top=<5>&recent=<30>` 接口，由 `AdminAnalyticsController` 暴露，内部调用 `AnalyticsService.loadAdminSummary` 统计 `analytics_page_views` 与 `analytics_traffic_sources`，返回 `AdminAnalyticsSummaryDto`，包含 `overview`（累计/区间 PV、UV、登录访问、日均、文章/评论数）、`dailyTrends`（按天聚合 PV/UV）、`trafficSources`、`topPosts` 以及 `recentVisits`（最近 30 条 PV，含文章、IP、时间、referrer、Geo、登录状态）。
+*   后台仪表盘 `DashboardView` 通过 `AnalyticsSummaryContext` 读取上述 Summary，展示双行 KPI 卡片、趋势火花线、最新流量来源、热门文章和最近 6 条访问，刷新按钮会调用 `reload()` 重新请求。
+*   `/admin/analytics` 页面支持 7/14/30 天快速切换，展示区间 PV、UV、日均、曲线图、来源占比、热门文章表格以及完整访问日志；访问日志会标记“已登录/访客”、显示文章来源 URL、IP、Geo 与时间，满足“可识别最近访客及其文章、IP、时间、登录身份”的需求。
+*   仪表盘与数据分析的所有卡片、列表都基于真实数据库数据渲染，不再依赖 Mock；若统计表暂为空，前端会提示“暂无数据”并保留刷新能力。
+
 
 ---
 

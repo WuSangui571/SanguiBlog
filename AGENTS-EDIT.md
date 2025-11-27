@@ -487,3 +487,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **前端**：新增评论创建/回复表单，支持快速指向目标文章、选择父级评论、填写署名并提交，所有操作使用现有 `/posts/{id}/comments` API 完成 CRUD。
 - **文档**：NOTE.md 追加“后台评论管理”章节，说明筛选模式与 CRUD 入口的工作方式，便于后续扩展审批流程。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.2.33`。
+
+## V1.2.34 (2025-11-27)
+- **后端**：新增 `AdminAnalyticsController` 提供 `/api/admin/analytics/summary` 聚合接口，基于 `analytics_page_views` 与 `analytics_traffic_sources` 统计区间 PV/UV、登录访问、热门文章和最近访客信息，仅 ADMIN / SUPER_ADMIN 可访问。
+- **前端**：后台仪表盘 Dashboard 改为消费真实 Summary 数据，展示双行 KPI、趋势折线、流量来源、热门文章与最近访客（含文章、IP、时间、登录标识），支持一键刷新。
+- **前端**：`/admin/analytics` 数据分析页支持 7/14/30 天切换，提供趋势图、流量来源、热门文章表格以及详细访问日志（文章、IP、时间、来源、Geo、用户状态），满足“可查看最近访客访问了哪些文章、何时访问、是否登录”的需求。
+- **文档**：NOTE.md 新增“3.10 后台仪表盘与数据分析”记录接口结构、前端行为及可配置项。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.2.34`。

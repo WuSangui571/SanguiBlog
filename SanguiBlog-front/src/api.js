@@ -264,3 +264,12 @@ export const adminDeleteUser = (id) =>
   });
 
 export const adminFetchRoles = () => request("/admin/users/roles");
+
+export const adminFetchAnalyticsSummary = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.days) search.append("days", params.days);
+  if (params.top) search.append("top", params.top);
+  if (params.recent) search.append("recent", params.recent);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/analytics/summary${query}`);
+};
