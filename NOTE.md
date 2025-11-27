@@ -124,6 +124,12 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   `GET /api/admin/users/{id}` / `POST /api/admin/users` / `PUT /api/admin/users/{id}` / `DELETE /api/admin/users/{id}` 完成完整 CRUD；
     *   `GET /api/admin/users/roles` 返回可选角色列表（`code` + `name`），供前端下拉框使用。
 
+### 3.9 后台评论管理
+*   `/admin/comments` 页面由 `CommentsAdminView` 渲染，顶部提供“全部文章（当前列表）/指定文章”双模式筛选以及文章搜索 + 分页切换，管理员可通过切换列表或翻页加载更多文章，再批量抓取对应评论。
+*   列表区将树形评论拍平成层级列表，支持直接回复、编辑或删除单条评论；回复会自动填充目标文章并记录父级 ID，删除调用 `/api/posts/{postId}/comments/{commentId}`，编辑沿用 `/api/posts/{postId}/comments/{commentId}` PUT 接口。
+*   右侧表单可手动指定文章、署名与内容，新评论或回复均复用 `/api/posts/{postId}/comments` POST 接口，成功后自动刷新当前筛选范围内的评论。
+*   “全部文章” 模式会针对当前文章列表（含搜索/分页结果）批量拉取评论，避免一次性遍历全部文章；如需遍历更多文章，先通过筛选加载目标文章再点击刷新即可。
+
 
 ---
 
