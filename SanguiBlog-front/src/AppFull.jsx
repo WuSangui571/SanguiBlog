@@ -34,6 +34,7 @@ import {
     adminFetchComments,
     adminUpdateComment,
     adminDeleteComment,
+    uploadAvatar,
     uploadPostAssets,
     reservePostAssetsFolder,
     createPost,
@@ -1438,7 +1439,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.8
+                    SANGUI BLOG // V1.3.9
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4640,8 +4641,9 @@ const UserManagementView = ({isDarkMode}) => {
         githubUrl: "",
         wechatQrUrl: "",
         status: "ACTIVE",
-        roleCode: "",
+        roleCode: "USER",
         password: "",
+        avatarUrl: "",
     };
     const [form, setForm] = useState(emptyForm);
     const [meta, setMeta] = useState({id: null, createdAt: null, lastLoginAt: null});
@@ -4649,7 +4651,9 @@ const UserManagementView = ({isDarkMode}) => {
     const [formLoading, setFormLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
     const formRef = useRef(null);
+    const avatarInputRef = useRef(null);
     const usersFetchTokenRef = useRef(0);
+    const [avatarUploading, setAvatarUploading] = useState(false);
     const scrollFormIntoView = useCallback(() => {
         requestAnimationFrame(() => {
             formRef.current?.scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -4663,12 +4667,27 @@ const UserManagementView = ({isDarkMode}) => {
         {value: 'DISABLED', label: '已禁用'},
     ];
 
+    const getDefaultRoleCode = (roleList) => {
+        if (!Array.isArray(roleList) || roleList.length === 0) return 'USER';
+        const preferred = roleList.find((role) => (role.code || '').toUpperCase() === 'USER');
+        return preferred?.code || roleList[0].code;
+    };
+
+    const resolveMediaUrl = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        if (!path.startsWith('/')) return `http://localhost:8080/${path}`;
+        return `http://localhost:8080${path}`;
+    };
+    const resolveUserAvatar = (user) => resolveMediaUrl(user?.avatar || user?.avatarUrl || user?.avatar_url);
+
     const loadRoles = useCallback(async () => {
         try {
             const res = await adminFetchRoles();
             const data = res.data || res || [];
             setRoles(data);
-            setForm((prev) => ({...prev, roleCode: prev.roleCode || data[0]?.code || 'USER'}));
+            const defaultRole = getDefaultRoleCode(data);
+            setForm((prev) => ({...prev, roleCode: prev.roleCode || defaultRole}));
         } catch (err) {
             setFeedback({type: 'error', text: err.message || '无法加载角色列表'});
         }
@@ -4709,10 +4728,11 @@ const UserManagementView = ({isDarkMode}) => {
     }, [loadUsers]);
 
     const resetForm = useCallback(() => {
-        setForm((prev) => ({
+        const defaultRole = getDefaultRoleCode(roles);
+        setForm({
             ...emptyForm,
-            roleCode: roles[0]?.code || prev.roleCode || 'USER',
-        }));
+            roleCode: defaultRole,
+        });
         setMeta({id: null, createdAt: null, lastLoginAt: null});
         setSelectedUserId(null);
         setFormMode('create');
@@ -4725,6 +4745,41 @@ const UserManagementView = ({isDarkMode}) => {
     const handleInputChange = (e) => {
         const {name, value} = e.target;
         setForm((prev) => ({...prev, [name]: value}));
+    };
+
+    const handleAvatarUpload = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setFeedback({type: 'error', text: '请上传图片文件'});
+            event.target.value = '';
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            setFeedback({type: 'error', text: '头像需小于 2MB'});
+            event.target.value = '';
+            return;
+        }
+        setAvatarUploading(true);
+        try {
+            const response = await uploadAvatar(file);
+            const newPath = response?.data?.url
+                || response?.url
+                || response?.avatar
+                || response?.avatarUrl
+                || response?.avatar_url
+                || response?.path;
+            if (!newPath) {
+                throw new Error('上传结果为空');
+            }
+            setForm((prev) => ({...prev, avatarUrl: newPath}));
+            setFeedback({type: 'success', text: '头像已更新'});
+        } catch (err) {
+            setFeedback({type: 'error', text: err.message || '头像上传失败'});
+        } finally {
+            setAvatarUploading(false);
+            event.target.value = '';
+        }
     };
 
     const handleEdit = async (id) => {
@@ -4743,8 +4798,9 @@ const UserManagementView = ({isDarkMode}) => {
                 githubUrl: data.githubUrl || '',
                 wechatQrUrl: data.wechatQrUrl || '',
                 status: data.status || 'ACTIVE',
-                roleCode: data.roleCode || roles[0]?.code || 'USER',
+                roleCode: data.roleCode || getDefaultRoleCode(roles),
                 password: '',
+                avatarUrl: data.avatar || data.avatarUrl || data.avatar_url || '',
             });
             setMeta({id: data.id, createdAt: data.createdAt, lastLoginAt: data.lastLoginAt});
             setFeedback(null);
@@ -4786,6 +4842,7 @@ const UserManagementView = ({isDarkMode}) => {
                 wechatQrUrl: form.wechatQrUrl?.trim() || null,
                 status: form.status,
                 roleCode: form.roleCode,
+                avatarUrl: form.avatarUrl || null,
             };
             if (form.password?.trim()) {
                 payload.password = form.password.trim();
@@ -4820,6 +4877,7 @@ const UserManagementView = ({isDarkMode}) => {
             <p className="text-sm font-mono">{value || '—'}</p>
         </div>
     );
+    const avatarPreviewSrc = resolveMediaUrl(form.avatarUrl);
 
     return (
         <div className="space-y-8">
@@ -4881,6 +4939,7 @@ const UserManagementView = ({isDarkMode}) => {
                         <table className="min-w-full text-sm">
                             <thead>
                             <tr className={isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-600'}>
+                                <th className="px-4 py-2 text-left">头像</th>
                                 <th className="px-4 py-2 text-left">用户名</th>
                                 <th className="px-4 py-2 text-left">显示名</th>
                                 <th className="px-4 py-2 text-left">邮箱</th>
@@ -4892,33 +4951,48 @@ const UserManagementView = ({isDarkMode}) => {
                             </thead>
                             <tbody
                                 className={isDarkMode ? 'divide-y divide-gray-800 text-gray-100' : 'divide-y divide-gray-200 text-gray-700'}>
-                            {users.map((user) => (
-                                <tr
-                                    key={user.id}
-                                    className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} ${selectedUserId === user.id ? (isDarkMode ? 'bg-gray-800/60' : 'bg-indigo-50') : ''}`}
-                                >
-                                    <td className="px-4 py-3">{user.username}</td>
-                                    <td className="px-4 py-3">{user.displayName || '—'}</td>
-                                    <td className="px-4 py-3">{user.email || '—'}</td>
-                                    <td className="px-4 py-3">{user.roleName || user.roleCode}</td>
-                                    <td className="px-4 py-3">{STATUS_OPTIONS.find((s) => s.value === user.status)?.label || '—'}</td>
-                                    <td className="px-4 py-3 text-gray-500">{formatDate(user.lastLoginAt)}</td>
-                                    <td className="px-4 py-3 text-right space-x-2">
-                                        <button
-                                            onClick={() => handleEdit(user.id)}
-                                            className="px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
-                                        >
-                                            编辑
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(user)}
-                                            className="px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
-                                        >
-                                            删除
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {users.map((user) => {
+                                const avatarSrc = resolveUserAvatar(user);
+                                const avatarFallback = (user.displayName || user.username || 'U').charAt(0).toUpperCase();
+                                return (
+                                    <tr
+                                        key={user.id}
+                                        className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} ${selectedUserId === user.id ? (isDarkMode ? 'bg-gray-800/60' : 'bg-indigo-50') : ''}`}
+                                    >
+                                        <td className="px-4 py-3">
+                                            <div
+                                                className={`w-12 h-12 rounded-full border-2 border-black overflow-hidden flex items-center justify-center text-sm font-bold ${isDarkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-600'}`}>
+                                                {avatarSrc ? (
+                                                    <img src={avatarSrc} alt={`${user.username} avatar`}
+                                                         className="w-full h-full object-cover"/>
+                                                ) : (
+                                                    avatarFallback
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3">{user.username}</td>
+                                        <td className="px-4 py-3">{user.displayName || '—'}</td>
+                                        <td className="px-4 py-3">{user.email || '—'}</td>
+                                        <td className="px-4 py-3">{user.roleName || user.roleCode}</td>
+                                        <td className="px-4 py-3">{STATUS_OPTIONS.find((s) => s.value === user.status)?.label || '—'}</td>
+                                        <td className="px-4 py-3 text-gray-500">{formatDate(user.lastLoginAt)}</td>
+                                        <td className="px-4 py-3 text-right space-x-2">
+                                            <button
+                                                onClick={() => handleEdit(user.id)}
+                                                className="px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                                            >
+                                                编辑
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(user)}
+                                                className="px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
+                                            >
+                                                删除
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                             </tbody>
                         </table>
                     </div>
@@ -4967,6 +5041,41 @@ const UserManagementView = ({isDarkMode}) => {
                 )}
                 {formLoading && <p className="mb-4 text-sm text-gray-500">正在加载用户详情...</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">用户头像</label>
+                        <div className="flex items-center gap-4 mt-3">
+                            <div
+                                className={`w-20 h-20 rounded-full border-2 border-black overflow-hidden flex items-center justify-center ${isDarkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-600'}`}>
+                                {avatarPreviewSrc ? (
+                                    <img src={avatarPreviewSrc} alt="avatar preview"
+                                         className="w-full h-full object-cover"/>
+                                ) : (
+                                    <User size={24}/>
+                                )}
+                            </div>
+                            <div className="space-y-2">
+                                <input
+                                    ref={avatarInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleAvatarUpload}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => avatarInputRef.current?.click()}
+                                    disabled={avatarUploading}
+                                    className="px-4 py-2 border-2 border-black font-bold text-sm bg-[#6366F1] text-white rounded-full disabled:opacity-50"
+                                >
+                                    {avatarUploading ? '上传中...' : '上传头像'}
+                                </button>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">支持 JPG/PNG，大小不超过 2MB。</p>
+                                {form.avatarUrl && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 break-all">当前路径：{form.avatarUrl}</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">用户名</label>

@@ -118,7 +118,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 ### 3.8 用户管理
 *   `/admin/users` 页面由 `UserManagementView` 渲染，左侧表格可按关键词、角色和分页浏览全部后台账号，右侧表单同时支持创建/编辑，密码字段无需原密码即可重置。
-*   创建/更新接口均允许填写基础资料（用户名、显示名、邮箱、头衔、简介、GitHub、微信二维码）并直接选择角色；只读信息（ID、创建时间、最近登录）在表单下方展示，仍不可手动修改。
+*   创建/更新接口均允许填写基础资料（用户名、显示名、邮箱、头衔、简介、GitHub、微信二维码）并直接选择角色；表单新增头像上传控件，沿用 `/api/upload/avatar` 上传后立即写入 `avatarUrl`，列表中也会显示缩略头像以便校对。
+*   创建用户时默认角色会优先选用 `USER`（若存在），防止误把新账号设为 SUPER_ADMIN；只读信息（ID、创建时间、最近登录）在表单下方展示，仍不可手动修改。
 *   对应后端接口：
     *   `GET /api/admin/users`（支持 `keyword`、`role`、`page`、`size`）返回 `PageResponse<AdminUserDto>`；
     *   `GET /api/admin/users/{id}` / `POST /api/admin/users` / `PUT /api/admin/users/{id}` / `DELETE /api/admin/users/{id}` 完成完整 CRUD；

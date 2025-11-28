@@ -23,14 +23,20 @@ const FieldLabel = ({ icon: Icon, children }) => (
   </label>
 );
 
-const InfoBadge = ({ label, value }) => (
-  <div className="flex flex-col gap-1">
-    <span className="text-xs font-semibold text-gray-700 dark:text-gray-400">{label}</span>
-    <span className="px-3 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded text-sm font-mono text-gray-900 dark:text-gray-100">
-      {value || "—"}
-    </span>
-  </div>
-);
+const InfoBadge = ({ label, value, isDarkMode }) => {
+  const labelClass = isDarkMode ? "text-gray-300" : "text-gray-700";
+  const valueClass = isDarkMode
+    ? "bg-gray-800 text-white border-gray-600"
+    : "bg-gray-50 text-gray-900 border-gray-300";
+  return (
+    <div className="flex flex-col gap-1">
+      <span className={`text-xs font-semibold ${labelClass}`}>{label}</span>
+      <span className={`px-3 py-2 border-2 rounded text-sm font-mono ${valueClass}`}>
+        {value || "—"}
+      </span>
+    </div>
+  );
+};
 
 const buildMediaUrl = (raw) => {
   if (!raw) return "";
@@ -401,10 +407,10 @@ export default function AdminProfile({ isDarkMode = false }) {
             只读信息
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InfoBadge label="角色" value={meta.role} />
-            <InfoBadge label="用户 ID" value={meta.id} />
-            <InfoBadge label="账号创建时间" value={meta.createdAt} />
-            <InfoBadge label="上次登录时间" value={meta.lastLogin} />
+            <InfoBadge label="角色" value={meta.role} isDarkMode={isDarkMode} />
+            <InfoBadge label="用户 ID" value={meta.id} isDarkMode={isDarkMode} />
+            <InfoBadge label="账号创建时间" value={meta.createdAt} isDarkMode={isDarkMode} />
+            <InfoBadge label="上次登录时间" value={meta.lastLogin} isDarkMode={isDarkMode} />
           </div>
         </section>
 
