@@ -502,6 +502,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.0`。
 
 ## V1.3.1 (2025-11-27)
+
 - **后端**：`DataInitializer` 支持 `app.bootstrap.*-password` 配置（Super Admin/Admin/Editor + default），启动时会检测旧的 `123456` 哈希并自动换成强密码，彻底消除浏览器弱密码告警。
 - **后端**：`AnalyticsService.recordPageView` 仅在 `pageTitle/referrer` 含 `admin` 时跳过 SUPER_ADMIN，访问首页或文章时仍会写入 `analytics_page_views` 与 `analytics_traffic_sources`，解决自测无数据的问题。
 - **前端**：首页 Hero Banner 版本标识更新为 `SANGUI BLOG // V1.3.1`，与本次补丁保持一致。
@@ -525,3 +526,12 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **前端**：权限上下文上移到全局，登录用户均可进入后台个人资料；后台导航与按钮依据权限精确展示/隐藏，仪表盘自动跳转到首个可用模块。
 - **评论管理**：`/admin/comments` 恢复评论列表、分页、审核/删除操作与后台回复表单，支持过滤范围统计、逐条审核；文章详情评论区新增管理员编辑/删除按钮以匹配后端放权。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.4`。
+
+## V1.3.5 (2025-11-28)
+- **后端**：`DataInitializer` 在检测弱密码时若遇到非 BCrypt 哈希将仅记录警告并跳过，不再把超级管理员等账号强制改写为默认口令，避免 V1.3.1 引入的“密码被自动重置”问题。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.5`。
+
+## V1.3.6 (2025-11-28)
+- **前端**：后台文章列表根据权限自动隐藏“打开编辑页”按钮，防止普通用户误跳转至无权限页面；标题列新增链接，点击可在新标签页直接预览 `/article/{id}` 页面。
+- **UI**：文章列表状态列添加固定宽度以容纳三字中文状态，整体阅读更清晰。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.6`。

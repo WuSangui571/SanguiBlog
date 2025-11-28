@@ -1438,7 +1438,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.4
+                    SANGUI BLOG // V1.3.6
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -3788,6 +3788,7 @@ const EditPostView = ({isDarkMode}) => {
 
 const PostsView = ({isDarkMode}) => {
     const navigate = useNavigate();
+    const {hasPermission} = usePermissionContext();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -3869,6 +3870,14 @@ const PostsView = ({isDarkMode}) => {
         navigate(`/admin/posts/edit?postId=${id}`);
     };
 
+    const goArticle = (id) => {
+        if (!id) return;
+        const url = `/article/${id}`;
+        window.open(url, '_blank', 'noopener');
+    };
+
+    const canEditPosts = hasPermission('POST_EDIT');
+
     return (
         <div className="space-y-8">
             <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
@@ -3936,9 +3945,9 @@ const PostsView = ({isDarkMode}) => {
                                 <th className="px-4 py-2 text-left font-semibold">摘要</th>
                                 <th className="px-4 py-2 text-left font-semibold">分类</th>
                                 <th className="px-4 py-2 text-left font-semibold">标签</th>
-                                <th className="px-4 py-2 text-left font-semibold">状态</th>
+                                <th className="px-4 py-2 text-left font-semibold w-24">状态</th>
                                 <th className="px-4 py-2 text-left font-semibold">发布时间</th>
-                                <th className="px-4 py-2 text-right font-semibold">操作</th>
+                                {canEditPosts && <th className="px-4 py-2 text-right font-semibold">操作</th>}
                             </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
@@ -3946,7 +3955,13 @@ const PostsView = ({isDarkMode}) => {
                                 <tr key={post.id}
                                     className={`${statusRowTintClass(post.status)} ${rowHoverClass} transition-colors`}>
                                     <td className="px-4 py-3">
-                                        <p className="font-semibold">{post.title}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => goArticle(post.id)}
+                                            className="font-semibold text-left text-indigo-500 hover:underline"
+                                        >
+                                            {post.title}
+                                        </button>
                                     </td>
                                     <td className="px-4 py-3">
                                         <span
@@ -3967,16 +3982,18 @@ const PostsView = ({isDarkMode}) => {
                                                 <span className="text-gray-400">无标签</span>}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3">{STATUS_LABELS[post.status] || '未知'}</td>
+                                    <td className="px-4 py-3 w-24">{STATUS_LABELS[post.status] || '未知'}</td>
                                     <td className="px-4 py-3 text-gray-500">{formatDate(post.publishedAt)}</td>
-                                    <td className="px-4 py-3 text-right">
-                                        <button
-                                            onClick={() => goEdit(post.id)}
-                                            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
-                                        >
-                                            <Edit size={14}/> 打开编辑页
-                                        </button>
-                                    </td>
+                                    {canEditPosts && (
+                                        <td className="px-4 py-3 text-right">
+                                            <button
+                                                onClick={() => goEdit(post.id)}
+                                                className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                                            >
+                                                <Edit size={14}/> 打开编辑页
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                             </tbody>

@@ -5,6 +5,7 @@ import com.sangui.sanguiblog.model.repository.RoleRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
 import com.sangui.sanguiblog.service.PermissionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +16,7 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DataInitializer implements CommandLineRunner {
 
     private static final String LEGACY_WEAK_PASSWORD = "123456";
@@ -75,8 +77,9 @@ public class DataInitializer implements CommandLineRunner {
         }
         try {
             return passwordEncoder.matches(LEGACY_WEAK_PASSWORD, encodedPassword);
-        } catch (Exception ignored) {
-            return true;
+        } catch (Exception ex) {
+            log.warn("Skip auto password reset: stored hash format is incompatible with current encoder. Please rotate manually if needed.", ex);
+            return false;
         }
     }
 
