@@ -4,7 +4,6 @@ import com.sangui.sanguiblog.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -54,12 +53,7 @@ public class SecurityConfig {
                                 "/error")
                         .permitAll()
                         .requestMatchers("/api/upload/**").authenticated()
-                        .requestMatchers("/api/admin/permissions/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/api/admin/tags/**", "/api/admin/categories/**", "/api/admin/posts/**", "/api/admin/users/**", "/api/admin/analytics/**", "/api/admin/comments/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        // .requestMatchers(HttpMethod.POST, "/api/posts/*/comments").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/posts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/admin/**").authenticated()
                         .requestMatchers("/api/permissions/me").authenticated()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

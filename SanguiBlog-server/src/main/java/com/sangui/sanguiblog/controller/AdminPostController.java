@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/posts")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
 public class AdminPostController {
 
     private final PostService postService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('PERM_POST_VIEW')")
     public ApiResponse<PageResponse<PostAdminDto>> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
@@ -29,11 +29,13 @@ public class AdminPostController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERM_POST_VIEW')")
     public ApiResponse<AdminPostDetailDto> detail(@PathVariable Long id) {
         return ApiResponse.ok(postService.getAdminDetail(id));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERM_POST_EDIT')")
     public ApiResponse<PostAdminDto> update(@PathVariable Long id, @Valid @RequestBody AdminPostUpdateRequest request) {
         return ApiResponse.ok(postService.updateMeta(id, request));
     }

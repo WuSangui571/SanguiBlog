@@ -9,6 +9,7 @@ import com.sangui.sanguiblog.security.UserPrincipal;
 import com.sangui.sanguiblog.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,6 +44,7 @@ public class PostController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('PERM_POST_CREATE')")
     public ApiResponse<PostDetailDto> create(@Valid @RequestBody SavePostRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
         Long uid = principal != null ? principal.getId() : null;
@@ -50,6 +52,7 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERM_POST_EDIT')")
     public ApiResponse<PostDetailDto> update(@PathVariable Long id,
             @Valid @RequestBody SavePostRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -59,6 +62,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERM_POST_DELETE')")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         postService.delete(id);
         return ApiResponse.ok();

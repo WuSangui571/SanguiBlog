@@ -26,7 +26,7 @@ public class AdminCommentController {
     private final CommentService commentService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_COMMENT_VIEW')")
     public ApiResponse<PageResponse<AdminCommentItemDto>> list(
             @RequestParam(value = "postId", required = false) Long postId,
             @RequestParam(value = "keyword", required = false) String keyword,
@@ -42,7 +42,7 @@ public class AdminCommentController {
     }
 
     @PutMapping("/{commentId}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_COMMENT_REVIEW')")
     public ApiResponse<AdminCommentItemDto> update(@PathVariable Long commentId,
             @RequestBody AdminUpdateCommentRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -59,7 +59,7 @@ public class AdminCommentController {
     }
 
     @DeleteMapping("/{commentId}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_COMMENT_DELETE')")
     public ApiResponse<Void> delete(@PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal principal) {
         Long actorId = principal != null ? principal.getId() : null;

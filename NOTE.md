@@ -125,10 +125,11 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   `GET /api/admin/users/roles` 返回可选角色列表（`code` + `name`），供前端下拉框使用。
 
 ### 3.9 Backoffice Comment Management
-*   /admin/comments (CommentsAdminView) lists comments either by post or across the whole site. Filters support postId, status, keyword and pagination, the right panel shows quick stats and a refresh button.
-*   GET /api/admin/comments?postId=&status=&keyword=&page=&size= returns PageResponse<AdminCommentItemDto> with title/slug, tree structure, IP, time and author. PUT /api/admin/comments/{id} accepts {content,status} (status within APPROVED/PENDING/REJECTED/SPAM). DELETE /api/admin/comments/{id} removes one comment and its replies.
-*   CommentService.searchComments + updateCommentAsAdmin power the UI, while AdminNoticeBar + useTimedNotice deliver consistent feedback.
-*   Permission codes COMMENT_CREATE/COMMENT_REPLY/COMMENT_REVIEW/COMMENT_DELETE guard each action. Front-end /posts/{id}/comments still uses the public API, but moderation/deletion must go through /api/admin/comments.
+*   **界面**：`/admin/comments` 由筛选区 + 文章候选列表 + 评论概览三部分组成。筛选区支持“全部文章/指定文章”切换、状态和关键字过滤，并提供刷新按钮；文章列表用于分页加载文章标题，方便快速定位；概览卡片会展示当前范围、筛选状态与符合条件的总数。
+*   **列表操作**：评论表格展示 ID、所属文章、作者/IP/时间、内容与状态。拥有 `COMMENT_REVIEW` 的账号可以在表格行内编辑内容及状态（APPROVED/PENDING/REJECTED/SPAM），拥有 `COMMENT_DELETE` 的账号可以直接删除任意评论；`COMMENT_REPLY` 控制是否可在后台以官方身份回复评论。
+*   **后台回复**：页底提供“发布后台回复”表单，可选择文章、填写显示作者、指定父级评论并提交内容。该表单依旧调用公开的 `POST /api/posts/{id}/comments`，从而保持与前台访客评论一致的流程。
+*   **接口**：`GET /api/admin/comments` 提供分页数据（`PageResponse<AdminCommentItemDto>`），`PUT /api/admin/comments/{id}` 只接受 `{content,status}` 字段用于审核/改写，`DELETE /api/admin/comments/{id}` 删除单条评论及其子节点。所有操作都依赖 `CommentService.searchComments/updateCommentAsAdmin/deleteComment`。
+*   **权限**：`COMMENT_VIEW/COMMENT_CREATE/COMMENT_REPLY/COMMENT_REVIEW/COMMENT_DELETE` 分别对应查看、后台创建、后台回复、审核、删除，各项权限既影响前端按钮是否渲染，也由后端 `@PreAuthorize` 强制校验；超级管理员天然拥有全部权限。
 
 ### 3.10 Analytics for Admin
 *   GET /api/admin/analytics/summary?days=<7|14|30>&top=<5>&recent=<30> calls AnalyticsService.loadAdminSummary to aggregate nalytics_page_views + nalytics_traffic_sources and fill AdminAnalyticsSummaryDto (overview, daily trends, top posts, recent visits).
@@ -144,6 +145,8 @@ ecordPageView (fallback writes directly). DELETE /api/admin/analytics/page-views
 *   GET /api/admin/permissions, GET /api/admin/permissions/{roleCode}, PUT /api/admin/permissions/{roleCode} are handled by PermissionService, backed by PermissionDefinition. Saving will update 
 ole_permissions in bulk.
 *   permissions_seed.sql seeds permissions/role_permissions; only ADMIN/SUPER_ADMIN can operate this module.
+*   所有后台控制器及 `/api/posts` 写操作均使用 `PERM_*` 权限码进行 `@PreAuthorize` 校验，与 `PermissionDefinition` 中的 code 一一对应；`SUPER_ADMIN` 默认拥有全部权限，其余角色必须在矩阵中勾选后才能调用相应 API。
+*   前端通过全局 `PermissionContext` 缓存 `/api/permissions/me` 返回的 code 列表，导航菜单和具体按钮都会依据 `hasPermission(code)` 结果展示/隐藏，确保 UI 与后端策略一致。
 
 ### 4.1 核心数据库表
 *   **`users`**: 用户表。
@@ -188,6 +191,7 @@ ole_permissions in bulk.
 *   接口补充：`GET /api/comments/recent?size=5` 会返回最近通过审核的若干条评论（默认 5 条，上限 20），每条带有 `postId/postTitle/postSlug` 便于前端跳转对应文章。首页左侧的“最新评论”模块直接消费该接口，并在评论增删改后由 `useBlogData` 自动刷新。
 *   安全策略：`/api/comments/recent` 现已加入 Spring Security 的匿名白名单（`SecurityConfig` 中 `permitAll` 列表），未登录访客也可正常获取最新评论；评论的新增、编辑、删除仍受 `/api/posts/**` 写操作权限控制，不会被此调整放开。
 *   交互：从首页“最新评论”点击评论文本会直接跳转到对应文章详情的开头（不再锚定具体评论），提示文案通过 `title="来自《文章》"` 告知来源，保持体验一致且避免滚动失败。
+*   管理权限：登录用户若拥有 `COMMENT_REVIEW` 或 `COMMENT_DELETE`，会在文章详情页的评论项中额外看到“编辑”“删除”按钮；这些操作仍调用 `/api/posts/{postId}/comments/{commentId}`，后端依据 `PERM_*` 判定是否允许越权处理。
 
 ### 4.6 Data Collection
 *   POST /api/analytics/page-view accepts PageViewRequest(postId,pageTitle,referrer,geo,userAgent) plus the client IP and inserts into nalytics_page_views. Empty referrers are treated as Direct visits.

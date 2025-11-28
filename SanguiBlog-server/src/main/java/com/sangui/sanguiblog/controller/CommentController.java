@@ -41,10 +41,8 @@ public class CommentController {
     public ApiResponse<Void> delete(@PathVariable Long postId,
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        boolean isAdmin = userPrincipal.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN")
-                        || auth.getAuthority().equals("ROLE_SUPER_ADMIN"));
-        commentService.deleteComment(commentId, userPrincipal.getId(), isAdmin);
+        boolean canModerate = hasAuthority(userPrincipal, "PERM_COMMENT_DELETE");
+        commentService.deleteComment(commentId, userPrincipal.getId(), canModerate);
         return ApiResponse.ok();
     }
 
@@ -54,14 +52,20 @@ public class CommentController {
             @PathVariable Long commentId,
             @RequestBody UpdateCommentRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        boolean isAdmin = userPrincipal.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN")
-                        || auth.getAuthority().equals("ROLE_SUPER_ADMIN"));
-        return ApiResponse.ok(commentService.updateComment(commentId, userPrincipal.getId(), request.getContent(), isAdmin));
+        boolean canModerate = hasAuthority(userPrincipal, "PERM_COMMENT_REVIEW");
+        return ApiResponse.ok(commentService.updateComment(commentId, userPrincipal.getId(), request.getContent(), canModerate));
     }
 
     @lombok.Data
     public static class UpdateCommentRequest {
         private String content;
+    }
+
+    private boolean hasAuthority(UserPrincipal principal, String authority) {
+        if (principal == null || authority == null || authority.isBlank()) {
+            return false;
+        }
+        return principal.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> authority.equals(grantedAuthority.getAuthority()));
     }
 }

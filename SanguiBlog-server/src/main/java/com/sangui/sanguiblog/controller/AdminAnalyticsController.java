@@ -21,7 +21,7 @@ public class AdminAnalyticsController {
     private final AnalyticsService analyticsService;
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW')")
     public ApiResponse<AdminAnalyticsSummaryDto> summary(
             @RequestParam(value = "days", defaultValue = "14") int days,
             @RequestParam(value = "top", defaultValue = "5") int top,
@@ -30,7 +30,7 @@ public class AdminAnalyticsController {
     }
 
     @DeleteMapping("/page-views/me")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW') and hasRole('SUPER_ADMIN')")
     public ApiResponse<Long> deleteMyPageViews(@AuthenticationPrincipal UserPrincipal principal) {
         Long count = analyticsService.deletePageViewsByUser(principal.getId());
         return ApiResponse.ok(count);

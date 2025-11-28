@@ -23,13 +23,13 @@ public class AdminPermissionController {
     private final PermissionService permissionService;
 
     @GetMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_PERMISSION_MANAGE')")
     public ApiResponse<PermissionMatrixDto> matrix() {
         return ApiResponse.ok(permissionService.buildMatrix());
     }
 
     @PutMapping("/{roleCode}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_PERMISSION_MANAGE')")
     public ApiResponse<Void> updateRolePermissions(@PathVariable String roleCode,
                                                    @RequestBody UpdateRolePermissionRequest request) {
         if (request.getPermissions() == null) {
