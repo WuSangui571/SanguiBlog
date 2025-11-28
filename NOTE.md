@@ -198,12 +198,13 @@ ole_permissions in bulk.
 *   PV uses ?1-minute in-memory throttle (IP + post) + 10-minute DB dedupe?. Since V1.3.2 PostService.incrementViews also creates a PageViewRequest and calls 
 ecordPageView; if that fails it writes the record directly so admin dashboards never go blank.
 *   AnalyticsService.updateTrafficSourceStat classifies referrers and maintains nalytics_traffic_sources(stat_date, source_label, visits, percentage) (default Direct / None).
+*   AnalyticsService.recordPageView now runs in its own transaction (REQUIRES_NEW) and traffic-source upserts retry once before logging a warning, ensuring view counters never roll back even when analytics aggregation encounters conflicts.
 *   DELETE /api/admin/analytics/page-views/me lets administrators purge their own visits.
 
 ### 4.7 Initial Accounts & Default Passwords
-*   DataInitializer ensures sangui, dmin_user1, editor_user2 have BCrypt hashes; missing or legacy 123456 values are replaced to avoid browser leak warnings.
-*   Override credentials via pp.bootstrap.super-admin-password, pp.bootstrap.admin-password, pp.bootstrap.editor-password, or pp.bootstrap.default-password (Sg!2025#Blog! by default).
-*   After first login, update the password in /admin/profile immediately and never store the defaults in repos/scripts/logs.
+*   DataInitializer now only ensures the default roles exist and assigns them to `sangui` / `admin_user1` / `editor_user2` when these users lack a role; it no longer changes or resets their passwords automatically.
+*   There is no longer any `app.bootstrap.*-password` override. Operators must rotate credentials manually（SQL 或后台重置均可），并在首次登录后及时修改密码且不要把默认口令写入代码库/脚本。
+*   After each manual reset, verify `/admin/profile` 可正常登录，并在 NOTE 中同步记录密码策略（仅写流程，不写明口令）。
 
 ## 5. 易错点与注意事项 (Common Pitfalls & Gotchas)
 

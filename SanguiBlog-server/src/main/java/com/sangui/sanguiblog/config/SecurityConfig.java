@@ -73,12 +73,14 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:5174",
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:5174",
-                "http://localhost:3000"));
+//        configuration.setAllowedOrigins(List.of(
+//                "http://localhost:5173",
+//                "http://localhost:5174",
+//                "http://127.0.0.1:5173",
+//                "http://127.0.0.1:5174",
+//                "http://localhost:3000"));
+        // ✅ 开发用：直接允许所有域名（包括 ngrok）
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

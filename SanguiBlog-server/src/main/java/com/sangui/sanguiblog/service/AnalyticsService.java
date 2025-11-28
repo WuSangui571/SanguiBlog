@@ -12,10 +12,15 @@ import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,6 +36,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AnalyticsService {
 
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
     private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final AnalyticsPageViewRepository analyticsPageViewRepository;
@@ -39,7 +45,7 @@ public class AnalyticsService {
     private final CommentRepository commentRepository;
     private final AnalyticsTrafficSourceRepository analyticsTrafficSourceRepository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId) {
         User viewer = null;
         if (userId != null) {
@@ -62,14 +68,22 @@ public class AnalyticsService {
 
         pv.setUser(viewer);
         pv.setPageTitle(normalizePageTitle(request.getPageTitle()));
-        pv.setViewerIp(ip);
+        pv.setViewerIp(normalizeViewerIp(ip));
         pv.setReferrerUrl(trimToLength(request.getReferrer(), 512));
         pv.setGeoLocation(trimToLength(request.getGeo(), 128));
         pv.setUserAgent(trimToLength(userAgent, 512));
         pv.setViewedAt(LocalDateTime.now());
         analyticsPageViewRepository.save(pv);
 
-        updateTrafficSourceStat(request.getReferrer(), pv.getViewedAt());
+        try {
+            updateTrafficSourceStat(request.getReferrer(), pv.getViewedAt());
+        } catch (DataIntegrityViolationException ex) {
+            log.warn("流量来源统计写入冲突，已忽略本次来源，上报维度 date={}, label={}",
+                    pv.getViewedAt() != null ? pv.getViewedAt().toLocalDate() : LocalDate.now(),
+                    determineSourceLabel(request.getReferrer()));
+        } catch (Exception ex) {
+            log.warn("流量来源统计写入失败，已忽略本次来源记录", ex);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -208,17 +222,28 @@ public class AnalyticsService {
     private void updateTrafficSourceStat(String referrer, LocalDateTime viewedAt) {
         LocalDate statDate = viewedAt != null ? viewedAt.toLocalDate() : LocalDate.now();
         String label = determineSourceLabel(referrer);
-        analyticsTrafficSourceRepository.findByStatDateAndSourceLabel(statDate, label)
-                .ifPresentOrElse(ts -> {
-                    ts.setVisits(ts.getVisits() == null ? 1 : ts.getVisits() + 1);
-                    analyticsTrafficSourceRepository.save(ts);
-                }, () -> {
-                    AnalyticsTrafficSource ts = new AnalyticsTrafficSource();
-                    ts.setStatDate(statDate);
-                    ts.setSourceLabel(label);
-                    ts.setVisits(1);
-                    analyticsTrafficSourceRepository.save(ts);
-                });
+        for (int attempt = 0; attempt < 2; attempt++) {
+            try {
+                analyticsTrafficSourceRepository.findByStatDateAndSourceLabel(statDate, label)
+                        .ifPresentOrElse(ts -> {
+                            ts.setVisits(ts.getVisits() == null ? 1 : ts.getVisits() + 1);
+                            analyticsTrafficSourceRepository.save(ts);
+                        }, () -> {
+                            AnalyticsTrafficSource ts = new AnalyticsTrafficSource();
+                            ts.setStatDate(statDate);
+                            ts.setSourceLabel(label);
+                            ts.setVisits(1);
+                            analyticsTrafficSourceRepository.save(ts);
+                        });
+                return;
+            } catch (DataIntegrityViolationException ex) {
+                if (attempt == 0) {
+                    log.warn("流量来源统计存在并发写入，准备重试一次。date={}, label={}", statDate, label);
+                } else {
+                    throw ex;
+                }
+            }
+        }
     }
 
     private String determineSourceLabel(String referrer) {
@@ -254,6 +279,14 @@ public class AnalyticsService {
             return "页面";
         }
         return title.length() > 255 ? title.substring(0, 255) : title;
+    }
+
+    private String normalizeViewerIp(String rawIp) {
+        if (!StringUtils.hasText(rawIp)) {
+            return "0.0.0.0";
+        }
+        String ip = rawIp.trim();
+        return ip.length() > 45 ? ip.substring(0, 45) : ip;
     }
 
     private String trimToLength(String value, int maxLen) {
