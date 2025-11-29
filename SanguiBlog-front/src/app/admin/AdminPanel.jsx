@@ -3961,6 +3961,23 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
         });
     }, [tabDefinitions, permissionLoading, hasPermission]);
 
+    const groupedNav = useMemo(() => {
+        const groupDefinitions = [
+            {title: '概览与洞察', items: ['dashboard', 'analytics']},
+            {title: '内容运营', items: ['create-post', 'posts', 'comments', 'categories', 'taxonomy']},
+            {title: '账号与权限', items: ['users', 'permissions', 'profile']},
+            {title: '系统配置', items: ['settings']},
+        ];
+        return groupDefinitions
+                .map(group => ({
+                    title: group.title,
+                    items: group.items
+                            .map(key => tabs.find(tab => tab.key === key))
+                            .filter(Boolean),
+                }))
+                .filter(group => group.items.length > 0);
+    }, [tabs]);
+
     useEffect(() => {
         if (permissionLoading) return;
         if (!tabs.length) return;
@@ -4048,18 +4065,27 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                     <h2 className="font-bold text-lg flex items-center gap-2 text-indigo-500"><Terminal
                         className="text-pink-500"/> SANGUI // ADMIN</h2>
                 </div>
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                    {tabs.map(({key, label, icon: Icon}) => (
-                        <Link
-                            key={key}
-                            to={key === 'dashboard' ? '/admin' : `/admin/${key}`}
-                            className={`w-full text-left px-4 py-3 rounded text-sm font-medium flex items-center gap-3 transition-colors ${activeTab === key
-                                ? 'bg-indigo-500 text-white shadow-lg'
-                                : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800'}`
-                            }`}
-                        >
-                            <Icon size={18}/> {label}
-                        </Link>
+                <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
+                    {groupedNav.map(({title, items}) => (
+                        <div key={title}>
+                            <p className={`px-4 pb-2 text-xs font-semibold tracking-[0.2em] uppercase ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                {title}
+                            </p>
+                            <div className="space-y-1">
+                                {items.map(({key, label, icon: Icon}) => (
+                                    <Link
+                                        key={key}
+                                        to={key === 'dashboard' ? '/admin' : `/admin/${key}`}
+                                        className={`w-full text-left px-4 py-3 rounded text-sm font-medium flex items-center gap-3 transition-colors ${activeTab === key
+                                            ? 'bg-indigo-500 text-white shadow-lg'
+                                            : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800'}`
+                                        }`}
+                                    >
+                                        <Icon size={18}/> {label}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </nav>
                 <div className="p-4 border-t border-gray-100">
