@@ -1,7 +1,27 @@
-// const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
-const API_BASE = "/api";
-export const API_ORIGIN = API_BASE.replace(/\/api$/, "");
-export const ASSET_ORIGIN = (import.meta.env.VITE_ASSET_ORIGIN || API_ORIGIN).replace(/\/$/, "");
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+
+const deriveApiOrigin = () => {
+  if (API_BASE.startsWith("http")) {
+    try {
+      return new URL(API_BASE).origin.replace(/\/$/, "");
+    } catch (e) {
+      console.warn("Invalid VITE_API_BASE, fallback to default origin", e);
+    }
+  }
+  if (import.meta.env.VITE_API_ORIGIN) {
+    return import.meta.env.VITE_API_ORIGIN.replace(/\/$/, "");
+  }
+  if (import.meta.env.DEV) {
+    return (import.meta.env.VITE_DEV_SERVER_ORIGIN || "http://localhost:8080").replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin.replace(/\/$/, "");
+  }
+  return "http://localhost:8080";
+};
+
+export const API_ORIGIN = deriveApiOrigin();
+export const ASSET_ORIGIN = (import.meta.env.VITE_ASSET_ORIGIN || API_ORIGIN || "http://localhost:8080").replace(/\/$/, "");
 
 const buildHeaders = () => {
   const token = localStorage.getItem("sg_token");
