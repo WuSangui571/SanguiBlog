@@ -664,6 +664,14 @@ const ArticleDetail = ({
         return doubleQuoteReplaced.replace(/src='([^']+)'/g, (_, src) => `src='${resolveAssetPath(src)}'`);
     }, [contentHtml, resolveAssetPath]);
 
+    const scrollToComments = useCallback(() => {
+        if (typeof document === 'undefined') return;
+        const commentsEl = document.getElementById('comments-section');
+        if (commentsEl) {
+            commentsEl.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+    }, []);
+
     useEffect(() => {
         if (typeof document === 'undefined') return;
         const container = articleContentRef.current;
@@ -870,6 +878,16 @@ const ArticleDetail = ({
                     <div
                         className={`absolute top-0 right-0 w-64 h-64 ${post.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 pointer-events-none`}></div>
 
+                    <button
+                        type="button"
+                        aria-label="跳转到评论区"
+                        onClick={scrollToComments}
+                        className={`hidden xl:flex flex-col items-center gap-1 absolute -right-16 top-1/2 -translate-y-1/2 border-2 border-black px-4 py-3 rounded-full shadow-[4px_4px_0px_0px_#000] transition-transform hover:-translate-y-[calc(50%+4px)] ${isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'}`}
+                    >
+                        <MessageCircle size={22}/>
+                        <span className="text-[10px] font-black tracking-widest">评论</span>
+                    </button>
+
                     <div
                         className={`flex items-center gap-2 mb-6 border-b-4 ${isDarkMode ? 'border-gray-700' : 'border-black'} pb-6`}>
             <span
@@ -965,16 +983,18 @@ const ArticleDetail = ({
                         )}
                     </article>
 
-                    <CommentsSection
-                        list={comments}
-                        isDarkMode={isDarkMode}
-                        onSubmit={handleCommentSubmit}
-                        currentUser={currentUser}
-                        setView={setView}
-                        onDeleteComment={onDeleteComment}
-                        onUpdateComment={onUpdateComment}
-                        postAuthorName={post.authorName}
-                    />
+                    <div id="comments-section" className="scroll-mt-32">
+                        <CommentsSection
+                            list={comments}
+                            isDarkMode={isDarkMode}
+                            onSubmit={handleCommentSubmit}
+                            currentUser={currentUser}
+                            setView={setView}
+                            onDeleteComment={onDeleteComment}
+                            onUpdateComment={onUpdateComment}
+                            postAuthorName={post.authorName}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -1517,7 +1537,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.13
+                    SANGUI BLOG // V1.3.14
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
