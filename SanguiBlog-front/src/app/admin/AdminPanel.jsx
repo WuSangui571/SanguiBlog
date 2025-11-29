@@ -4065,7 +4065,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                     <h2 className="font-bold text-lg flex items-center gap-2 text-indigo-500"><Terminal
                         className="text-pink-500"/> SANGUI // ADMIN</h2>
                 </div>
-                <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
+                <nav className="flex-1 min-h-0 p-4 space-y-5 overflow-y-auto">
                     {groupedNav.map(({title, items}) => (
                         <div key={title}>
                             <p className={`px-4 pb-2 text-xs font-semibold tracking-[0.2em] uppercase ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
