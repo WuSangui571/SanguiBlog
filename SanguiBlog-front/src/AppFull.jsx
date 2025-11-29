@@ -85,6 +85,7 @@ import {
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
     RefreshCw, Plus, Trash2, Save, ImagePlus
 } from 'lucide-react';
+import ArticleDetail from "./components/ArticleDetail.jsx";
 
 // --- 1. Design system moved to app/shared/designSystem.js ---
 // --- 2. 炫酷 UI 组件库 (不变) ---
@@ -392,7 +393,7 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.25'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.27'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -666,7 +667,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.25';
+    const siteVersion = meta?.version || 'V1.3.27';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;

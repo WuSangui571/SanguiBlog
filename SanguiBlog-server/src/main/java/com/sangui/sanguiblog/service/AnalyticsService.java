@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.service;
 
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsSummaryDto;
+import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
 import com.sangui.sanguiblog.model.entity.AnalyticsTrafficSource;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -44,6 +46,7 @@ public class AnalyticsService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final AnalyticsTrafficSourceRepository analyticsTrafficSourceRepository;
+    private final GeoLocationResolver geoLocationResolver;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId) {
@@ -70,7 +73,7 @@ public class AnalyticsService {
         pv.setPageTitle(normalizePageTitle(request.getPageTitle()));
         pv.setViewerIp(normalizeViewerIp(ip));
         pv.setReferrerUrl(trimToLength(request.getReferrer(), 512));
-        pv.setGeoLocation(trimToLength(request.getGeo(), 128));
+        pv.setGeoLocation(geoLocationResolver.resolve(ip, trimToLength(request != null ? request.getGeo() : null, 128)));
         pv.setUserAgent(trimToLength(userAgent, 512));
         pv.setViewedAt(LocalDateTime.now());
         analyticsPageViewRepository.save(pv);
@@ -128,23 +131,7 @@ public class AnalyticsService {
         List<AdminAnalyticsSummaryDto.RecentVisit> recentVisits = analyticsPageViewRepository
                 .findAllByOrderByViewedAtDesc(PageRequest.of(0, safeRecent))
                 .stream()
-                .map(view -> AdminAnalyticsSummaryDto.RecentVisit.builder()
-                        .id(view.getId())
-                        .title(view.getPost() != null ? view.getPost().getTitle() : view.getPageTitle())
-                        .postId(view.getPost() != null ? view.getPost().getId() : null)
-                        .slug(view.getPost() != null ? view.getPost().getSlug() : null)
-                        .ip(view.getViewerIp())
-                        .time(view.getViewedAt() != null ? DATE_TIME_FMT.format(view.getViewedAt()) : "")
-                        .referrer(view.getReferrerUrl())
-                        .geo(view.getGeoLocation())
-                        .loggedIn(view.getUser() != null)
-                        .userId(view.getUser() != null ? view.getUser().getId() : null)
-                        .userName(view.getUser() != null ? view.getUser().getDisplayName() : null)
-                        .userRole(view.getUser() != null && view.getUser().getRole() != null
-                                ? view.getUser().getRole().getCode()
-                                : null)
-                        .userAgent(view.getUserAgent())
-                        .build())
+                .map(this::toRecentVisit)
                 .toList();
 
         return AdminAnalyticsSummaryDto.builder()
@@ -169,6 +156,58 @@ public class AnalyticsService {
     @Transactional
     public long deletePageViewsByUser(Long userId) {
         return analyticsPageViewRepository.deleteByUser_Id(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AdminAnalyticsSummaryDto.RecentVisit> loadVisitLogs(
+            LocalDate startDate,
+            LocalDate endDate,
+            int page,
+            int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        LocalDate effectiveEnd = endDate != null ? endDate : LocalDate.now();
+        LocalDate effectiveStart = startDate != null
+                ? startDate
+                : effectiveEnd.minusDays(6L);
+        if (effectiveStart.isAfter(effectiveEnd)) {
+            LocalDate tmp = effectiveStart;
+            effectiveStart = effectiveEnd;
+            effectiveEnd = tmp;
+        }
+        LocalDateTime startDateTime = effectiveStart.atStartOfDay();
+        LocalDateTime endDateTime = effectiveEnd.atTime(23, 59, 59);
+
+        Page<AnalyticsPageView> pageResult = analyticsPageViewRepository
+                .findByViewedAtBetweenOrderByViewedAtDesc(
+                        startDateTime, endDateTime,
+                        PageRequest.of(safePage - 1, safeSize));
+
+        List<AdminAnalyticsSummaryDto.RecentVisit> records = pageResult.stream()
+                .map(this::toRecentVisit)
+                .toList();
+
+        return new PageResponse<>(records, pageResult.getTotalElements(), safePage, safeSize);
+    }
+
+    private AdminAnalyticsSummaryDto.RecentVisit toRecentVisit(AnalyticsPageView view) {
+        return AdminAnalyticsSummaryDto.RecentVisit.builder()
+                .id(view.getId())
+                .title(view.getPost() != null ? view.getPost().getTitle() : view.getPageTitle())
+                .postId(view.getPost() != null ? view.getPost().getId() : null)
+                .slug(view.getPost() != null ? view.getPost().getSlug() : null)
+                .ip(view.getViewerIp())
+                .time(view.getViewedAt() != null ? DATE_TIME_FMT.format(view.getViewedAt()) : "")
+                .referrer(view.getReferrerUrl())
+                .geo(geoLocationResolver.resolve(view.getViewerIp(), view.getGeoLocation()))
+                .loggedIn(view.getUser() != null)
+                .userId(view.getUser() != null ? view.getUser().getId() : null)
+                .userName(view.getUser() != null ? view.getUser().getDisplayName() : "访客")
+                .userRole(view.getUser() != null && view.getUser().getRole() != null
+                        ? view.getUser().getRole().getCode()
+                        : null)
+                .userAgent(view.getUserAgent())
+                .build();
     }
 
     private List<AdminAnalyticsSummaryDto.TrendPoint> buildTrendPoints(LocalDate startDate, int safeDays) {

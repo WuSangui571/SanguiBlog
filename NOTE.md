@@ -64,6 +64,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 - 自 V1.3.22 起，`AppFull.jsx` 仅承担路由与上下文管理，真实的视图代码拆分到 `src/app` 目录：`app/shared/designSystem.jsx` 保存设计系统与 Mock 数据，`app/common` 提供主题色选择器、后台通知等通用组件，`app/admin/AdminPanel.jsx` 则完整承载后台模块逻辑。
 - 后台模块通过 `React.lazy` 懒加载，首次进入管理后台时才下载大量表单/表格代码，首屏仅需加载前台视图与公共组件，减轻主 bundle。
+- V1.3.27 之后，仪表盘与「数据分析」合并为单一 Dashboard 视图，同时内嵌实时访问日志表，可按最近 7/14/30 天或自定义日期筛选，并支持分页与日志清理（仅超管可操作）。
 - V1.3.24 将后台侧边栏整理为“概览与洞察 / 内容运营 / 账号与权限 / 系统配置”四个分组，仅调整可视结构，所有路由与权限逻辑保持不变。
 
 *   **路由 (`AppFull.jsx`)**:
@@ -209,6 +210,7 @@ ecordPageView; if that fails it writes the record directly so admin dashboards n
 *   AnalyticsService.updateTrafficSourceStat classifies referrers and maintains nalytics_traffic_sources(stat_date, source_label, visits, percentage) (default Direct / None).
 *   AnalyticsService.recordPageView now runs in its own transaction (REQUIRES_NEW) and traffic-source upserts retry once before logging a warning, ensuring view counters never roll back even when analytics aggregation encounters conflicts.
 *   DELETE /api/admin/analytics/page-views/me lets administrators purge their own visits.
+*   V1.3.27 新增 `/api/admin/analytics/page-views` 分页接口，支持 `startDate/endDate/days/page/size` 筛选日志；后端通过 `GeoLocationResolver` 根据 IP 兜底估算地域，前端 Dashboard「实时访问日志」面板消费该接口并可由超级管理员清理个人日志。
 
 ### 4.7 Initial Accounts & Default Passwords
 *   DataInitializer now only ensures the default roles exist and assigns them to `sangui` / `admin_user1` / `editor_user2` when these users lack a role; it no longer changes or resets their passwords automatically.

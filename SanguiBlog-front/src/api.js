@@ -185,6 +185,17 @@ export const adminDeleteComment = (commentId) =>
     method: "DELETE",
   });
 
+export const adminFetchVisitLogs = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  if (params.days) search.append("days", params.days);
+  if (params.startDate) search.append("startDate", params.startDate);
+  if (params.endDate) search.append("endDate", params.endDate);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/analytics/page-views${query}`);
+};
+
 export const updateBroadcast = (payload) =>
   request("/site/broadcast", {
     method: "POST",

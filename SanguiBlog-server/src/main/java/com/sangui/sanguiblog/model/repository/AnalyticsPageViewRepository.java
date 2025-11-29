@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.model.repository;
 
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -59,6 +60,8 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
     List<TopPostAggregation> findTopPostsSince(@Param("start") LocalDateTime start, Pageable pageable);
 
     List<AnalyticsPageView> findAllByOrderByViewedAtDesc(Pageable pageable);
+
+    Page<AnalyticsPageView> findByViewedAtBetweenOrderByViewedAtDesc(LocalDateTime start, LocalDateTime end, Pageable pageable);
 
     long deleteByUser_Id(Long userId);
 }

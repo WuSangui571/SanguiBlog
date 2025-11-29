@@ -63,7 +63,7 @@ import {
 import {useBlog} from "../../hooks/useBlogData.jsx";
 
 // 4.1 Sub-Component: Dashboard View
-const DashboardView = ({isDarkMode}) => {
+const DashboardView = ({isDarkMode, user}) => {
     const {summary, loading, error, reload} = useAdminAnalytics();
     const overview = summary?.overview;
     const dailyTrends = summary?.dailyTrends || [];
@@ -71,6 +71,20 @@ const DashboardView = ({isDarkMode}) => {
     const topPosts = (summary?.topPosts || []).slice(0, 5);
     const recentVisits = (summary?.recentVisits || []).slice(0, 6);
     const rangeLabel = overview?.rangeLabel || '最近14天';
+    const rangeOptions = [7, 14, 30];
+    const logRangePresets = [7, 14, 30];
+    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    const [visitLogs, setVisitLogs] = useState([]);
+    const [logsLoading, setLogsLoading] = useState(false);
+    const [logsError, setLogsError] = useState('');
+    const [logPage, setLogPage] = useState(1);
+    const [logSize, setLogSize] = useState(10);
+    const [logTotal, setLogTotal] = useState(0);
+    const [startInput, setStartInput] = useState('');
+    const [endInput, setEndInput] = useState('');
+    const [selectedLogDays, setSelectedLogDays] = useState(7);
+    const [activeLogRange, setActiveLogRange] = useState({start: '', end: '', days: 7});
+    const [clearing, setClearing] = useState(false);
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const border = isDarkMode ? 'border border-gray-700' : 'border border-gray-200';
     const textPrimary = isDarkMode ? 'text-gray-100' : 'text-gray-900';
@@ -116,6 +130,81 @@ const DashboardView = ({isDarkMode}) => {
         );
     };
 
+    const fetchVisitLogs = useCallback(async () => {
+        setLogsLoading(true);
+        setLogsError('');
+        try {
+            const params = {page: logPage, size: logSize};
+            if (activeLogRange.start) params.startDate = activeLogRange.start;
+            if (activeLogRange.end) params.endDate = activeLogRange.end;
+            if (!activeLogRange.start && !activeLogRange.end && activeLogRange.days) {
+                params.days = activeLogRange.days;
+            }
+            const res = await adminFetchVisitLogs(params);
+            const data = res.data || res;
+            setVisitLogs(data.records || []);
+            setLogTotal(data.total || 0);
+        } catch (err) {
+            setLogsError(err.message || '加载访问日志失败');
+        } finally {
+            setLogsLoading(false);
+        }
+    }, [logPage, logSize, activeLogRange]);
+
+    useEffect(() => {
+        fetchVisitLogs();
+    }, [fetchVisitLogs]);
+
+    const totalLogPages = Math.max(1, Math.ceil((logTotal || 0) / logSize));
+
+    const handleQuickLogRange = (days) => {
+        setSelectedLogDays(days);
+        setStartInput('');
+        setEndInput('');
+        setActiveLogRange({start: '', end: '', days});
+        setLogPage(1);
+    };
+
+    const handleApplyCustomRange = () => {
+        const nextStart = startInput;
+        const nextEnd = endInput;
+        if (!nextStart && !nextEnd) {
+            const fallback = selectedLogDays || 7;
+            setActiveLogRange({start: '', end: '', days: fallback});
+            setSelectedLogDays(fallback);
+        } else {
+            setActiveLogRange({start: nextStart, end: nextEnd, days: null});
+            setSelectedLogDays(null);
+        }
+        setLogPage(1);
+    };
+
+    const handleClearLogs = async () => {
+        if (!isSuperAdmin) return;
+        if (!window.confirm('确定要删除你在本站的所有访问日志吗？')) return;
+        setClearing(true);
+        try {
+            await adminDeleteMyAnalyticsLogs();
+            fetchVisitLogs();
+        } catch (err) {
+            alert(err.message || '清理失败，请稍后重试');
+        } finally {
+            setClearing(false);
+        }
+    };
+
+    const renderLogReferrer = (referrer) => {
+        if (!referrer) return 'Direct / None';
+        if (/^https?:/i.test(referrer)) {
+            return (
+                <a className="text-indigo-500 hover:underline" href={referrer} target="_blank" rel="noopener noreferrer">
+                    {referrer}
+                </a>
+            );
+        }
+        return referrer;
+    };
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -125,16 +214,25 @@ const DashboardView = ({isDarkMode}) => {
                     </h2>
                     <p className={`text-sm ${textMuted}`}>{rangeLabel}，实时同步访客、文章与评论概况</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    {error && <span className="text-sm text-red-500">{error}</span>}
+                <div className="flex flex-wrap items-center gap-2">
+                    {rangeOptions.map((size) => (
+                        <button
+                            key={`range-${size}`}
+                            type="button"
+                            onClick={() => reload(size)}
+                            className={`px-3 py-1 text-sm font-bold border-2 border-black rounded-full transition ${rangeDays === size ? 'bg-[#FF0080] text-white' : 'bg-white text-black hover:bg-[#FFD700]'}`}
+                        >
+                            最近{size}天
+                        </button>
+                    ))}
                     <button
                         type="button"
-                        onClick={() => reload()}
-                        disabled={loading}
-                        className="px-4 py-2 border-2 border-black text-sm font-bold bg-[#FFD700] rounded-full hover:-translate-y-0.5 transition disabled:opacity-50"
+                        onClick={() => reload(rangeDays)}
+                        className="px-3 py-1 text-sm font-bold border-2 border-black rounded-full hover:bg-black hover:text-white transition"
                     >
-                        {loading ? '刷新中...' : '刷新数据'}
+                        手动刷新
                     </button>
+                    {error && <span className="text-sm text-red-500">{error}</span>}
                 </div>
             </div>
 
@@ -262,551 +360,161 @@ const DashboardView = ({isDarkMode}) => {
                     )}
                 </div>
             </div>
-        </div>
-    );
-};
 
-// 4.2 Sub-Component: Analytics View (Detailed Data)
-const AnalyticsView = ({isDarkMode, user}) => {
-    const {summary, loading, error, reload, rangeDays} = useAdminAnalytics();
-    const overview = summary?.overview;
-    const dailyTrends = summary?.dailyTrends || [];
-    const trafficSources = summary?.trafficSources || [];
-    const topPosts = summary?.topPosts || [];
-    const recentVisits = summary?.recentVisits || [];
-    const rangeOptions = [7, 14, 30];
-    const [clearing, setClearing] = useState(false);
-    const [clearMessage, setClearMessage] = useState('');
-    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
-
-    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
-    const border = isDarkMode ? 'border border-gray-700' : 'border border-gray-200';
-    const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
-    const textMuted = isDarkMode ? 'text-gray-400' : 'text-gray-500';
-
-    const formatNumber = (value, fallback = '--') => {
-        if (typeof value === 'number') return value.toLocaleString();
-        return fallback;
-    };
-
-    const Chart = ({data}) => {
-        if (!data.length) return <p className={`text-sm ${textMuted}`}>暂无趋势数据</p>;
-        const max = Math.max(...data.map(d => d.views), 1);
-        const points = data.map((item, index) => {
-            const x = (index / Math.max(data.length - 1, 1)) * 100;
-            const y = 100 - (item.views / max) * 100;
-            return `${x},${y}`;
-        }).join(' ');
-        return (
-            <svg viewBox="0 0 100 100" className="w-full h-64">
-                <polyline
-                    fill="none"
-                    stroke="#FF0080"
-                    strokeWidth="3"
-                    points={points}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                />
-            </svg>
-        );
-    };
-
-    const renderReferrer = (referrer) => {
-        if (!referrer) return 'Direct / None';
-        if (referrer.startsWith('http')) {
-            return <a className="text-indigo-500 hover:underline" href={referrer} target="_blank"
-                      rel="noopener noreferrer">{referrer}</a>;
-        }
-        return referrer;
-    };
-
-    const handleClearLogs = async () => {
-        if (!isSuperAdmin) return;
-        if (!window.confirm('确定要删除你在本站的所有访问日志吗？')) return;
-        setClearing(true);
-        setClearMessage('');
-        try {
-            await adminDeleteMyAnalyticsLogs();
-            setClearMessage('已清理当前账户的访问日志。');
-            reload(rangeDays);
-        } catch (err) {
-            setClearMessage(err.message || '清理失败，请稍后重试。');
-        } finally {
-            setClearing(false);
-        }
-    };
-
-    return (
-        <div className="space-y-8">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h2 className="text-3xl font-black flex items-center gap-2"><TrendingUp/> 数据分析</h2>
-                    <p className={`text-sm ${textMuted}`}>来自 `analytics_page_views` 与 `analytics_traffic_sources` 的实时统计</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {rangeOptions.map((size) => (
-                        <button
-                            key={size}
-                            type="button"
-                            onClick={() => reload(size)}
-                            className={`px-3 py-1 text-sm font-bold border-2 border-black rounded-full transition ${rangeDays === size ? 'bg-[#FF0080] text-white' : 'bg-white text-black hover:bg-[#FFD700]'}`}
-                        >
-                            {size} 天
-                        </button>
-                    ))}
-                    {isSuperAdmin && (
-                        <button
-                            type="button"
-                            onClick={handleClearLogs}
-                            disabled={clearing}
-                            className="px-3 py-1 text-sm font-bold border-2 border-red-600 text-red-600 rounded-full hover:bg-red-50 disabled:opacity-50"
-                        >
-                            {clearing ? '清理中...' : '清理我的访问日志'}
-                        </button>
-                    )}
-                </div>
-            </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            {clearMessage && <p className="text-sm text-emerald-500">{clearMessage}</p>}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className={`${surface} ${border} p-5 rounded-2xl shadow-xl`}>
-                    <p className={`text-xs uppercase tracking-[0.3em] ${textMuted}`}>区间 PV</p>
-                    <p className="text-3xl font-black mt-2">{formatNumber(overview?.periodViews)}</p>
-                </div>
-                <div className={`${surface} ${border} p-5 rounded-2xl shadow-xl`}>
-                    <p className={`text-xs uppercase tracking-[0.3em] ${textMuted}`}>独立访客</p>
-                    <p className="text-3xl font-black mt-2">{formatNumber(overview?.uniqueVisitors)}</p>
-                </div>
-                <div className={`${surface} ${border} p-5 rounded-2xl shadow-xl`}>
-                    <p className={`text-xs uppercase tracking-[0.3em] ${textMuted}`}>日均访问</p>
-                    <p className="text-3xl font-black mt-2">
-                        {overview ? (overview.avgViewsPerDay?.toFixed(1) || '0.0') : '--'}
-                    </p>
-                </div>
-            </div>
-
-            <div className={`${surface} ${border} p-6 rounded-2xl shadow-xl`}>
-                <div className="flex items-center justify-between mb-4">
+            <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <h3 className={`text-2xl font-bold ${text}`}>访问曲线</h3>
-                        <p className={`text-xs ${textMuted}`}>{overview?.rangeLabel || `最近${rangeDays}天`}</p>
+                        <h3 className={`text-xl font-bold ${textPrimary}`}>实时访问日志</h3>
+                        <p className={`text-xs ${textMuted}`}>可选择最近区间或自定义日期，查看全部访客轨迹</p>
                     </div>
-                    {loading && <span className={`text-xs ${textMuted}`}>数据加载中...</span>}
-                </div>
-                <Chart data={dailyTrends}/>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                    <h3 className={`text-xl font-bold ${text}`}>流量来源</h3>
-                    {trafficSources.length === 0 ? (
-                        <p className={`text-sm mt-4 ${textMuted}`}>暂无流量来源数据</p>
-                    ) : (
-                        <div className="mt-4 space-y-3">
-                            {trafficSources.map((source, idx) => (
-                                <div key={`${source.label}-${idx}`}>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span>{source.label}</span>
-                                        <span className="font-semibold">{Math.round(source.value * 10) / 10}%</span>
-                                    </div>
-                                    <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                        <div
-                                            className="h-full rounded-full bg-[#00E096]"
-                                            style={{width: `${Math.min(source.value, 100)}%`}}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div className="lg:col-span-2">
-                    <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className={`text-xl font-bold ${text}`}>热门文章</h3>
-                            <span className={`text-xs ${textMuted}`}>按 PV 排序</span>
-                        </div>
-                        {topPosts.length === 0 ? (
-                            <p className={`text-sm ${textMuted}`}>暂无文章访问</p>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full text-sm">
-                                    <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
-                                    <tr>
-                                        <th className="px-4 py-2 text-left">文章</th>
-                                        <th className="px-4 py-2 text-left">Slug</th>
-                                        <th className="px-4 py-2 text-right">PV</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                                    {topPosts.map((post) => (
-                                        <tr key={post.postId}>
-                                            <td className="px-4 py-3 font-semibold">{post.title || '未命名文章'}</td>
-                                            <td className={`px-4 py-3 ${textMuted}`}>{post.slug || '—'}</td>
-                                            <td className="px-4 py-3 text-right font-bold">{formatNumber(post.views, '0')}</td>
-                                        </tr>
-                                    ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                    <div className="flex flex-wrap gap-2">
+                        {logRangePresets.map((size) => (
+                            <button
+                                key={`log-range-${size}`}
+                                type="button"
+                                onClick={() => handleQuickLogRange(size)}
+                                className={`px-3 py-1 text-xs font-bold border rounded-full ${!activeLogRange.start && !activeLogRange.end && selectedLogDays === size ? 'bg-[#FF0080] text-white border-[#FF0080]' : 'border-gray-300 text-gray-600 hover:bg-gray-100'}`}
+                            >
+                                最近{size}天
+                            </button>
+                        ))}
+                        <button
+                            type="button"
+                            onClick={() => fetchVisitLogs()}
+                            className="px-3 py-1 text-xs font-bold border border-black rounded-full hover:bg-[#FFD700]"
+                        >
+                            刷新日志
+                        </button>
+                        {isSuperAdmin && (
+                            <button
+                                type="button"
+                                onClick={handleClearLogs}
+                                disabled={clearing}
+                                className="px-3 py-1 text-xs font-bold border-2 border-red-600 text-red-600 rounded-full hover:bg-red-50 disabled:opacity-50"
+                            >
+                                {clearing ? '清理中...' : '清理我的日志'}
+                            </button>
                         )}
                     </div>
                 </div>
-            </div>
-
-            <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                <h3 className={`text-2xl font-bold mb-4 ${text}`}>实时访问日志</h3>
-                {recentVisits.length === 0 ? (
-                    <p className={`text-sm ${textMuted}`}>暂无访问记录</p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full text-sm">
-                            <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
+                <div className="mt-4 flex flex-wrap gap-3 text-xs">
+                    <label className="flex items-center gap-2">
+                        <span>开始日期</span>
+                        <input
+                            type="date"
+                            value={startInput}
+                            onChange={(e) => setStartInput(e.target.value)}
+                            className={`border rounded px-2 py-1 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'border-gray-300'}`}
+                        />
+                    </label>
+                    <label className="flex items-center gap-2">
+                        <span>结束日期</span>
+                        <input
+                            type="date"
+                            value={endInput}
+                            onChange={(e) => setEndInput(e.target.value)}
+                            className={`border rounded px-2 py-1 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'border-gray-300'}`}
+                        />
+                    </label>
+                    <button
+                        type="button"
+                        onClick={handleApplyCustomRange}
+                        className="px-3 py-1 font-bold border border-black rounded-full hover:bg-black hover:text-white transition"
+                    >
+                        应用筛选
+                    </button>
+                    <select
+                        value={logSize}
+                        onChange={(e) => {
+                            setLogSize(Number(e.target.value));
+                            setLogPage(1);
+                        }}
+                        className={`px-2 py-1 border rounded ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'border-gray-300'}`}
+                    >
+                        {[10, 20, 30, 50].map((size) => (
+                            <option key={`log-size-${size}`} value={size}>{size} 条/页</option>
+                        ))}
+                    </select>
+                </div>
+                {logsError && <p className="text-sm text-red-500 mt-2">{logsError}</p>}
+                <div className="mt-4 overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                        <thead>
+                        <tr className="text-left text-xs uppercase tracking-wider text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                            <th className="py-2 pr-4">访客</th>
+                            <th className="py-2 pr-4">IP</th>
+                            <th className="py-2 pr-4">地域</th>
+                            <th className="py-2 pr-4">页面</th>
+                            <th className="py-2 pr-4">来源</th>
+                            <th className="py-2 pr-4">时间</th>
+                            <th className="py-2 pr-4">终端</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {logsLoading ? (
                             <tr>
-                                <th className="px-4 py-3 text-left">页面/文章</th>
-                                <th className="px-4 py-3 text-left">访客 IP</th>
-                                <th className="px-4 py-3 text-left">用户</th>
-                                <th className="px-4 py-3 text-left">时间</th>
-                                <th className="px-4 py-3 text-left">来源</th>
-                                <th className="px-4 py-3 text-left">地理</th>
+                                <td colSpan={7} className="py-6 text-center text-gray-500">日志加载中...</td>
                             </tr>
-                            </thead>
-                            <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                            {recentVisits.map((visit) => (
-                                <tr key={visit.id} className="align-top">
-                                    <td className="px-4 py-3">
-                                        <p className="font-semibold">{visit.title || '未命名页面'}</p>
-                                        {visit.slug && <p className={`text-xs ${textMuted}`}>Slug：{visit.slug}</p>}
+                        ) : visitLogs.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="py-6 text-center text-gray-500">暂无日志</td>
+                            </tr>
+                        ) : (
+                            visitLogs.map((visit) => (
+                                <tr key={`visit-${visit.id || visit.time}`} className="border-b border-gray-100 dark:border-gray-800">
+                                    <td className="py-3 pr-4 font-semibold">
+                                        {visit.loggedIn ? (visit.userName || '已登录用户') : '访客'}
                                     </td>
-                                    <td className="px-4 py-3 font-mono">{visit.ip || '-'}</td>
-                                    <td className="px-4 py-3">
-                                        {visit.loggedIn ? (
-                                            <>
-                                                <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-600">已登录</span>
-                                                <p className="text-xs mt-1">{visit.userName || '内部账号'}</p>
-                                            </>
+                                    <td className="py-3 pr-4">{visit.ip || '-'}</td>
+                                    <td className="py-3 pr-4">{visit.geo || '未知'}</td>
+                                    <td className="py-3 pr-4">
+                                        {visit.slug ? (
+                                            <a className="text-indigo-500 hover:underline" href={`/article/${visit.slug}`} target="_blank" rel="noopener noreferrer">
+                                                {visit.title || visit.slug}
+                                            </a>
                                         ) : (
-                                            <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">访客</span>
+                                            visit.title || '未命名页面'
                                         )}
                                     </td>
-                                    <td className="px-4 py-3">{visit.time || '-'}</td>
-                                    <td className="px-4 py-3">{renderReferrer(visit.referrer)}</td>
-                                    <td className="px-4 py-3">{visit.geo || '未知'}</td>
+                                    <td className="py-3 pr-4">{renderLogReferrer(visit.referrer)}</td>
+                                    <td className="py-3 pr-4">{visit.time || '-'}</td>
+                                    <td className="py-3 pr-4 truncate max-w-[180px]" title={visit.userAgent || ''}>
+                                        {visit.userAgent || '--'}
+                                    </td>
                                 </tr>
-                            ))}
-                            </tbody>
-                        </table>
+                            ))
+                        )}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                    <div>共 {logTotal || 0} 条 · 第 {logPage}/{totalLogPages} 页</div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setLogPage((p) => Math.max(1, p - 1))}
+                            disabled={logPage === 1}
+                            className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                            上一页
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setLogPage((p) => Math.min(totalLogPages, p + 1))}
+                            disabled={logPage === totalLogPages}
+                            className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                            下一页
+                        </button>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );
 };
 
-// 4.3 Sub-Component: Create New Post (The most important module)
-const CreatePostView = ({isDarkMode}) => {
-    const {categories} = useBlog();
-    const {hasPermission, loading: permLoading} = usePermissionContext();
-    const [tags, setTags] = useState([]);
-    const [assetsFolder, setAssetsFolder] = useState("");
-    const [title, setTitle] = useState("");
-    const [excerpt, setExcerpt] = useState("");
-    const [mdContent, setMdContent] = useState("");
-    const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
-    const [markdownFileName, setMarkdownFileName] = useState("");
-    const [selectedParentId, setSelectedParentId] = useState(null);
-    const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-    const [selectedTags, setSelectedTags] = useState([]);
-    const [imageUploadMessage, setImageUploadMessage] = useState("");
-    const [markdownMessage, setMarkdownMessage] = useState("");
-    const [submitNotice, setSubmitNotice] = useState("");
-    const [submitError, setSubmitError] = useState("");
-    const [submitting, setSubmitting] = useState(false);
-    const [uploadingImages, setUploadingImages] = useState(false);
-    const markdownFileInputRef = useRef(null);
-    const markdownEditorRef = useRef(null);
-    const inlineImageInputRef = useRef(null);
-    const {
-        notice: publishNotice,
-        showNotice: showPublishNotice,
-        hideNotice: hidePublishNotice
-    } = useTimedNotice(4200);
-
-    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
-    const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
-    const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
-
-    const ensureAssetsSlug = useCallback(async () => {
-        if (assetsFolder) return assetsFolder;
-        const res = await reservePostAssetsFolder();
-        const data = res.data || res;
-        if (!data?.folder) {
-            throw new Error("未获取到资源标识");
-        }
-        setAssetsFolder(data.folder);
-        return data.folder;
-    }, [assetsFolder]);
-
-    const insertImagesAtCursor = useCallback((urls = []) => {
-        if (!urls.length) return;
-        const snippet = urls
-            .map((url, index) => `![${title || `插图${index + 1}`}](${url})`)
-            .join("\n") + "\n";
-        setMdContent((prev) => {
-            const textarea = markdownEditorRef.current;
-            if (!textarea) {
-                const prefix = prev.endsWith("\n") || prev.length === 0 ? prev : `${prev}\n`;
-                return `${prefix}${snippet}`;
-            }
-            const start = textarea.selectionStart ?? prev.length;
-            const end = textarea.selectionEnd ?? start;
-            const before = prev.slice(0, start);
-            const after = prev.slice(end);
-            const normalizedBefore = before && !before.endsWith("\n") ? `${before}\n` : before;
-            const normalizedAfter = after.startsWith("\n") || after.length === 0 ? after : `\n${after}`;
-            const nextContent = `${normalizedBefore}${snippet}${normalizedAfter}`;
-            const cursorPos = (normalizedBefore + snippet).length;
-            requestAnimationFrame(() => {
-                const el = markdownEditorRef.current;
-                if (el) {
-                    el.focus();
-                    el.selectionStart = cursorPos;
-                    el.selectionEnd = cursorPos;
-                }
-            });
-            return nextContent;
-        });
-    }, [markdownEditorRef, title]);
-
-    useEffect(() => {
-        const loadTags = async () => {
-            try {
-                const res = await fetchTags();
-                const data = res.data || res;
-                setTags(data || []);
-            } catch (error) {
-                setSubmitError(error.message || "标签加载失败");
-                setSubmitNotice("");
-            }
-        };
-        loadTags();
-    }, []);
-
-    const normalizedCategories = useMemo(() => {
-        return (categories || []).filter((cat) => typeof cat.id === "number");
-    }, [categories]);
-
-    const activeParent = normalizedCategories.find((cat) => Number(cat.id) === selectedParentId) || normalizedCategories[0];
-    useEffect(() => {
-        if (activeParent) {
-            const parentId = Number(activeParent.id);
-            if (selectedParentId !== parentId) {
-                setSelectedParentId(parentId);
-                setSelectedCategoryId(null);
-            }
-        }
-    }, [activeParent, selectedParentId]);
-
-    const secondLevelCategories = activeParent?.children || [];
-
-    const handleFolderReserve = async () => {
-        try {
-            const res = await reservePostAssetsFolder();
-            const data = res.data || res;
-            if (data?.folder) {
-                setAssetsFolder(data.folder);
-                setImageUploadMessage(`已生成资源 slug：${data.folder}`);
-            }
-        } catch (error) {
-            setImageUploadMessage(error.message || "无法生成目录");
-        }
-    };
-
-    const handleInlineImageUpload = async (event) => {
-        const files = Array.from(event.target.files || []);
-        if (!files.length) return;
-        setUploadingImages(true);
-        setImageUploadMessage("图片上传中...");
-        try {
-            const slug = await ensureAssetsSlug();
-            const res = await uploadPostAssets(files, slug);
-            const data = res.data || res;
-            if (data?.folder && data.folder !== assetsFolder) setAssetsFolder(data.folder);
-            const urls = data?.urls || [];
-            if (urls.length) {
-                insertImagesAtCursor(urls);
-                setImageUploadMessage(data.joined || urls.join(";"));
-            } else {
-                setImageUploadMessage("上传成功");
-            }
-        } catch (error) {
-            setImageUploadMessage(error.message || "图片上传失败");
-        } finally {
-            setUploadingImages(false);
-            if (event?.target) {
-                event.target.value = null;
-            }
-        }
-    };
-
-    const handleMarkdownUpload = async (event) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-        try {
-            const text = await file.text();
-            setMdContent(text);
-            setMarkdownFileName(file.name);
-            setMarkdownMessage(`已加载 ${file.name}`);
-            if (!title.trim()) {
-                const inferredTitle = file.name.replace(/\.(md|markdown|txt)$/i, "");
-                setTitle(inferredTitle);
-            }
-            if (!excerpt.trim()) {
-                const plain = text.replace(/[#>*_`-]/g, "").replace(/\s+/g, " ").trim();
-                setExcerpt(plain.slice(0, 160));
-            }
-        } catch (error) {
-            setMarkdownMessage(error.message || "读取 Markdown 失败");
-        } finally {
-            event.target.value = null;
-        }
-    };
-
-    const toggleTag = (id) => {
-        const tagId = Number(id);
-        setSelectedTags((prev) =>
-            prev.includes(tagId) ? prev.filter((value) => value !== tagId) : [...prev, tagId]
-        );
-    };
-
-    const canPublish = Boolean(
-        title.trim() &&
-        mdContent.trim() &&
-        selectedCategoryId &&
-        selectedTags.length > 0
-    );
-
-    if (permLoading) {
-        return (
-            <div className="p-10 text-center text-sm text-gray-500">权限信息加载中...</div>
-        );
-    }
-
-    if (!hasPermission('POST_CREATE')) {
-        return (
-            <PermissionNotice
-                title="无法访问发布文章功能"
-                description="当前角色未被授予“新建文章”权限，请联系超级管理员在权限管理页开启。"
-            />
-        );
-    }
-
-    const handlePublish = async () => {
-        if (!canPublish || submitting) return;
-        setSubmitting(true);
-        setSubmitNotice("");
-        setSubmitError("");
-        try {
-            const slug = await ensureAssetsSlug();
-            if (!slug) {
-                throw new Error("未能生成资源目录");
-            }
-            const payload = {
-                title: title.trim(),
-                slug,
-                contentMd: mdContent,
-                excerpt: excerpt.trim() || mdContent.replace(/\s+/g, " ").slice(0, 160),
-                categoryId: selectedCategoryId,
-                tagIds: selectedTags,
-                status: "PUBLISHED",
-                themeColor: themeColor?.trim() || undefined,
-            };
-            const res = await createPost(payload);
-            const data = res.data || res;
-            setSubmitNotice(`发布成功（ID: ${data?.summary?.id || data?.id || "已创建"}）`);
-            setTitle("");
-            setMdContent("");
-            setMarkdownFileName("");
-            setSelectedTags([]);
-            setExcerpt("");
-            setAssetsFolder("");
-            setThemeColor(DEFAULT_THEME_COLOR);
-        } catch (error) {
-            setSubmitError(error.message || "发布失败");
-            setSubmitNotice("");
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!submitNotice) return;
-        showPublishNotice(submitNotice);
-    }, [submitNotice, showPublishNotice]);
-
-    return (
-        <div className="space-y-8">
-            <AdminNoticeBar notice={publishNotice} onClose={hidePublishNotice}/>
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
-                    <h2 className="text-3xl font-black italic text-pink-500 flex items-center gap-2">
-                        <Edit/> 发布新文章
-                    </h2>
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                    上传 Markdown + 资源图片，整理分类与标签后方可发布
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                <div className="xl:col-span-2 space-y-6">
-                    <div
-                        className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
-                        <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章标题</label>
-                        <input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="请输入文章标题"
-                            className={`${inputClass} text-2xl font-bold`}
-                        />
-                    </div>
-
-                    <div
-                        className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
-                        <div
-                            className="flex flex-col gap-3 border-b pb-3 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h3 className={`font-semibold ${text}`}>Markdown 正文</h3>
-                                <p className="text-xs text-gray-500">上传 .md、粘贴内容，或在当前光标处插入图片</p>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    className="text-sm text-indigo-500 flex items-center gap-1 hover:text-indigo-400"
-                                    onClick={() => markdownFileInputRef.current?.click()}
-                                >
-                                    <Upload size={16}/> 上传 .md
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={uploadingImages}
-                                    className={`text-sm flex items-center gap-1 ${uploadingImages ? 'text-gray-400 cursor-not-allowed' : 'text-pink-500 hover:text-pink-400'}`}
-                                    onClick={() => inlineImageInputRef.current?.click()}
-                                >
-                                    <ImagePlus size={16}/> {uploadingImages ? "插图上传中..." : "插入图片"}
-                                </button>
-                            </div>
-                            <input
-                                type="file"
-                                accept=".md,.markdown,.txt"
-                                ref={markdownFileInputRef}
-                                className="hidden"
-                                onChange={handleMarkdownUpload}
-                            />
-                            <input
-                                type="file"
+// 4.3 Sub-Component: Create New Post
+           type="file"
                                 accept="image/*"
                                 multiple
                                 ref={inlineImageInputRef}
@@ -3941,7 +3649,6 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
         {key: 'dashboard', label: '仪表盘', icon: Home, permissions: ['ANALYTICS_VIEW']},
         {key: 'create-post', label: '发布文章', icon: Edit, permissions: ['POST_CREATE']},
         {key: 'posts', label: '文章列表', icon: FileText, permissions: ['POST_VIEW']},
-        {key: 'analytics', label: '数据分析', icon: BarChart3, permissions: ['ANALYTICS_VIEW']},
         {key: 'comments', label: '评论管理', icon: MessageCircle, permissions: ['COMMENT_VIEW']},
         {key: 'categories', label: '二级分类', icon: Layers, permissions: ['CATEGORY_MANAGE']},
         {key: 'taxonomy', label: '标签管理', icon: Tag, permissions: ['TAG_MANAGE']},
@@ -3963,7 +3670,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
 
     const groupedNav = useMemo(() => {
         const groupDefinitions = [
-            {title: '概览与洞察', items: ['dashboard', 'analytics']},
+            {title: '概览与洞察', items: ['dashboard']},
             {title: '内容运营', items: ['create-post', 'posts', 'comments', 'categories', 'taxonomy']},
             {title: '账号与权限', items: ['users', 'permissions', 'profile']},
             {title: '系统配置', items: ['settings']},
@@ -4135,7 +3842,6 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                             <Route index element={<DashboardView isDarkMode={isDarkMode} user={user}/>}/>
                             <Route path="dashboard" element={<DashboardView isDarkMode={isDarkMode} user={user}/>}/>
                             <Route path="create-post" element={<CreatePostView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user}/>}/>
                             <Route path="comments" element={<CommentsAdminView isDarkMode={isDarkMode}/>}/>
                             <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode}/>}/>
                             <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode}/>}/>
@@ -4149,7 +3855,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                     </AnalyticsSummaryContext.Provider>
 
                     {/* General Notification System for Super Admin */}
-                    {(activeTab === 'dashboard' || activeTab === 'settings') && user.role === 'SUPER_ADMIN' && (
+                    {activeTab === 'settings' && user.role === 'SUPER_ADMIN' && (
                         <div
                             className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-lg border shadow-sm mt-8`}>
                             <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>紧急广播设置</h3>
