@@ -78,6 +78,15 @@ const THEME_COLOR_PRESETS = [
 ];
 const DEFAULT_THEME_COLOR = 'bg-[#6366F1]';
 
+const buildAssetUrl = (path) => {
+    if (!path) return null;
+    if (/^(https?:)?\/\//i.test(path)) return path;
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    const origin = (ASSET_ORIGIN || '').replace(/\/$/, '');
+    if (!origin) return normalized;
+    return `${origin}${normalized}`.replace(/([^:]\/)\/+/g, '$1');
+};
+
 const extractHexFromBgClass = (value = '', fallback = '#6366F1') => {
     if (typeof value !== 'string') return fallback;
     const match = value.match(/#([0-9a-fA-F]{6})/);
@@ -277,11 +286,7 @@ const CommentsSection = ({
     const countAll = (items = []) => items.reduce((sum, item) => sum + 1 + countAll(item.replies || []), 0);
     const totalComments = countAll(normalizedList);
 
-    const getAvatarSrc = (avatarPath) => {
-        if (!avatarPath) return null;
-        if (avatarPath.startsWith('http')) return avatarPath;
-        return `http://localhost:8080${avatarPath}`;
-    };
+    const getAvatarSrc = (avatarPath) => buildAssetUrl(avatarPath);
 
     const handleSubmit = () => {
         if (!content.trim()) return;
@@ -295,12 +300,23 @@ const CommentsSection = ({
 
     const handleReplySubmit = () => {
         if (!replyTarget || !replyContent.trim()) return;
-        onSubmit && onSubmit({
+        const trimmed = replyContent.trim();
+        const targetComment = replyTarget.comment || {};
+        const replyDepth = replyTarget.depth || 0;
+        const baseParentId = replyDepth >= 1
+            ? (targetComment.parentId || targetComment.parentCommentId || targetComment.parent_id || targetComment.id)
+            : targetComment.id;
+        const mentionName = targetComment.authorName || targetComment.user || 'Ta';
+        const prefix = replyDepth >= 1 ? `@${mentionName}：` : '';
+        const payload = {
             authorName: resolvedAuthorName,
             avatarUrl: resolvedAvatar,
-            content: replyContent.trim(),
-            parentId: replyTarget.comment.id,
-        });
+            content: `${prefix}${trimmed}`,
+        };
+        if (baseParentId) {
+            payload.parentId = baseParentId;
+        }
+        onSubmit && onSubmit(payload);
         setReplyContent("");
         setReplyTarget(null);
     };
@@ -309,15 +325,16 @@ const CommentsSection = ({
         const replies = Array.isArray(c.replies) ? c.replies : [];
         const avatarSrc = getAvatarSrc(c.avatar);
         const isReplying = replyTarget?.comment?.id === c.id;
-        const canReply = depth < 1;
+        const canReply = depth < 2;
         const isOwnComment = currentUser && c.userId === currentUser.id;
         const allowEdit = currentUser && (isOwnComment || canReviewComments);
         const allowDelete = currentUser && (isOwnComment || canDeleteComments);
+        const visualDepth = depth > 0 ? 1 : 0;
 
         return (
             <div
                 key={c.id || `${depth}-${c.authorName || c.user || 'comment'}`}
-                className={`flex gap-4 ${depth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
+                className={`flex gap-4 ${visualDepth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
                 <div
                     className={`w-12 h-12 border-2 border-black rounded-full shrink-0 flex items-center justify-center font-bold overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-200 text-black'}`}>
                     {avatarSrc ? (
@@ -1539,7 +1556,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.16
+                    SANGUI BLOG // V1.3.17
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
