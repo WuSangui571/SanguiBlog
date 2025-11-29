@@ -172,15 +172,20 @@ const useTimedNotice = (duration = 4000) => {
 };
 
 const AdminNoticeBar = ({notice, onClose}) => {
+    const {headerHeight} = useLayoutOffsets();
     if (!notice?.visible || !notice?.message) return null;
     const tone = notice.tone === 'error' ? 'error' : 'success';
     const toneStyles = tone === 'error'
         ? 'bg-rose-50 border-rose-200 text-rose-700 shadow-[0_20px_45px_rgba(244,63,94,0.35)]'
         : 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-[0_20px_45px_rgba(16,185,129,0.35)]';
     const Icon = tone === 'error' ? AlertTriangle : CheckCircle;
+    const safeTop = headerHeight + 16;
 
     return (
-        <div className="fixed top-24 right-8 z-50 w-[min(360px,calc(100vw-32px))] transition-all duration-300">
+        <div
+            className="fixed right-8 z-50 w-[min(360px,calc(100vw-32px))] transition-all duration-300"
+            style={{top: safeTop}}
+        >
             <div className={`flex items-start gap-3 rounded-2xl border px-5 py-4 ${toneStyles}`}>
                 <Icon size={20}/>
                 <div className="flex-1">
@@ -542,6 +547,8 @@ const ArticleDetail = ({
     const text = isDarkMode ? 'text-gray-100' : 'text-black';
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const articleContentRef = useRef(null);
+    const {headerHeight} = useLayoutOffsets();
+    const fixedTopOffset = headerHeight + 16;
     const [previewImage, setPreviewImage] = useState(null);
     const handleImagePreview = useCallback((src) => {
         if (!src) return;
@@ -820,7 +827,8 @@ const ArticleDetail = ({
                         initial={{opacity: 0, y: -50, x: '-50%'}}
                         animate={{opacity: 1, y: 0, x: '-50%'}}
                         exit={{opacity: 0, y: -50, x: '-50%'}}
-                        className={`fixed top-24 left-1/2 z-[60] px-6 py-3 border-2 border-black shadow-[4px_4px_0px_0px_#000] flex items-center gap-3 ${isDarkMode ? 'bg-green-600 text-white' : 'bg-green-400 text-black'}`}
+                        style={{top: fixedTopOffset}}
+                        className={`fixed left-1/2 z-[60] px-6 py-3 border-2 border-black shadow-[4px_4px_0px_0px_#000] flex items-center gap-3 ${isDarkMode ? 'bg-green-600 text-white' : 'bg-green-400 text-black'}`}
                     >
                         <CheckCircle size={24} strokeWidth={3}/>
                         <span className="font-black text-lg">链接已复制！</span>
@@ -829,7 +837,10 @@ const ArticleDetail = ({
             </AnimatePresence>
 
             {/* Floating Back Button - Aligned with article content */}
-            <div className="fixed top-24 left-0 right-0 z-50 pointer-events-none">
+            <div
+                className="fixed left-0 right-0 z-50 pointer-events-none"
+                style={{top: fixedTopOffset}}
+            >
                 <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
                     <motion.button
                         onClick={() => setView('home')}
@@ -1142,6 +1153,14 @@ const PermissionNotice = ({title = '权限不足', description = '请联系超�
 //const usePermissionContext = () => useContext(PermissionContext);
 const usePermissionContext = () => useContext(PermissionContext);
 
+const LayoutOffsetContext = React.createContext({
+    headerHeight: 80,
+    navHeight: 80,
+    emergencyHeight: 0
+});
+
+const useLayoutOffsets = () => useContext(LayoutOffsetContext);
+
 const getReferrer = () => {
     if (typeof document === 'undefined') return '';
     return document.referrer || '';
@@ -1222,16 +1241,36 @@ const TiltCard = ({children, className = "", onClick}) => {
     );
 };
 
-const EmergencyBar = ({isOpen, content, onClose}) => {
-    // ... (EmergencyBar code is kept unchanged)
+const EmergencyBar = ({isOpen, content, onClose, onHeightChange}) => {
+    const barRef = useRef(null);
+
+    useEffect(() => {
+        if (typeof onHeightChange !== 'function') return;
+        if (!isOpen) {
+            onHeightChange(0);
+            return;
+        }
+        const node = barRef.current;
+        if (!node) return;
+        const updateHeight = () => onHeightChange(node.offsetHeight || 0);
+        updateHeight();
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(() => updateHeight());
+            observer.observe(node);
+            return () => observer.disconnect();
+        }
+        return undefined;
+    }, [isOpen, content, onHeightChange]);
+
     return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
+                    ref={barRef}
                     initial={{height: 0, opacity: 0}}
                     animate={{height: 'auto', opacity: 1}}
                     exit={{height: 0, opacity: 0}}
-                    className="bg-[#FF0080] border-b-4 border-black overflow-hidden relative z-[60]"
+                    className="bg-[#FF0080] border-b-4 border-black overflow-hidden relative z-[60] w-full"
                 >
                     <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between text-white font-bold">
                         <div className="flex items-center gap-3 animate-pulse">
@@ -1240,9 +1279,12 @@ const EmergencyBar = ({isOpen, content, onClose}) => {
                         </div>
                         <div className="flex items-center gap-4">
                             <span className="text-sm hidden md:inline">{content}</span>
-                            <button onClick={onClose}
-                                    className="bg-black p-1 hover:rotate-90 transition-transform border border-white"><X
-                                size={16}/></button>
+                            <button
+                                onClick={onClose}
+                                className="bg-black p-1 hover:rotate-90 transition-transform border border-white"
+                            >
+                                <X size={16}/>
+                            </button>
                         </div>
                     </div>
                 </motion.div>
@@ -1252,6 +1294,8 @@ const EmergencyBar = ({isOpen, content, onClose}) => {
 };
 
 const ErrorToast = ({error, onClose}) => {
+    const {headerHeight} = useLayoutOffsets();
+    const toastTop = headerHeight + 16;
     useEffect(() => {
         if (error) {
             const timer = setTimeout(onClose, 5000);
@@ -1266,7 +1310,8 @@ const ErrorToast = ({error, onClose}) => {
                     initial={{opacity: 0, y: -50}}
                     animate={{opacity: 1, y: 0}}
                     exit={{opacity: 0, y: -50}}
-                    className="fixed top-24 right-4 z-[70] max-w-md"
+                    className="fixed right-4 z-[70] max-w-md"
+                    style={{top: toastTop}}
                 >
                     <div className="bg-red-500 border-4 border-black shadow-[8px_8px_0px_0px_#000] p-4">
                         <div className="flex items-start gap-3 text-white">
@@ -1325,6 +1370,8 @@ const ClickRipple = () => {
 };
 
 // --- 3. 前台视图组件 (保持不变) ---
+const NAVIGATION_HEIGHT = 80;
+
 const Navigation = ({user, setView, handleLogout, toggleMenu, isDarkMode, setIsDarkMode, onProfileClick}) => {
     const roleInfo = user ? ROLES[user.role] : null;
     const isFrontNav = true; // Use a flag for front-end vs back-end styling
@@ -1333,9 +1380,9 @@ const Navigation = ({user, setView, handleLogout, toggleMenu, isDarkMode, setIsD
         <motion.nav
             initial={{y: -100}}
             animate={{y: 0}}
-            className={`fixed top-0 left-0 right-0 z-50 h-20 flex items-center justify-between px-4 md:px-8 
-        ${isDarkMode ? 'bg-gray-900 border-b-4 border-[#FF0080] text-white' : 'bg-white border-b-4 border-black text-black'}
-      `}
+            className={`relative w-full h-20 flex items-center justify-between px-4 md:px-8 
+          ${isDarkMode ? 'bg-gray-900 border-b-4 border-[#FF0080] text-white' : 'bg-white border-b-4 border-black text-black'}
+        `}
         >
             <div
                 className="flex items-center gap-2 cursor-pointer group"
@@ -1439,7 +1486,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.9
+                    SANGUI BLOG // V1.3.10
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5347,6 +5394,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
     const [analyticsError, setAnalyticsError] = useState('');
     const [analyticsRange, setAnalyticsRange] = useState(14);
     const {loading: permissionLoading, error: permissionError, hasPermission} = usePermissionContext();
+    const {headerHeight} = useLayoutOffsets();
 
     const pathSegments = location.pathname.split('/').filter(Boolean);
     const lastSegment = pathSegments[pathSegments.length - 1] || 'dashboard';
@@ -5491,7 +5539,8 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
             <div className="flex-1 ml-64 flex flex-col">
                 {/* Top Bar */}
                 <header
-                    className={`sticky top-0 z-30 h-16 flex items-center justify-between px-8 ${topbarBg} border-b ${sidebarBorder} shadow-sm`}>
+                    className={`sticky z-30 h-16 flex items-center justify-between px-8 ${topbarBg} border-b ${sidebarBorder} shadow-sm`}
+                    style={{top: headerHeight}}>
                     <h1 className="text-xl font-bold">{activeLabel}</h1>
                     <div className="flex items-center space-x-4">
             <span className={`text-xs px-3 py-1 rounded font-bold text-white ${ROLES[user.role].color}`}>
@@ -5759,6 +5808,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     const [activeSub, setActiveSub] = useState("all");
     const [menuOpen, setMenuOpen] = useState(false);
     const [notification, setNotification] = useState({isOpen: false, content: "系统将于今晚 00:00 停机维护"});
+    const [emergencyHeight, setEmergencyHeight] = useState(0);
     const [error, setError] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -5800,6 +5850,12 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
         error: permissionState.error,
         hasPermission
     }), [permissionState, hasPermission]);
+
+    const layoutContextValue = useMemo(() => ({
+        headerHeight: NAVIGATION_HEIGHT + emergencyHeight,
+        navHeight: NAVIGATION_HEIGHT,
+        emergencyHeight
+    }), [emergencyHeight]);
 
     useEffect(() => {
         if (blogUser) setUser(blogUser);
@@ -6017,34 +6073,50 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
 
     return (
         <PermissionContext.Provider value={permissionContextValue}>
-            <div className={`min-h-screen relative ${globalBg}`}>
-                <ClickRipple/>
-                <ScrollToTop isDarkMode={isDarkMode}/>
-                <EmergencyBar isOpen={notification.isOpen} content={notification.content}
-                              onClose={() => setNotification(prev => ({...prev, isOpen: false}))}/>
-                <ErrorToast error={error} onClose={() => setError(null)}/>
-                <Navigation
-                    user={user}
-                    setView={setView}
-                    handleLogout={handleLogout}
-                    toggleMenu={() => setMenuOpen(!menuOpen)}
-                    isDarkMode={isDarkMode}
-                    setIsDarkMode={setIsDarkMode}
-                    onProfileClick={handleProfileNav}
-                />
+            <LayoutOffsetContext.Provider value={layoutContextValue}>
+                <div className={`min-h-screen relative ${globalBg}`}>
+                    <ClickRipple/>
+                    <ScrollToTop isDarkMode={isDarkMode}/>
+                    <div className="fixed top-0 left-0 right-0 z-50">
+                        <div className="flex flex-col w-full">
+                            <EmergencyBar
+                                isOpen={notification.isOpen}
+                                content={notification.content}
+                                onClose={() => setNotification(prev => ({...prev, isOpen: false}))}
+                                onHeightChange={setEmergencyHeight}
+                            />
+                            <Navigation
+                                user={user}
+                                setView={setView}
+                                handleLogout={handleLogout}
+                                toggleMenu={() => setMenuOpen(!menuOpen)}
+                                isDarkMode={isDarkMode}
+                                setIsDarkMode={setIsDarkMode}
+                                onProfileClick={handleProfileNav}
+                            />
+                        </div>
+                    </div>
+                    <div
+                        className="w-full"
+                        style={{height: layoutContextValue.headerHeight}}
+                        aria-hidden="true"
+                    />
+                    <ErrorToast error={error} onClose={() => setError(null)}/>
 
-                <AnimatePresence mode="wait">
-                    <motion.main key={view} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                        {renderView()}
-                    </motion.main>
-                </AnimatePresence>
-            </div>
+                    <AnimatePresence mode="wait">
+                        <motion.main key={view} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                            {renderView()}
+                        </motion.main>
+                    </AnimatePresence>
+                </div>
+            </LayoutOffsetContext.Provider>
         </PermissionContext.Provider>
     );
 }
 
 // Below are the remaining Front-end components updated to respect Dark Mode state
 const StatsStrip = ({isDarkMode, stats}) => {
+    const {headerHeight} = useLayoutOffsets();
     const s = stats || SITE_STATS;
     const items = [
         {label: "文章", value: s.posts, icon: FileText, color: "text-[#6366F1]"},
@@ -6066,7 +6138,10 @@ const StatsStrip = ({isDarkMode, stats}) => {
     const tooltipArrow = isDarkMode ? 'border-b-gray-800' : 'border-b-black';
 
     return (
-        <div className={`sticky top-20 z-40 ${bg} ${text_cls} border-b-4 border-black`}>
+        <div
+            className={`sticky z-40 ${bg} ${text_cls} border-b-4 border-black`}
+            style={{top: headerHeight}}
+        >
             <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
                 <div className="flex items-center gap-2 mr-8 flex-shrink-0">
                     <Activity className="text-[#00E096] animate-pulse"/>

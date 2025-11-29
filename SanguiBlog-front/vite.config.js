@@ -19,6 +19,10 @@ export default defineConfig({
                 changeOrigin: true,
                 // 如果后端不是 /api 开头，而是根路径，可以用 rewrite：
                 // rewrite: (path) => path.replace(/^\/api/, '')
+            },
+            '/uploads': {                    // ⭐ 新增这一块
+                target: 'http://localhost:8080',
+                changeOrigin: true,
             }
         }
     }
