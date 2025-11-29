@@ -522,17 +522,20 @@ const ArticleDetail = ({
                            currentUser,
                            onCategoryClick
                        }) => {
+    const {meta: siteMeta} = useBlog();
     const summary = articleData?.summary;
 
     // The backend returns a PostDetailDto which contains a 'summary' field (PostSummaryDto).
     // We should prioritize using 'summary' as the source of post metadata.
     const postSource = summary || MOCK_POSTS.find(p => p.id === id) || MOCK_POSTS[0];
 
+    const siteAuthorAvatar = siteMeta?.author?.avatar || siteMeta?.author?.avatarUrl;
+
     const post = {
         ...postSource,
         // Ensure fallback for fields that might be missing or named differently in Mock vs API
         authorName: postSource.authorName || postSource.author || 'Unknown',
-        authorAvatar: postSource.authorAvatar || postSource.avatar,
+        authorAvatar: postSource.authorAvatar || siteAuthorAvatar || postSource.avatar,
         // PostSummaryDto does not have 'authorTitle', so we default it.
         // If needed, we would need to update the backend DTO.
         authorTitle: postSource.authorTitle || '博主',
@@ -816,10 +819,13 @@ const ArticleDetail = ({
 
     const avatarSrc = getAvatarUrl(post.authorAvatar);
 
+    const articleTopPadding = Math.max(16, fixedTopOffset - headerHeight);
+
     return (
         <motion.div initial={{x: '100%'}} animate={{x: 0}} exit={{x: '100%'}}
                     transition={{type: "spring", stiffness: 300, damping: 30}}
-                    className={`min-h-screen pt-24 px-4 md:px-0 pb-20 ${surface} ${text}`}>
+                    className={`min-h-screen px-4 md:px-0 pb-20 ${surface} ${text}`}
+                    style={{paddingTop: articleTopPadding}}>
             {/* Share Toast Notification */}
             <AnimatePresence>
                 {showShareToast && (
@@ -1511,7 +1517,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.12
+                    SANGUI BLOG // V1.3.13
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
