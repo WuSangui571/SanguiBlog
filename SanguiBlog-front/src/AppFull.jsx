@@ -882,7 +882,7 @@ const ArticleDetail = ({
                         type="button"
                         aria-label="跳转到评论区"
                         onClick={scrollToComments}
-                        className={`hidden xl:flex flex-col items-center gap-1 absolute -right-16 top-1/2 -translate-y-1/2 border-2 border-black px-4 py-3 rounded-full shadow-[4px_4px_0px_0px_#000] transition-transform hover:-translate-y-[calc(50%+4px)] ${isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'}`}
+                        className={`flex flex-col items-center gap-1 border-2 border-black px-4 py-3 rounded-full shadow-[4px_4px_0px_0px_#000] transition-transform fixed right-4 bottom-24 z-[60] hover:-translate-y-1 ${isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'} xl:absolute xl:-right-16 xl:top-1/2 xl:bottom-auto xl:translate-y-[-50%] xl:hover:-translate-y-[calc(50%+4px)]`}
                     >
                         <MessageCircle size={22}/>
                         <span className="text-[10px] font-black tracking-widest">评论</span>
@@ -1537,7 +1537,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.14
+                    SANGUI BLOG // V1.3.15
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
