@@ -178,6 +178,7 @@ ole_permissions in bulk.
 ### 4.4 静态资源与头像存储 (Static Resources & Avatars)
 *   **根路径配置**：`application.yaml` 暴露 `storage.base-path`（支持环境变量 `STORAGE_BASE_PATH`），用于指定所有本地静态资源的根目录，默认值为仓库根目录下的 `uploads`。应用启动时会自动创建根目录以及 `avatar/`、`posts/` 等必要子目录。
 *   **站点版本**：`application.yaml` 提供 `site.version`，后端会在 `/api/site/meta` 中返回该值；前端首页 Banner 直接读取该字段显示 `SANGUI BLOG // <version>`，统一版本号来源。
+*   **数据库与 JWT 凭证**：`spring.datasource.username/password` 会优先读取 `DB_USERNAME` / `DB_PASSWORD`，若未设置则兼容 Spring Boot 原生的 `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`；`jwt.secret` 亦支持 `JWT_SECRET` 或 `SPRING_JWT_SECRET`。仓库中不再保存明文，生产与本地环境需通过系统环境变量或额外的 `application-local.yaml`（自行创建并忽略）提供真实值。
 *   **目录结构**：头像、文章图片、附件等均放置在根目录下的独立子目录，例如文章资源统一保存在 `<base-path>/posts/<slug>/`。后续扩展新的资源类型时只需在该根目录内再创建子目录即可，部署与备份流程保持一致。
 *   **数据库字段**：`users.avatar_url` 保存头像文件名或 `avatar/` 相对路径；`posts.slug` 现改为记录文章图片文件夹的相对路径（如 `posts/20241124/abc123`），后端返回数据时会携带该路径以便前端按需拼接。
 *   **静态映射**：`WebConfig` 将 `/avatar/**` 与 `/uploads/**` 映射到实际文件系统目录，无需重新打包 `static/` 资源即可即时读取最新上传内容。文章图片可直接通过 `http://<server>/uploads/<slug>/xxx.png` 访问。

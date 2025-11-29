@@ -596,3 +596,14 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.18 (2025-11-29)
 - **协作规范**：修复 `AGENTS.md` 乱码并重写任务指令，强调输出格式、版本管理和 NOTE/AGENTS-EDIT 维护要求，避免后续代理执行出错。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.18`。
+
+## V1.3.19 (2025-11-29)
+- **配置安全**：`application.yaml` 的数据库用户名、密码与 JWT Secret 均改为通过 `DB_USERNAME`、`DB_PASSWORD`、`JWT_SECRET` 注入，不再在仓库中保留明文，避免仓库外泄时数据库与令牌体系同步暴露。
+- **前端版本**：前端 Banner 兜底版本与 `site.version` 同步到 `V1.3.19`，保证显示一致。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.19`。
+
+## V1.3.20 (2025-11-29)
+- **配置兼容**：为防止本地/生产环境仅设置 `SPRING_DATASOURCE_*` 等原生变量导致占位符无法解析，`application.yaml` 现优先读取 `DB_*`，若缺失将回落至 `SPRING_DATASOURCE_*` 或 `SPRING_JWT_SECRET`，并在缺少凭证时给出明确提示。
+- **文档**：NOTE.md “静态资源与站点配置” 小节同步说明新的变量兼容策略，提醒开发者不要再把明文凭证写回仓库。
+- **前端版本**：Banner fallback 升级为 `V1.3.20`，与后端 `site.version` 保持一致。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.20`。
