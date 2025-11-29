@@ -220,6 +220,7 @@ CREATE TABLE analytics_traffic_sources (
 CREATE TABLE system_broadcasts (
     id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     content     VARCHAR(512) NOT NULL,
+    style       VARCHAR(32) NOT NULL DEFAULT 'ALERT',
     is_active   TINYINT(1) NOT NULL DEFAULT 1,
     created_by  BIGINT UNSIGNED NULL,
     active_from DATETIME NULL,
@@ -452,6 +453,6 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 
 -- 紧急广播
 INSERT INTO system_broadcasts
-(content, is_active, created_by, active_from)
+(content, style, is_active, created_by, active_from)
 VALUES
-('系统将于今晚 00:00 停机维护', 1, 1, '2025-11-21 00:00:00');
+('系统将于今晚 00:00 停机维护', 'ALERT', 1, 1, '2025-11-21 00:00:00');

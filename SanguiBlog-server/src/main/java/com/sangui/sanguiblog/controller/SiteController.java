@@ -24,7 +24,7 @@ public class SiteController {
     public ApiResponse<Void> updateBroadcast(
             @org.springframework.web.bind.annotation.RequestBody BroadcastRequest request) {
         System.out.println("Received broadcast update request: " + request);
-        siteService.updateBroadcast(request.getContent(), request.isActive());
+        siteService.updateBroadcast(request.getContent(), request.isActive(), request.getStyle());
         return ApiResponse.ok();
     }
 
@@ -33,5 +33,6 @@ public class SiteController {
     public static class BroadcastRequest {
         private String content;
         private boolean active;
+        private String style;
     }
 }

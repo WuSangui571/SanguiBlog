@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,9 @@ public class SiteService {
 
         private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         private static final DateTimeFormatter DATE_FULL_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        private static final String DEFAULT_BROADCAST_STYLE = "ALERT";
+        private static final Set<String> SUPPORTED_BROADCAST_STYLES = Set.of("ALERT", "ANNOUNCE");
 
         private final PostRepository postRepository;
         private final CommentRepository commentRepository;
@@ -120,6 +124,9 @@ public class SiteService {
                                                 .active(broadcast != null
                                                                 && Boolean.TRUE.equals(broadcast.getIsActive()))
                                                 .content(broadcast != null ? broadcast.getContent() : "")
+                                                .style(broadcast != null
+                                                                ? normalizeBroadcastStyle(broadcast.getStyle())
+                                                                : DEFAULT_BROADCAST_STYLE)
                                                 .build())
                                 .author(author != null ? authService.toProfile(author) : null)
                                 .trafficSources(trafficSources)
@@ -150,16 +157,26 @@ public class SiteService {
         }
 
         @org.springframework.transaction.annotation.Transactional
-        public void updateBroadcast(String content, boolean isActive) {
+        public void updateBroadcast(String content, boolean isActive, String style) {
                 // Always create a new record to ensure history and correct ordering
                 SystemBroadcast broadcast = new SystemBroadcast();
                 broadcast.setCreatedAt(java.time.Instant.now());
                 broadcast.setContent(content);
+                broadcast.setStyle(normalizeBroadcastStyle(style));
                 broadcast.setIsActive(isActive);
                 broadcast.setUpdatedAt(java.time.Instant.now());
                 broadcast.setActiveFrom(java.time.LocalDateTime.now());
 
-                System.out.println("Creating new broadcast: content=" + content + ", active=" + isActive);
+                System.out.println("Creating new broadcast: content=" + content + ", active=" + isActive + ", style="
+                                + broadcast.getStyle());
                 systemBroadcastRepository.saveAndFlush(broadcast);
+        }
+
+        private String normalizeBroadcastStyle(String style) {
+                if (style == null || style.isBlank()) {
+                        return DEFAULT_BROADCAST_STYLE;
+                }
+                String normalized = style.trim().toUpperCase();
+                return SUPPORTED_BROADCAST_STYLES.contains(normalized) ? normalized : DEFAULT_BROADCAST_STYLE;
         }
 }

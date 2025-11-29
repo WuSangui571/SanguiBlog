@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.config.StoragePathResolver;
 import com.sangui.sanguiblog.model.dto.AdminUserDto;
 import com.sangui.sanguiblog.model.dto.AdminUserRequest;
 import com.sangui.sanguiblog.model.dto.PageResponse;
@@ -18,8 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +32,7 @@ public class AdminUserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StoragePathResolver storagePathResolver;
 
     @Transactional(readOnly = true)
     public PageResponse<AdminUserDto> list(String keyword, String roleCode, int page, int size) {
@@ -83,6 +88,7 @@ public class AdminUserService {
         user.setWechatQrUrl(trimToNull(request.getWechatQrUrl()));
         user.setRole(role);
         user.setStatus(StringUtils.hasText(request.getStatus()) ? request.getStatus().trim() : "ACTIVE");
+        user.setAvatarUrl(normalizeAvatarPath(request.getAvatarUrl()));
         Instant now = Instant.now();
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
@@ -105,11 +111,21 @@ public class AdminUserService {
         user.setWechatQrUrl(trimToNull(request.getWechatQrUrl()));
         user.setRole(role);
         user.setStatus(StringUtils.hasText(request.getStatus()) ? request.getStatus().trim() : user.getStatus());
+        String previousAvatar = user.getAvatarUrl();
+        if (request.getAvatarUrl() != null) {
+            user.setAvatarUrl(normalizeAvatarPath(request.getAvatarUrl()));
+        }
         if (StringUtils.hasText(request.getPassword())) {
             user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         }
         user.setUpdatedAt(Instant.now());
-        return toDto(userRepository.save(user));
+        User saved = userRepository.save(user);
+        if (request.getAvatarUrl() != null
+                && previousAvatar != null
+                && !Objects.equals(previousAvatar, saved.getAvatarUrl())) {
+            deleteLocalAvatar(previousAvatar);
+        }
+        return toDto(saved);
     }
 
     @Transactional
@@ -183,5 +199,47 @@ public class AdminUserService {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
+    }
+
+    private String normalizeAvatarPath(String incoming) {
+        if (!StringUtils.hasText(incoming)) {
+            return null;
+        }
+        String value = incoming.trim();
+        if (value.startsWith("/avatar/")) {
+            return value.substring("/avatar/".length());
+        }
+        if (value.startsWith("avatar/")) {
+            return value.substring("avatar/".length());
+        }
+        if (value.contains("/avatar/")) {
+            return value.substring(value.indexOf("/avatar/") + "/avatar/".length());
+        }
+        if (value.startsWith("http")) {
+            int idx = value.lastIndexOf('/');
+            if (idx >= 0 && idx < value.length() - 1) {
+                return value.substring(idx + 1);
+            }
+        }
+        return value;
+    }
+
+    private void deleteLocalAvatar(String avatarPath) {
+        if (!StringUtils.hasText(avatarPath)) {
+            return;
+        }
+        String relative = avatarPath;
+        if (relative.startsWith("/avatar/")) {
+            relative = relative.substring("/avatar/".length());
+        } else if (relative.startsWith("avatar/")) {
+            relative = relative.substring("avatar/".length());
+        }
+        Path target = storagePathResolver.resolveAvatarFile(relative);
+        try {
+            if (Files.exists(target)) {
+                Files.delete(target);
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

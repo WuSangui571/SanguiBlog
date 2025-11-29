@@ -22,6 +22,9 @@ public class SystemBroadcast {
     @Column(nullable = false, length = 512)
     private String content;
 
+    @Column(name = "style", length = 32)
+    private String style;
+
     @Column(name = "is_active")
     private Boolean isActive;
 

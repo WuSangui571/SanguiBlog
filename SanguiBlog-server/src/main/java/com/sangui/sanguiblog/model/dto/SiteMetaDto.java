@@ -32,6 +32,7 @@ public class SiteMetaDto {
     public static class BroadcastDto {
         private boolean active;
         private String content;
+        private String style;
     }
 
     @Data

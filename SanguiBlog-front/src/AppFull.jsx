@@ -1241,8 +1241,32 @@ const TiltCard = ({children, className = "", onClick}) => {
     );
 };
 
-const EmergencyBar = ({isOpen, content, onClose, onHeightChange}) => {
+const BROADCAST_STYLE_CONFIG = {
+    ALERT: {
+        label: "紧急广播 // SYSTEM ALERT",
+        containerClass: "bg-[#FF0080] text-white",
+        textClass: "text-white",
+        icon: AlertTriangle,
+        iconClass: "text-[#FFD700]",
+        iconSize: 24,
+        pulse: true
+    },
+    ANNOUNCE: {
+        label: "系统公告 // COMMUNITY UPDATE",
+        containerClass: "bg-[#FFF7CC] text-[#1F2933]",
+        textClass: "text-[#1F2933]",
+        icon: Sparkles,
+        iconClass: "text-[#D97706]",
+        iconSize: 22,
+        pulse: false
+    }
+};
+
+const EmergencyBar = ({isOpen, content, onClose, onHeightChange, style = "ALERT"}) => {
     const barRef = useRef(null);
+    const normalizedStyle = (style || "ALERT").toUpperCase();
+    const styleConfig = BROADCAST_STYLE_CONFIG[normalizedStyle] || BROADCAST_STYLE_CONFIG.ALERT;
+    const StyleIcon = styleConfig.icon;
 
     useEffect(() => {
         if (typeof onHeightChange !== 'function') return;
@@ -1270,18 +1294,19 @@ const EmergencyBar = ({isOpen, content, onClose, onHeightChange}) => {
                     initial={{height: 0, opacity: 0}}
                     animate={{height: 'auto', opacity: 1}}
                     exit={{height: 0, opacity: 0}}
-                    className="bg-[#FF0080] border-b-4 border-black overflow-hidden relative z-[60] w-full"
+                    className={`border-b-4 border-black overflow-hidden relative z-[60] w-full ${styleConfig.containerClass}`}
                 >
-                    <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between text-white font-bold">
-                        <div className="flex items-center gap-3 animate-pulse">
-                            <AlertTriangle size={24} strokeWidth={3} className="text-[#FFD700]"/>
-                            <span className="uppercase tracking-widest">紧急广播 // SYSTEM ALERT</span>
+                    <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between font-bold">
+                        <div className={`flex items-center gap-3 ${styleConfig.pulse ? 'animate-pulse' : ''}`}>
+                            <StyleIcon size={styleConfig.iconSize} strokeWidth={3}
+                                       className={styleConfig.iconClass}/>
+                            <span className={`uppercase tracking-widest ${styleConfig.textClass}`}>{styleConfig.label}</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className="text-sm hidden md:inline">{content}</span>
+                            <span className={`text-sm hidden md:inline ${styleConfig.textClass}`}>{content}</span>
                             <button
                                 onClick={onClose}
-                                className="bg-black p-1 hover:rotate-90 transition-transform border border-white"
+                                className="bg-black text-white p-1 hover:rotate-90 transition-transform border border-white"
                             >
                                 <X size={16}/>
                             </button>
@@ -1486,7 +1511,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.10
+                    SANGUI BLOG // V1.3.12
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5389,6 +5414,10 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
     const location = useLocation();
     const navigate = useNavigate();
     const [broadcastSaving, setBroadcastSaving] = useState(false);
+    const BROADCAST_STYLES = [
+        {value: "ALERT", label: "紧急红色告警"},
+        {value: "ANNOUNCE", label: "温和庆典公告"}
+    ];
     const [analyticsSummary, setAnalyticsSummary] = useState(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [analyticsError, setAnalyticsError] = useState('');
@@ -5493,6 +5522,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
             await updateBroadcast({
                 content: payloadContent,
                 active: nextState,
+                style: notification.style || "ALERT"
             });
             alert(nextState ? "紧急广播已开启并保存" : "紧急广播已关闭并保存");
         } catch (error) {
@@ -5592,23 +5622,53 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                         <div
                             className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-lg border shadow-sm mt-8`}>
                             <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>紧急广播设置</h3>
-                            <div className="flex gap-4">
-                                <input
-                                    className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                    value={notification.content}
-                                    onChange={(e) => setNotification({...notification, content: e.target.value})}
-                                />
-                                <button
-                                    onClick={handleBroadcastToggle}
-                                    disabled={broadcastSaving}
-                                    className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} ${broadcastSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                >
-                                    {notification.isOpen ? '关闭并保存' : '开启并保存'}
-                                </button>
+                    <div className="flex flex-col gap-4">
+                        <input
+                            className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                            value={notification.content}
+                            onChange={(e) => setNotification({...notification, content: e.target.value})}
+                            placeholder="请输入广播内容，如“热烈庆祝五一国际劳工节成立100周年！”"
+                        />
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <span className="text-xs font-bold uppercase tracking-wide text-gray-500">显示样式</span>
+                            <div className="flex gap-2">
+                                {BROADCAST_STYLES.map((style) => (
+                                    <button
+                                        key={style.value}
+                                        type="button"
+                                        onClick={() => setNotification(prev => ({
+                                            ...prev,
+                                            style: style.value
+                                        }))}
+                                        className={`px-3 py-1 text-xs font-bold border-2 border-black rounded shadow-[2px_2px_0px_0px_#000] transition-colors ${notification.style === style.value ? 'bg-black text-white' : (style.value === 'ANNOUNCE' ? 'bg-[#FFF7CC] text-black' : 'bg-[#FF0080] text-white')}`}
+                                    >
+                                        {style.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    )}
-                </main>
+                        <div className="flex gap-4">
+                            <select
+                                className={`w-48 border rounded px-3 py-2 text-sm ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                value={notification.style}
+                                onChange={(e) => setNotification({...notification, style: e.target.value})}
+                            >
+                                {BROADCAST_STYLES.map((style) => (
+                                    <option key={style.value} value={style.value}>{style.label}</option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={handleBroadcastToggle}
+                                disabled={broadcastSaving}
+                                className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} ${broadcastSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            >
+                                {notification.isOpen ? '关闭并保存' : '开启并保存'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </main>
             </div>
         </div>
     );
@@ -5807,7 +5867,11 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     const [activeParent, setActiveParent] = useState("all");
     const [activeSub, setActiveSub] = useState("all");
     const [menuOpen, setMenuOpen] = useState(false);
-    const [notification, setNotification] = useState({isOpen: false, content: "系统将于今晚 00:00 停机维护"});
+    const [notification, setNotification] = useState({
+        isOpen: false,
+        content: "系统将于今晚 00:00 停机维护",
+        style: "ALERT"
+    });
     const [emergencyHeight, setEmergencyHeight] = useState(0);
     const [error, setError] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -5893,8 +5957,10 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
         if (meta?.stats) Object.assign(SITE_STATS, meta.stats);
         if (meta?.broadcast) {
             setNotification((prev) => ({
+                ...prev,
                 isOpen: Boolean(meta.broadcast.active),
                 content: meta.broadcast.content || prev.content,
+                style: (meta.broadcast.style || prev.style || "ALERT").toUpperCase()
             }));
         }
     }, [meta]);
@@ -6082,6 +6148,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                             <EmergencyBar
                                 isOpen={notification.isOpen}
                                 content={notification.content}
+                                style={notification.style}
                                 onClose={() => setNotification(prev => ({...prev, isOpen: false}))}
                                 onHeightChange={setEmergencyHeight}
                             />

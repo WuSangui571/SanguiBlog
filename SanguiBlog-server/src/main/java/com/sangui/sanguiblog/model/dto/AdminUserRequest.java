@@ -30,6 +30,9 @@ public class AdminUserRequest {
     @Size(max = 512)
     private String wechatQrUrl;
 
+    @Size(max = 512)
+    private String avatarUrl;
+
     private String status;
 
     @NotBlank

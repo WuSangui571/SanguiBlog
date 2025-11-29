@@ -118,7 +118,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 ### 3.8 用户管理
 *   `/admin/users` 页面由 `UserManagementView` 渲染，左侧表格可按关键词、角色和分页浏览全部后台账号，右侧表单同时支持创建/编辑，密码字段无需原密码即可重置。
-*   创建/更新接口均允许填写基础资料（用户名、显示名、邮箱、头衔、简介、GitHub、微信二维码）并直接选择角色；表单新增头像上传控件，沿用 `/api/upload/avatar` 上传后立即写入 `avatarUrl`，列表中也会显示缩略头像以便校对。
+*   创建/更新接口均允许填写基础资料（用户名、显示名、邮箱、头衔、简介、GitHub、微信二维码）并直接选择角色；表单新增头像上传控件，沿用 `/api/upload/avatar` 上传后立即写入 `avatarUrl`，列表中也会显示缩略头像以便校对。后端 `AdminUserService` 会像个人资料页一样规范化 `avatarUrl` 并在写入新路径后删除旧头像文件，确保数据库与文件系统保持一致。
 *   创建用户时默认角色会优先选用 `USER`（若存在），防止误把新账号设为 SUPER_ADMIN；只读信息（ID、创建时间、最近登录）在表单下方展示，仍不可手动修改。
 *   对应后端接口：
     *   `GET /api/admin/users`（支持 `keyword`、`role`、`page`、`size`）返回 `PageResponse<AdminUserDto>`；
@@ -236,6 +236,8 @@ ecordPageView; if that fails it writes the record directly so admin dashboards n
 
 ### ⚠️ 5. 紧急广播 (System Broadcast)
 *   前端实现了“紧急广播”功能 (`EmergencyBar`)。
+*   广播记录包含 `content`、`active` 与 `style` 字段，其中 `style` 目前支持 `ALERT`（红色紧急告警，带闪烁提醒）与 `ANNOUNCE`（温和公告，暖色系展示），默认值为 `ALERT`；数据库对应 `system_broadcasts.style`，后端 `SiteService.updateBroadcast` 会自动兜底非法值。
+*   `/api/site/meta.broadcast` 会把 `style` 同步到前端，后台“紧急广播设置”表单在保存时需携带该字段以保持风格一致；前端的 AdminPanel 已提供按钮/下拉同时设置内容、开关与展示样式。
 *   **状态**: 目前广播状态可能仅保存在前端内存或简单的后端接口，刷新页面后的一致性需重点测试 (依赖 `/site/broadcast` 接口)。
 
 ---
