@@ -868,6 +868,18 @@ const ArticleDetail = ({
                             <span>返回首页</span>
                         </div>
                     </motion.button>
+                    <motion.button
+                        onClick={scrollToComments}
+                        initial={{opacity: 0, x: 50}}
+                        animate={{opacity: 1, x: 0}}
+                        whileHover={{scale: 1.05}}
+                        className={`pointer-events-auto absolute -right-6 md:-right-40 px-4 py-2 font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <MessageCircle size={18}/>
+                            <span>去评论</span>
+                        </div>
+                    </motion.button>
                 </div>
             </div>
 
@@ -877,16 +889,6 @@ const ArticleDetail = ({
                     className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-8 md:p-12 ${surface} relative overflow-hidden`}>
                     <div
                         className={`absolute top-0 right-0 w-64 h-64 ${post.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 pointer-events-none`}></div>
-
-                    <button
-                        type="button"
-                        aria-label="跳转到评论区"
-                        onClick={scrollToComments}
-                        className={`flex flex-col items-center gap-1 border-2 border-black px-4 py-3 rounded-full shadow-[4px_4px_0px_0px_#000] transition-transform fixed right-4 bottom-24 z-[60] hover:-translate-y-1 ${isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'} xl:absolute xl:-right-16 xl:top-1/2 xl:bottom-auto xl:translate-y-[-50%] xl:hover:-translate-y-[calc(50%+4px)]`}
-                    >
-                        <MessageCircle size={22}/>
-                        <span className="text-[10px] font-black tracking-widest">评论</span>
-                    </button>
 
                     <div
                         className={`flex items-center gap-2 mb-6 border-b-4 ${isDarkMode ? 'border-gray-700' : 'border-black'} pb-6`}>
