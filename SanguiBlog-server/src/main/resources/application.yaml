@@ -6,8 +6,10 @@ spring:
     name: SanguiBlog-server
   datasource:
     url: jdbc:mysql://localhost:3306/sanguiblog_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
-    username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
-    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
+#    username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
+    username: root
+#    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
+    password: 333
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -19,7 +21,8 @@ spring:
     default-property-inclusion: non_null
 
 jwt:
-  secret: ${JWT_SECRET:${SPRING_JWT_SECRET:?JWT_SECRET (or SPRING_JWT_SECRET) is required}}
+#  secret: ${JWT_SECRET:${SPRING_JWT_SECRET:?JWT_SECRET (or SPRING_JWT_SECRET) is required}}
+  secret: change-me-sangui-super-secret-256-bit-key
   expiration-minutes: 180
   issuer: sangui-blog
 
@@ -39,7 +42,7 @@ storage:
     base-path: ${STORAGE_BASE_PATH:uploads}
 #  base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.20"
+  version: "V1.3.21"
   footer:
     year: 2025
     brand: 三桂博客

@@ -607,3 +607,8 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **文档**：NOTE.md “静态资源与站点配置” 小节同步说明新的变量兼容策略，提醒开发者不要再把明文凭证写回仓库。
 - **前端版本**：Banner fallback 升级为 `V1.3.20`，与后端 `site.version` 保持一致。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.20`。
+
+## V1.3.21 (2025-11-29)
+- **安全**：评论删除/编辑必须同时匹配 `postId` 与 `commentId`，后端在 Service 层二次校验评论所属文章，阻断通过猜测评论 ID 越权删改他人文章评论的可能性。
+- **前端版本**：首页 Banner fallback 与 `site.version` 同步到 `V1.3.21`，确保显示最新补丁号。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.21`。

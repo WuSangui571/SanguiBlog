@@ -153,9 +153,8 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(Long commentId, Long userId, boolean isAdmin) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("评论不存在"));
+    public void deleteComment(Long postId, Long commentId, Long userId, boolean isAdmin) {
+        Comment comment = requireComment(commentId, postId);
 
         // Check permission: user must own the comment OR be admin
         if (!isAdmin && (comment.getUser() == null || !comment.getUser().getId().equals(userId))) {
@@ -173,19 +172,19 @@ public class CommentService {
     }
 
     @Transactional
-    public CommentDto updateComment(Long commentId, Long userId, String newContent) {
-        return updateComment(commentId, userId, newContent, false);
+    public CommentDto updateComment(Long postId, Long commentId, Long userId, String newContent) {
+        return updateComment(postId, commentId, userId, newContent, false);
     }
 
     @Transactional
-    public CommentDto updateComment(Long commentId, Long userId, String newContent, boolean isAdmin) {
-        Comment updated = updateCommentInternal(commentId, userId, isAdmin, newContent, null);
+    public CommentDto updateComment(Long postId, Long commentId, Long userId, String newContent, boolean isAdmin) {
+        Comment updated = updateCommentInternal(postId, commentId, userId, isAdmin, newContent, null);
         return toDto(updated);
     }
 
     @Transactional
     public AdminCommentItemDto updateCommentAsAdmin(Long commentId, String newContent, String status, Long operatorId) {
-        Comment updated = updateCommentInternal(commentId, operatorId, true, newContent, status);
+        Comment updated = updateCommentInternal(null, commentId, operatorId, true, newContent, status);
         return toAdminItem(updated);
     }
 
@@ -202,9 +201,8 @@ public class CommentService {
                 .toList();
     }
 
-    private Comment updateCommentInternal(Long commentId, Long userId, boolean isAdmin, String newContent, String status) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("评论不存在"));
+    private Comment updateCommentInternal(Long postId, Long commentId, Long userId, boolean isAdmin, String newContent, String status) {
+        Comment comment = requireComment(commentId, postId);
         if (!isAdmin) {
             if (comment.getUser() == null || userId == null || !comment.getUser().getId().equals(userId)) {
                 throw new SecurityException("无权编辑此评论");
@@ -226,6 +224,18 @@ public class CommentService {
         }
         comment.setUpdatedAt(Instant.now());
         return commentRepository.save(comment);
+    }
+
+    private Comment requireComment(Long commentId, Long postId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("评论不存在"));
+        if (postId != null) {
+            Long actualPostId = comment.getPost() != null ? comment.getPost().getId() : null;
+            if (actualPostId == null || !postId.equals(actualPostId)) {
+                throw new IllegalArgumentException("评论不属于当前文章");
+            }
+        }
+        return comment;
     }
 
     private AdminCommentItemDto toAdminItem(Comment comment) {

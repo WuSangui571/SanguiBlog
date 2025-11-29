@@ -42,7 +42,7 @@ public class CommentController {
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         boolean canModerate = hasAuthority(userPrincipal, "PERM_COMMENT_DELETE");
-        commentService.deleteComment(commentId, userPrincipal.getId(), canModerate);
+        commentService.deleteComment(postId, commentId, userPrincipal.getId(), canModerate);
         return ApiResponse.ok();
     }
 
@@ -53,7 +53,7 @@ public class CommentController {
             @RequestBody UpdateCommentRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         boolean canModerate = hasAuthority(userPrincipal, "PERM_COMMENT_REVIEW");
-        return ApiResponse.ok(commentService.updateComment(commentId, userPrincipal.getId(), request.getContent(), canModerate));
+        return ApiResponse.ok(commentService.updateComment(postId, commentId, userPrincipal.getId(), request.getContent(), canModerate));
     }
 
     @lombok.Data

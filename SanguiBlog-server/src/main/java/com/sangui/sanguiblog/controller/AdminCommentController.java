@@ -63,7 +63,7 @@ public class AdminCommentController {
     public ApiResponse<Void> delete(@PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal principal) {
         Long actorId = principal != null ? principal.getId() : null;
-        commentService.deleteComment(commentId, actorId, true);
+        commentService.deleteComment(null, commentId, actorId, true);
         return ApiResponse.ok();
     }
 

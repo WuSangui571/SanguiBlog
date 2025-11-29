@@ -196,6 +196,7 @@ ole_permissions in bulk.
 *   安全策略：`/api/comments/recent` 现已加入 Spring Security 的匿名白名单（`SecurityConfig` 中 `permitAll` 列表），未登录访客也可正常获取最新评论；评论的新增、编辑、删除仍受 `/api/posts/**` 写操作权限控制，不会被此调整放开。
 *   交互：从首页“最新评论”点击评论文本会直接跳转到对应文章详情的开头（不再锚定具体评论），提示文案通过 `title="来自《文章》"` 告知来源，保持体验一致且避免滚动失败。
 *   管理权限：登录用户若拥有 `COMMENT_REVIEW` 或 `COMMENT_DELETE`，会在文章详情页的评论项中额外看到“编辑”“删除”按钮；这些操作仍调用 `/api/posts/{postId}/comments/{commentId}`，后端依据 `PERM_*` 判定是否允许越权处理。
+*   安全校验：自 V1.3.21 起，所有 `/api/posts/{postId}/comments/{commentId}` 写操作都会在 Service 层验证评论是否属于当前文章，若 `commentId` 不隶属于 `postId`，后端直接返回 400 以阻断 IDOR；管理员使用 `/api/admin/comments/{id}` 仍可跨文章处理。
 
 ### 4.6 Data Collection
 *   POST /api/analytics/page-view accepts PageViewRequest(postId,pageTitle,referrer,geo,userAgent) plus the client IP and inserts into nalytics_page_views. Empty referrers are treated as Direct visits.
