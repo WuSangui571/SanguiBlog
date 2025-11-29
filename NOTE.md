@@ -62,6 +62,9 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 ### 3.2 前端架构
 单页应用，入口为 `src/main.jsx` -> `AppFull.jsx`。
 
+- 自 V1.3.22 起，`AppFull.jsx` 仅承担路由与上下文管理，真实的视图代码拆分到 `src/app` 目录：`app/shared/designSystem.jsx` 保存设计系统与 Mock 数据，`app/common` 提供主题色选择器、后台通知等通用组件，`app/admin/AdminPanel.jsx` 则完整承载后台模块逻辑。
+- 后台模块通过 `React.lazy` 懒加载，首次进入管理后台时才下载大量表单/表格代码，首屏仅需加载前台视图与公共组件，减轻主 bundle。
+
 *   **路由 (`AppFull.jsx`)**:
     *   `/`: 首页 (Hero + 文章列表)
     *   `/posts/:id`: 文章详情页

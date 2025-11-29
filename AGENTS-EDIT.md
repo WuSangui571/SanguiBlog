@@ -612,3 +612,12 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **安全**：评论删除/编辑必须同时匹配 `postId` 与 `commentId`，后端在 Service 层二次校验评论所属文章，阻断通过猜测评论 ID 越权删改他人文章评论的可能性。
 - **前端版本**：首页 Banner fallback 与 `site.version` 同步到 `V1.3.21`，确保显示最新补丁号。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.21`。
+
+## V1.3.22 (2025-11-29)
+- **前端架构**：将 `AppFull.jsx` 拆分为 `app/shared`, `app/common`, `app/admin` 多个模块，设计系统与管理员面板独立成文件，后台面板通过 `React.lazy` 懒加载，显著降低主包体积且便于维护。
+- **共用组件**：主题色选择器与后台通知条迁移到 `app/common`，所有上下文/统计常量集中在 `app/shared/designSystem.jsx`，消除 30 万行巨石文件。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.22`。
+
+## V1.3.23 (2025-11-29)
+- **指标采集**：`/api/analytics/page-view` 外层增加容错，若底层写入或统计出错仅记录警告，不再抛 500，避免前端控制台持续报错。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.23`。
