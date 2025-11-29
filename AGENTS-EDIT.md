@@ -584,6 +584,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.15`。
 
 ## V1.3.16 (2025-11-29)
+- **后端**：`/api/site/meta` 新增 `version` 字段，可通过 `application.yaml` 的 `site.version` 统一配置，前端 Banner 直接读取该值展示。
 - **静态资源**：`api.js` 重新引入 `VITE_API_BASE` / `VITE_ASSET_ORIGIN` 配置并默认回落到 `http://localhost:8080`，所有 `/avatar`、`/uploads` 链接现在会自动拼接后端域名，文章详情页博主头像不再退回 Mock。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.16`。
 

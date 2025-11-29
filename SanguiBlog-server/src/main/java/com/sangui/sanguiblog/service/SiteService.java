@@ -48,6 +48,8 @@ public class SiteService {
         private String footerIcpLink;
         @Value("${site.footer.powered-by:Powered by Spring Boot 3 & React 19}")
         private String footerPoweredBy;
+        @Value("${site.version:V1.0.0}")
+        private String siteVersion;
 
         public SiteMetaDto meta() {
                 long postCount = postRepository.count();
@@ -140,6 +142,7 @@ public class SiteService {
                                                 .copyrightText(String.format("Copyright © %d %s All rights reserved.",
                                                                 footerYear, footerBrand))
                                                 .build())
+                                .version(siteVersion)
                                 .build();
         }
 

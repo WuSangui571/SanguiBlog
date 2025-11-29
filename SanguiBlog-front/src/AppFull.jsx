@@ -1,6 +1,10 @@
 import React, {useState, useEffect, useRef, useCallback, useMemo, useContext} from 'react';
 import {Routes, Route, Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {useBlog} from "./hooks/useBlogData";
+import CommentsSection from "./components/comments/CommentsSection.jsx";
+import PopButton from "./components/common/PopButton.jsx";
+import {LayoutOffsetContext, useLayoutOffsets} from "./contexts/LayoutOffsetContext.jsx";
+import {PermissionContext, usePermissionContext} from "./contexts/PermissionContext.jsx";
 import {
     recordPageView,
     updateBroadcast,
@@ -77,15 +81,6 @@ const THEME_COLOR_PRESETS = [
     'bg-[#F97316]'
 ];
 const DEFAULT_THEME_COLOR = 'bg-[#6366F1]';
-
-const buildAssetUrl = (path) => {
-    if (!path) return null;
-    if (/^(https?:)?\/\//i.test(path)) return path;
-    const normalized = path.startsWith('/') ? path : `/${path}`;
-    const origin = (ASSET_ORIGIN || '').replace(/\/$/, '');
-    if (!origin) return normalized;
-    return `${origin}${normalized}`.replace(/([^:]\/)\/+/g, '$1');
-};
 
 const extractHexFromBgClass = (value = '', fallback = '#6366F1') => {
     if (typeof value !== 'string') return fallback;
@@ -255,276 +250,6 @@ const remarkHighlight = () => (tree) => {
         parent.children.splice(index, 1, ...newNodes);
         return [visit.SKIP, index + newNodes.length];
     });
-};
-
-const CommentsSection = ({
-                             list = [],
-                             isDarkMode,
-                             onSubmit,
-                             currentUser,
-                             setView,
-                             onDeleteComment,
-                             onUpdateComment,
-                             postAuthorName
-                         }) => {
-    const {hasPermission} = usePermissionContext();
-    const [content, setContent] = useState("");
-    const [editingCommentId, setEditingCommentId] = useState(null);
-    const [editContent, setEditContent] = useState("");
-    const [deleteConfirm, setDeleteConfirm] = useState(null);
-    const [replyTarget, setReplyTarget] = useState(null);
-    const [replyContent, setReplyContent] = useState("");
-    const canReviewComments = currentUser ? hasPermission('COMMENT_REVIEW') : false;
-    const canDeleteComments = currentUser ? hasPermission('COMMENT_DELETE') : false;
-
-    const inputBg = isDarkMode ? 'bg-gray-800 text-white' : 'bg-[#F0F0F0] text-black';
-    const commentBg = isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-black';
-    const resolvedAuthorName = currentUser?.displayName || currentUser?.nickname || currentUser?.username || '访客';
-    const resolvedAvatar = currentUser?.avatarUrl || currentUser?.avatar;
-    const normalizedList = Array.isArray(list) ? list : [];
-
-    const countAll = (items = []) => items.reduce((sum, item) => sum + 1 + countAll(item.replies || []), 0);
-    const totalComments = countAll(normalizedList);
-
-    const getAvatarSrc = (avatarPath) => buildAssetUrl(avatarPath);
-
-    const handleSubmit = () => {
-        if (!content.trim()) return;
-        onSubmit && onSubmit({
-            authorName: resolvedAuthorName,
-            avatarUrl: resolvedAvatar,
-            content: content.trim(),
-        });
-        setContent("");
-    };
-
-    const handleReplySubmit = () => {
-        if (!replyTarget || !replyContent.trim()) return;
-        const trimmed = replyContent.trim();
-        const targetComment = replyTarget.comment || {};
-        const replyDepth = replyTarget.depth || 0;
-        const baseParentId = replyDepth >= 1
-            ? (targetComment.parentId || targetComment.parentCommentId || targetComment.parent_id || targetComment.id)
-            : targetComment.id;
-        const mentionName = targetComment.authorName || targetComment.user || 'Ta';
-        const prefix = replyDepth >= 1 ? `@${mentionName}：` : '';
-        const payload = {
-            authorName: resolvedAuthorName,
-            avatarUrl: resolvedAvatar,
-            content: `${prefix}${trimmed}`,
-        };
-        if (baseParentId) {
-            payload.parentId = baseParentId;
-        }
-        onSubmit && onSubmit(payload);
-        setReplyContent("");
-        setReplyTarget(null);
-    };
-
-    const renderComment = (c, depth = 0) => {
-        const replies = Array.isArray(c.replies) ? c.replies : [];
-        const avatarSrc = getAvatarSrc(c.avatar);
-        const isReplying = replyTarget?.comment?.id === c.id;
-        const canReply = depth < 2;
-        const isOwnComment = currentUser && c.userId === currentUser.id;
-        const allowEdit = currentUser && (isOwnComment || canReviewComments);
-        const allowDelete = currentUser && (isOwnComment || canDeleteComments);
-        const visualDepth = depth > 0 ? 1 : 0;
-
-        return (
-            <div
-                key={c.id || `${depth}-${c.authorName || c.user || 'comment'}`}
-                className={`flex gap-4 ${visualDepth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
-                <div
-                    className={`w-12 h-12 border-2 border-black rounded-full shrink-0 flex items-center justify-center font-bold overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-200 text-black'}`}>
-                    {avatarSrc ? (
-                        <img src={avatarSrc} alt={c.authorName} className="w-full h-full object-cover"/>
-                    ) : (
-                        (c.authorName || c.user || 'U').toString().slice(0, 2)
-                    )}
-                </div>
-                <div className="flex-1">
-                    <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-                        <span className="font-black text-lg">{c.authorName || c.user}</span>
-                        {postAuthorName && (c.authorName === postAuthorName || c.user === postAuthorName) && (
-                            <span
-                                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black border border-black rounded shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-pink-600 text-white' : 'bg-yellow-400 text-black'}`}>
-                <PenTool size={10} strokeWidth={3}/>
-                博主
-              </span>
-                        )}
-                        <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
-                        <div className="ml-auto flex gap-2">
-                            {currentUser && canReply && (
-                                <button
-                                    onClick={() => {
-                                        setReplyTarget({comment: c, depth});
-                                        setReplyContent("");
-                                    }}
-                                    className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-purple-500 hover:text-white' : 'hover:bg-purple-100'}`}
-                                >
-                                    回复
-                                </button>
-                            )}
-                            {currentUser && allowEdit && (
-                                <button
-                                    onClick={() => {
-                                        setEditingCommentId(c.id);
-                                        setEditContent(c.content);
-                                    }}
-                                    className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-blue-500 hover:text-white' : 'hover:bg-blue-100'}`}
-                                >
-                                    编辑
-                                </button>
-                            )}
-                            {currentUser && allowDelete && (
-                                <button
-                                    onClick={() => setDeleteConfirm(c.id)}
-                                    className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-red-100'}`}
-                                >
-                                    删除
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    {editingCommentId === c.id ? (
-                        <div className="space-y-2">
-              <textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className={`w-full p-2 border-2 border-black ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white'}`}
-                  rows={3}
-              />
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => {
-                                        onUpdateComment && onUpdateComment(c.id, editContent);
-                                        setEditingCommentId(null);
-                                    }}
-                                    className="px-3 py-1 bg-green-500 text-white font-bold border-2 border-black"
-                                >
-                                    保存
-                                </button>
-                                <button
-                                    onClick={() => setEditingCommentId(null)}
-                                    className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black"
-                                >
-                                    取消
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
-                            <p className="font-medium">{c.content || c.text}</p>
-                        </div>
-                    )}
-
-                    {deleteConfirm === c.id && (
-                        <div className={`mt-2 p-3 border-2 border-red-500 ${isDarkMode ? 'bg-red-900' : 'bg-red-50'}`}>
-                            <p className="font-bold text-sm mb-2">确认删除这条评论？</p>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => {
-                                        onDeleteComment && onDeleteComment(c.id);
-                                        setDeleteConfirm(null);
-                                    }}
-                                    className="px-3 py-1 bg-red-500 text-white font-bold border-2 border-black text-xs"
-                                >
-                                    确认删除
-                                </button>
-                                <button
-                                    onClick={() => setDeleteConfirm(null)}
-                                    className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black text-xs"
-                                >
-                                    取消
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {isReplying && currentUser && (
-                        <div className={`mt-4 border-2 border-black p-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
-              <textarea
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  className={`w-full p-3 border-2 border-black font-bold focus:outline-none min-h-[100px] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
-                  placeholder={`回复 ${c.authorName || c.user || 'Ta'}...`}
-              />
-                            <div className="flex gap-2 mt-2">
-                                <PopButton onClick={handleReplySubmit}>发送回复</PopButton>
-                                <button
-                                    onClick={() => {
-                                        setReplyTarget(null);
-                                        setReplyContent("");
-                                    }}
-                                    className="px-3 py-1 border-2 border-black font-bold shadow-[2px_2px_0px_0px_#000] bg-gray-200"
-                                >
-                                    取消
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {replies.length > 0 && (
-                        <div className="mt-6 space-y-6">
-                            {replies.map((child) => renderComment(child, depth + 1))}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    return (
-        <div className="mt-16">
-            <div className="flex items-center gap-3 mb-8">
-                <MessageSquare size={28} className="text-black dark:text-white" strokeWidth={3}/>
-                <h2 className="text-3xl font-black uppercase">Comments ({totalComments})</h2>
-            </div>
-
-            {currentUser ? (
-                <div className={`${inputBg} border-2 border-black p-6 mb-12 shadow-[8px_8px_0px_0px_#000]`}>
-                    <div className="flex gap-4 mb-4">
-                        <div
-                            className={`w-12 h-12 border-2 border-black ${commentBg} rounded-full flex items-center justify-center font-bold overflow-hidden`}>
-                            {resolvedAvatar ? (
-                                <img
-                                    src={resolvedAvatar.startsWith('http') ? resolvedAvatar : `http://localhost:8080${resolvedAvatar}`}
-                                    alt={currentUser.username} className="w-full h-full object-cover"/>
-                            ) : (
-                                currentUser.username?.slice(0, 2) || 'ME'
-                            )}
-                        </div>
-                        <div className="flex-1">
-              <textarea
-                  placeholder="写下你的想法..."
-                  className={`w-full min-h-[120px] p-4 border-2 border-black font-bold focus:outline-none focus:ring-4 focus:ring-[#FFD700] transition-shadow ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-              ></textarea>
-                        </div>
-                    </div>
-                    <div className="flex justify-between items-center text-sm font-bold flex-wrap gap-4">
-                        <span className="uppercase tracking-wide">{resolvedAuthorName} 已登录</span>
-                        <PopButton onClick={handleSubmit}>发布评论</PopButton>
-                    </div>
-                </div>
-            ) : (
-                <div
-                    className={`${inputBg} border-2 border-black p-6 mb-12 shadow-[8px_8px_0px_0px_#000] flex flex-col md:flex-row items-center justify-between gap-4`}>
-                    <div>
-                        <p className="font-black text-lg">登录后参与讨论</p>
-                        <p className="text-sm text-gray-500 font-mono">SIGN IN TO LEAVE A TRAIL.</p>
-                    </div>
-                    <PopButton onClick={() => setView('login')} icon={LogIn}>前往登录</PopButton>
-                </div>
-            )}
-
-            <div className="space-y-8">
-                {normalizedList.map((comment) => renderComment(comment))}
-            </div>
-        </div>
-    );
 };
 
 const ArticleDetail = ({
@@ -1178,13 +903,6 @@ const AnalyticsSummaryContext = React.createContext({
     }
 });
 
-const PermissionContext = React.createContext({
-    permissions: [],
-    loading: true,
-    error: '',
-    hasPermission: () => false
-});
-
 const useAdminAnalytics = () => useContext(AnalyticsSummaryContext);
 const PermissionNotice = ({title = '权限不足', description = '请联系超级管理员分配权限'}) => (
     <div
@@ -1194,17 +912,6 @@ const PermissionNotice = ({title = '权限不足', description = '请联系超�
         <p className="text-sm text-gray-500 dark:text-gray-400 leading-6">{description}</p>
     </div>
 );
-
-//const usePermissionContext = () => useContext(PermissionContext);
-const usePermissionContext = () => useContext(PermissionContext);
-
-const LayoutOffsetContext = React.createContext({
-    headerHeight: 80,
-    navHeight: 80,
-    emergencyHeight: 0
-});
-
-const useLayoutOffsets = () => useContext(LayoutOffsetContext);
 
 const getReferrer = () => {
     if (typeof document === 'undefined') return '';
@@ -1224,34 +931,6 @@ const getGeoHint = () => {
 };
 
 // --- 2. 炫酷 UI 组件库 (不变) ---
-
-const PopButton = ({children, onClick, variant = "primary", className = "", icon: Icon, ...props}) => {
-    const variants = {
-        primary: "bg-[#1A1A1A] text-white hover:bg-[#6366F1]",
-        secondary: "bg-white text-black hover:bg-[#FFD700]",
-        accent: "bg-[#FF0080] text-white hover:bg-[#D10069]",
-        ghost: "bg-transparent text-black border-transparent shadow-none hover:bg-black/5"
-    };
-
-    return (
-        <motion.button
-            whileHover={{scale: 1.05}}
-            whileTap={{scale: 0.95}}
-            className={`
-        relative px-6 py-3 font-black text-sm uppercase tracking-wider
-        border-2 border-black transition-colors duration-200 flex items-center gap-2
-        ${variants[variant] || variants.primary}
-        ${variant !== 'ghost' ? 'shadow-[4px_4px_0px_0px_#000]' : ''}
-        ${className}
-      `}
-            onClick={onClick}
-            {...props}
-        >
-            {Icon && <Icon size={18} strokeWidth={3}/>}
-            {children}
-        </motion.button>
-    );
-};
 
 const TiltCard = ({children, className = "", onClick}) => {
     const x = useMotionValue(0);
@@ -1525,7 +1204,7 @@ const Navigation = ({user, setView, handleLogout, toggleMenu, isDarkMode, setIsD
     );
 };
 // ... (Hero, StatsStrip, ArticleList, CommentsSection, ArticleDetail, LoginView components are kept unchanged in functionality, but are wrapped in the main App with the dark mode context.)
-const Hero = ({setView, isDarkMode, onStartReading}) => {
+const Hero = ({setView, isDarkMode, onStartReading, version}) => {
     const {scrollY} = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const rotate = useTransform(scrollY, [0, 500], [0, 45]);
@@ -1556,7 +1235,7 @@ const Hero = ({setView, isDarkMode, onStartReading}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
                 >
-                    SANGUI BLOG // V1.3.17
+                    {`SANGUI BLOG // ${version || 'V1.3.17'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5946,6 +5625,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
+    const siteVersion = meta?.version || 'V1.3.17';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6113,7 +5793,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
             case 'home':
                 return (
                     <>
-                        <Hero setView={setView} isDarkMode={isDarkMode} onStartReading={scrollToPostsTop}/>
+                        <Hero setView={setView} isDarkMode={isDarkMode} onStartReading={scrollToPostsTop} version={siteVersion}/>
                         <ArticleList
                             setView={setView}
                             setArticleId={setArticleId}
