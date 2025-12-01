@@ -625,3 +625,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.24 (2025-12-01)
 - **文章卡片**：列表卡片 hover 改为 `whileHover={{ y: -6, rotate: -1 }}` 并配合 spring 过渡，在微微上浮/倾斜的同时保留原有点击事件。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.24`。
+
+## V1.3.25 (2025-12-01)
+- **共用按钮**：PopButton 引入基于指针坐标的局部波纹与点击弹簧动画，波纹色值复用主色/边界逻辑、持续 0.45s，统一与全局 ripple 工具的反馈风格，同时保持 hover 放大与原 onClick 事件。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.25`。
