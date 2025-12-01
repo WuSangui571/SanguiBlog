@@ -1339,7 +1339,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.39'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.43'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5799,15 +5799,33 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         }
         return false;
     }); // Persisted dark mode state
-    const handleThemeToggle = useCallback(() => {
-        setIsDarkMode((prev) => {
-            const next = !prev;
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('sangui-theme', next ? 'dark' : 'light');
-            }
-            return next;
-        });
+    const [themeBlast, setThemeBlast] = useState({ active: false, x: 0, y: 0, toDark: false });
+    const themeBlastTimers = useRef([]);
+    useEffect(() => () => {
+        themeBlastTimers.current.forEach((timer) => clearTimeout(timer));
+        themeBlastTimers.current = [];
     }, []);
+    const handleThemeToggle = useCallback((event) => {
+        const rect = event?.currentTarget?.getBoundingClientRect?.();
+        const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+        const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+        const targetMode = !isDarkMode;
+        setThemeBlast({ active: true, x, y, toDark: targetMode });
+        themeBlastTimers.current.forEach((timer) => clearTimeout(timer));
+        themeBlastTimers.current = [];
+        themeBlastTimers.current.push(setTimeout(() => {
+            setIsDarkMode((prev) => {
+                const next = !prev;
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('sangui-theme', next ? 'dark' : 'light');
+                }
+                return next;
+            });
+        }, 220));
+        themeBlastTimers.current.push(setTimeout(() => {
+            setThemeBlast((prev) => ({ ...prev, active: false }));
+        }, 900));
+    }, [isDarkMode]);
     const [permissionState, setPermissionState] = useState({ permissions: [], loading: false, error: '' });
     const lastRecordedArticleRef = useRef(null);
     const scrollToPostsTop = useCallback(() => {
@@ -5829,7 +5847,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.39';
+    const siteVersion = meta?.version || 'V1.3.43';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6072,6 +6090,22 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 <div className={`min-h-screen relative ${globalBg}`}>
                     <ClickRipple />
                     <ScrollToTop isDarkMode={isDarkMode} />
+                    <AnimatePresence>
+                        {themeBlast.active && (
+                            <motion.div
+                                className="fixed inset-0 pointer-events-none z-[60] mix-blend-screen"
+                                initial={{ clipPath: `circle(0% at ${themeBlast.x}px ${themeBlast.y}px)`, opacity: 0.85 }}
+                                animate={{ clipPath: `circle(160% at ${themeBlast.x}px ${themeBlast.y}px)`, opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.7, ease: 'easeInOut' }}
+                                style={{
+                                    background: themeBlast.toDark
+                                        ? 'radial-gradient(circle, rgba(255,215,0,0.4) 0%, rgba(99,102,241,0.35) 40%, rgba(0,0,0,0.85) 100%)'
+                                        : 'radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(99,102,241,0.3) 30%, rgba(255,255,255,0.95) 100%)'
+                                }}
+                            />
+                        )}
+                    </AnimatePresence>
                     <div className="fixed top-0 left-0 right-0 z-50">
                         <div className="flex flex-col w-full">
                             <EmergencyBar
