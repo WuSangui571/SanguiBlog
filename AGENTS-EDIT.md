@@ -612,3 +612,8 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **安全**：评论删除/编辑必须同时匹配 `postId` 与 `commentId`，后端在 Service 层二次校验评论所属文章，阻断通过猜测评论 ID 越权删改他人文章评论的可能性。
 - **前端版本**：首页 Banner fallback 与 `site.version` 同步到 `V1.3.21`，确保显示最新补丁号。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.21`。
+
+## V1.3.22 (2025-12-01)
+- **主页导航**：品牌字样统一为黑/白配色并通过 LayoutGroup + `layoutId` 提供的动态下划线展示当前视图，CTA 以外的元素移除热粉色，导航边框与头像区域保持深浅色模式一致的黑白/金色层级。
+- **Hero Banner**：叠加锥形渐变与噪点纹理动画，重新分配高光色并让「Start Reading」按钮改用热粉色，突出唯一 CTA。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.22`。

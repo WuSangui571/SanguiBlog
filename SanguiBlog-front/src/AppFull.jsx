@@ -59,7 +59,8 @@ import {
     useTransform,
     useSpring,
     useMotionValue,
-    useMotionTemplate
+    useMotionTemplate,
+    LayoutGroup
 } from 'framer-motion';
 import AdminProfile from './pages/admin/Profile';
 import {
@@ -81,6 +82,7 @@ const THEME_COLOR_PRESETS = [
     'bg-[#F97316]'
 ];
 const DEFAULT_THEME_COLOR = 'bg-[#6366F1]';
+const HERO_NOISE_TEXTURE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyB2aWV3Qm94PScwIDAgMTIwIDEyMCc+PGZpbHRlciBpZD0nbicgeD0nMCcgeT0nMCc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuNCcvPjwvc3ZnPg==";
 
 const extractHexFromBgClass = (value = '', fallback = '#6366F1') => {
     if (typeof value !== 'string') return fallback;
@@ -1120,17 +1122,32 @@ const ClickRipple = () => {
 
 // --- 3. 前台视图组件 (保持不变) ---
 const NAVIGATION_HEIGHT = 80;
+const PRIMARY_NAV_ITEMS = [
+    {key: 'home', label: '首页'},
+    {key: 'archive', label: '归档'},
+    {key: 'about', label: '关于'}
+];
 
-const Navigation = ({user, setView, handleLogout, toggleMenu, isDarkMode, setIsDarkMode, onProfileClick}) => {
+const Navigation = ({
+                        user,
+                        setView,
+                        currentView,
+                        handleLogout,
+                        toggleMenu,
+                        isDarkMode,
+                        setIsDarkMode,
+                        onProfileClick
+                    }) => {
     const roleInfo = user ? ROLES[user.role] : null;
     const isFrontNav = true; // Use a flag for front-end vs back-end styling
+    const activeView = currentView || 'home';
 
     return (
         <motion.nav
             initial={{y: -100}}
             animate={{y: 0}}
             className={`relative w-full h-20 flex items-center justify-between px-4 md:px-8 
-          ${isDarkMode ? 'bg-gray-900 border-b-4 border-[#FF0080] text-white' : 'bg-white border-b-4 border-black text-black'}
+          ${isDarkMode ? 'bg-gray-900 border-b-4 border-gray-700 text-white' : 'bg-white border-b-4 border-black text-black'}
         `}
         >
             <div
@@ -1138,25 +1155,44 @@ const Navigation = ({user, setView, handleLogout, toggleMenu, isDarkMode, setIsD
                 onClick={() => setView('home')}
             >
                 <div
-                    className={`w-12 h-12 ${isDarkMode ? 'bg-[#FF0080] text-white' : 'bg-black text-white'} flex items-center justify-center border-2 border-black group-hover:bg-[#FFD700] group-hover:text-black transition-colors`}>
+                    className={`w-12 h-12 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'} flex items-center justify-center border-2 border-black group-hover:bg-[#FFD700] group-hover:text-black transition-colors`}>
                     <Code size={28} strokeWidth={3}/>
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-2xl font-black tracking-tighter leading-none italic">SANGUI</span>
-                    <span className="text-xs font-bold tracking-widest bg-[#FF0080] text-white px-1">BLOG.OS</span>
+                    <span
+                        className={`text-2xl font-black tracking-tighter leading-none italic ${isDarkMode ? 'text-white' : 'text-black'}`}>SANGUI</span>
+                    <span
+                        className={`text-xs font-bold tracking-widest px-1 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>BLOG.OS</span>
                 </div>
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-                {['home', 'archive', 'about'].map((key) => (
-                    <button
-                        key={key}
-                        onClick={() => setView(key)}
-                        className={`text-lg font-bold uppercase hover:bg-black hover:text-white px-2 py-1 transition-all decoration-4 underline-offset-4 hover:underline ${isDarkMode ? 'decoration-[#FF0080]' : 'decoration-[#FFD700]'}`}
-                    >
-                        {key === 'home' ? '首页' : key === 'archive' ? '归档' : '关于'}
-                    </button>
-                ))}
+                <LayoutGroup id="primary-nav-tabs">
+                    <div className="flex items-center gap-8">
+                        {PRIMARY_NAV_ITEMS.map((item) => {
+                            const isActive = activeView === item.key;
+                            return (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={() => setView(item.key)}
+                                    aria-current={isActive ? 'page' : undefined}
+                                    className={`relative px-2 py-1 text-lg font-bold uppercase transition-colors ${isActive ? (isDarkMode ? 'text-white' : 'text-black') : (isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
+                                >
+                                    {item.label}
+                                    {isActive && (
+                                        <motion.span
+                                            layoutId="nav-underline"
+                                            className="absolute -bottom-1 left-0 right-0 h-1 rounded-full"
+                                            style={{backgroundColor: '#FFD700'}}
+                                            transition={{type: 'spring', stiffness: 500, damping: 40}}
+                                        />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </LayoutGroup>
 
                 {user ? (
                     <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
@@ -1179,7 +1215,7 @@ const Navigation = ({user, setView, handleLogout, toggleMenu, isDarkMode, setIsD
                                     className="p-2 hover:bg-black hover:text-white border-2 border-transparent hover:border-black rounded-full transition-all">
                                 <Settings size={20}/></button>
                         )}
-                        <button onClick={handleLogout} className="p-2 hover:text-[#FF0080] transition-colors"><LogOut
+                        <button onClick={handleLogout} className="p-2 hover:text-[#F97316] transition-colors"><LogOut
                             size={20}/></button>
                     </div>
                 ) : (
@@ -1217,11 +1253,32 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
         <div
             className={`relative min-h-[90vh] flex flex-col justify-center items-center pt-20 overflow-hidden ${bgClass} ${textClass}`}>
             <div className="absolute inset-0 opacity-10 pointer-events-none"
-                 style={{
-                     backgroundImage: `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px)`,
-                     backgroundSize: '40px 40px'
-                 }}>
+                style={{
+                    backgroundImage: `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px)`,
+                    backgroundSize: '40px 40px'
+                }}>
             </div>
+            <div
+                aria-hidden
+                className="absolute inset-0 pointer-events-none mix-blend-multiply"
+                style={{
+                    backgroundImage: 'conic-gradient(from 180deg at 50% 50%, rgba(255,215,0,0.35), rgba(14,165,233,0.2), transparent 290deg)',
+                    opacity: isDarkMode ? 0.35 : 0.5
+                }}
+            />
+            <motion.div
+                aria-hidden
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    backgroundImage: `url(${HERO_NOISE_TEXTURE})`,
+                    backgroundSize: '200px 200px',
+                    opacity: isDarkMode ? 0.18 : 0.28,
+                    mixBlendMode: isDarkMode ? 'screen' : 'multiply'
+                }}
+                initial={{backgroundPosition: '0% 0%'}}
+                animate={{backgroundPosition: ['0% 0%', '100% 100%']}}
+                transition={{duration: 30, repeat: Infinity, ease: 'linear'}}
+            />
             <motion.div style={{y: y1, rotate}} className="absolute top-32 left-[10%] text-[#FFD700]">
                 <Sparkles size={80} strokeWidth={1.5} className="drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] fill-current"/>
             </motion.div>
@@ -1233,9 +1290,9 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
             <div className="z-10 text-center max-w-5xl px-4 relative">
                 <motion.div
                     initial={{scale: 0}} animate={{scale: 1}}
-                    className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#FF0080]"
+                    className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.21'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.22'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1247,12 +1304,12 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                     <motion.span initial={{y: 100, opacity: 0}} animate={{y: 0, opacity: 1}} transition={{delay: 0.2}}
                                  className="block">
                         以分享照亮<span
-                        className="text-[#FF0080] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
+                        className="text-[#0EA5E9] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
                     </motion.span>
                 </h1>
                 <p className={`text-xl md:text-2xl font-bold mb-12 max-w-2xl mx-auto border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-600'}`}>
                     拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。
-                    <br/><span className="text-sm font-mono text-[#FF0080]">{`>>`} PRESS START TO CONTINUE</span>
+                    <br/><span className="text-sm font-mono text-[#0EA5E9]">{`>>`} PRESS START TO CONTINUE</span>
                 </p>
 
 
@@ -1264,7 +1321,7 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                             document.getElementById('posts')?.scrollIntoView({behavior: 'smooth', block: 'start'});
                         }
                     }}
-                               icon={ArrowUpRight} className="text-xl px-8 py-4 bg-[#FFD700] text-black">
+                               icon={ArrowUpRight} className="text-xl px-8 py-4 bg-[#FF0080] text-white">
                         START READING
                     </PopButton>
                     <PopButton variant="secondary" icon={Github}
@@ -5625,7 +5682,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.21';
+    const siteVersion = meta?.version || 'V1.3.22';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -5880,6 +5937,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                             <Navigation
                                 user={user}
                                 setView={setView}
+                                currentView={view}
                                 handleLogout={handleLogout}
                                 toggleMenu={() => setMenuOpen(!menuOpen)}
                                 isDarkMode={isDarkMode}
