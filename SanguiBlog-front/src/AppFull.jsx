@@ -1293,7 +1293,7 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.26'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.32'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5462,6 +5462,8 @@ const ScrollToTop = ({isDarkMode}) => {
     const STORAGE_KEY = 'sangui-scroll-button';
     const BUTTON_SIZE = 56;
     const [isVisible, setIsVisible] = useState(false);
+    const [scrollPercent, setScrollPercent] = useState(0);
+    const scrollProgress = useSpring(0, {stiffness: 160, damping: 28, mass: 0.6});
     const [position, setPosition] = useState(() => {
         if (typeof window === 'undefined') return {x: 24, y: 24};
         try {
@@ -5508,19 +5510,6 @@ const ScrollToTop = ({isDarkMode}) => {
         if (typeof window === 'undefined') return;
         setPosition(prev => clampPosition(prev));
     }, [clampPosition]);
-
-    useEffect(() => {
-        const toggleVisibility = () => {
-            if (window.pageYOffset > 300) {
-                setIsVisible(true);
-            } else {
-                setIsVisible(false);
-            }
-        };
-
-        window.addEventListener("scroll", toggleVisibility);
-        return () => window.removeEventListener("scroll", toggleVisibility);
-    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -5570,6 +5559,26 @@ const ScrollToTop = ({isDarkMode}) => {
         };
     }, [clampPosition, persistPosition]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const updateScrollState = () => {
+            const doc = document.documentElement;
+            const scrollTop = window.pageYOffset || doc.scrollTop || 0;
+            const maxScroll = Math.max(doc.scrollHeight - window.innerHeight, 1);
+            const ratio = Math.min(Math.max(scrollTop / maxScroll, 0), 1);
+            setScrollPercent(ratio);
+            setIsVisible(scrollTop > 300);
+            scrollProgress.set(ratio);
+        };
+        updateScrollState();
+        window.addEventListener('scroll', updateScrollState);
+        window.addEventListener('resize', updateScrollState);
+        return () => {
+            window.removeEventListener('scroll', updateScrollState);
+            window.removeEventListener('resize', updateScrollState);
+        };
+    }, [scrollProgress]);
+
     const scrollToTop = () => {
         window.scrollTo({
             top: 0,
@@ -5601,6 +5610,15 @@ const ScrollToTop = ({isDarkMode}) => {
         scrollToTop();
     };
 
+    const indicatorRadius = 16;
+    const indicatorStroke = 3;
+    const indicatorSize = indicatorRadius * 2 + indicatorStroke * 2;
+    const circumference = 2 * Math.PI * indicatorRadius;
+    const dashOffset = useTransform(scrollProgress, (value) => (1 - value) * circumference);
+    const trackColor = isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)';
+    const progressColor = isDarkMode ? '#F9FAFB' : '#111827';
+    const percentLabel = Math.round(scrollPercent * 100);
+
     return (
         <AnimatePresence>
             {isVisible && (
@@ -5613,9 +5631,37 @@ const ScrollToTop = ({isDarkMode}) => {
                     onTouchStart={startDrag}
                     onClick={handleClick}
                     style={{left: `${position.x}px`, top: `${position.y}px`}}
+                    aria-label={`返回顶部（已滚动 ${percentLabel}%）`}
                     className={`fixed z-50 p-3 rounded-full shadow-lg transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-white hover:bg-gray-800'} ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 >
-                    <ArrowUp size={24}/>
+                    <span className="relative flex items-center justify-center w-10 h-10">
+                        <ArrowUp size={24} className="relative z-10"/>
+                        <motion.svg
+                            className="absolute inset-0"
+                            width={indicatorSize}
+                            height={indicatorSize}
+                            viewBox={`0 0 ${indicatorSize} ${indicatorSize}`}
+                            fill="none"
+                        >
+                            <circle
+                                cx={indicatorSize / 2}
+                                cy={indicatorSize / 2}
+                                r={indicatorRadius}
+                                stroke={trackColor}
+                                strokeWidth={indicatorStroke}
+                            />
+                            <motion.circle
+                                cx={indicatorSize / 2}
+                                cy={indicatorSize / 2}
+                                r={indicatorRadius}
+                                stroke={progressColor}
+                                strokeWidth={indicatorStroke}
+                                strokeDasharray={circumference}
+                                style={{strokeDashoffset: dashOffset}}
+                                strokeLinecap="round"
+                            />
+                        </motion.svg>
+                    </span>
                 </motion.button>
             )}
         </AnimatePresence>
@@ -5935,16 +5981,24 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                                 onClose={() => setNotification(prev => ({...prev, isOpen: false}))}
                                 onHeightChange={setEmergencyHeight}
                             />
-                            <Navigation
-                                user={user}
-                                setView={setView}
-                                currentView={view}
-                                handleLogout={handleLogout}
-                                toggleMenu={() => setMenuOpen(!menuOpen)}
-                                isDarkMode={isDarkMode}
-                                setIsDarkMode={setIsDarkMode}
-                                onProfileClick={handleProfileNav}
-                            />
+                            <AnimateSharedLayout id="nav-section-indicator">
+                                <Navigation
+                                    user={user}
+                                    setView={setView}
+                                    currentView={view}
+                                    handleLogout={handleLogout}
+                                    toggleMenu={() => setMenuOpen(!menuOpen)}
+                                    isDarkMode={isDarkMode}
+                                    setIsDarkMode={setIsDarkMode}
+                                    onProfileClick={handleProfileNav}
+                                />
+                                <motion.div
+                                    layoutId="nav-pulse-line"
+                                    animate={{opacity: notification.isOpen ? 0.85 : 0.65}}
+                                    transition={{type: 'spring', stiffness: 300, damping: 30}}
+                                    className="h-1 w-full bg-gradient-to-r from-[#FFD700] via-[#FF0080] to-[#6366F1]"
+                                />
+                            </AnimateSharedLayout>
                         </div>
                     </div>
                     <div

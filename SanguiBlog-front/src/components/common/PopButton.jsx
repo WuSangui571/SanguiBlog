@@ -15,9 +15,33 @@ const ripplePalette = {
     ghost: 'rgba(0,0,0,0.1)'
 };
 
+const shadowMap = {
+    primary: {
+        base: '4px 4px 0px 0px #000',
+        hover: '8px 8px 0px 0px #000',
+        tap: '2px 2px 0px 0px #000'
+    },
+    secondary: {
+        base: '4px 4px 0px 0px #000',
+        hover: '8px 8px 0px 0px #000',
+        tap: '2px 2px 0px 0px #000'
+    },
+    accent: {
+        base: '4px 4px 0px 0px #000',
+        hover: '8px 8px 0px 0px #000',
+        tap: '2px 2px 0px 0px #000'
+    },
+    ghost: {
+        base: '0px 0px 0px 0px transparent',
+        hover: '4px 4px 0px 0px #000',
+        tap: '1px 1px 0px 0px #000'
+    }
+};
+
 export const PopButton = ({children, onClick, variant = "primary", className = "", icon: Icon, ...props}) => {
     const [ripples, setRipples] = useState([]);
     const rippleId = useRef(0);
+    const {base, hover, tap} = shadowMap[variant] || shadowMap.primary;
 
     const spawnRipple = useCallback((event) => {
         const rect = event.currentTarget.getBoundingClientRect();
@@ -39,15 +63,15 @@ export const PopButton = ({children, onClick, variant = "primary", className = "
 
     return (
         <motion.button
-            whileHover={{scale: 1.05}}
-            whileTap={{scale: 0.93, transition: {type: 'spring', stiffness: 420, damping: 26}}}
+            style={{boxShadow: base}}
+            whileHover={{scale: 1.05, boxShadow: hover}}
+            whileTap={{scale: 0.93, boxShadow: tap, transition: {type: 'spring', stiffness: 420, damping: 26}}}
             className={`
-            relative overflow-hidden px-6 py-3 font-black text-sm uppercase tracking-wider
-            border-2 border-black transition-colors duration-200 flex items-center gap-2
-            ${variants[variant] || variants.primary}
-            ${variant !== 'ghost' ? 'shadow-[4px_4px_0px_0px_#000]' : ''}
-            ${className}
-        `}
+                relative overflow-hidden px-6 py-3 font-black text-sm uppercase tracking-wider
+                border-2 border-black transition-colors duration-200 flex items-center gap-2
+                ${variants[variant] || variants.primary}
+                ${className}
+            `}
             onClick={handleClick}
             {...props}
         >

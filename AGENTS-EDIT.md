@@ -633,3 +633,27 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.26 (2025-12-01)
 - **文章卡片**：左侧彩色区的 Code 背景改为 motion 图层，继承卡片的 `whileHover="hover"` 状态并以 spring 过渡实现渐隐+轻微放大，强化浮雕观感。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.26`。
+
+## V1.3.27 (2025-12-01)
+- **标签筛选**：标签 chip 改用 `motion.button layout` + `AnimatePresence`，在展开/收起和分页切换时以 spring 方式进出场并保持共享高亮，整个区域 `motion.div layout` 保障平滑重排。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.27`。
+
+## V1.3.28 (2025-12-01)
+- **标签筛选**：根据视觉反馈移除 `layout/exit` 动画，恢复为静态 flex 渲染，仅保留共享高亮的 AnimateSharedLayout，列表展开/分页时不再额外缩放。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.28`。
+
+## V1.3.29 (2025-12-01)
+- **按钮动效**：PopButton `whileHover` 叠加 boxShadow 动画，配合现有波纹与点击弹簧，让 Hero CTA/社交按钮在 Neo-Brutalism 风格下具备更强的层级感；不同变体按需调整 hover/tap 阴影。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.29`。
+
+## V1.3.30 (2025-12-01)
+- **滚动反馈**：返回顶部漂浮按钮新增 ScrollIndicator，使用 `useSpring` 驱动的圆形 `motion.svg` 路径实时呈现滚动进度，并在拖拽/点击逻辑保持不变的情况下同步更新可见性；辅助 aria 标签显示百分比。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.30`。
+
+## V1.3.31 (2025-12-01)
+- **滚动反馈**：根据反馈缩小 ScrollIndicator 的 SVG 半径并将按钮内部容器改回原始 40px 尺寸，恢复「一键回顶」的整体占位感，同时保留滚动进度显示。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.31`。
+
+## V1.3.32 (2025-12-01)
+- **导航分隔**：在广播条与 Navigation 之间新增 `motion.div` 脉冲下划线，复用 `layoutId` 处理当前视图变化与提示状态，切换视图时会以金色-粉色-靛紫渐变闪动，强化顶部反馈。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.32`。
