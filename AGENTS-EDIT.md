@@ -678,3 +678,11 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.37 (2025-12-01)
 - **主题切换**：SanGuiBlog 恢复 `handleThemeToggle`，导航按钮直接翻转深浅色并写回 localStorage，修复 `values[i].get` 与 `handleThemeToggle is not defined` 的运行时错误。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.37`。
+
+## V1.3.38 (2025-12-01)
+- **标签云**：标签筛选按钮在 Idle 状态自动进行轻微 scale/opacity 呼吸动画，点击后触发短暂放光效果，与现有共享高亮一起表现选中状态。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.38`。
+
+## V1.3.39 (2025-12-01)
+- **标签云**：根据视觉反馈移除标签 Idle 呼吸与放光动画，恢复为静态按钮，仅保留共享高亮与阴影动效，避免干扰阅读。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.39`。
