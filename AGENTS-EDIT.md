@@ -617,3 +617,11 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **主页导航**：品牌字样统一为黑/白配色并通过 LayoutGroup + `layoutId` 提供的动态下划线展示当前视图，CTA 以外的元素移除热粉色，导航边框与头像区域保持深浅色模式一致的黑白/金色层级。
 - **Hero Banner**：叠加锥形渐变与噪点纹理动画，重新分配高光色并让「Start Reading」按钮改用热粉色，突出唯一 CTA。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.22`。
+
+## V1.3.23 (2025-12-01)
+- **前端/导航**：桌面导航与标签筛选区改用 AnimateSharedLayout，共享 layoutId 的金色高亮会以 0.05s 延迟在所选项间滑动，交互逻辑继续沿用既有 state。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.23`。
+
+## V1.3.24 (2025-12-01)
+- **文章卡片**：列表卡片 hover 改为 `whileHover={{ y: -6, rotate: -1 }}` 并配合 spring 过渡，在微微上浮/倾斜的同时保留原有点击事件。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.24`。

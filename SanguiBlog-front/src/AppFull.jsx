@@ -60,7 +60,7 @@ import {
     useSpring,
     useMotionValue,
     useMotionTemplate,
-    LayoutGroup
+    LayoutGroup as AnimateSharedLayout
 } from 'framer-motion';
 import AdminProfile from './pages/admin/Profile';
 import {
@@ -954,6 +954,8 @@ const TiltCard = ({children, className = "", onClick}) => {
                 y.set(0.5);
             }}
             style={{rotateX, rotateY}}
+            whileHover={{y: -6, rotate: -1}}
+            transition={{type: 'spring', stiffness: 320, damping: 24}}
             onClick={onClick}
             className={`
         relative bg-white border-2 border-black p-0 
@@ -1167,7 +1169,7 @@ const Navigation = ({
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-                <LayoutGroup id="primary-nav-tabs">
+                <AnimateSharedLayout id="primary-nav-tabs">
                     <div className="flex items-center gap-8">
                         {PRIMARY_NAV_ITEMS.map((item) => {
                             const isActive = activeView === item.key;
@@ -1177,22 +1179,21 @@ const Navigation = ({
                                     type="button"
                                     onClick={() => setView(item.key)}
                                     aria-current={isActive ? 'page' : undefined}
-                                    className={`relative px-2 py-1 text-lg font-bold uppercase transition-colors ${isActive ? (isDarkMode ? 'text-white' : 'text-black') : (isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
+                                    className={`relative overflow-hidden px-4 py-1 text-lg font-black uppercase tracking-wide rounded-full transition-colors ${isActive ? 'text-black' : (isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
                                 >
-                                    {item.label}
                                     {isActive && (
                                         <motion.span
-                                            layoutId="nav-underline"
-                                            className="absolute -bottom-1 left-0 right-0 h-1 rounded-full"
-                                            style={{backgroundColor: '#FFD700'}}
-                                            transition={{type: 'spring', stiffness: 500, damping: 40}}
+                                            layoutId="desktop-nav-highlight"
+                                            className="absolute inset-0 rounded-full border-2 border-black bg-[#FFD700]"
+                                            transition={{duration: 0.08, ease: 'easeInOut', delay: 0.05}}
                                         />
                                     )}
+                                    <span className="relative z-10">{item.label}</span>
                                 </button>
                             );
                         })}
                     </div>
-                </LayoutGroup>
+                </AnimateSharedLayout>
 
                 {user ? (
                     <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
@@ -1292,7 +1293,7 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.22'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.24'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6363,26 +6364,37 @@ const ArticleList = ({
                                     </button>
                                 </div>
                             )}
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {visibleTags.length ? (
-                                    visibleTags.map((tag) => {
-                                        const isActive = activeTag === tag;
-                                        return (
-                                            <button
-                                                type="button"
-                                                key={tag}
-                                                onClick={() => handleTagClick(tag)}
-                                                aria-pressed={isActive}
-                                                className={`px-3 py-1 text-xs font-black border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${isActive ? 'bg-[#FFD700] text-black' : tagAccentClass}`}
-                                            >
-                                                #{tag}
-                                            </button>
-                                        );
-                                    })
-                                ) : (
+                            {visibleTags.length ? (
+                                <AnimateSharedLayout id="tag-filter-shared-highlight">
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        {visibleTags.map((tag) => {
+                                            const isActive = activeTag === tag;
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={tag}
+                                                    onClick={() => handleTagClick(tag)}
+                                                    aria-pressed={isActive}
+                                                    className={`relative overflow-hidden px-3 py-1 text-xs font-black border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] transition-transform hover:-translate-y-0.5 bg-transparent ${isActive ? 'text-black' : tagAccentClass}`}
+                                                >
+                                                    {isActive && (
+                                                        <motion.span
+                                                            layoutId="tag-filter-highlight"
+                                                            className="absolute inset-0 rounded-full bg-[#FFD700]"
+                                                            transition={{duration: 0.09, ease: 'easeInOut', delay: 0.05}}
+                                                        />
+                                                    )}
+                                                    <span className="relative z-10">#{tag}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </AnimateSharedLayout>
+                            ) : (
+                                <div className="mt-4">
                                     <span className={`text-sm font-bold ${subText}`}>暂无标签</span>
-                                )}
-                            </div>
+                                </div>
+                            )}
                             {hasMoreTags && (
                                 <button
                                     onClick={() => setExpandedTags(prev => !prev)}
