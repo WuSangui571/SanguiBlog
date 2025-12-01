@@ -670,3 +670,11 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.35 (2025-12-01)
 - **图层修复**：DEV 徽章提升到 z-50 并保持指针穿透，避免被导航下方脉冲线覆盖；脉冲线本身下降到基层 `z-0`，仍随视图切换进行渐变动画。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.35`。
+
+## V1.3.36 (2025-12-01)
+- **导航分隔**：去掉导航下方脉冲线的 layout 动画，改为静态 motion.div 仅根据广播开关调整透明度，避免从下往上的跳动；Navigation 参数恢复 `setIsDarkMode` 以保持原逻辑。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.36`。
+
+## V1.3.37 (2025-12-01)
+- **主题切换**：SanGuiBlog 恢复 `handleThemeToggle`，导航按钮直接翻转深浅色并写回 localStorage，修复 `values[i].get` 与 `handleThemeToggle is not defined` 的运行时错误。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.37`。

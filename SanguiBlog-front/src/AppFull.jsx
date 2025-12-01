@@ -1,10 +1,10 @@
-import React, {useState, useEffect, useRef, useCallback, useMemo, useContext} from 'react';
-import {Routes, Route, Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
-import {useBlog} from "./hooks/useBlogData";
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
+import { Routes, Route, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useBlog } from "./hooks/useBlogData";
 import CommentsSection from "./components/comments/CommentsSection.jsx";
 import PopButton from "./components/common/PopButton.jsx";
-import {LayoutOffsetContext, useLayoutOffsets} from "./contexts/LayoutOffsetContext.jsx";
-import {PermissionContext, usePermissionContext} from "./contexts/PermissionContext.jsx";
+import { LayoutOffsetContext, useLayoutOffsets } from "./contexts/LayoutOffsetContext.jsx";
+import { PermissionContext, usePermissionContext } from "./contexts/PermissionContext.jsx";
 import {
     recordPageView,
     updateBroadcast,
@@ -51,7 +51,7 @@ import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import {visit} from 'unist-util-visit';
+import { visit } from 'unist-util-visit';
 import {
     motion,
     AnimatePresence,
@@ -96,7 +96,7 @@ const formatBgClassFromHex = (hex) => {
     return `bg-[${normalized}]`;
 };
 
-const ThemeColorSelector = ({value, onChange, inputClass, isDarkMode}) => {
+const ThemeColorSelector = ({ value, onChange, inputClass, isDarkMode }) => {
     const selectedHex = useMemo(() => extractHexFromBgClass(value, '#6366F1'), [value]);
 
     return (
@@ -132,7 +132,7 @@ const ThemeColorSelector = ({value, onChange, inputClass, isDarkMode}) => {
                             aria-label={`选择颜色 ${presetHex}`}
                             onClick={() => onChange(preset)}
                             className={`w-10 h-10 rounded-full border-2 ${isActive ? 'border-black scale-110' : 'border-transparent'} shadow-[2px_2px_0px_0px_#000] transition-transform`}
-                            style={{backgroundColor: presetHex}}
+                            style={{ backgroundColor: presetHex }}
                         />
                     );
                 })}
@@ -144,17 +144,17 @@ const ThemeColorSelector = ({value, onChange, inputClass, isDarkMode}) => {
 };
 
 const useTimedNotice = (duration = 4000) => {
-    const [notice, setNotice] = useState({visible: false, message: '', tone: 'success'});
+    const [notice, setNotice] = useState({ visible: false, message: '', tone: 'success' });
     const timerRef = useRef(null);
 
     const showNotice = useCallback((message, tone = 'success') => {
         if (!message) return;
-        setNotice({visible: true, message, tone});
+        setNotice({ visible: true, message, tone });
         if (timerRef.current) {
             clearTimeout(timerRef.current);
         }
         timerRef.current = setTimeout(() => {
-            setNotice((prev) => ({...prev, visible: false}));
+            setNotice((prev) => ({ ...prev, visible: false }));
         }, duration);
     }, [duration]);
 
@@ -163,7 +163,7 @@ const useTimedNotice = (duration = 4000) => {
             clearTimeout(timerRef.current);
             timerRef.current = null;
         }
-        setNotice((prev) => ({...prev, visible: false}));
+        setNotice((prev) => ({ ...prev, visible: false }));
     }, []);
 
     useEffect(() => {
@@ -174,11 +174,11 @@ const useTimedNotice = (duration = 4000) => {
         };
     }, []);
 
-    return {notice, showNotice, hideNotice};
+    return { notice, showNotice, hideNotice };
 };
 
-const AdminNoticeBar = ({notice, onClose}) => {
-    const {headerHeight} = useLayoutOffsets();
+const AdminNoticeBar = ({ notice, onClose }) => {
+    const { headerHeight } = useLayoutOffsets();
     if (!notice?.visible || !notice?.message) return null;
     const tone = notice.tone === 'error' ? 'error' : 'success';
     const toneStyles = tone === 'error'
@@ -190,10 +190,10 @@ const AdminNoticeBar = ({notice, onClose}) => {
     return (
         <div
             className="fixed right-8 z-50 w-[min(360px,calc(100vw-32px))] transition-all duration-300"
-            style={{top: safeTop}}
+            style={{ top: safeTop }}
         >
             <div className={`flex items-start gap-3 rounded-2xl border px-5 py-4 ${toneStyles}`}>
-                <Icon size={20}/>
+                <Icon size={20} />
                 <div className="flex-1">
                     <p className="font-semibold text-sm leading-5">{notice.message}</p>
                     <p className="text-xs opacity-80 mt-1">提示栏会在 4 秒后自动收起。</p>
@@ -204,7 +204,7 @@ const AdminNoticeBar = ({notice, onClose}) => {
                     onClick={onClose}
                     className="text-xs text-current/70 hover:text-current transition-colors"
                 >
-                    <X size={16}/>
+                    <X size={16} />
                 </button>
             </div>
         </div>
@@ -255,18 +255,18 @@ const remarkHighlight = () => (tree) => {
 };
 
 const ArticleDetail = ({
-                           id,
-                           setView,
-                           isDarkMode,
-                           articleData,
-                           commentsData,
-                           onSubmitComment,
-                           onDeleteComment,
-                           onUpdateComment,
-                           currentUser,
-                           onCategoryClick
-                       }) => {
-    const {meta: siteMeta} = useBlog();
+    id,
+    setView,
+    isDarkMode,
+    articleData,
+    commentsData,
+    onSubmitComment,
+    onDeleteComment,
+    onUpdateComment,
+    currentUser,
+    onCategoryClick
+}) => {
+    const { meta: siteMeta } = useBlog();
     const summary = articleData?.summary;
 
     // The backend returns a PostDetailDto which contains a 'summary' field (PostSummaryDto).
@@ -294,7 +294,7 @@ const ArticleDetail = ({
     const text = isDarkMode ? 'text-gray-100' : 'text-black';
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const articleContentRef = useRef(null);
-    const {headerHeight} = useLayoutOffsets();
+    const { headerHeight } = useLayoutOffsets();
     const fixedTopOffset = headerHeight + 16;
     const [previewImage, setPreviewImage] = useState(null);
     const handleImagePreview = useCallback((src) => {
@@ -330,7 +330,7 @@ const ArticleDetail = ({
         return hyphenated || base;
     };
 
-    const createHeading = (Tag) => ({children, ...props}) => {
+    const createHeading = (Tag) => ({ children, ...props }) => {
         const rawText = extractText(children);
         const baseSlug = slugifyHeading(rawText);
         const count = headingSluggerRef.current[baseSlug] || 0;
@@ -347,7 +347,7 @@ const ArticleDetail = ({
         const exactMatch = document.getElementById(rawTarget);
         const slugMatch = exactMatch || document.getElementById(slugifyHeading(rawTarget));
         if (slugMatch) {
-            slugMatch.scrollIntoView({behavior: 'smooth', block: 'start'});
+            slugMatch.scrollIntoView({ behavior: 'smooth', block: 'start' });
             if (window?.history?.replaceState) {
                 window.history.replaceState(null, '', `#${slugMatch.id}`);
             } else {
@@ -412,7 +412,7 @@ const ArticleDetail = ({
         if (typeof document === 'undefined') return;
         const commentsEl = document.getElementById('comments-section');
         if (commentsEl) {
-            commentsEl.scrollIntoView({behavior: 'smooth', block: 'start'});
+            commentsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, []);
 
@@ -435,8 +435,8 @@ const ArticleDetail = ({
     }, [resolvedHtml, contentMd, handleImagePreview]);
 
     const markdownComponents = useMemo(() => ({
-        pre: ({children}) => <>{children}</>,
-        img: ({src, alt, className = '', ...props}) => {
+        pre: ({ children }) => <>{children}</>,
+        img: ({ src, alt, className = '', ...props }) => {
             const resolved = resolveAssetPath(src);
             return (
                 <img
@@ -448,7 +448,7 @@ const ArticleDetail = ({
                 />
             );
         },
-        code({inline, className, children, ...props}) {
+        code({ inline, className, children, ...props }) {
             const rawText = String(children);
             const textContent = rawText.replace(/\n$/, '');
             const hasLanguage = typeof className === 'string' && className.includes('language-');
@@ -497,10 +497,10 @@ const ArticleDetail = ({
                     </div>
                     <pre
                         className={`p-4 overflow-auto m-0 ${isDarkMode ? 'bg-[#1E1E1E] text-gray-200' : 'bg-[#282c34] text-white'}`}>
-            <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
-              {textContent}
-            </code>
-          </pre>
+                        <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
+                            {textContent}
+                        </code>
+                    </pre>
                 </div>
             );
         },
@@ -510,7 +510,7 @@ const ArticleDetail = ({
         h4: createHeading('h4'),
         h5: createHeading('h5'),
         h6: createHeading('h6'),
-        a: ({href, children, ...props}) => {
+        a: ({ href, children, ...props }) => {
             if (href && href.startsWith('#')) {
                 return (
                     <a
@@ -574,21 +574,21 @@ const ArticleDetail = ({
     const articleTopPadding = Math.max(16, fixedTopOffset - headerHeight);
 
     return (
-        <motion.div initial={{x: '100%'}} animate={{x: 0}} exit={{x: '100%'}}
-                    transition={{type: "spring", stiffness: 300, damping: 30}}
-                    className={`min-h-screen px-4 md:px-0 pb-20 ${surface} ${text}`}
-                    style={{paddingTop: articleTopPadding}}>
+        <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className={`min-h-screen px-4 md:px-0 pb-20 ${surface} ${text}`}
+            style={{ paddingTop: articleTopPadding }}>
             {/* Share Toast Notification */}
             <AnimatePresence>
                 {showShareToast && (
                     <motion.div
-                        initial={{opacity: 0, y: -50, x: '-50%'}}
-                        animate={{opacity: 1, y: 0, x: '-50%'}}
-                        exit={{opacity: 0, y: -50, x: '-50%'}}
-                        style={{top: fixedTopOffset}}
+                        initial={{ opacity: 0, y: -50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: -50, x: '-50%' }}
+                        style={{ top: fixedTopOffset }}
                         className={`fixed left-1/2 z-[60] px-6 py-3 border-2 border-black shadow-[4px_4px_0px_0px_#000] flex items-center gap-3 ${isDarkMode ? 'bg-green-600 text-white' : 'bg-green-400 text-black'}`}
                     >
-                        <CheckCircle size={24} strokeWidth={3}/>
+                        <CheckCircle size={24} strokeWidth={3} />
                         <span className="font-black text-lg">链接已复制！</span>
                     </motion.div>
                 )}
@@ -597,30 +597,30 @@ const ArticleDetail = ({
             {/* Floating Back Button - Aligned with article content */}
             <div
                 className="fixed left-0 right-0 z-50 pointer-events-none"
-                style={{top: fixedTopOffset}}
+                style={{ top: fixedTopOffset }}
             >
                 <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
                     <motion.button
                         onClick={() => setView('home')}
-                        initial={{opacity: 0, x: -50}}
-                        animate={{opacity: 1, x: 0}}
-                        whileHover={{scale: 1.05}}
+                        initial={{ opacity: 0, x: -50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        whileHover={{ scale: 1.05 }}
                         className={`pointer-events-auto absolute -left-6 md:-left-40 px-4 py-2 font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
                     >
                         <div className="flex items-center gap-2">
-                            <ChevronRight size={20} className="rotate-180"/>
+                            <ChevronRight size={20} className="rotate-180" />
                             <span>返回首页</span>
                         </div>
                     </motion.button>
                     <motion.button
                         onClick={scrollToComments}
-                        initial={{opacity: 0, x: 50}}
-                        animate={{opacity: 1, x: 0}}
-                        whileHover={{scale: 1.05}}
+                        initial={{ opacity: 0, x: 50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        whileHover={{ scale: 1.05 }}
                         className={`pointer-events-auto absolute -right-6 md:-right-40 px-4 py-2 font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
                     >
                         <div className="flex items-center gap-2">
-                            <MessageCircle size={18}/>
+                            <MessageCircle size={18} />
                             <span>去评论</span>
                         </div>
                     </motion.button>
@@ -636,12 +636,12 @@ const ArticleDetail = ({
 
                     <div
                         className={`flex items-center gap-2 mb-6 border-b-4 ${isDarkMode ? 'border-gray-700' : 'border-black'} pb-6`}>
-            <span
-                onClick={() => onCategoryClick && onCategoryClick(post.parentCategory)}
-                className={`bg-black text-white px-3 py-1 font-bold text-sm cursor-pointer transition-transform hover:scale-105 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'hover:bg-gray-800'}`}
-            >{post.parentCategory}</span>
+                        <span
+                            onClick={() => onCategoryClick && onCategoryClick(post.parentCategory)}
+                            className={`bg-black text-white px-3 py-1 font-bold text-sm cursor-pointer transition-transform hover:scale-105 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'hover:bg-gray-800'}`}
+                        >{post.parentCategory}</span>
                         <ChevronRight size={16} className={`${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}
-                                      strokeWidth={3}/>
+                            strokeWidth={3} />
                         <span
                             onClick={() => onCategoryClick && onCategoryClick(post.parentCategory, post.category)}
                             className={`px-3 py-1 font-bold text-sm border-2 border-black ${post.color} text-white shadow-[2px_2px_0px_0px_#000] cursor-pointer transition-transform hover:scale-105`}
@@ -653,23 +653,23 @@ const ArticleDetail = ({
                     {/* Article Meta: Date, Reading Time, Word Count */}
                     <div className="flex flex-wrap items-center gap-4 mb-8 text-sm font-bold text-gray-500">
                         <div className="flex items-center gap-1">
-                            <Clock size={16}/>
+                            <Clock size={16} />
                             <span>{post.date}</span>
                         </div>
                         {articleData?.readingTime && (
                             <div className="flex items-center gap-1">
-                                <BookOpen size={16}/>
+                                <BookOpen size={16} />
                                 <span>{articleData.readingTime}</span>
                             </div>
                         )}
                         {articleData?.wordCount && (
                             <div className="flex items-center gap-1">
-                                <FileText size={16}/>
+                                <FileText size={16} />
                                 <span>{articleData.wordCount} 字</span>
                             </div>
                         )}
                         <div className="flex items-center gap-1">
-                            <Eye size={16}/>
+                            <Eye size={16} />
                             <span>{post.views} 阅读</span>
                         </div>
                     </div>
@@ -693,8 +693,8 @@ const ArticleDetail = ({
                                 <p className="font-black text-lg leading-none">{post.authorName}</p>
                                 <span
                                     className={`inline-block mt-1 px-2 py-0.5 text-xs font-black border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-pink-600 text-white' : 'bg-yellow-400 text-black'}`}>
-                  {post.authorTitle ? post.authorTitle.toUpperCase() : '博主'}
-                </span>
+                                    {post.authorTitle ? post.authorTitle.toUpperCase() : '博主'}
+                                </span>
                             </div>
                         </div>
 
@@ -703,7 +703,7 @@ const ArticleDetail = ({
                             className={`p-2 border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
                             title="复制链接"
                         >
-                            <Share2 size={20}/>
+                            <Share2 size={20} />
                         </button>
                     </div>
 
@@ -722,7 +722,7 @@ const ArticleDetail = ({
                             </ReactMarkdown>
                         ) : contentHtml ? (
                             <div
-                                dangerouslySetInnerHTML={{__html: resolvedHtml || contentHtml}}
+                                dangerouslySetInnerHTML={{ __html: resolvedHtml || contentHtml }}
                             />
                         ) : (
                             <p className="font-semibold">暂无正文内容</p>
@@ -747,17 +747,17 @@ const ArticleDetail = ({
             <AnimatePresence>
                 {previewImage && (
                     <motion.div
-                        initial={{opacity: 0}}
-                        animate={{opacity: 1}}
-                        exit={{opacity: 0}}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-6"
                         onClick={closeImagePreview}
                     >
                         <motion.img
                             src={previewImage}
-                            initial={{scale: 0.8, opacity: 0}}
-                            animate={{scale: 1, opacity: 1}}
-                            exit={{scale: 0.8, opacity: 0}}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
                             className="max-w-full max-h-full rounded-lg shadow-[8px_8px_0px_0px_#000] border-4 border-white cursor-zoom-out"
                             onClick={(e) => e.stopPropagation()}
                         />
@@ -791,17 +791,17 @@ const THEME = {
 
 // 角色定义
 const ROLES = {
-    SUPER_ADMIN: {label: "超级管理员", color: "bg-[#FF0080]"},
-    ADMIN: {label: "管理员", color: "bg-[#6366F1]"},
-    USER: {label: "用户", color: "bg-[#00E096]"}
+    SUPER_ADMIN: { label: "超级管理员", color: "bg-[#FF0080]" },
+    ADMIN: { label: "管理员", color: "bg-[#6366F1]" },
+    USER: { label: "用户", color: "bg-[#00E096]" }
 };
 
 const CATEGORY_TREE = [
-    {id: "all", label: "全部", children: []},
+    { id: "all", label: "全部", children: [] },
     {
         id: "programming",
         label: "硬核编程",
-        children: [{id: "java", label: "Java Core"}, {id: "frontend", label: "Modern Web"}, {
+        children: [{ id: "java", label: "Java Core" }, { id: "frontend", label: "Modern Web" }, {
             id: "algo",
             label: "算法进阶"
         }]
@@ -809,9 +809,9 @@ const CATEGORY_TREE = [
     {
         id: "architecture",
         label: "架构视角",
-        children: [{id: "cloud", label: "云原生"}, {id: "system", label: "分布式系统"}]
+        children: [{ id: "cloud", label: "云原生" }, { id: "system", label: "分布式系统" }]
     },
-    {id: "life", label: "数字生活", children: [{id: "gear", label: "装备控"}, {id: "think", label: "碎碎念"}]}
+    { id: "life", label: "数字生活", children: [{ id: "gear", label: "装备控" }, { id: "think", label: "碎碎念" }] }
 ];
 
 const SITE_STATS = {
@@ -906,10 +906,10 @@ const AnalyticsSummaryContext = React.createContext({
 });
 
 const useAdminAnalytics = () => useContext(AnalyticsSummaryContext);
-const PermissionNotice = ({title = '权限不足', description = '请联系超级管理员分配权限'}) => (
+const PermissionNotice = ({ title = '权限不足', description = '请联系超级管理员分配权限' }) => (
     <div
         className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-10 text-center space-y-3 bg-white/60 dark:bg-gray-900/40">
-        <Lock size={32} className="mx-auto text-gray-400"/>
+        <Lock size={32} className="mx-auto text-gray-400" />
         <h3 className="text-xl font-black">{title}</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 leading-6">{description}</p>
     </div>
@@ -934,7 +934,7 @@ const getGeoHint = () => {
 
 // --- 2. 炫酷 UI 组件库 (不变) ---
 
-const TiltCard = ({children, className = "", onClick}) => {
+const TiltCard = ({ children, className = "", onClick }) => {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
     const rotateX = useTransform(y, [0, 1], [5, -5]);
@@ -953,9 +953,9 @@ const TiltCard = ({children, className = "", onClick}) => {
                 x.set(0.5);
                 y.set(0.5);
             }}
-            style={{rotateX, rotateY}}
-            whileHover={{y: -6, rotate: -1}}
-            transition={{type: 'spring', stiffness: 320, damping: 24}}
+            style={{ rotateX, rotateY }}
+            whileHover={{ y: -6, rotate: -1 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
             onClick={onClick}
             className={`
         relative bg-white border-2 border-black p-0 
@@ -990,7 +990,7 @@ const BROADCAST_STYLE_CONFIG = {
     }
 };
 
-const EmergencyBar = ({isOpen, content, onClose, onHeightChange, style = "ALERT"}) => {
+const EmergencyBar = ({ isOpen, content, onClose, onHeightChange, style = "ALERT" }) => {
     const barRef = useRef(null);
     const normalizedStyle = (style || "ALERT").toUpperCase();
     const styleConfig = BROADCAST_STYLE_CONFIG[normalizedStyle] || BROADCAST_STYLE_CONFIG.ALERT;
@@ -1019,15 +1019,15 @@ const EmergencyBar = ({isOpen, content, onClose, onHeightChange, style = "ALERT"
             {isOpen && (
                 <motion.div
                     ref={barRef}
-                    initial={{height: 0, opacity: 0}}
-                    animate={{height: 'auto', opacity: 1}}
-                    exit={{height: 0, opacity: 0}}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
                     className={`border-b-4 border-black overflow-hidden relative z-[60] w-full ${styleConfig.containerClass}`}
                 >
                     <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between font-bold">
                         <div className={`flex items-center gap-3 ${styleConfig.pulse ? 'animate-pulse' : ''}`}>
                             <StyleIcon size={styleConfig.iconSize} strokeWidth={3}
-                                       className={styleConfig.iconClass}/>
+                                className={styleConfig.iconClass} />
                             <span className={`uppercase tracking-widest ${styleConfig.textClass}`}>{styleConfig.label}</span>
                         </div>
                         <div className="flex items-center gap-4">
@@ -1036,7 +1036,7 @@ const EmergencyBar = ({isOpen, content, onClose, onHeightChange, style = "ALERT"
                                 onClick={onClose}
                                 className="bg-black text-white p-1 hover:rotate-90 transition-transform border border-white"
                             >
-                                <X size={16}/>
+                                <X size={16} />
                             </button>
                         </div>
                     </div>
@@ -1046,8 +1046,8 @@ const EmergencyBar = ({isOpen, content, onClose, onHeightChange, style = "ALERT"
     );
 };
 
-const ErrorToast = ({error, onClose}) => {
-    const {headerHeight} = useLayoutOffsets();
+const ErrorToast = ({ error, onClose }) => {
+    const { headerHeight } = useLayoutOffsets();
     const toastTop = headerHeight + 16;
     useEffect(() => {
         if (error) {
@@ -1060,15 +1060,15 @@ const ErrorToast = ({error, onClose}) => {
         <AnimatePresence>
             {error && (
                 <motion.div
-                    initial={{opacity: 0, y: -50}}
-                    animate={{opacity: 1, y: 0}}
-                    exit={{opacity: 0, y: -50}}
+                    initial={{ opacity: 0, y: -50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -50 }}
                     className="fixed right-4 z-[70] max-w-md"
-                    style={{top: toastTop}}
+                    style={{ top: toastTop }}
                 >
                     <div className="bg-red-500 border-4 border-black shadow-[8px_8px_0px_0px_#000] p-4">
                         <div className="flex items-start gap-3 text-white">
-                            <AlertTriangle size={24} strokeWidth={3} className="flex-shrink-0 mt-1"/>
+                            <AlertTriangle size={24} strokeWidth={3} className="flex-shrink-0 mt-1" />
                             <div className="flex-1">
                                 <h4 className="font-black text-lg mb-1">错误 // ERROR</h4>
                                 <p className="font-bold text-sm">{error}</p>
@@ -1077,7 +1077,7 @@ const ErrorToast = ({error, onClose}) => {
                                 onClick={onClose}
                                 className="bg-black p-1 hover:rotate-90 transition-transform border border-white flex-shrink-0"
                             >
-                                <X size={16}/>
+                                <X size={16} />
                             </button>
                         </div>
                     </div>
@@ -1093,7 +1093,7 @@ const ClickRipple = () => {
     useEffect(() => {
         const handleClick = (e) => {
             const id = Date.now();
-            setRipples(prev => [...prev, {x: e.clientX, y: e.clientY, id}]);
+            setRipples(prev => [...prev, { x: e.clientX, y: e.clientY, id }]);
             setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 1000);
         };
         window.addEventListener('click', handleClick);
@@ -1105,9 +1105,9 @@ const ClickRipple = () => {
             {ripples.map(ripple => (
                 <motion.div
                     key={ripple.id}
-                    initial={{width: 0, height: 0, opacity: 0.8, borderWidth: 5}}
-                    animate={{width: 100, height: 100, opacity: 0, borderWidth: 0}}
-                    transition={{duration: 0.6, ease: "easeOut"}}
+                    initial={{ width: 0, height: 0, opacity: 0.8, borderWidth: 5 }}
+                    animate={{ width: 100, height: 100, opacity: 0, borderWidth: 0 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
                     style={{
                         left: ripple.x,
                         top: ripple.y,
@@ -1125,23 +1125,22 @@ const ClickRipple = () => {
 // --- 3. 前台视图组件 (保持不变) ---
 const NAVIGATION_HEIGHT = 80;
 const PRIMARY_NAV_ITEMS = [
-    {key: 'home', label: '首页'},
-    {key: 'archive', label: '归档'},
-    {key: 'about', label: '关于'}
+    { key: 'home', label: '首页' },
+    { key: 'archive', label: '归档' },
+    { key: 'about', label: '关于' }
 ];
 
 const Navigation = ({
-                        user,
-                        setView,
-                        currentView,
-                        handleLogout,
-                        toggleMenu,
-                        isDarkMode,
-                        setIsDarkMode,
-                        onProfileClick
-                    }) => {
+    user,
+    setView,
+    currentView,
+    handleLogout,
+    toggleMenu,
+    isDarkMode,
+    onToggleTheme,
+    onProfileClick
+}) => {
     const roleInfo = user ? ROLES[user.role] : null;
-    const isFrontNav = true; // Use a flag for front-end vs back-end styling
     const activeView = currentView || 'home';
     const [logoClicks, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
@@ -1152,14 +1151,10 @@ const Navigation = ({
         setView('home');
         setLogoClicks((prev) => {
             const next = prev + 1;
-            if (logoResetTimer.current) {
-                clearTimeout(logoResetTimer.current);
-            }
+            if (logoResetTimer.current) clearTimeout(logoResetTimer.current);
             if (next >= 5) {
                 setDevUnlocked(true);
-                if (devMessageTimer.current) {
-                    clearTimeout(devMessageTimer.current);
-                }
+                if (devMessageTimer.current) clearTimeout(devMessageTimer.current);
                 devMessageTimer.current = setTimeout(() => setDevUnlocked(false), 2500);
                 return 0;
             }
@@ -1175,10 +1170,16 @@ const Navigation = ({
         };
     }, []);
 
+    const handleThemeButton = useCallback((event) => {
+        if (typeof onToggleTheme === 'function') {
+            onToggleTheme(event);
+        }
+    }, [onToggleTheme]);
+
     return (
         <motion.nav
-            initial={{y: -100}}
-            animate={{y: 0}}
+            initial={{ y: -100 }}
+            animate={{ y: 0 }}
             className={`relative w-full h-20 flex items-center justify-between px-4 md:px-8 
           ${isDarkMode ? 'bg-gray-900 border-b-4 border-gray-700 text-white' : 'bg-white border-b-4 border-black text-black'}
         `}
@@ -1189,7 +1190,7 @@ const Navigation = ({
             >
                 <div
                     className={`w-12 h-12 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'} flex items-center justify-center border-2 border-black group-hover:bg-[#FFD700] group-hover:text-black transition-colors`}>
-                    <Code size={28} strokeWidth={3}/>
+                    <Code size={28} strokeWidth={3} />
                 </div>
                 <div className="flex flex-col">
                     <span
@@ -1216,7 +1217,7 @@ const Navigation = ({
                                         <motion.span
                                             layoutId="desktop-nav-highlight"
                                             className="absolute inset-0 rounded-full border-2 border-black bg-[#FFD700]"
-                                            transition={{duration: 0.08, ease: 'easeInOut', delay: 0.05}}
+                                            transition={{ duration: 0.08, ease: 'easeInOut', delay: 0.05 }}
                                         />
                                     )}
                                     <span className="relative z-10">{item.label}</span>
@@ -1229,37 +1230,36 @@ const Navigation = ({
                 {user ? (
                     <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
                         <div className="flex items-center gap-2 cursor-pointer"
-                             onClick={onProfileClick || (() => setView('admin'))}>
+                            onClick={onProfileClick || (() => setView('admin'))}>
                             <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
                                 <img
                                     src={user.avatar?.startsWith('http') ? user.avatar : `http://localhost:8080${user.avatar}`}
-                                    className="w-full h-full object-cover"/>
+                                    className="w-full h-full object-cover" />
                             </div>
                             <div className="flex flex-col items-start">
                                 <span className="font-black text-sm leading-none">{user.username}</span>
                                 <span className={`text-[10px] ${roleInfo?.color} text-white px-1 w-max mt-1 font-bold`}>
-                  {roleInfo?.label || "USER"}
-                </span>
+                                    {roleInfo?.label || "USER"}
+                                </span>
                             </div>
                         </div>
                         {(user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && (
                             <button onClick={() => setView('admin')}
-                                    className="p-2 hover:bg-black hover:text-white border-2 border-transparent hover:border-black rounded-full transition-all">
-                                <Settings size={20}/></button>
+                                className="p-2 hover:bg-black hover:text-white border-2 border-transparent hover:border-black rounded-full transition-all">
+                                <Settings size={20} /></button>
                         )}
                         <button onClick={handleLogout} className="p-2 hover:text-[#F97316] transition-colors"><LogOut
-                            size={20}/></button>
+                            size={20} /></button>
                     </div>
                 ) : (
                     <PopButton onClick={() => setView('login')} icon={LogIn}>Login</PopButton>
                 )}
-                {/* Dark Mode Toggle */}
                 <button
-                    onClick={() => setIsDarkMode(!isDarkMode)}
+                    onClick={handleThemeButton}
                     className={`p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-[#FFD700] text-black hover:bg-white' : 'bg-black text-white hover:bg-[#6366F1]'}`}
                     title="Toggle Dark Mode"
                 >
-                    {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>}
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
             </div>
 
@@ -1267,11 +1267,11 @@ const Navigation = ({
                 {devUnlocked && (
                     <motion.div
                         className="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 px-6 py-2 text-sm md:text-base font-black uppercase tracking-[0.2em] bg-black text-[#FFD700] border-2 border-white rounded-full shadow-[4px_4px_0px_0px_#000] z-50"
-                        style={{filter: 'drop-shadow(0 0 6px rgba(255,215,0,0.8))'}}
-                        initial={{opacity: 0, y: 10, scale: 0.9}}
-                        animate={{opacity: 1, y: 0, scale: 1}}
-                        exit={{opacity: 0, y: -10, scale: 0.9}}
-                        transition={{type: 'spring', stiffness: 260, damping: 20}}
+                        style={{ filter: 'drop-shadow(0 0 6px rgba(255,215,0,0.8))' }}
+                        initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                     >
                         DEV MODE READY
                     </motion.div>
@@ -1281,14 +1281,14 @@ const Navigation = ({
             <button
                 className="md:hidden p-2 border-2 border-black bg-[#FFD700] shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none"
                 onClick={toggleMenu}>
-                <Menu size={24}/>
+                <Menu size={24} />
             </button>
         </motion.nav>
     );
 };
 // ... (Hero, StatsStrip, ArticleList, CommentsSection, ArticleDetail, LoginView components are kept unchanged in functionality, but are wrapped in the main App with the dark mode context.)
-const Hero = ({setView, isDarkMode, onStartReading, version}) => {
-    const {scrollY} = useScroll();
+const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
+    const { scrollY } = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const rotate = useTransform(scrollY, [0, 500], [0, 45]);
 
@@ -1322,41 +1322,41 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                     opacity: isDarkMode ? 0.18 : 0.28,
                     mixBlendMode: isDarkMode ? 'screen' : 'multiply'
                 }}
-                initial={{backgroundPosition: '0% 0%'}}
-                animate={{backgroundPosition: ['0% 0%', '100% 100%']}}
-                transition={{duration: 30, repeat: Infinity, ease: 'linear'}}
+                initial={{ backgroundPosition: '0% 0%' }}
+                animate={{ backgroundPosition: ['0% 0%', '100% 100%'] }}
+                transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
             />
-            <motion.div style={{y: y1, rotate}} className="absolute top-32 left-[10%] text-[#FFD700]">
-                <Sparkles size={80} strokeWidth={1.5} className="drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] fill-current"/>
+            <motion.div style={{ y: y1, rotate }} className="absolute top-32 left-[10%] text-[#FFD700]">
+                <Sparkles size={80} strokeWidth={1.5} className="drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] fill-current" />
             </motion.div>
-            <motion.div style={{y: y1, x: -50}}
-                        className="absolute bottom-40 right-[10%] w-32 h-32 border-4 border-black bg-[#00E096] shadow-[8px_8px_0px_0px_#000] z-0 rounded-full flex items-center justify-center font-black text-2xl">
+            <motion.div style={{ y: y1, x: -50 }}
+                className="absolute bottom-40 right-[10%] w-32 h-32 border-4 border-black bg-[#00E096] shadow-[8px_8px_0px_0px_#000] z-0 rounded-full flex items-center justify-center font-black text-2xl">
                 CODE
             </motion.div>
 
             <div className="z-10 text-center max-w-5xl px-4 relative">
                 <motion.div
-                    initial={{scale: 0}} animate={{scale: 1}}
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.35'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.37'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
-                    <motion.span initial={{y: 100, opacity: 0}} animate={{y: 0, opacity: 1}} transition={{delay: 0.1}}
-                                 className="block">
+                    <motion.span initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
+                        className="block">
                         用代码记录<span
-                        className="text-[#6366F1] underline decoration-8 decoration-black underline-offset-8 ml-4">探索</span>
+                            className="text-[#6366F1] underline decoration-8 decoration-black underline-offset-8 ml-4">探索</span>
                     </motion.span>
-                    <motion.span initial={{y: 100, opacity: 0}} animate={{y: 0, opacity: 1}} transition={{delay: 0.2}}
-                                 className="block">
+                    <motion.span initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
+                        className="block">
                         以分享照亮<span
-                        className="text-[#0EA5E9] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
+                            className="text-[#0EA5E9] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
                     </motion.span>
                 </h1>
                 <p className={`text-xl md:text-2xl font-bold mb-12 max-w-2xl mx-auto border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-600'}`}>
                     拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。
-                    <br/><span className="text-sm font-mono text-[#0EA5E9]">{`>>`} PRESS START TO CONTINUE</span>
+                    <br /><span className="text-sm font-mono text-[#0EA5E9]">{`>>`} PRESS START TO CONTINUE</span>
                 </p>
 
 
@@ -1365,15 +1365,15 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                         if (onStartReading) {
                             onStartReading();
                         } else {
-                            document.getElementById('posts')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+                            document.getElementById('posts')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
                     }}
-                               icon={ArrowUpRight} className="text-xl px-8 py-4 bg-[#FF0080] text-white">
+                        icon={ArrowUpRight} className="text-xl px-8 py-4 bg-[#FF0080] text-white">
                         START READING
                     </PopButton>
                     <PopButton variant="secondary" icon={Github}
-                               onClick={() => window.open('https://github.com/Wusangui571')}
-                               className="text-xl px-8 py-4">
+                        onClick={() => window.open('https://github.com/Wusangui571')}
+                        className="text-xl px-8 py-4">
                         GITHUB REPO
                     </PopButton>
                 </div>
@@ -1386,8 +1386,8 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
 // --- 4. 后台管理组件 (Admin Panel) ---
 
 // 4.1 Sub-Component: Dashboard View
-const DashboardView = ({isDarkMode}) => {
-    const {summary, loading, error, reload} = useAdminAnalytics();
+const DashboardView = ({ isDarkMode }) => {
+    const { summary, loading, error, reload } = useAdminAnalytics();
     const overview = summary?.overview;
     const dailyTrends = summary?.dailyTrends || [];
     const trafficSources = summary?.trafficSources || [];
@@ -1404,18 +1404,18 @@ const DashboardView = ({isDarkMode}) => {
         return fallback;
     };
 
-    const Card = ({title, value, icon: Icon, color, desc}) => (
+    const Card = ({ title, value, icon: Icon, color, desc }) => (
         <div className={`${surface} ${border} p-5 rounded-xl shadow-lg`}>
             <div className="flex items-center justify-between">
                 <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${textMuted}`}>{title}</p>
-                {Icon && <Icon size={20} className={color}/>}
+                {Icon && <Icon size={20} className={color} />}
             </div>
             <div className="mt-3 text-3xl font-black">{value}</div>
             {desc && <p className={`text-xs mt-1 ${textMuted}`}>{desc}</p>}
         </div>
     );
 
-    const Sparkline = ({data}) => {
+    const Sparkline = ({ data }) => {
         if (!data.length) {
             return <p className={`text-sm ${textMuted}`}>暂无数据</p>;
         }
@@ -1444,7 +1444,7 @@ const DashboardView = ({isDarkMode}) => {
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h2 className="text-2xl font-black flex items-center gap-2">
-                        <Activity/> 仪表盘概览
+                        <Activity /> 仪表盘概览
                     </h2>
                     <p className={`text-sm ${textMuted}`}>{rangeLabel}，实时同步访客、文章与评论概况</p>
                 </div>
@@ -1463,27 +1463,27 @@ const DashboardView = ({isDarkMode}) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <Card title="累计浏览" value={formatNumber(overview?.totalViews)} icon={BarChart3} color="text-indigo-500"
-                      desc="含所有文章与页面"/>
+                    desc="含所有文章与页面" />
                 <Card title="区间 PV" value={formatNumber(overview?.periodViews)} icon={Activity}
-                      color="text-pink-500" desc={rangeLabel}/>
+                    color="text-pink-500" desc={rangeLabel} />
                 <Card title="独立访客" value={formatNumber(overview?.uniqueVisitors)} icon={Users}
-                      color="text-green-500"
-                      desc="按 IP 去重"/>
+                    color="text-green-500"
+                    desc="按 IP 去重" />
                 <Card title="登录访问" value={formatNumber(overview?.loggedInViews)} icon={Shield}
-                      color="text-yellow-500"
-                      desc="含后台/前台已登录用户"/>
+                    color="text-yellow-500"
+                    desc="含后台/前台已登录用户" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <Card title="文章总数" value={SITE_STATS.posts} icon={FileText} color="text-slate-500"
-                      desc={`最后更新：${SITE_STATS.lastUpdated || '—'}`}/>
+                    desc={`最后更新：${SITE_STATS.lastUpdated || '—'}`} />
                 <Card title="评论总数" value={SITE_STATS.comments} icon={MessageSquare} color="text-emerald-500"
-                      desc="包含前台所有回复"/>
+                    desc="包含前台所有回复" />
                 <Card title="日均 PV" value={overview ? (overview.avgViewsPerDay?.toFixed(1) || '0.0') : '--'}
-                      icon={TrendingUp} color="text-purple-500" desc={rangeLabel}/>
+                    icon={TrendingUp} color="text-purple-500" desc={rangeLabel} />
                 <Card title="区间评论" value={formatNumber(SITE_STATS.comments)} icon={MessageCircle}
-                      color="text-orange-500"
-                      desc="历史累计"/>
+                    color="text-orange-500"
+                    desc="历史累计" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1496,7 +1496,7 @@ const DashboardView = ({isDarkMode}) => {
                         <span className="text-xs font-mono">{dailyTrends.length} 天</span>
                     </div>
                     <div className="mt-4">
-                        <Sparkline data={dailyTrends}/>
+                        <Sparkline data={dailyTrends} />
                     </div>
                     {dailyTrends.length > 0 && (
                         <div className="flex flex-wrap gap-4 text-xs mt-2">
@@ -1521,7 +1521,7 @@ const DashboardView = ({isDarkMode}) => {
                                     <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                                         <div
                                             className="h-full rounded-full bg-gradient-to-r from-[#FF0080] to-[#6366F1]"
-                                            style={{width: `${Math.min(source.value, 100)}%`}}
+                                            style={{ width: `${Math.min(source.value, 100)}%` }}
                                         />
                                     </div>
                                 </div>
@@ -1543,7 +1543,7 @@ const DashboardView = ({isDarkMode}) => {
                         <div className="mt-4 space-y-3">
                             {topPosts.map((post, index) => (
                                 <div key={post.postId || index}
-                                     className="flex items-center justify-between text-sm border-b border-dashed border-gray-200 dark:border-gray-700 pb-2 last:border-none last:pb-0">
+                                    className="flex items-center justify-between text-sm border-b border-dashed border-gray-200 dark:border-gray-700 pb-2 last:border-none last:pb-0">
                                     <div>
                                         <p className="font-semibold">{post.title || '未命名文章'}</p>
                                         {post.slug && (
@@ -1590,8 +1590,8 @@ const DashboardView = ({isDarkMode}) => {
 };
 
 // 4.2 Sub-Component: Analytics View (Detailed Data)
-const AnalyticsView = ({isDarkMode, user}) => {
-    const {summary, loading, error, reload, rangeDays} = useAdminAnalytics();
+const AnalyticsView = ({ isDarkMode, user }) => {
+    const { summary, loading, error, reload, rangeDays } = useAdminAnalytics();
     const overview = summary?.overview;
     const dailyTrends = summary?.dailyTrends || [];
     const trafficSources = summary?.trafficSources || [];
@@ -1612,7 +1612,7 @@ const AnalyticsView = ({isDarkMode, user}) => {
         return fallback;
     };
 
-    const Chart = ({data}) => {
+    const Chart = ({ data }) => {
         if (!data.length) return <p className={`text-sm ${textMuted}`}>暂无趋势数据</p>;
         const max = Math.max(...data.map(d => d.views), 1);
         const points = data.map((item, index) => {
@@ -1638,7 +1638,7 @@ const AnalyticsView = ({isDarkMode, user}) => {
         if (!referrer) return 'Direct / None';
         if (referrer.startsWith('http')) {
             return <a className="text-indigo-500 hover:underline" href={referrer} target="_blank"
-                      rel="noopener noreferrer">{referrer}</a>;
+                rel="noopener noreferrer">{referrer}</a>;
         }
         return referrer;
     };
@@ -1663,7 +1663,7 @@ const AnalyticsView = ({isDarkMode, user}) => {
         <div className="space-y-8">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h2 className="text-3xl font-black flex items-center gap-2"><TrendingUp/> 数据分析</h2>
+                    <h2 className="text-3xl font-black flex items-center gap-2"><TrendingUp /> 数据分析</h2>
                     <p className={`text-sm ${textMuted}`}>来自 `analytics_page_views` 与 `analytics_traffic_sources` 的实时统计</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1717,7 +1717,7 @@ const AnalyticsView = ({isDarkMode, user}) => {
                     </div>
                     {loading && <span className={`text-xs ${textMuted}`}>数据加载中...</span>}
                 </div>
-                <Chart data={dailyTrends}/>
+                <Chart data={dailyTrends} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1736,7 +1736,7 @@ const AnalyticsView = ({isDarkMode, user}) => {
                                     <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                                         <div
                                             className="h-full rounded-full bg-[#00E096]"
-                                            style={{width: `${Math.min(source.value, 100)}%`}}
+                                            style={{ width: `${Math.min(source.value, 100)}%` }}
                                         />
                                     </div>
                                 </div>
@@ -1756,20 +1756,20 @@ const AnalyticsView = ({isDarkMode, user}) => {
                             <div className="overflow-x-auto">
                                 <table className="min-w-full text-sm">
                                     <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
-                                    <tr>
-                                        <th className="px-4 py-2 text-left">文章</th>
-                                        <th className="px-4 py-2 text-left">Slug</th>
-                                        <th className="px-4 py-2 text-right">PV</th>
-                                    </tr>
+                                        <tr>
+                                            <th className="px-4 py-2 text-left">文章</th>
+                                            <th className="px-4 py-2 text-left">Slug</th>
+                                            <th className="px-4 py-2 text-right">PV</th>
+                                        </tr>
                                     </thead>
                                     <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                                    {topPosts.map((post) => (
-                                        <tr key={post.postId}>
-                                            <td className="px-4 py-3 font-semibold">{post.title || '未命名文章'}</td>
-                                            <td className={`px-4 py-3 ${textMuted}`}>{post.slug || '—'}</td>
-                                            <td className="px-4 py-3 text-right font-bold">{formatNumber(post.views, '0')}</td>
-                                        </tr>
-                                    ))}
+                                        {topPosts.map((post) => (
+                                            <tr key={post.postId}>
+                                                <td className="px-4 py-3 font-semibold">{post.title || '未命名文章'}</td>
+                                                <td className={`px-4 py-3 ${textMuted}`}>{post.slug || '—'}</td>
+                                                <td className="px-4 py-3 text-right font-bold">{formatNumber(post.views, '0')}</td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -1786,38 +1786,38 @@ const AnalyticsView = ({isDarkMode, user}) => {
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm">
                             <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
-                            <tr>
-                                <th className="px-4 py-3 text-left">页面/文章</th>
-                                <th className="px-4 py-3 text-left">访客 IP</th>
-                                <th className="px-4 py-3 text-left">用户</th>
-                                <th className="px-4 py-3 text-left">时间</th>
-                                <th className="px-4 py-3 text-left">来源</th>
-                                <th className="px-4 py-3 text-left">地理</th>
-                            </tr>
+                                <tr>
+                                    <th className="px-4 py-3 text-left">页面/文章</th>
+                                    <th className="px-4 py-3 text-left">访客 IP</th>
+                                    <th className="px-4 py-3 text-left">用户</th>
+                                    <th className="px-4 py-3 text-left">时间</th>
+                                    <th className="px-4 py-3 text-left">来源</th>
+                                    <th className="px-4 py-3 text-left">地理</th>
+                                </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                            {recentVisits.map((visit) => (
-                                <tr key={visit.id} className="align-top">
-                                    <td className="px-4 py-3">
-                                        <p className="font-semibold">{visit.title || '未命名页面'}</p>
-                                        {visit.slug && <p className={`text-xs ${textMuted}`}>Slug：{visit.slug}</p>}
-                                    </td>
-                                    <td className="px-4 py-3 font-mono">{visit.ip || '-'}</td>
-                                    <td className="px-4 py-3">
-                                        {visit.loggedIn ? (
-                                            <>
-                                                <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-600">已登录</span>
-                                                <p className="text-xs mt-1">{visit.userName || '内部账号'}</p>
-                                            </>
-                                        ) : (
-                                            <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">访客</span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">{visit.time || '-'}</td>
-                                    <td className="px-4 py-3">{renderReferrer(visit.referrer)}</td>
-                                    <td className="px-4 py-3">{visit.geo || '未知'}</td>
-                                </tr>
-                            ))}
+                                {recentVisits.map((visit) => (
+                                    <tr key={visit.id} className="align-top">
+                                        <td className="px-4 py-3">
+                                            <p className="font-semibold">{visit.title || '未命名页面'}</p>
+                                            {visit.slug && <p className={`text-xs ${textMuted}`}>Slug：{visit.slug}</p>}
+                                        </td>
+                                        <td className="px-4 py-3 font-mono">{visit.ip || '-'}</td>
+                                        <td className="px-4 py-3">
+                                            {visit.loggedIn ? (
+                                                <>
+                                                    <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-600">已登录</span>
+                                                    <p className="text-xs mt-1">{visit.userName || '内部账号'}</p>
+                                                </>
+                                            ) : (
+                                                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">访客</span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">{visit.time || '-'}</td>
+                                        <td className="px-4 py-3">{renderReferrer(visit.referrer)}</td>
+                                        <td className="px-4 py-3">{visit.geo || '未知'}</td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -1828,9 +1828,9 @@ const AnalyticsView = ({isDarkMode, user}) => {
 };
 
 // 4.3 Sub-Component: Create New Post (The most important module)
-const CreatePostView = ({isDarkMode}) => {
-    const {categories} = useBlog();
-    const {hasPermission, loading: permLoading} = usePermissionContext();
+const CreatePostView = ({ isDarkMode }) => {
+    const { categories } = useBlog();
+    const { hasPermission, loading: permLoading } = usePermissionContext();
     const [tags, setTags] = useState([]);
     const [assetsFolder, setAssetsFolder] = useState("");
     const [title, setTitle] = useState("");
@@ -2070,12 +2070,12 @@ const CreatePostView = ({isDarkMode}) => {
 
     return (
         <div className="space-y-8">
-            <AdminNoticeBar notice={publishNotice} onClose={hidePublishNotice}/>
+            <AdminNoticeBar notice={publishNotice} onClose={hidePublishNotice} />
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
                     <h2 className="text-3xl font-black italic text-pink-500 flex items-center gap-2">
-                        <Edit/> 发布新文章
+                        <Edit /> 发布新文章
                     </h2>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -2110,7 +2110,7 @@ const CreatePostView = ({isDarkMode}) => {
                                     className="text-sm text-indigo-500 flex items-center gap-1 hover:text-indigo-400"
                                     onClick={() => markdownFileInputRef.current?.click()}
                                 >
-                                    <Upload size={16}/> 上传 .md
+                                    <Upload size={16} /> 上传 .md
                                 </button>
                                 <button
                                     type="button"
@@ -2118,7 +2118,7 @@ const CreatePostView = ({isDarkMode}) => {
                                     className={`text-sm flex items-center gap-1 ${uploadingImages ? 'text-gray-400 cursor-not-allowed' : 'text-pink-500 hover:text-pink-400'}`}
                                     onClick={() => inlineImageInputRef.current?.click()}
                                 >
-                                    <ImagePlus size={16}/> {uploadingImages ? "插图上传中..." : "插入图片"}
+                                    <ImagePlus size={16} /> {uploadingImages ? "插图上传中..." : "插入图片"}
                                 </button>
                             </div>
                             <input
@@ -2141,12 +2141,12 @@ const CreatePostView = ({isDarkMode}) => {
                             <div className="text-xs space-y-1">
                                 {markdownFileName && (
                                     <div className="text-emerald-500 flex items-center gap-1">
-                                        <CheckCircle size={14}/> {markdownMessage || markdownFileName}
+                                        <CheckCircle size={14} /> {markdownMessage || markdownFileName}
                                     </div>
                                 )}
                                 {imageUploadMessage && (
                                     <div className="text-indigo-500 flex items-center gap-1">
-                                        <ImagePlus size={14}/> {imageUploadMessage}
+                                        <ImagePlus size={14} /> {imageUploadMessage}
                                     </div>
                                 )}
                             </div>
@@ -2178,7 +2178,7 @@ const CreatePostView = ({isDarkMode}) => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 1</p>
-                                <h3 className="font-semibold flex items-center gap-2"><FolderPlus size={16}/> 资源标识
+                                <h3 className="font-semibold flex items-center gap-2"><FolderPlus size={16} /> 资源标识
                                 </h3>
                             </div>
                             <button
@@ -2186,7 +2186,7 @@ const CreatePostView = ({isDarkMode}) => {
                                 onClick={handleFolderReserve}
                                 className="text-xs text-indigo-500 hover:text-indigo-400 flex items-center gap-1"
                             >
-                                <RefreshCw size={14}/> 重新生成
+                                <RefreshCw size={14} /> 重新生成
                             </button>
                         </div>
                         <div className="text-xs text-gray-500 space-y-2">
@@ -2207,7 +2207,7 @@ const CreatePostView = ({isDarkMode}) => {
                     <div
                         className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
                         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 2</p>
-                        <h3 className="font-semibold flex items-center gap-2"><Layers size={16}/> 选择二级分类</h3>
+                        <h3 className="font-semibold flex items-center gap-2"><Layers size={16} /> 选择二级分类</h3>
                         <div className="flex flex-wrap gap-2">
                             {normalizedCategories.map((cat) => {
                                 const catId = Number(cat.id);
@@ -2241,7 +2241,7 @@ const CreatePostView = ({isDarkMode}) => {
                         </div>
                         {!secondLevelCategories.length && (
                             <p className="text-xs text-amber-500 flex items-center gap-1">
-                                <AlertTriangle size={14}/> 当前父级暂无二级分类，请先到分类管理中创建。
+                                <AlertTriangle size={14} /> 当前父级暂无二级分类，请先到分类管理中创建。
                             </p>
                         )}
                     </div>
@@ -2249,7 +2249,7 @@ const CreatePostView = ({isDarkMode}) => {
                     <div
                         className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
                         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 3</p>
-                        <h3 className="font-semibold flex items-center gap-2"><Tag size={16}/> 选择标签</h3>
+                        <h3 className="font-semibold flex items-center gap-2"><Tag size={16} /> 选择标签</h3>
                         <div className="flex flex-wrap gap-2">
                             {tags.map((tag) => (
                                 <button
@@ -2263,7 +2263,7 @@ const CreatePostView = ({isDarkMode}) => {
                         </div>
                         {selectedTags.length === 0 && (
                             <p className="text-xs text-amber-500 flex items-center gap-1">
-                                <AlertTriangle size={14}/> 至少选择一个标签，用于站内检索。
+                                <AlertTriangle size={14} /> 至少选择一个标签，用于站内检索。
                             </p>
                         )}
                     </div>
@@ -2271,7 +2271,7 @@ const CreatePostView = ({isDarkMode}) => {
                     <div
                         className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
                         <div className="flex items-center gap-2">
-                            <Send/> <span>发布设置</span>
+                            <Send /> <span>发布设置</span>
                         </div>
                         <p className="text-xs text-gray-500">
                             填写完成并确认分类/标签后可立即发布到线上。
@@ -2298,13 +2298,13 @@ const CreatePostView = ({isDarkMode}) => {
 };
 
 
-const TaxonomyView = ({isDarkMode}) => {
+const TaxonomyView = ({ isDarkMode }) => {
     const [tags, setTags] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [form, setForm] = useState({name: "", slug: "", description: ""});
+    const [form, setForm] = useState({ name: "", slug: "", description: "" });
     const [editingId, setEditingId] = useState(null);
-    const [editForm, setEditForm] = useState({name: "", slug: "", description: ""});
+    const [editForm, setEditForm] = useState({ name: "", slug: "", description: "" });
     const [saving, setSaving] = useState(false);
     const [keyword, setKeyword] = useState("");
     const [page, setPage] = useState(1);
@@ -2315,7 +2315,7 @@ const TaxonomyView = ({isDarkMode}) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await adminFetchTags({keyword, page, size});
+            const res = await adminFetchTags({ keyword, page, size });
             const data = res.data || res;
             setTags(data?.records || []);
             setTotal(data?.total || 0);
@@ -2344,7 +2344,7 @@ const TaxonomyView = ({isDarkMode}) => {
         setSaving(true);
         try {
             await adminCreateTag(normalizePayload(form));
-            setForm({name: "", slug: "", description: ""});
+            setForm({ name: "", slug: "", description: "" });
             setPage(1);
             await loadTags();
             alert("标签创建成功");
@@ -2366,7 +2366,7 @@ const TaxonomyView = ({isDarkMode}) => {
 
     const cancelEdit = () => {
         setEditingId(null);
-        setEditForm({name: "", slug: "", description: ""});
+        setEditForm({ name: "", slug: "", description: "" });
     };
 
     const handleUpdate = async () => {
@@ -2414,7 +2414,7 @@ const TaxonomyView = ({isDarkMode}) => {
         <div className="space-y-8">
             <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <Tag className="text-[#FF0080]"/>
+                    <Tag className="text-[#FF0080]" />
                     <h2 className="text-2xl font-bold">新增标签</h2>
                 </div>
                 <div className="grid md:grid-cols-3 gap-4 mb-4">
@@ -2423,7 +2423,7 @@ const TaxonomyView = ({isDarkMode}) => {
                         <input
                             className={inputClass}
                             value={form.name}
-                            onChange={(e) => setForm((prev) => ({...prev, name: e.target.value}))}
+                            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                             placeholder="例如：Spring Cloud"
                         />
                     </div>
@@ -2434,7 +2434,7 @@ const TaxonomyView = ({isDarkMode}) => {
                         <input
                             className={inputClass}
                             value={form.slug}
-                            onChange={(e) => setForm((prev) => ({...prev, slug: e.target.value}))}
+                            onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
                             placeholder="例如：spring-cloud"
                         />
                     </div>
@@ -2443,7 +2443,7 @@ const TaxonomyView = ({isDarkMode}) => {
                         <input
                             className={inputClass}
                             value={form.description}
-                            onChange={(e) => setForm((prev) => ({...prev, description: e.target.value}))}
+                            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                             placeholder="一句话说明用途"
                         />
                     </div>
@@ -2474,7 +2474,7 @@ const TaxonomyView = ({isDarkMode}) => {
                                 onClick={loadTags}
                                 className="flex items-center gap-2 text-sm font-bold text-indigo-500 hover:text-indigo-400"
                             >
-                                <RefreshCw size={16}/> 查询
+                                <RefreshCw size={16} /> 查询
                             </button>
                         </div>
                         <select
@@ -2502,97 +2502,97 @@ const TaxonomyView = ({isDarkMode}) => {
                     <div className="overflow-x-auto">
                         <table className="min-w-full table-auto text-sm">
                             <thead>
-                            <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
-                                <th className="px-4 py-2 text-left font-semibold">名称</th>
-                                <th className="px-4 py-2 text-left font-semibold">别名</th>
-                                <th className="px-4 py-2 text-left font-semibold">描述</th>
-                                <th className="px-4 py-2 text-left font-semibold">更新时间</th>
-                                <th className="px-4 py-2 text-right font-semibold">操作</th>
-                            </tr>
+                                <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
+                                    <th className="px-4 py-2 text-left font-semibold">名称</th>
+                                    <th className="px-4 py-2 text-left font-semibold">别名</th>
+                                    <th className="px-4 py-2 text-left font-semibold">描述</th>
+                                    <th className="px-4 py-2 text-left font-semibold">更新时间</th>
+                                    <th className="px-4 py-2 text-right font-semibold">操作</th>
+                                </tr>
                             </thead>
                             <tbody className={isDarkMode ? "divide-y divide-gray-800" : "divide-y divide-gray-200"}>
-                            {tags.map((tag) => (
-                                <tr key={tag.id} className={isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}>
-                                    <td className="px-4 py-3 font-semibold">
-                                        {editingId === tag.id ? (
-                                            <input
-                                                className={inputClass}
-                                                value={editForm.name}
-                                                onChange={(e) => setEditForm((prev) => ({
-                                                    ...prev,
-                                                    name: e.target.value
-                                                }))}
-                                            />
-                                        ) : (
-                                            tag.name
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {editingId === tag.id ? (
-                                            <input
-                                                className={inputClass}
-                                                value={editForm.slug}
-                                                onChange={(e) => setEditForm((prev) => ({
-                                                    ...prev,
-                                                    slug: e.target.value
-                                                }))}
-                                            />
-                                        ) : (
-                                            <code
-                                                className="px-2 py-1 text-xs bg-black/5 dark:bg-white/10 rounded">{tag.slug}</code>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {editingId === tag.id ? (
-                                            <input
-                                                className={inputClass}
-                                                value={editForm.description}
-                                                onChange={(e) => setEditForm((prev) => ({
-                                                    ...prev,
-                                                    description: e.target.value
-                                                }))}
-                                            />
-                                        ) : (
-                                            tag.description || "—"
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-500">{formatDate(tag.updatedAt || tag.createdAt)}</td>
-                                    <td className="px-4 py-3 text-right space-x-2">
-                                        {editingId === tag.id ? (
-                                            <>
-                                                <button
-                                                    onClick={handleUpdate}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-green-500 text-green-600 font-bold text-xs"
-                                                    disabled={saving}
-                                                >
-                                                    <Save size={14}/> 保存
-                                                </button>
-                                                <button
-                                                    onClick={cancelEdit}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-gray-400 text-gray-500 font-bold text-xs"
-                                                >
-                                                    取消
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button
-                                                    onClick={() => startEdit(tag)}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
-                                                >
-                                                    <Edit size={14}/> 编辑
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(tag.id)}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
-                                                >
-                                                    <Trash2 size={14}/> 删除
-                                                </button>
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
+                                {tags.map((tag) => (
+                                    <tr key={tag.id} className={isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}>
+                                        <td className="px-4 py-3 font-semibold">
+                                            {editingId === tag.id ? (
+                                                <input
+                                                    className={inputClass}
+                                                    value={editForm.name}
+                                                    onChange={(e) => setEditForm((prev) => ({
+                                                        ...prev,
+                                                        name: e.target.value
+                                                    }))}
+                                                />
+                                            ) : (
+                                                tag.name
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {editingId === tag.id ? (
+                                                <input
+                                                    className={inputClass}
+                                                    value={editForm.slug}
+                                                    onChange={(e) => setEditForm((prev) => ({
+                                                        ...prev,
+                                                        slug: e.target.value
+                                                    }))}
+                                                />
+                                            ) : (
+                                                <code
+                                                    className="px-2 py-1 text-xs bg-black/5 dark:bg-white/10 rounded">{tag.slug}</code>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {editingId === tag.id ? (
+                                                <input
+                                                    className={inputClass}
+                                                    value={editForm.description}
+                                                    onChange={(e) => setEditForm((prev) => ({
+                                                        ...prev,
+                                                        description: e.target.value
+                                                    }))}
+                                                />
+                                            ) : (
+                                                tag.description || "—"
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-500">{formatDate(tag.updatedAt || tag.createdAt)}</td>
+                                        <td className="px-4 py-3 text-right space-x-2">
+                                            {editingId === tag.id ? (
+                                                <>
+                                                    <button
+                                                        onClick={handleUpdate}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 border-2 border-green-500 text-green-600 font-bold text-xs"
+                                                        disabled={saving}
+                                                    >
+                                                        <Save size={14} /> 保存
+                                                    </button>
+                                                    <button
+                                                        onClick={cancelEdit}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 border-2 border-gray-400 text-gray-500 font-bold text-xs"
+                                                    >
+                                                        取消
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={() => startEdit(tag)}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                                                    >
+                                                        <Edit size={14} /> 编辑
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(tag.id)}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
+                                                    >
+                                                        <Trash2 size={14} /> 删除
+                                                    </button>
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -2623,14 +2623,14 @@ const TaxonomyView = ({isDarkMode}) => {
     );
 };
 
-const CategoriesView = ({isDarkMode}) => {
+const CategoriesView = ({ isDarkMode }) => {
     const [categories, setCategories] = useState([]);
     const [parentOptions, setParentOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [form, setForm] = useState({name: "", slug: "", description: "", parentId: "", sortOrder: ""});
+    const [form, setForm] = useState({ name: "", slug: "", description: "", parentId: "", sortOrder: "" });
     const [editingId, setEditingId] = useState(null);
-    const [editForm, setEditForm] = useState({name: "", slug: "", description: "", parentId: "", sortOrder: ""});
+    const [editForm, setEditForm] = useState({ name: "", slug: "", description: "", parentId: "", sortOrder: "" });
     const [saving, setSaving] = useState(false);
     const [keyword, setKeyword] = useState("");
     const [parentFilter, setParentFilter] = useState("all");
@@ -2642,7 +2642,7 @@ const CategoriesView = ({isDarkMode}) => {
         try {
             const res = await fetchCategories();
             const data = res.data || res || [];
-            setParentOptions(data.map((item) => ({id: item.id, label: item.label})));
+            setParentOptions(data.map((item) => ({ id: item.id, label: item.label })));
         } catch (err) {
             console.warn("load parent categories failed", err);
         }
@@ -2652,7 +2652,7 @@ const CategoriesView = ({isDarkMode}) => {
         setLoading(true);
         setError(null);
         try {
-            const params = {keyword, page, size};
+            const params = { keyword, page, size };
             if (parentFilter === "root") params.parentId = 0;
             else if (parentFilter !== "all") params.parentId = parentFilter;
             const res = await adminFetchCategories(params);
@@ -2690,7 +2690,7 @@ const CategoriesView = ({isDarkMode}) => {
         setSaving(true);
         try {
             await adminCreateCategory(normalizePayload(form));
-            setForm({name: "", slug: "", description: "", parentId: "", sortOrder: ""});
+            setForm({ name: "", slug: "", description: "", parentId: "", sortOrder: "" });
             setPage(1);
             await loadParentOptions();
             await loadCategories();
@@ -2715,7 +2715,7 @@ const CategoriesView = ({isDarkMode}) => {
 
     const cancelEdit = () => {
         setEditingId(null);
-        setEditForm({name: "", slug: "", description: "", parentId: "", sortOrder: ""});
+        setEditForm({ name: "", slug: "", description: "", parentId: "", sortOrder: "" });
     };
 
     const handleUpdate = async () => {
@@ -2763,7 +2763,7 @@ const CategoriesView = ({isDarkMode}) => {
         <div className="space-y-8">
             <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <Layers className="text-[#6366F1]"/>
+                    <Layers className="text-[#6366F1]" />
                     <div>
                         <h2 className="text-2xl font-bold">新增/编辑分类</h2>
                         <p className="text-sm text-gray-500">支持两级分类，选择父级时仅可选择一级分类。</p>
@@ -2775,7 +2775,7 @@ const CategoriesView = ({isDarkMode}) => {
                         <input
                             className={inputClass}
                             value={form.name}
-                            onChange={(e) => setForm((prev) => ({...prev, name: e.target.value}))}
+                            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                             placeholder="例如：硬核编程"
                         />
                     </div>
@@ -2784,7 +2784,7 @@ const CategoriesView = ({isDarkMode}) => {
                         <input
                             className={inputClass}
                             value={form.slug}
-                            onChange={(e) => setForm((prev) => ({...prev, slug: e.target.value}))}
+                            onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
                             placeholder="例如：hardcore-dev"
                         />
                     </div>
@@ -2793,7 +2793,7 @@ const CategoriesView = ({isDarkMode}) => {
                         <select
                             className={inputClass}
                             value={form.parentId}
-                            onChange={(e) => setForm((prev) => ({...prev, parentId: e.target.value}))}
+                            onChange={(e) => setForm((prev) => ({ ...prev, parentId: e.target.value }))}
                         >
                             <option value="">一级分类（无父级）</option>
                             {parentOptions.map((opt) => (
@@ -2806,7 +2806,7 @@ const CategoriesView = ({isDarkMode}) => {
                         <input
                             className={inputClass}
                             value={form.sortOrder}
-                            onChange={(e) => setForm((prev) => ({...prev, sortOrder: e.target.value}))}
+                            onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
                             placeholder="数字越小越靠前"
                         />
                     </div>
@@ -2815,7 +2815,7 @@ const CategoriesView = ({isDarkMode}) => {
                         <input
                             className={inputClass}
                             value={form.description}
-                            onChange={(e) => setForm((prev) => ({...prev, description: e.target.value}))}
+                            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                             placeholder="一句话说明分类用途"
                         />
                     </div>
@@ -2846,7 +2846,7 @@ const CategoriesView = ({isDarkMode}) => {
                                 onClick={loadCategories}
                                 className="flex items-center gap-2 text-sm font-bold text-indigo-500 hover:text-indigo-400"
                             >
-                                <RefreshCw size={16}/> 查询
+                                <RefreshCw size={16} /> 查询
                             </button>
                         </div>
                         <select
@@ -2888,130 +2888,130 @@ const CategoriesView = ({isDarkMode}) => {
                     <div className="overflow-x-auto">
                         <table className="min-w-full table-auto text-sm">
                             <thead>
-                            <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
-                                <th className="px-4 py-2 text-left font-semibold">名称</th>
-                                <th className="px-4 py-2 text-left font-semibold">别名</th>
-                                <th className="px-4 py-2 text-left font-semibold">父级</th>
-                                <th className="px-4 py-2 text-left font-semibold">排序</th>
-                                <th className="px-4 py-2 text-left font-semibold">描述</th>
-                                <th className="px-4 py-2 text-left font-semibold">更新时间</th>
-                                <th className="px-4 py-2 text-right font-semibold">操作</th>
-                            </tr>
+                                <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
+                                    <th className="px-4 py-2 text-left font-semibold">名称</th>
+                                    <th className="px-4 py-2 text-left font-semibold">别名</th>
+                                    <th className="px-4 py-2 text-left font-semibold">父级</th>
+                                    <th className="px-4 py-2 text-left font-semibold">排序</th>
+                                    <th className="px-4 py-2 text-left font-semibold">描述</th>
+                                    <th className="px-4 py-2 text-left font-semibold">更新时间</th>
+                                    <th className="px-4 py-2 text-right font-semibold">操作</th>
+                                </tr>
                             </thead>
                             <tbody className={isDarkMode ? "divide-y divide-gray-800" : "divide-y divide-gray-200"}>
-                            {categories.map((category) => (
-                                <tr key={category.id} className={isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}>
-                                    <td className="px-4 py-3 font-semibold">
-                                        {editingId === category.id ? (
+                                {categories.map((category) => (
+                                    <tr key={category.id} className={isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}>
+                                        <td className="px-4 py-3 font-semibold">
+                                            {editingId === category.id ? (
+                                                <input
+                                                    className={inputClass}
+                                                    value={editForm.name}
+                                                    onChange={(e) => setEditForm((prev) => ({
+                                                        ...prev,
+                                                        name: e.target.value
+                                                    }))}
+                                                />
+                                            ) : (
+                                                category.name
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {editingId === category.id ? (
+                                                <input
+                                                    className={inputClass}
+                                                    value={editForm.slug}
+                                                    onChange={(e) => setEditForm((prev) => ({
+                                                        ...prev,
+                                                        slug: e.target.value
+                                                    }))}
+                                                />
+                                            ) : (
+                                                <code
+                                                    className="px-2 py-1 text-xs bg-black/5 dark:bg-white/10 rounded">{category.slug}</code>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {editingId === category.id ? (
+                                                <select
+                                                    className={inputClass}
+                                                    value={editForm.parentId}
+                                                    onChange={(e) => setEditForm((prev) => ({
+                                                        ...prev,
+                                                        parentId: e.target.value
+                                                    }))}
+                                                >
+                                                    <option value="">一级分类（无父级）</option>
+                                                    {parentOptions.map((opt) => (
+                                                        <option key={opt.id} value={opt.id}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                category.parentName || "一级分类"
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {editingId === category.id ? (
+                                                <input
+                                                    className={inputClass}
+                                                    value={editForm.sortOrder}
+                                                    onChange={(e) => setEditForm((prev) => ({
+                                                        ...prev,
+                                                        sortOrder: e.target.value
+                                                    }))}
+                                                />
+                                            ) : (
+                                                category.sortOrder ?? "—"
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">{editingId === category.id ? (
                                             <input
                                                 className={inputClass}
-                                                value={editForm.name}
+                                                value={editForm.description}
                                                 onChange={(e) => setEditForm((prev) => ({
                                                     ...prev,
-                                                    name: e.target.value
+                                                    description: e.target.value
                                                 }))}
                                             />
                                         ) : (
-                                            category.name
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {editingId === category.id ? (
-                                            <input
-                                                className={inputClass}
-                                                value={editForm.slug}
-                                                onChange={(e) => setEditForm((prev) => ({
-                                                    ...prev,
-                                                    slug: e.target.value
-                                                }))}
-                                            />
-                                        ) : (
-                                            <code
-                                                className="px-2 py-1 text-xs bg-black/5 dark:bg-white/10 rounded">{category.slug}</code>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {editingId === category.id ? (
-                                            <select
-                                                className={inputClass}
-                                                value={editForm.parentId}
-                                                onChange={(e) => setEditForm((prev) => ({
-                                                    ...prev,
-                                                    parentId: e.target.value
-                                                }))}
-                                            >
-                                                <option value="">一级分类（无父级）</option>
-                                                {parentOptions.map((opt) => (
-                                                    <option key={opt.id} value={opt.id}>{opt.label}</option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            category.parentName || "一级分类"
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {editingId === category.id ? (
-                                            <input
-                                                className={inputClass}
-                                                value={editForm.sortOrder}
-                                                onChange={(e) => setEditForm((prev) => ({
-                                                    ...prev,
-                                                    sortOrder: e.target.value
-                                                }))}
-                                            />
-                                        ) : (
-                                            category.sortOrder ?? "—"
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">{editingId === category.id ? (
-                                        <input
-                                            className={inputClass}
-                                            value={editForm.description}
-                                            onChange={(e) => setEditForm((prev) => ({
-                                                ...prev,
-                                                description: e.target.value
-                                            }))}
-                                        />
-                                    ) : (
-                                        category.description || "—"
-                                    )}</td>
-                                    <td className="px-4 py-3 text-gray-500">{formatDate(category.updatedAt || category.createdAt)}</td>
-                                    <td className="px-4 py-3 text-right space-x-2">
-                                        {editingId === category.id ? (
-                                            <>
-                                                <button
-                                                    onClick={handleUpdate}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-green-500 text-green-600 font-bold text-xs"
-                                                    disabled={saving}
-                                                >
-                                                    <Save size={14}/> 保存
-                                                </button>
-                                                <button
-                                                    onClick={cancelEdit}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-gray-400 text-gray-500 font-bold text-xs"
-                                                >
-                                                    取消
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button
-                                                    onClick={() => startEdit(category)}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
-                                                >
-                                                    <Edit size={14}/> 编辑
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(category.id)}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
-                                                >
-                                                    <Trash2 size={14}/> 删除
-                                                </button>
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
+                                            category.description || "—"
+                                        )}</td>
+                                        <td className="px-4 py-3 text-gray-500">{formatDate(category.updatedAt || category.createdAt)}</td>
+                                        <td className="px-4 py-3 text-right space-x-2">
+                                            {editingId === category.id ? (
+                                                <>
+                                                    <button
+                                                        onClick={handleUpdate}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 border-2 border-green-500 text-green-600 font-bold text-xs"
+                                                        disabled={saving}
+                                                    >
+                                                        <Save size={14} /> 保存
+                                                    </button>
+                                                    <button
+                                                        onClick={cancelEdit}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 border-2 border-gray-400 text-gray-500 font-bold text-xs"
+                                                    >
+                                                        取消
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={() => startEdit(category)}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                                                    >
+                                                        <Edit size={14} /> 编辑
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(category.id)}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
+                                                    >
+                                                        <Trash2 size={14} /> 删除
+                                                    </button>
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -3043,10 +3043,10 @@ const CategoriesView = ({isDarkMode}) => {
 };
 
 
-const EditPostView = ({isDarkMode}) => {
+const EditPostView = ({ isDarkMode }) => {
     const navigate = useNavigate();
-    const {categories} = useBlog();
-    const {hasPermission, loading: permLoading} = usePermissionContext();
+    const { categories } = useBlog();
+    const { hasPermission, loading: permLoading } = usePermissionContext();
     const [searchParams, setSearchParams] = useSearchParams();
     const initialId = searchParams.get('postId');
     const normalizedInitialId = initialId && !Number.isNaN(Number(initialId)) ? Number(initialId) : null;
@@ -3082,7 +3082,7 @@ const EditPostView = ({isDarkMode}) => {
     const markdownEditorRef = useRef(null);
     const markdownFileInputRef = useRef(null);
     const inlineImageInputRef = useRef(null);
-    const [postMeta, setPostMeta] = useState({publishedAt: null});
+    const [postMeta, setPostMeta] = useState({ publishedAt: null });
     const selectorPageSize = 8;
     const {
         notice: editNotice,
@@ -3094,9 +3094,9 @@ const EditPostView = ({isDarkMode}) => {
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
     const statusOptions = [
-        {value: 'DRAFT', label: '草稿'},
-        {value: 'PUBLISHED', label: '已发布'},
-        {value: 'ARCHIVED', label: '已归档'},
+        { value: 'DRAFT', label: '草稿' },
+        { value: 'PUBLISHED', label: '已发布' },
+        { value: 'ARCHIVED', label: '已归档' },
     ];
 
     useEffect(() => {
@@ -3139,7 +3139,7 @@ const EditPostView = ({isDarkMode}) => {
         setSelectorLoading(true);
         setSelectorError('');
         try {
-            const res = await adminFetchPosts({keyword: selectorKeyword, page: selectorPage, size: selectorPageSize});
+            const res = await adminFetchPosts({ keyword: selectorKeyword, page: selectorPage, size: selectorPageSize });
             const data = res.data || res;
             setSelectorPosts(data?.records || []);
             setSelectorTotal(data?.total || 0);
@@ -3181,7 +3181,7 @@ const EditPostView = ({isDarkMode}) => {
             setSelectedParentId(data.parentCategoryId ? Number(data.parentCategoryId) : null);
             setSelectedTags((data.tagIds || []).map((tid) => Number(tid)));
             setAssetsFolder(data.slug || '');
-            setPostMeta({publishedAt: data.publishedAt || null});
+            setPostMeta({ publishedAt: data.publishedAt || null });
             setSubmitNotice('');
             setSubmitError('');
             setMarkdownFileName('');
@@ -3197,7 +3197,7 @@ const EditPostView = ({isDarkMode}) => {
     useEffect(() => {
         if (selectedPostId) {
             loadPostDetail(selectedPostId);
-            setSearchParams({postId: selectedPostId});
+            setSearchParams({ postId: selectedPostId });
         }
     }, [selectedPostId, loadPostDetail, setSearchParams]);
 
@@ -3229,7 +3229,7 @@ const EditPostView = ({isDarkMode}) => {
             const textarea = markdownEditorRef.current;
             if (!textarea) {
                 const prefix = current.endsWith('\n') || current.length === 0 ? current : `${current}\n`;
-                return {...prev, mdContent: `${prefix}${snippet}`};
+                return { ...prev, mdContent: `${prefix}${snippet}` };
             }
             const start = textarea.selectionStart ?? current.length;
             const end = textarea.selectionEnd ?? start;
@@ -3247,7 +3247,7 @@ const EditPostView = ({isDarkMode}) => {
                     el.selectionEnd = cursorPos;
                 }
             });
-            return {...prev, mdContent: nextContent};
+            return { ...prev, mdContent: nextContent };
         });
     }, [form.title]);
 
@@ -3256,16 +3256,16 @@ const EditPostView = ({isDarkMode}) => {
         if (!file) return;
         try {
             const textContent = await file.text();
-            setForm((prev) => ({...prev, mdContent: textContent}));
+            setForm((prev) => ({ ...prev, mdContent: textContent }));
             setMarkdownFileName(file.name);
             setMarkdownMessage(`已加载 ${file.name}`);
             if (!form.title.trim()) {
                 const inferred = file.name.replace(/\.(md|markdown|txt)$/i, '');
-                setForm((prev) => ({...prev, title: prev.title || inferred}));
+                setForm((prev) => ({ ...prev, title: prev.title || inferred }));
             }
             if (!form.excerpt.trim()) {
                 const plain = textContent.replace(/[#>*_`-]/g, '').replace(/\s+/g, ' ').trim();
-                setForm((prev) => ({...prev, excerpt: prev.excerpt || plain.slice(0, 160)}));
+                setForm((prev) => ({ ...prev, excerpt: prev.excerpt || plain.slice(0, 160) }));
             }
         } catch (error) {
             setMarkdownMessage(error.message || '读取 Markdown 失败');
@@ -3334,7 +3334,7 @@ const EditPostView = ({isDarkMode}) => {
             const res = await updatePost(selectedPostId, payload);
             const data = res.data || res;
             setSubmitNotice(`已保存（ID: ${data?.summary?.id || selectedPostId}）`);
-            setPostMeta((prev) => ({...prev, publishedAt: data?.summary?.date || prev.publishedAt}));
+            setPostMeta((prev) => ({ ...prev, publishedAt: data?.summary?.date || prev.publishedAt }));
         } catch (error) {
             setSubmitError(error.message || '保存失败');
         } finally {
@@ -3345,7 +3345,7 @@ const EditPostView = ({isDarkMode}) => {
     const resetSelection = () => {
         setSelectedPostId(null);
         setSearchParams({});
-        setForm({title: '', slug: '', excerpt: '', mdContent: '', themeColor: '', status: 'DRAFT'});
+        setForm({ title: '', slug: '', excerpt: '', mdContent: '', themeColor: '', status: 'DRAFT' });
         setSelectedCategoryId(null);
         setSelectedParentId(null);
         setSelectedTags([]);
@@ -3370,7 +3370,7 @@ const EditPostView = ({isDarkMode}) => {
     if (!selectedPostId) {
         return (
             <div className="space-y-6">
-                <AdminNoticeBar notice={editNotice} onClose={hideEditNotice}/>
+                <AdminNoticeBar notice={editNotice} onClose={hideEditNotice} />
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
@@ -3456,7 +3456,7 @@ const EditPostView = ({isDarkMode}) => {
 
     return (
         <div className="space-y-8">
-            <AdminNoticeBar notice={editNotice} onClose={hideEditNotice}/>
+            <AdminNoticeBar notice={editNotice} onClose={hideEditNotice} />
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                     <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
@@ -3493,7 +3493,7 @@ const EditPostView = ({isDarkMode}) => {
                             <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章标题</label>
                             <input
                                 value={form.title}
-                                onChange={(e) => setForm((prev) => ({...prev, title: e.target.value}))}
+                                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                                 placeholder="请输入文章标题"
                                 className={`${inputClass} text-2xl font-bold`}
                             />
@@ -3513,7 +3513,7 @@ const EditPostView = ({isDarkMode}) => {
                                         className="text-sm text-indigo-500 flex items-center gap-1 hover:text-indigo-400"
                                         onClick={() => markdownFileInputRef.current?.click()}
                                     >
-                                        <Upload size={16}/> 上传 .md
+                                        <Upload size={16} /> 上传 .md
                                     </button>
                                     <button
                                         type="button"
@@ -3521,7 +3521,7 @@ const EditPostView = ({isDarkMode}) => {
                                         className={`text-sm flex items-center gap-1 ${uploadingImages ? 'text-gray-400 cursor-not-allowed' : 'text-pink-500 hover:text-pink-400'}`}
                                         onClick={() => inlineImageInputRef.current?.click()}
                                     >
-                                        <ImagePlus size={16}/> {uploadingImages ? '插图处理中' : '插入图片'}
+                                        <ImagePlus size={16} /> {uploadingImages ? '插图处理中' : '插入图片'}
                                     </button>
                                 </div>
                                 <input
@@ -3544,12 +3544,12 @@ const EditPostView = ({isDarkMode}) => {
                                 <div className="text-xs space-y-1">
                                     {markdownFileName && (
                                         <div className="text-emerald-500 flex items-center gap-1">
-                                            <CheckCircle size={14}/> {markdownMessage || markdownFileName}
+                                            <CheckCircle size={14} /> {markdownMessage || markdownFileName}
                                         </div>
                                     )}
                                     {imageUploadMessage && (
                                         <div className="text-indigo-500 flex items-center gap-1">
-                                            <ImagePlus size={14}/> {imageUploadMessage}
+                                            <ImagePlus size={14} /> {imageUploadMessage}
                                         </div>
                                     )}
                                 </div>
@@ -3558,7 +3558,7 @@ const EditPostView = ({isDarkMode}) => {
                                 ref={markdownEditorRef}
                                 className={`${inputClass} min-h-[420px] font-mono text-sm`}
                                 value={form.mdContent}
-                                onChange={(e) => setForm((prev) => ({...prev, mdContent: e.target.value}))}
+                                onChange={(e) => setForm((prev) => ({ ...prev, mdContent: e.target.value }))}
                                 placeholder="在此粘贴或编写 Markdown 内容"
                             />
                         </div>
@@ -3570,7 +3570,7 @@ const EditPostView = ({isDarkMode}) => {
                             <textarea
                                 className={`${inputClass} min-h-[120px]`}
                                 value={form.excerpt}
-                                onChange={(e) => setForm((prev) => ({...prev, excerpt: e.target.value}))}
+                                onChange={(e) => setForm((prev) => ({ ...prev, excerpt: e.target.value }))}
                                 placeholder="用于首页卡片展示，若留空则自动截取正文"
                             />
                         </div>
@@ -3585,12 +3585,12 @@ const EditPostView = ({isDarkMode}) => {
                                 <input
                                     className={inputClass}
                                     value={form.slug}
-                                    onChange={(e) => setForm((prev) => ({...prev, slug: e.target.value}))}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
                                     placeholder="文章 slug"
                                 />
                                 <ThemeColorSelector
                                     value={form.themeColor || ''}
-                                    onChange={(next) => setForm((prev) => ({...prev, themeColor: next}))}
+                                    onChange={(next) => setForm((prev) => ({ ...prev, themeColor: next }))}
                                     inputClass={inputClass}
                                     isDarkMode={isDarkMode}
                                 />
@@ -3598,7 +3598,7 @@ const EditPostView = ({isDarkMode}) => {
                                 <select
                                     className={inputClass}
                                     value={form.status}
-                                    onChange={(e) => setForm((prev) => ({...prev, status: e.target.value}))}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}
                                 >
                                     {statusOptions.map((option) => (
                                         <option key={option.value} value={option.value}>{option.label}</option>
@@ -3610,7 +3610,7 @@ const EditPostView = ({isDarkMode}) => {
                         <div
                             className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
                             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 1</p>
-                            <h3 className="font-semibold flex items-center gap-2"><FolderPlus size={16}/> 选择二级分类
+                            <h3 className="font-semibold flex items-center gap-2"><FolderPlus size={16} /> 选择二级分类
                             </h3>
                             <div className="flex flex-wrap gap-2">
                                 {normalizedCategories.map((cat) => {
@@ -3645,7 +3645,7 @@ const EditPostView = ({isDarkMode}) => {
                             </div>
                             {!secondLevelCategories.length && (
                                 <p className="text-xs text-amber-500 flex items-center gap-1">
-                                    <AlertTriangle size={14}/> 当前父级暂无二级分类，请先到分类管理中创建。
+                                    <AlertTriangle size={14} /> 当前父级暂无二级分类，请先到分类管理中创建。
                                 </p>
                             )}
                         </div>
@@ -3653,7 +3653,7 @@ const EditPostView = ({isDarkMode}) => {
                         <div
                             className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
                             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 2</p>
-                            <h3 className="font-semibold flex items-center gap-2"><Tag size={16}/> 选择标签</h3>
+                            <h3 className="font-semibold flex items-center gap-2"><Tag size={16} /> 选择标签</h3>
                             <div className="flex flex-wrap gap-2">
                                 {tags.map((tag) => (
                                     <button
@@ -3687,9 +3687,9 @@ const EditPostView = ({isDarkMode}) => {
 };
 
 
-const PostsView = ({isDarkMode}) => {
+const PostsView = ({ isDarkMode }) => {
     const navigate = useNavigate();
-    const {hasPermission} = usePermissionContext();
+    const { hasPermission } = usePermissionContext();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -3707,7 +3707,7 @@ const PostsView = ({isDarkMode}) => {
         const result = [];
         tree.forEach((root) => {
             (root.children || []).forEach((child) => {
-                result.push({id: child.id, label: `${root.label}/${child.label}`});
+                result.push({ id: child.id, label: `${root.label}/${child.label}` });
             });
         });
         return result;
@@ -3727,7 +3727,7 @@ const PostsView = ({isDarkMode}) => {
         setLoading(true);
         setError(null);
         try {
-            const params = {keyword, page, size};
+            const params = { keyword, page, size };
             if (categoryFilter !== 'all') params.categoryId = categoryFilter;
             const res = await adminFetchPosts(params);
             const data = res.data || res;
@@ -3748,7 +3748,7 @@ const PostsView = ({isDarkMode}) => {
         loadPosts();
     }, [loadPosts]);
 
-    const STATUS_LABELS = {DRAFT: '草稿', PUBLISHED: '已发布', ARCHIVED: '已归档'};
+    const STATUS_LABELS = { DRAFT: '草稿', PUBLISHED: '已发布', ARCHIVED: '已归档' };
     const totalPages = Math.max(Math.ceil(total / size), 1);
     const formatDate = (value) => (value ? new Date(value).toLocaleString() : '—');
     const rowHoverClass = isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50';
@@ -3828,7 +3828,7 @@ const PostsView = ({isDarkMode}) => {
                             onClick={loadPosts}
                             className="flex items-center gap-2 text-sm font-bold text-indigo-500 hover:text-indigo-400"
                         >
-                            <RefreshCw size={16}/> 刷新
+                            <RefreshCw size={16} /> 刷新
                         </button>
                     </div>
                 </div>
@@ -3841,62 +3841,62 @@ const PostsView = ({isDarkMode}) => {
                     <div className="overflow-x-auto">
                         <table className="min-w-full table-auto text-sm">
                             <thead>
-                            <tr className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
-                                <th className="px-4 py-2 text-left font-semibold">标题</th>
-                                <th className="px-4 py-2 text-left font-semibold">摘要</th>
-                                <th className="px-4 py-2 text-left font-semibold">分类</th>
-                                <th className="px-4 py-2 text-left font-semibold">标签</th>
-                                <th className="px-4 py-2 text-left font-semibold w-24">状态</th>
-                                <th className="px-4 py-2 text-left font-semibold">发布时间</th>
-                                {canEditPosts && <th className="px-4 py-2 text-right font-semibold">操作</th>}
-                            </tr>
+                                <tr className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
+                                    <th className="px-4 py-2 text-left font-semibold">标题</th>
+                                    <th className="px-4 py-2 text-left font-semibold">摘要</th>
+                                    <th className="px-4 py-2 text-left font-semibold">分类</th>
+                                    <th className="px-4 py-2 text-left font-semibold">标签</th>
+                                    <th className="px-4 py-2 text-left font-semibold w-24">状态</th>
+                                    <th className="px-4 py-2 text-left font-semibold">发布时间</th>
+                                    {canEditPosts && <th className="px-4 py-2 text-right font-semibold">操作</th>}
+                                </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                            {posts.map((post) => (
-                                <tr key={post.id}
-                                    className={`${statusRowTintClass(post.status)} ${rowHoverClass} transition-colors`}>
-                                    <td className="px-4 py-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => goArticle(post.id)}
-                                            className="font-semibold text-left text-indigo-500 hover:underline"
-                                        >
-                                            {post.title}
-                                        </button>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span
-                                            className="text-sm text-gray-600 dark:text-gray-300">{post.excerpt || '无摘要'}</span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {post.parentCategoryName && post.categoryName && post.parentCategoryName !== post.categoryName
-                                            ? `${post.parentCategoryName}/${post.categoryName}`
-                                            : (post.categoryName || '未分类')}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-wrap gap-1">
-                                            {(post.tags || []).map((tag) => (
-                                                <span key={tag.id}
-                                                      className="px-2 py-0.5 text-xs border border-black">{tag.name}</span>
-                                            ))}
-                                            {(!post.tags || post.tags.length === 0) &&
-                                                <span className="text-gray-400">无标签</span>}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 w-24">{STATUS_LABELS[post.status] || '未知'}</td>
-                                    <td className="px-4 py-3 text-gray-500">{formatDate(post.publishedAt)}</td>
-                                    {canEditPosts && (
-                                        <td className="px-4 py-3 text-right">
+                                {posts.map((post) => (
+                                    <tr key={post.id}
+                                        className={`${statusRowTintClass(post.status)} ${rowHoverClass} transition-colors`}>
+                                        <td className="px-4 py-3">
                                             <button
-                                                onClick={() => goEdit(post.id)}
-                                                className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                                                type="button"
+                                                onClick={() => goArticle(post.id)}
+                                                className="font-semibold text-left text-indigo-500 hover:underline"
                                             >
-                                                <Edit size={14}/> 打开编辑页
+                                                {post.title}
                                             </button>
                                         </td>
-                                    )}
-                                </tr>
-                            ))}
+                                        <td className="px-4 py-3">
+                                            <span
+                                                className="text-sm text-gray-600 dark:text-gray-300">{post.excerpt || '无摘要'}</span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {post.parentCategoryName && post.categoryName && post.parentCategoryName !== post.categoryName
+                                                ? `${post.parentCategoryName}/${post.categoryName}`
+                                                : (post.categoryName || '未分类')}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-1">
+                                                {(post.tags || []).map((tag) => (
+                                                    <span key={tag.id}
+                                                        className="px-2 py-0.5 text-xs border border-black">{tag.name}</span>
+                                                ))}
+                                                {(!post.tags || post.tags.length === 0) &&
+                                                    <span className="text-gray-400">无标签</span>}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 w-24">{STATUS_LABELS[post.status] || '未知'}</td>
+                                        <td className="px-4 py-3 text-gray-500">{formatDate(post.publishedAt)}</td>
+                                        {canEditPosts && (
+                                            <td className="px-4 py-3 text-right">
+                                                <button
+                                                    onClick={() => goEdit(post.id)}
+                                                    className="inline-flex items-center gap-1 px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                                                >
+                                                    <Edit size={14} /> 打开编辑页
+                                                </button>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -3926,19 +3926,19 @@ const PostsView = ({isDarkMode}) => {
 };
 
 const COMMENT_STATUS_OPTIONS = [
-    {value: 'ALL', label: '全部状态'},
-    {value: 'APPROVED', label: '已通过'},
-    {value: 'PENDING', label: '待审核'},
-    {value: 'REJECTED', label: '已拒绝'},
-    {value: 'SPAM', label: '垃圾'},
+    { value: 'ALL', label: '全部状态' },
+    { value: 'APPROVED', label: '已通过' },
+    { value: 'PENDING', label: '待审核' },
+    { value: 'REJECTED', label: '已拒绝' },
+    { value: 'SPAM', label: '垃圾' },
 ];
 const REVIEW_STATUS_OPTIONS = COMMENT_STATUS_OPTIONS.filter((item) => item.value !== 'ALL');
 
-const CommentsAdminView = ({isDarkMode}) => {
+const CommentsAdminView = ({ isDarkMode }) => {
     const cardBg = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
     const inputClass = `w-full px-3 py-2 border-2 rounded-md text-sm outline-none transition ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white focus:border-indigo-400' : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500'}`;
     const statsBg = isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-800';
-    const {hasPermission, loading: permLoading} = usePermissionContext();
+    const { hasPermission, loading: permLoading } = usePermissionContext();
     const canView = hasPermission('COMMENT_VIEW');
     const canCreate = hasPermission('COMMENT_CREATE');
     const canReply = hasPermission('COMMENT_REPLY');
@@ -3963,7 +3963,7 @@ const CommentsAdminView = ({isDarkMode}) => {
     const [loadingComments, setLoadingComments] = useState(false);
     const [commentsError, setCommentsError] = useState('');
 
-    const [form, setForm] = useState({postId: '', authorName: '', content: '', parentId: ''});
+    const [form, setForm] = useState({ postId: '', authorName: '', content: '', parentId: '' });
     const [formError, setFormError] = useState('');
     const [formSuccess, setFormSuccess] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -4004,20 +4004,20 @@ const CommentsAdminView = ({isDarkMode}) => {
 
     useEffect(() => {
         if (!form.postId && postOptions.length) {
-            setForm((prev) => ({...prev, postId: prev.postId || String(postOptions[0].id)}));
+            setForm((prev) => ({ ...prev, postId: prev.postId || String(postOptions[0].id) }));
         }
     }, [postOptions, form.postId]);
 
     useEffect(() => {
         if (selectedPostId !== 'all') {
-            setForm((prev) => ({...prev, postId: String(selectedPostId)}));
+            setForm((prev) => ({ ...prev, postId: String(selectedPostId) }));
         }
     }, [selectedPostId]);
 
     useEffect(() => {
         if (replyTarget && form.postId && Number(form.postId) !== replyTarget.postId) {
             setReplyTarget(null);
-            setForm((prev) => ({...prev, parentId: ''}));
+            setForm((prev) => ({ ...prev, parentId: '' }));
         }
     }, [form.postId, replyTarget]);
 
@@ -4055,17 +4055,17 @@ const CommentsAdminView = ({isDarkMode}) => {
     const scopeSummary = useMemo(() => {
         const scope = normalizedPostId ? `文章 #${normalizedPostId}` : '全部文章';
         const status = COMMENT_STATUS_OPTIONS.find((item) => item.value === statusFilter)?.label || '全部状态';
-        return {scope, status};
+        return { scope, status };
     }, [normalizedPostId, statusFilter]);
 
     const renderStatusBadge = (status) => {
         const map = {
-            APPROVED: {label: '已通过', className: 'bg-emerald-100 text-emerald-700'},
-            PENDING: {label: '待审核', className: 'bg-amber-100 text-amber-700'},
-            REJECTED: {label: '已拒绝', className: 'bg-red-100 text-red-600'},
-            SPAM: {label: '垃圾', className: 'bg-gray-200 text-gray-700'},
+            APPROVED: { label: '已通过', className: 'bg-emerald-100 text-emerald-700' },
+            PENDING: { label: '待审核', className: 'bg-amber-100 text-amber-700' },
+            REJECTED: { label: '已拒绝', className: 'bg-red-100 text-red-600' },
+            SPAM: { label: '垃圾', className: 'bg-gray-200 text-gray-700' },
         };
-        const info = map[status] || {label: status || '未知', className: 'bg-gray-200 text-gray-700'};
+        const info = map[status] || { label: status || '未知', className: 'bg-gray-200 text-gray-700' };
         return <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${info.className}`}>{info.label}</span>;
     };
 
@@ -4098,7 +4098,7 @@ const CommentsAdminView = ({isDarkMode}) => {
                 content: form.content.trim(),
                 parentId: form.parentId ? Number(form.parentId) : undefined,
             });
-            setForm((prev) => ({...prev, content: '', parentId: ''}));
+            setForm((prev) => ({ ...prev, content: '', parentId: '' }));
             setReplyTarget(null);
             setFormSuccess('评论已提交');
             loadComments();
@@ -4112,7 +4112,7 @@ const CommentsAdminView = ({isDarkMode}) => {
     const handlePickReply = (comment) => {
         if (!canReply) return;
         setReplyTarget(comment);
-        setForm((prev) => ({...prev, postId: String(comment.postId), parentId: String(comment.id)}));
+        setForm((prev) => ({ ...prev, postId: String(comment.postId), parentId: String(comment.id) }));
     };
 
     const handleSaveEdit = async () => {
@@ -4220,7 +4220,7 @@ const CommentsAdminView = ({isDarkMode}) => {
                         onClick={() => loadComments()}
                         className="w-full md:w-auto px-4 py-2 border-2 border-black font-bold bg-[#FFD700] text-black rounded-full flex items-center justify-center gap-2 hover:-translate-y-0.5 transition"
                     >
-                        <RefreshCw size={14}/> 刷新
+                        <RefreshCw size={14} /> 刷新
                     </button>
                 </div>
             </div>
@@ -4294,123 +4294,123 @@ const CommentsAdminView = ({isDarkMode}) => {
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm">
                             <thead>
-                            <tr className={isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-600'}>
-                                <th className="px-4 py-2 text-left">ID</th>
-                                <th className="px-4 py-2 text-left">所属文章</th>
-                                <th className="px-4 py-2 text-left">作者 / IP</th>
-                                <th className="px-4 py-2 text-left w-1/3">内容</th>
-                                <th className="px-4 py-2 text-left">状态</th>
-                                <th className="px-4 py-2 text-left w-48">操作</th>
-                            </tr>
+                                <tr className={isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-600'}>
+                                    <th className="px-4 py-2 text-left">ID</th>
+                                    <th className="px-4 py-2 text-left">所属文章</th>
+                                    <th className="px-4 py-2 text-left">作者 / IP</th>
+                                    <th className="px-4 py-2 text-left w-1/3">内容</th>
+                                    <th className="px-4 py-2 text-left">状态</th>
+                                    <th className="px-4 py-2 text-left w-48">操作</th>
+                                </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800 text-gray-100' : 'divide-y divide-gray-200 text-gray-800'}>
-                            {comments.map((comment) => (
-                                <tr key={comment.id} className="align-top">
-                                    <td className="px-4 py-3 font-mono text-xs">#{comment.id}</td>
-                                    <td className="px-4 py-3">
-                                        <p className="font-semibold">{comment.postTitle || '未关联文章'}</p>
-                                        {comment.postSlug && (
-                                            <p className="text-xs text-gray-500">/{comment.postSlug}</p>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <p className="font-semibold">{comment.authorName || '访客'}</p>
-                                        <p className="text-xs text-gray-500">{comment.authorIp || '未知 IP'}</p>
-                                        <p className="text-xs text-gray-400 mt-1">{comment.createdAt || ''}</p>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {editingId === comment.id ? (
-                                            <div className="space-y-2">
-                                                <textarea
-                                                    className={`${inputClass} font-medium`}
-                                                    rows={4}
-                                                    value={editContent}
-                                                    onChange={(e) => setEditContent(e.target.value)}
-                                                />
-                                                <select
-                                                    className={inputClass}
-                                                    value={editStatus}
-                                                    onChange={(e) => setEditStatus(e.target.value)}
-                                                >
-                                                    {REVIEW_STATUS_OPTIONS.map((option) => (
-                                                        <option key={option.value} value={option.value}>{option.label}</option>
-                                                    ))}
-                                                </select>
-                                                {editError && <p className="text-xs text-red-500">{editError}</p>}
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleSaveEdit}
-                                                        disabled={savingEdit}
-                                                        className="px-4 py-2 border-2 border-black font-bold bg-[#00E096] text-black rounded-full text-xs disabled:opacity-50"
+                                {comments.map((comment) => (
+                                    <tr key={comment.id} className="align-top">
+                                        <td className="px-4 py-3 font-mono text-xs">#{comment.id}</td>
+                                        <td className="px-4 py-3">
+                                            <p className="font-semibold">{comment.postTitle || '未关联文章'}</p>
+                                            {comment.postSlug && (
+                                                <p className="text-xs text-gray-500">/{comment.postSlug}</p>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <p className="font-semibold">{comment.authorName || '访客'}</p>
+                                            <p className="text-xs text-gray-500">{comment.authorIp || '未知 IP'}</p>
+                                            <p className="text-xs text-gray-400 mt-1">{comment.createdAt || ''}</p>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {editingId === comment.id ? (
+                                                <div className="space-y-2">
+                                                    <textarea
+                                                        className={`${inputClass} font-medium`}
+                                                        rows={4}
+                                                        value={editContent}
+                                                        onChange={(e) => setEditContent(e.target.value)}
+                                                    />
+                                                    <select
+                                                        className={inputClass}
+                                                        value={editStatus}
+                                                        onChange={(e) => setEditStatus(e.target.value)}
                                                     >
-                                                        {savingEdit ? '保存中...' : '保存审核'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setEditingId(null);
-                                                            setEditContent('');
-                                                            setEditStatus('APPROVED');
-                                                            setEditError('');
-                                                        }}
-                                                        className="px-4 py-2 border-2 border-black font-bold rounded-full text-xs"
-                                                    >
-                                                        取消
-                                                    </button>
+                                                        {REVIEW_STATUS_OPTIONS.map((option) => (
+                                                            <option key={option.value} value={option.value}>{option.label}</option>
+                                                        ))}
+                                                    </select>
+                                                    {editError && <p className="text-xs text-red-500">{editError}</p>}
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleSaveEdit}
+                                                            disabled={savingEdit}
+                                                            className="px-4 py-2 border-2 border-black font-bold bg-[#00E096] text-black rounded-full text-xs disabled:opacity-50"
+                                                        >
+                                                            {savingEdit ? '保存中...' : '保存审核'}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setEditingId(null);
+                                                                setEditContent('');
+                                                                setEditStatus('APPROVED');
+                                                                setEditError('');
+                                                            }}
+                                                            className="px-4 py-2 border-2 border-black font-bold rounded-full text-xs"
+                                                        >
+                                                            取消
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            <p className="whitespace-pre-line break-words">{comment.content || '-'}</p>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {renderStatusBadge(comment.status)}
-                                        {comment.parentId && (
-                                            <p className="text-[11px] text-gray-500 mt-1">回复 #{comment.parentId}</p>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 space-y-2">
-                                        {editingId !== comment.id && (
-                                            <>
-                                                {canReview && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setEditingId(comment.id);
-                                                            setEditContent(comment.content || '');
-                                                            setEditStatus(comment.status || 'APPROVED');
-                                                            setEditError('');
-                                                        }}
-                                                        className="w-full px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs rounded"
-                                                    >
-                                                        审核/编辑
-                                                    </button>
-                                                )}
-                                                {canReply && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handlePickReply(comment)}
-                                                        className="w-full px-3 py-1 border-2 border-purple-500 text-purple-600 font-bold text-xs rounded"
-                                                    >
-                                                        回复
-                                                    </button>
-                                                )}
-                                                {canDelete && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteComment(comment)}
-                                                        disabled={deletingId === comment.id}
-                                                        className="w-full px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs rounded disabled:opacity-50"
-                                                    >
-                                                        {deletingId === comment.id ? '删除中...' : '删除'}
-                                                    </button>
-                                                )}
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
+                                            ) : (
+                                                <p className="whitespace-pre-line break-words">{comment.content || '-'}</p>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {renderStatusBadge(comment.status)}
+                                            {comment.parentId && (
+                                                <p className="text-[11px] text-gray-500 mt-1">回复 #{comment.parentId}</p>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 space-y-2">
+                                            {editingId !== comment.id && (
+                                                <>
+                                                    {canReview && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setEditingId(comment.id);
+                                                                setEditContent(comment.content || '');
+                                                                setEditStatus(comment.status || 'APPROVED');
+                                                                setEditError('');
+                                                            }}
+                                                            className="w-full px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs rounded"
+                                                        >
+                                                            审核/编辑
+                                                        </button>
+                                                    )}
+                                                    {canReply && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handlePickReply(comment)}
+                                                            className="w-full px-3 py-1 border-2 border-purple-500 text-purple-600 font-bold text-xs rounded"
+                                                        >
+                                                            回复
+                                                        </button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteComment(comment)}
+                                                            disabled={deletingId === comment.id}
+                                                            className="w-full px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs rounded disabled:opacity-50"
+                                                        >
+                                                            {deletingId === comment.id ? '删除中...' : '删除'}
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -4439,7 +4439,7 @@ const CommentsAdminView = ({isDarkMode}) => {
             {canCreate && (
                 <div className={`${cardBg} p-6 rounded-2xl shadow-lg space-y-4`}>
                     <h3 className="text-lg font-bold flex items-center gap-2">
-                        <MessageSquare size={18}/> 发布后台回复
+                        <MessageSquare size={18} /> 发布后台回复
                     </h3>
                     {formError && <div className="text-sm text-red-500">{formError}</div>}
                     {formSuccess && <div className="text-sm text-emerald-500">{formSuccess}</div>}
@@ -4450,7 +4450,7 @@ const CommentsAdminView = ({isDarkMode}) => {
                                 <select
                                     className={inputClass}
                                     value={form.postId}
-                                    onChange={(e) => setForm((prev) => ({...prev, postId: e.target.value}))}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, postId: e.target.value }))}
                                 >
                                     <option value="">请选择文章</option>
                                     {postOptions.map((post) => (
@@ -4464,7 +4464,7 @@ const CommentsAdminView = ({isDarkMode}) => {
                                     className={inputClass}
                                     placeholder="默认使用账号昵称"
                                     value={form.authorName}
-                                    onChange={(e) => setForm((prev) => ({...prev, authorName: e.target.value}))}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, authorName: e.target.value }))}
                                 />
                             </div>
                         </div>
@@ -4476,7 +4476,7 @@ const CommentsAdminView = ({isDarkMode}) => {
                                     className="font-bold underline"
                                     onClick={() => {
                                         setReplyTarget(null);
-                                        setForm((prev) => ({...prev, parentId: ''}));
+                                        setForm((prev) => ({ ...prev, parentId: '' }));
                                     }}
                                 >
                                     取消
@@ -4489,7 +4489,7 @@ const CommentsAdminView = ({isDarkMode}) => {
                                 className={`${inputClass} mt-2`}
                                 rows={4}
                                 value={form.content}
-                                onChange={(e) => setForm((prev) => ({...prev, content: e.target.value}))}
+                                onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
                                 placeholder="请输入要发布的评论内容..."
                             />
                         </div>
@@ -4497,7 +4497,7 @@ const CommentsAdminView = ({isDarkMode}) => {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    setForm({postId: '', authorName: '', content: '', parentId: ''});
+                                    setForm({ postId: '', authorName: '', content: '', parentId: '' });
                                     setReplyTarget(null);
                                     setFormError('');
                                     setFormSuccess('');
@@ -4521,7 +4521,7 @@ const CommentsAdminView = ({isDarkMode}) => {
     );
 };
 
-const UserManagementView = ({isDarkMode}) => {
+const UserManagementView = ({ isDarkMode }) => {
     const [users, setUsers] = useState([]);
     const [roles, setRoles] = useState([]);
     const [keyword, setKeyword] = useState("");
@@ -4546,7 +4546,7 @@ const UserManagementView = ({isDarkMode}) => {
         avatarUrl: "",
     };
     const [form, setForm] = useState(emptyForm);
-    const [meta, setMeta] = useState({id: null, createdAt: null, lastLoginAt: null});
+    const [meta, setMeta] = useState({ id: null, createdAt: null, lastLoginAt: null });
     const [saving, setSaving] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
@@ -4556,15 +4556,15 @@ const UserManagementView = ({isDarkMode}) => {
     const [avatarUploading, setAvatarUploading] = useState(false);
     const scrollFormIntoView = useCallback(() => {
         requestAnimationFrame(() => {
-            formRef.current?.scrollIntoView({behavior: 'smooth', block: 'start'});
+            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     }, []);
 
     const cardBg = isDarkMode ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200";
     const inputClass = `w-full px-3 py-2 border-2 rounded font-medium outline-none transition-colors ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white focus:border-indigo-400' : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500'}`;
     const STATUS_OPTIONS = [
-        {value: 'ACTIVE', label: '正常'},
-        {value: 'DISABLED', label: '已禁用'},
+        { value: 'ACTIVE', label: '正常' },
+        { value: 'DISABLED', label: '已禁用' },
     ];
 
     const getDefaultRoleCode = (roleList) => {
@@ -4587,9 +4587,9 @@ const UserManagementView = ({isDarkMode}) => {
             const data = res.data || res || [];
             setRoles(data);
             const defaultRole = getDefaultRoleCode(data);
-            setForm((prev) => ({...prev, roleCode: prev.roleCode || defaultRole}));
+            setForm((prev) => ({ ...prev, roleCode: prev.roleCode || defaultRole }));
         } catch (err) {
-            setFeedback({type: 'error', text: err.message || '无法加载角色列表'});
+            setFeedback({ type: 'error', text: err.message || '无法加载角色列表' });
         }
     }, []);
 
@@ -4597,7 +4597,7 @@ const UserManagementView = ({isDarkMode}) => {
         const token = ++usersFetchTokenRef.current;
         setLoading(true);
         try {
-            const params = {page, size};
+            const params = { page, size };
             if (roleFilter !== 'all') params.role = roleFilter;
             const trimmedKeyword = keyword.trim();
             if (trimmedKeyword) params.keyword = trimmedKeyword;
@@ -4610,7 +4610,7 @@ const UserManagementView = ({isDarkMode}) => {
             setTotal(data?.total || 0);
         } catch (err) {
             if (usersFetchTokenRef.current === token) {
-                setFeedback({type: 'error', text: err.message || '加载用户失败'});
+                setFeedback({ type: 'error', text: err.message || '加载用户失败' });
             }
         } finally {
             if (usersFetchTokenRef.current === token) {
@@ -4633,7 +4633,7 @@ const UserManagementView = ({isDarkMode}) => {
             ...emptyForm,
             roleCode: defaultRole,
         });
-        setMeta({id: null, createdAt: null, lastLoginAt: null});
+        setMeta({ id: null, createdAt: null, lastLoginAt: null });
         setSelectedUserId(null);
         setFormMode('create');
         setFeedback(null);
@@ -4643,20 +4643,20 @@ const UserManagementView = ({isDarkMode}) => {
     const formatDate = (value) => (value ? new Date(value).toLocaleString() : '—');
 
     const handleInputChange = (e) => {
-        const {name, value} = e.target;
-        setForm((prev) => ({...prev, [name]: value}));
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleAvatarUpload = async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
         if (!file.type.startsWith('image/')) {
-            setFeedback({type: 'error', text: '请上传图片文件'});
+            setFeedback({ type: 'error', text: '请上传图片文件' });
             event.target.value = '';
             return;
         }
         if (file.size > 2 * 1024 * 1024) {
-            setFeedback({type: 'error', text: '头像需小于 2MB'});
+            setFeedback({ type: 'error', text: '头像需小于 2MB' });
             event.target.value = '';
             return;
         }
@@ -4672,10 +4672,10 @@ const UserManagementView = ({isDarkMode}) => {
             if (!newPath) {
                 throw new Error('上传结果为空');
             }
-            setForm((prev) => ({...prev, avatarUrl: newPath}));
-            setFeedback({type: 'success', text: '头像已更新'});
+            setForm((prev) => ({ ...prev, avatarUrl: newPath }));
+            setFeedback({ type: 'success', text: '头像已更新' });
         } catch (err) {
-            setFeedback({type: 'error', text: err.message || '头像上传失败'});
+            setFeedback({ type: 'error', text: err.message || '头像上传失败' });
         } finally {
             setAvatarUploading(false);
             event.target.value = '';
@@ -4702,13 +4702,13 @@ const UserManagementView = ({isDarkMode}) => {
                 password: '',
                 avatarUrl: data.avatar || data.avatarUrl || data.avatar_url || '',
             });
-            setMeta({id: data.id, createdAt: data.createdAt, lastLoginAt: data.lastLoginAt});
+            setMeta({ id: data.id, createdAt: data.createdAt, lastLoginAt: data.lastLoginAt });
             setFeedback(null);
             requestAnimationFrame(() => {
-                formRef.current?.scrollIntoView({behavior: 'smooth', block: 'start'});
+                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         } catch (err) {
-            setFeedback({type: 'error', text: err.message || '加载用户详情失败'});
+            setFeedback({ type: 'error', text: err.message || '加载用户详情失败' });
         } finally {
             setFormLoading(false);
         }
@@ -4721,10 +4721,10 @@ const UserManagementView = ({isDarkMode}) => {
             if (selectedUserId === user.id) {
                 resetForm();
             }
-            setFeedback({type: 'success', text: '用户已删除'});
+            setFeedback({ type: 'success', text: '用户已删除' });
             loadUsers();
         } catch (err) {
-            setFeedback({type: 'error', text: err.message || '删除失败'});
+            setFeedback({ type: 'error', text: err.message || '删除失败' });
         }
     };
 
@@ -4753,24 +4753,24 @@ const UserManagementView = ({isDarkMode}) => {
                     throw new Error('请先设置初始密码');
                 }
                 result = await adminCreateUser(payload);
-                setFeedback({type: 'success', text: '新用户已创建'});
+                setFeedback({ type: 'success', text: '新用户已创建' });
                 resetForm();
             } else if (selectedUserId) {
                 result = await adminUpdateUser(selectedUserId, payload);
                 const data = result.data || result;
-                setFeedback({type: 'success', text: '用户资料已更新'});
-                setMeta({id: data.id, createdAt: data.createdAt, lastLoginAt: data.lastLoginAt});
-                setForm((prev) => ({...prev, password: ''}));
+                setFeedback({ type: 'success', text: '用户资料已更新' });
+                setMeta({ id: data.id, createdAt: data.createdAt, lastLoginAt: data.lastLoginAt });
+                setForm((prev) => ({ ...prev, password: '' }));
             }
             loadUsers();
         } catch (err) {
-            setFeedback({type: 'error', text: err.message || '保存失败'});
+            setFeedback({ type: 'error', text: err.message || '保存失败' });
         } finally {
             setSaving(false);
         }
     };
 
-    const InfoBadge = ({label, value}) => (
+    const InfoBadge = ({ label, value }) => (
         <div
             className={`p-3 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
             <p className="text-xs text-gray-500 mb-1">{label}</p>
@@ -4784,7 +4784,7 @@ const UserManagementView = ({isDarkMode}) => {
             <div className={`${cardBg} rounded-xl p-6 shadow-lg`}>
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                     <div>
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Users size={20}/> 用户列表</h2>
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Users size={20} /> 用户列表</h2>
                         <p className="text-sm text-gray-500 mt-1">可筛选查看所有后台账号，对敏感操作前请仔细核对。</p>
                     </div>
                     <button
@@ -4838,61 +4838,61 @@ const UserManagementView = ({isDarkMode}) => {
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm">
                             <thead>
-                            <tr className={isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-600'}>
-                                <th className="px-4 py-2 text-left">头像</th>
-                                <th className="px-4 py-2 text-left">用户名</th>
-                                <th className="px-4 py-2 text-left">显示名</th>
-                                <th className="px-4 py-2 text-left">邮箱</th>
-                                <th className="px-4 py-2 text-left">角色</th>
-                                <th className="px-4 py-2 text-left">状态</th>
-                                <th className="px-4 py-2 text-left">最近登录</th>
-                                <th className="px-4 py-2 text-right">操作</th>
-                            </tr>
+                                <tr className={isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-600'}>
+                                    <th className="px-4 py-2 text-left">头像</th>
+                                    <th className="px-4 py-2 text-left">用户名</th>
+                                    <th className="px-4 py-2 text-left">显示名</th>
+                                    <th className="px-4 py-2 text-left">邮箱</th>
+                                    <th className="px-4 py-2 text-left">角色</th>
+                                    <th className="px-4 py-2 text-left">状态</th>
+                                    <th className="px-4 py-2 text-left">最近登录</th>
+                                    <th className="px-4 py-2 text-right">操作</th>
+                                </tr>
                             </thead>
                             <tbody
                                 className={isDarkMode ? 'divide-y divide-gray-800 text-gray-100' : 'divide-y divide-gray-200 text-gray-700'}>
-                            {users.map((user) => {
-                                const avatarSrc = resolveUserAvatar(user);
-                                const avatarFallback = (user.displayName || user.username || 'U').charAt(0).toUpperCase();
-                                return (
-                                    <tr
-                                        key={user.id}
-                                        className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} ${selectedUserId === user.id ? (isDarkMode ? 'bg-gray-800/60' : 'bg-indigo-50') : ''}`}
-                                    >
-                                        <td className="px-4 py-3">
-                                            <div
-                                                className={`w-12 h-12 rounded-full border-2 border-black overflow-hidden flex items-center justify-center text-sm font-bold ${isDarkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-600'}`}>
-                                                {avatarSrc ? (
-                                                    <img src={avatarSrc} alt={`${user.username} avatar`}
-                                                         className="w-full h-full object-cover"/>
-                                                ) : (
-                                                    avatarFallback
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">{user.username}</td>
-                                        <td className="px-4 py-3">{user.displayName || '—'}</td>
-                                        <td className="px-4 py-3">{user.email || '—'}</td>
-                                        <td className="px-4 py-3">{user.roleName || user.roleCode}</td>
-                                        <td className="px-4 py-3">{STATUS_OPTIONS.find((s) => s.value === user.status)?.label || '—'}</td>
-                                        <td className="px-4 py-3 text-gray-500">{formatDate(user.lastLoginAt)}</td>
-                                        <td className="px-4 py-3 text-right space-x-2">
-                                            <button
-                                                onClick={() => handleEdit(user.id)}
-                                                className="px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
-                                            >
-                                                编辑
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(user)}
-                                                className="px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
-                                            >
-                                                删除
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                                {users.map((user) => {
+                                    const avatarSrc = resolveUserAvatar(user);
+                                    const avatarFallback = (user.displayName || user.username || 'U').charAt(0).toUpperCase();
+                                    return (
+                                        <tr
+                                            key={user.id}
+                                            className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} ${selectedUserId === user.id ? (isDarkMode ? 'bg-gray-800/60' : 'bg-indigo-50') : ''}`}
+                                        >
+                                            <td className="px-4 py-3">
+                                                <div
+                                                    className={`w-12 h-12 rounded-full border-2 border-black overflow-hidden flex items-center justify-center text-sm font-bold ${isDarkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-600'}`}>
+                                                    {avatarSrc ? (
+                                                        <img src={avatarSrc} alt={`${user.username} avatar`}
+                                                            className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        avatarFallback
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">{user.username}</td>
+                                            <td className="px-4 py-3">{user.displayName || '—'}</td>
+                                            <td className="px-4 py-3">{user.email || '—'}</td>
+                                            <td className="px-4 py-3">{user.roleName || user.roleCode}</td>
+                                            <td className="px-4 py-3">{STATUS_OPTIONS.find((s) => s.value === user.status)?.label || '—'}</td>
+                                            <td className="px-4 py-3 text-gray-500">{formatDate(user.lastLoginAt)}</td>
+                                            <td className="px-4 py-3 text-right space-x-2">
+                                                <button
+                                                    onClick={() => handleEdit(user.id)}
+                                                    className="px-3 py-1 border-2 border-indigo-500 text-indigo-600 font-bold text-xs"
+                                                >
+                                                    编辑
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(user)}
+                                                    className="px-3 py-1 border-2 border-red-500 text-red-600 font-bold text-xs"
+                                                >
+                                                    删除
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -4948,9 +4948,9 @@ const UserManagementView = ({isDarkMode}) => {
                                 className={`w-20 h-20 rounded-full border-2 border-black overflow-hidden flex items-center justify-center ${isDarkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-600'}`}>
                                 {avatarPreviewSrc ? (
                                     <img src={avatarPreviewSrc} alt="avatar preview"
-                                         className="w-full h-full object-cover"/>
+                                        className="w-full h-full object-cover" />
                                 ) : (
-                                    <User size={24}/>
+                                    <User size={24} />
                                 )}
                             </div>
                             <div className="space-y-2">
@@ -4980,46 +4980,46 @@ const UserManagementView = ({isDarkMode}) => {
                         <div>
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">用户名</label>
                             <input className={inputClass} name="username" value={form.username}
-                                   onChange={handleInputChange} required/>
+                                onChange={handleInputChange} required />
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">显示名</label>
                             <input className={inputClass} name="displayName" value={form.displayName}
-                                   onChange={handleInputChange} required/>
+                                onChange={handleInputChange} required />
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">邮箱</label>
                             <input className={inputClass} name="email" value={form.email} onChange={handleInputChange}
-                                   type="email"/>
+                                type="email" />
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">头衔</label>
-                            <input className={inputClass} name="title" value={form.title} onChange={handleInputChange}/>
+                            <input className={inputClass} name="title" value={form.title} onChange={handleInputChange} />
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">GitHub</label>
                             <input className={inputClass} name="githubUrl" value={form.githubUrl}
-                                   onChange={handleInputChange}/>
+                                onChange={handleInputChange} />
                         </div>
                         <div>
                             <label
                                 className="text-xs font-semibold text-gray-500 dark:text-gray-400">微信二维码地址</label>
                             <input className={inputClass} name="wechatQrUrl" value={form.wechatQrUrl}
-                                   onChange={handleInputChange}/>
+                                onChange={handleInputChange} />
                         </div>
                     </div>
                     <div>
                         <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">个人简介</label>
                         <textarea className={`${inputClass} mt-2`} rows={3} name="bio" value={form.bio}
-                                  onChange={handleInputChange}/>
+                            onChange={handleInputChange} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">角色</label>
                             <select className={`${inputClass} mt-2`} name="roleCode" value={form.roleCode}
-                                    onChange={handleInputChange}>
+                                onChange={handleInputChange}>
                                 {roles.map((role) => (
                                     <option key={role.code} value={role.code}>{role.name}</option>
                                 ))}
@@ -5028,7 +5028,7 @@ const UserManagementView = ({isDarkMode}) => {
                         <div>
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">状态</label>
                             <select className={`${inputClass} mt-2`} name="status" value={form.status}
-                                    onChange={handleInputChange}>
+                                onChange={handleInputChange}>
                                 {STATUS_OPTIONS.map((option) => (
                                     <option key={option.value} value={option.value}>{option.label}</option>
                                 ))}
@@ -5049,9 +5049,9 @@ const UserManagementView = ({isDarkMode}) => {
                     </div>
                     {formMode === 'edit' && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <InfoBadge label="用户 ID" value={meta.id}/>
-                            <InfoBadge label="创建时间" value={formatDate(meta.createdAt)}/>
-                            <InfoBadge label="最近登录" value={formatDate(meta.lastLoginAt)}/>
+                            <InfoBadge label="用户 ID" value={meta.id} />
+                            <InfoBadge label="创建时间" value={formatDate(meta.createdAt)} />
+                            <InfoBadge label="最近登录" value={formatDate(meta.lastLoginAt)} />
                         </div>
                     )}
                     <div className="flex justify-end pt-2">
@@ -5070,7 +5070,7 @@ const UserManagementView = ({isDarkMode}) => {
 };
 
 // 4.4 Sub-Component: Permissions View (Super Admin Only)
-const PermissionsView = ({isDarkMode}) => {
+const PermissionsView = ({ isDarkMode }) => {
     const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const [matrix, setMatrix] = useState([]);
@@ -5081,8 +5081,8 @@ const PermissionsView = ({isDarkMode}) => {
         USER: new Set()
     });
     const [savingRole, setSavingRole] = useState(null);
-    const {notice, showNotice, hideNotice} = useTimedNotice();
-    const {hasPermission} = usePermissionContext();
+    const { notice, showNotice, hideNotice } = useTimedNotice();
+    const { hasPermission } = usePermissionContext();
 
     const fetchMatrix = useCallback(async () => {
         setLoading(true);
@@ -5099,7 +5099,7 @@ const PermissionsView = ({isDarkMode}) => {
                     if (action.user) userSet.add(action.code);
                 });
             });
-            setRoleSelections({ADMIN: adminSet, USER: userSet});
+            setRoleSelections({ ADMIN: adminSet, USER: userSet });
         } catch (err) {
             setError(err.message || '加载权限矩阵失败');
         } finally {
@@ -5119,7 +5119,7 @@ const PermissionsView = ({isDarkMode}) => {
             } else {
                 next.add(code);
             }
-            return {...prev, [role]: next};
+            return { ...prev, [role]: next };
         });
     };
 
@@ -5137,9 +5137,9 @@ const PermissionsView = ({isDarkMode}) => {
     };
 
     const roleCards = [
-        {role: 'SUPER_ADMIN', label: '超级管理员', description: '拥有所有模块的最高权限，可配置其余角色权限。'},
-        {role: 'ADMIN', label: '管理员', description: '负责内容与互动管理，可通过矩阵勾选需要开放的模块动作。'},
-        {role: 'USER', label: '用户', description: '普通登录用户，通常仅开放浏览与发表评论。'}
+        { role: 'SUPER_ADMIN', label: '超级管理员', description: '拥有所有模块的最高权限，可配置其余角色权限。' },
+        { role: 'ADMIN', label: '管理员', description: '负责内容与互动管理，可通过矩阵勾选需要开放的模块动作。' },
+        { role: 'USER', label: '用户', description: '普通登录用户，通常仅开放浏览与发表评论。' }
     ];
 
     if (!hasPermission('PERMISSION_MANAGE')) {
@@ -5153,7 +5153,7 @@ const PermissionsView = ({isDarkMode}) => {
 
     return (
         <div className="space-y-8">
-            <AdminNoticeBar notice={notice} onClose={hideNotice}/>
+            <AdminNoticeBar notice={notice} onClose={hideNotice} />
             <div className="grid gap-4 md:grid-cols-3">
                 {roleCards.map((item) => (
                     <div key={item.role} className={`${surface} rounded-2xl shadow-lg p-5`}>
@@ -5238,20 +5238,20 @@ const PermissionsView = ({isDarkMode}) => {
 
 // 4.5 The main Admin Panel structure
 // 4.5 The main Admin Panel structure
-const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, handleLogout}) => {
+const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [broadcastSaving, setBroadcastSaving] = useState(false);
     const BROADCAST_STYLES = [
-        {value: "ALERT", label: "紧急红色告警"},
-        {value: "ANNOUNCE", label: "温和庆典公告"}
+        { value: "ALERT", label: "紧急红色告警" },
+        { value: "ANNOUNCE", label: "温和庆典公告" }
     ];
     const [analyticsSummary, setAnalyticsSummary] = useState(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [analyticsError, setAnalyticsError] = useState('');
     const [analyticsRange, setAnalyticsRange] = useState(14);
-    const {loading: permissionLoading, error: permissionError, hasPermission} = usePermissionContext();
-    const {headerHeight} = useLayoutOffsets();
+    const { loading: permissionLoading, error: permissionError, hasPermission } = usePermissionContext();
+    const { headerHeight } = useLayoutOffsets();
 
     const pathSegments = location.pathname.split('/').filter(Boolean);
     const lastSegment = pathSegments[pathSegments.length - 1] || 'dashboard';
@@ -5261,17 +5261,17 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
     }
 
     const tabDefinitions = useMemo(() => ([
-        {key: 'dashboard', label: '仪表盘', icon: Home, permissions: ['ANALYTICS_VIEW']},
-        {key: 'create-post', label: '发布文章', icon: Edit, permissions: ['POST_CREATE']},
-        {key: 'posts', label: '文章列表', icon: FileText, permissions: ['POST_VIEW']},
-        {key: 'analytics', label: '数据分析', icon: BarChart3, permissions: ['ANALYTICS_VIEW']},
-        {key: 'comments', label: '评论管理', icon: MessageCircle, permissions: ['COMMENT_VIEW']},
-        {key: 'categories', label: '二级分类', icon: Layers, permissions: ['CATEGORY_MANAGE']},
-        {key: 'taxonomy', label: '标签管理', icon: Tag, permissions: ['TAG_MANAGE']},
-        {key: 'users', label: '用户管理', icon: Users, permissions: ['USER_MANAGE']},
-        {key: 'permissions', label: '权限管理', icon: Shield, permissions: ['PERMISSION_MANAGE']},
-        {key: 'settings', label: '系统设置', icon: Settings, permissions: ['PERMISSION_MANAGE']},
-        {key: 'profile', label: '个人资料', icon: User, permissions: ['PROFILE_UPDATE']},
+        { key: 'dashboard', label: '仪表盘', icon: Home, permissions: ['ANALYTICS_VIEW'] },
+        { key: 'create-post', label: '发布文章', icon: Edit, permissions: ['POST_CREATE'] },
+        { key: 'posts', label: '文章列表', icon: FileText, permissions: ['POST_VIEW'] },
+        { key: 'analytics', label: '数据分析', icon: BarChart3, permissions: ['ANALYTICS_VIEW'] },
+        { key: 'comments', label: '评论管理', icon: MessageCircle, permissions: ['COMMENT_VIEW'] },
+        { key: 'categories', label: '二级分类', icon: Layers, permissions: ['CATEGORY_MANAGE'] },
+        { key: 'taxonomy', label: '标签管理', icon: Tag, permissions: ['TAG_MANAGE'] },
+        { key: 'users', label: '用户管理', icon: Users, permissions: ['USER_MANAGE'] },
+        { key: 'permissions', label: '权限管理', icon: Shield, permissions: ['PERMISSION_MANAGE'] },
+        { key: 'settings', label: '系统设置', icon: Settings, permissions: ['PERMISSION_MANAGE'] },
+        { key: 'profile', label: '个人资料', icon: User, permissions: ['PROFILE_UPDATE'] },
     ]), []);
 
     const tabs = useMemo(() => {
@@ -5291,7 +5291,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
             const fallback = tabs.find((tab) => tab.key === 'profile') || tabs[0];
             if (!fallback) return;
             const target = fallback.key === 'dashboard' ? '/admin' : `/admin/${fallback.key}`;
-            navigate(target, {replace: true});
+            navigate(target, { replace: true });
         }
     }, [permissionLoading, tabs, activeTab, navigate]);
 
@@ -5308,7 +5308,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
         setAnalyticsLoading(true);
         setAnalyticsError('');
         try {
-            const res = await adminFetchAnalyticsSummary({days: targetDays});
+            const res = await adminFetchAnalyticsSummary({ days: targetDays });
             const data = res.data || res;
             setAnalyticsSummary(data);
         } catch (error) {
@@ -5344,7 +5344,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
         const nextState = !previousState;
         const payloadContent = notification.content;
 
-        setNotification((prev) => ({...prev, isOpen: nextState}));
+        setNotification((prev) => ({ ...prev, isOpen: nextState }));
         setBroadcastSaving(true);
         try {
             await updateBroadcast({
@@ -5356,7 +5356,7 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
         } catch (error) {
             console.error("Failed to toggle broadcast", error);
             alert("同步广播状态失败，请稍后重试");
-            setNotification((prev) => ({...prev, isOpen: previousState}));
+            setNotification((prev) => ({ ...prev, isOpen: previousState }));
         } finally {
             setBroadcastSaving(false);
         }
@@ -5369,26 +5369,26 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                 className={`w-64 flex-shrink-0 ${sidebarBg} border-r ${sidebarBorder} flex flex-col fixed h-full z-40 transition-colors`}>
                 <div className="p-6 border-b border-gray-100">
                     <h2 className="font-bold text-lg flex items-center gap-2 text-indigo-500"><Terminal
-                        className="text-pink-500"/> SANGUI // ADMIN</h2>
+                        className="text-pink-500" /> SANGUI // ADMIN</h2>
                 </div>
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                    {tabs.map(({key, label, icon: Icon}) => (
+                    {tabs.map(({ key, label, icon: Icon }) => (
                         <Link
                             key={key}
                             to={key === 'dashboard' ? '/admin' : `/admin/${key}`}
                             className={`w-full text-left px-4 py-3 rounded text-sm font-medium flex items-center gap-3 transition-colors ${activeTab === key
                                 ? 'bg-indigo-500 text-white shadow-lg'
                                 : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800'}`
-                            }`}
+                                }`}
                         >
-                            <Icon size={18}/> {label}
+                            <Icon size={18} /> {label}
                         </Link>
                     ))}
                 </nav>
                 <div className="p-4 border-t border-gray-100">
                     <button onClick={() => setView('home')}
-                            className="text-sm text-gray-500 hover:text-black flex items-center gap-2"><LogOut
-                        size={14}/> 返回前台
+                        className="text-sm text-gray-500 hover:text-black flex items-center gap-2"><LogOut
+                            size={14} /> 返回前台
                     </button>
                 </div>
             </aside>
@@ -5398,15 +5398,15 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                 {/* Top Bar */}
                 <header
                     className={`sticky z-30 h-16 flex items-center justify-between px-8 ${topbarBg} border-b ${sidebarBorder} shadow-sm`}
-                    style={{top: headerHeight}}>
+                    style={{ top: headerHeight }}>
                     <h1 className="text-xl font-bold">{activeLabel}</h1>
                     <div className="flex items-center space-x-4">
-            <span className={`text-xs px-3 py-1 rounded font-bold text-white ${ROLES[user.role].color}`}>
-              {ROLES[user.role].label}
-            </span>
+                        <span className={`text-xs px-3 py-1 rounded font-bold text-white ${ROLES[user.role].color}`}>
+                            {ROLES[user.role].label}
+                        </span>
                         <button onClick={handleLogout}
-                                className="text-sm text-gray-500 hover:text-red-500 flex items-center gap-1">
-                            <LogOut size={16}/> 退出登录
+                            className="text-sm text-gray-500 hover:text-red-500 flex items-center gap-1">
+                            <LogOut size={16} /> 退出登录
                         </button>
                     </div>
                 </header>
@@ -5429,19 +5429,19 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                             />
                         )}
                         <Routes>
-                            <Route index element={<DashboardView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="dashboard" element={<DashboardView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="create-post" element={<CreatePostView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user}/>}/>
-                            <Route path="comments" element={<CommentsAdminView isDarkMode={isDarkMode}/>}/>
-                            <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode}/>}/>
-                            <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode}/>}/>
-                            <Route path="posts" element={<PostsView isDarkMode={isDarkMode}/>}/>
-                            <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode}/>}/>
-                            <Route path="users" element={<UserManagementView isDarkMode={isDarkMode}/>}/>
-                            <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode}/>}/>
-                            <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode}/>}/>
-                            <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>}/>
+                            <Route index element={<DashboardView isDarkMode={isDarkMode} user={user} />} />
+                            <Route path="dashboard" element={<DashboardView isDarkMode={isDarkMode} user={user} />} />
+                            <Route path="create-post" element={<CreatePostView isDarkMode={isDarkMode} user={user} />} />
+                            <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user} />} />
+                            <Route path="comments" element={<CommentsAdminView isDarkMode={isDarkMode} />} />
+                            <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode} />} />
+                            <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode} />} />
+                            <Route path="posts" element={<PostsView isDarkMode={isDarkMode} />} />
+                            <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
+                            <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
+                            <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} />} />
+                            <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
+                            <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
                         </Routes>
                     </AnalyticsSummaryContext.Provider>
 
@@ -5450,53 +5450,53 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
                         <div
                             className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-lg border shadow-sm mt-8`}>
                             <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>紧急广播设置</h3>
-                    <div className="flex flex-col gap-4">
-                        <input
-                            className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                            value={notification.content}
-                            onChange={(e) => setNotification({...notification, content: e.target.value})}
-                            placeholder="请输入广播内容，如“热烈庆祝五一国际劳工节成立100周年！”"
-                        />
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <span className="text-xs font-bold uppercase tracking-wide text-gray-500">显示样式</span>
-                            <div className="flex gap-2">
-                                {BROADCAST_STYLES.map((style) => (
-                                    <button
-                                        key={style.value}
-                                        type="button"
-                                        onClick={() => setNotification(prev => ({
-                                            ...prev,
-                                            style: style.value
-                                        }))}
-                                        className={`px-3 py-1 text-xs font-bold border-2 border-black rounded shadow-[2px_2px_0px_0px_#000] transition-colors ${notification.style === style.value ? 'bg-black text-white' : (style.value === 'ANNOUNCE' ? 'bg-[#FFF7CC] text-black' : 'bg-[#FF0080] text-white')}`}
+                            <div className="flex flex-col gap-4">
+                                <input
+                                    className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                    value={notification.content}
+                                    onChange={(e) => setNotification({ ...notification, content: e.target.value })}
+                                    placeholder="请输入广播内容，如“热烈庆祝五一国际劳工节成立100周年！”"
+                                />
+                                <div className="flex flex-wrap gap-3 items-center">
+                                    <span className="text-xs font-bold uppercase tracking-wide text-gray-500">显示样式</span>
+                                    <div className="flex gap-2">
+                                        {BROADCAST_STYLES.map((style) => (
+                                            <button
+                                                key={style.value}
+                                                type="button"
+                                                onClick={() => setNotification(prev => ({
+                                                    ...prev,
+                                                    style: style.value
+                                                }))}
+                                                className={`px-3 py-1 text-xs font-bold border-2 border-black rounded shadow-[2px_2px_0px_0px_#000] transition-colors ${notification.style === style.value ? 'bg-black text-white' : (style.value === 'ANNOUNCE' ? 'bg-[#FFF7CC] text-black' : 'bg-[#FF0080] text-white')}`}
+                                            >
+                                                {style.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <select
+                                        className={`w-48 border rounded px-3 py-2 text-sm ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                        value={notification.style}
+                                        onChange={(e) => setNotification({ ...notification, style: e.target.value })}
                                     >
-                                        {style.label}
+                                        {BROADCAST_STYLES.map((style) => (
+                                            <option key={style.value} value={style.value}>{style.label}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={handleBroadcastToggle}
+                                        disabled={broadcastSaving}
+                                        className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} ${broadcastSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                    >
+                                        {notification.isOpen ? '关闭并保存' : '开启并保存'}
                                     </button>
-                                ))}
+                                </div>
                             </div>
                         </div>
-                        <div className="flex gap-4">
-                            <select
-                                className={`w-48 border rounded px-3 py-2 text-sm ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                value={notification.style}
-                                onChange={(e) => setNotification({...notification, style: e.target.value})}
-                            >
-                                {BROADCAST_STYLES.map((style) => (
-                                    <option key={style.value} value={style.value}>{style.label}</option>
-                                ))}
-                            </select>
-                            <button
-                                onClick={handleBroadcastToggle}
-                                disabled={broadcastSaving}
-                                className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} ${broadcastSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
-                            >
-                                {notification.isOpen ? '关闭并保存' : '开启并保存'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </main>
+                    )}
+                </main>
             </div>
         </div>
     );
@@ -5504,16 +5504,16 @@ const AdminPanel = ({setView, notification, setNotification, user, isDarkMode, h
 
 
 // --- 6. Scroll To Top Component ---
-const ScrollToTop = ({isDarkMode}) => {
+const ScrollToTop = ({ isDarkMode }) => {
     const STORAGE_KEY = 'sangui-scroll-button';
     const BUTTON_SIZE = 56;
     const [isVisible, setIsVisible] = useState(false);
     const [scrollPercent, setScrollPercent] = useState(0);
-    const scrollProgress = useSpring(0, {stiffness: 160, damping: 28, mass: 0.6});
+    const scrollProgress = useSpring(0, { stiffness: 160, damping: 28, mass: 0.6 });
     const [sparks, setSparks] = useState([]);
     const sparkTimersRef = useRef([]);
     const [position, setPosition] = useState(() => {
-        if (typeof window === 'undefined') return {x: 24, y: 24};
+        if (typeof window === 'undefined') return { x: 24, y: 24 };
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
@@ -5528,7 +5528,7 @@ const ScrollToTop = ({isDarkMode}) => {
         };
     });
     const [isDragging, setIsDragging] = useState(false);
-    const dragMetaRef = useRef({active: false, moved: false, ignoreClick: false, offsetX: 0, offsetY: 0});
+    const dragMetaRef = useRef({ active: false, moved: false, ignoreClick: false, offsetX: 0, offsetY: 0 });
     const buttonRef = useRef(null);
     const latestPositionRef = useRef(position);
     const sparklePalette = useMemo(() => ['#FFD700', '#FF0080', '#6366F1', '#4ADE80'], []);
@@ -5603,7 +5603,7 @@ const ScrollToTop = ({isDarkMode}) => {
 
         window.addEventListener('mousemove', handlePointerMove);
         window.addEventListener('mouseup', handlePointerUp);
-        window.addEventListener('touchmove', handlePointerMove, {passive: false});
+        window.addEventListener('touchmove', handlePointerMove, { passive: false });
         window.addEventListener('touchend', handlePointerUp);
 
         return () => {
@@ -5637,7 +5637,7 @@ const ScrollToTop = ({isDarkMode}) => {
     const spawnSparkles = useCallback(() => {
         const baseId = Date.now();
         const burstCount = 14;
-        const burst = Array.from({length: burstCount}).map((_, index) => {
+        const burst = Array.from({ length: burstCount }).map((_, index) => {
             const angle = (Math.PI * 2 * index) / burstCount + Math.random() * 0.4;
             const distance = 28 + Math.random() * 22;
             return {
@@ -5703,18 +5703,18 @@ const ScrollToTop = ({isDarkMode}) => {
             {isVisible && (
                 <motion.button
                     ref={buttonRef}
-                    initial={{opacity: 0, scale: 0.8}}
-                    animate={{opacity: 1, scale: 1}}
-                    exit={{opacity: 0, scale: 0.8}}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
                     onMouseDown={startDrag}
                     onTouchStart={startDrag}
                     onClick={handleClick}
-                    style={{left: `${position.x}px`, top: `${position.y}px`}}
+                    style={{ left: `${position.x}px`, top: `${position.y}px` }}
                     aria-label={`返回顶部（已滚动 ${percentLabel}%）`}
                     className={`fixed z-50 p-3 rounded-full shadow-lg transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-white hover:bg-gray-800'} ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 >
                     <span className="relative flex items-center justify-center w-10 h-10">
-                        <ArrowUp size={24} className="relative z-10"/>
+                        <ArrowUp size={24} className="relative z-10" />
                         <motion.svg
                             className="absolute inset-0"
                             width={indicatorSize}
@@ -5736,7 +5736,7 @@ const ScrollToTop = ({isDarkMode}) => {
                                 stroke={progressColor}
                                 strokeWidth={indicatorStroke}
                                 strokeDasharray={circumference}
-                                style={{strokeDashoffset: dashOffset}}
+                                style={{ strokeDashoffset: dashOffset }}
                                 strokeLinecap="round"
                             />
                         </motion.svg>
@@ -5745,10 +5745,10 @@ const ScrollToTop = ({isDarkMode}) => {
                                 <motion.span
                                     key={spark.id}
                                     className="absolute w-2.5 h-2.5 rounded-full"
-                                    style={{left: '50%', top: '50%', backgroundColor: spark.color}}
-                                    initial={{opacity: 0.95, x: 0, y: 0, scale: 0.5, rotate: 0}}
-                                    animate={{opacity: 0, x: spark.dx, y: spark.dy, scale: 1.3, rotate: 180}}
-                                    transition={{duration: 0.85, ease: 'easeOut'}}
+                                    style={{ left: '50%', top: '50%', backgroundColor: spark.color }}
+                                    initial={{ opacity: 0.95, x: 0, y: 0, scale: 0.5, rotate: 0 }}
+                                    animate={{ opacity: 0, x: spark.dx, y: spark.dy, scale: 1.3, rotate: 180 }}
+                                    transition={{ duration: 0.85, ease: 'easeOut' }}
                                 />
                             ))}
                         </span>
@@ -5761,7 +5761,7 @@ const ScrollToTop = ({isDarkMode}) => {
 
 // --- 5. Main App ---
 
-export default function SanGuiBlog({initialView = 'home', initialArticleId = null, onViewChange}) {
+export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, onViewChange }) {
     const {
         meta,
         categories,
@@ -5799,7 +5799,16 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
         }
         return false;
     }); // Persisted dark mode state
-    const [permissionState, setPermissionState] = useState({permissions: [], loading: false, error: ''});
+    const handleThemeToggle = useCallback(() => {
+        setIsDarkMode((prev) => {
+            const next = !prev;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('sangui-theme', next ? 'dark' : 'light');
+            }
+            return next;
+        });
+    }, []);
+    const [permissionState, setPermissionState] = useState({ permissions: [], loading: false, error: '' });
     const lastRecordedArticleRef = useRef(null);
     const scrollToPostsTop = useCallback(() => {
         if (typeof window === 'undefined') return;
@@ -5820,7 +5829,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.22';
+    const siteVersion = meta?.version || 'V1.3.37';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -5847,20 +5856,20 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
 
     useEffect(() => {
         if (!user) {
-            setPermissionState({permissions: [], loading: false, error: ''});
+            setPermissionState({ permissions: [], loading: false, error: '' });
             return;
         }
         let active = true;
-        setPermissionState((prev) => ({...prev, loading: true, error: ''}));
+        setPermissionState((prev) => ({ ...prev, loading: true, error: '' }));
         fetchMyPermissions()
             .then((res) => {
                 if (!active) return;
                 const data = res.data || res || [];
-                setPermissionState({permissions: data, loading: false, error: ''});
+                setPermissionState({ permissions: data, loading: false, error: '' });
             })
             .catch((err) => {
                 if (!active) return;
-                setPermissionState({permissions: [], loading: false, error: err.message || '获取权限失败'});
+                setPermissionState({ permissions: [], loading: false, error: err.message || '获取权限失败' });
             });
         return () => {
             active = false;
@@ -5887,7 +5896,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
 
     useEffect(() => {
         if (categories && categories.length) {
-            CATEGORY_TREE.splice(0, CATEGORY_TREE.length, {id: "all", label: "全部", children: []}, ...categories);
+            CATEGORY_TREE.splice(0, CATEGORY_TREE.length, { id: "all", label: "全部", children: [] }, ...categories);
         }
     }, [categories]);
 
@@ -5914,7 +5923,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
     useEffect(() => {
         if (typeof window === 'undefined') return;
         if (view === 'article') {
-            window.scrollTo({top: 0, behavior: 'auto'});
+            window.scrollTo({ top: 0, behavior: 'auto' });
         }
     }, [view, articleId]);
 
@@ -5988,7 +5997,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
             case 'home':
                 return (
                     <>
-                        <Hero setView={setView} isDarkMode={isDarkMode} onStartReading={scrollToPostsTop} version={siteVersion}/>
+                        <Hero setView={setView} isDarkMode={isDarkMode} onStartReading={scrollToPostsTop} version={siteVersion} />
                         <ArticleList
                             setView={setView}
                             setArticleId={setArticleId}
@@ -6043,13 +6052,13 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                     />
                 );
             case 'login':
-                return <LoginView setView={setView} setUser={setUser} isDarkMode={isDarkMode} doLogin={doLogin}/>;
+                return <LoginView setView={setView} setUser={setUser} isDarkMode={isDarkMode} doLogin={doLogin} />;
             case 'admin':
                 if (!user) {
                     return <div className="p-20 text-center text-lg font-bold">请先登录后再访问管理后台</div>;
                 }
                 return <AdminPanel setView={setView} notification={notification} setNotification={setNotification}
-                                   user={user} isDarkMode={isDarkMode} handleLogout={handleLogout}/>;
+                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} />;
             default:
                 return <div className="pt-32 text-center">404</div>;
         }
@@ -6061,46 +6070,44 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
         <PermissionContext.Provider value={permissionContextValue}>
             <LayoutOffsetContext.Provider value={layoutContextValue}>
                 <div className={`min-h-screen relative ${globalBg}`}>
-                    <ClickRipple/>
-                    <ScrollToTop isDarkMode={isDarkMode}/>
+                    <ClickRipple />
+                    <ScrollToTop isDarkMode={isDarkMode} />
                     <div className="fixed top-0 left-0 right-0 z-50">
                         <div className="flex flex-col w-full">
                             <EmergencyBar
                                 isOpen={notification.isOpen}
                                 content={notification.content}
                                 style={notification.style}
-                                onClose={() => setNotification(prev => ({...prev, isOpen: false}))}
+                                onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
                                 onHeightChange={setEmergencyHeight}
                             />
-                            <AnimateSharedLayout id="nav-section-indicator">
-                                <Navigation
-                                    user={user}
-                                    setView={setView}
-                                    currentView={view}
-                                    handleLogout={handleLogout}
-                                    toggleMenu={() => setMenuOpen(!menuOpen)}
-                                    isDarkMode={isDarkMode}
-                                    setIsDarkMode={setIsDarkMode}
-                                    onProfileClick={handleProfileNav}
-                                />
-                                <motion.div
-                                    layoutId="nav-pulse-line"
-                                    animate={{opacity: notification.isOpen ? 0.85 : 0.65}}
-                                    transition={{type: 'spring', stiffness: 300, damping: 30}}
-                                    className="relative z-0 h-1 w-full bg-gradient-to-r from-[#FFD700] via-[#FF0080] to-[#6366F1]"
-                                />
-                            </AnimateSharedLayout>
+                            <Navigation
+                                user={user}
+                                setView={setView}
+                                currentView={view}
+                                handleLogout={handleLogout}
+                                toggleMenu={() => setMenuOpen(!menuOpen)}
+                                isDarkMode={isDarkMode}
+                                onToggleTheme={handleThemeToggle}
+                                onProfileClick={handleProfileNav}
+                            />
+                            <motion.div
+                                initial={false}
+                                animate={{ opacity: notification.isOpen ? 0.85 : 0.65 }}
+                                transition={{ duration: 0.4, ease: 'easeInOut' }}
+                                className="h-1 w-full bg-gradient-to-r from-[#FFD700] via-[#FF0080] to-[#6366F1]"
+                            />
                         </div>
                     </div>
                     <div
                         className="w-full"
-                        style={{height: layoutContextValue.headerHeight}}
+                        style={{ height: layoutContextValue.headerHeight }}
                         aria-hidden="true"
                     />
-                    <ErrorToast error={error} onClose={() => setError(null)}/>
+                    <ErrorToast error={error} onClose={() => setError(null)} />
 
                     <AnimatePresence mode="wait">
-                        <motion.main key={view} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                        <motion.main key={view} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             {renderView()}
                         </motion.main>
                     </AnimatePresence>
@@ -6111,14 +6118,14 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
 }
 
 // Below are the remaining Front-end components updated to respect Dark Mode state
-const StatsStrip = ({isDarkMode, stats}) => {
-    const {headerHeight} = useLayoutOffsets();
+const StatsStrip = ({ isDarkMode, stats }) => {
+    const { headerHeight } = useLayoutOffsets();
     const s = stats || SITE_STATS;
     const items = [
-        {label: "文章", value: s.posts, icon: FileText, color: "text-[#6366F1]"},
-        {label: "浏览", value: s.views, icon: Eye, color: "text-[#FF0080]"},
-        {label: "评论", value: s.comments, icon: MessageSquare, color: "text-[#00E096]"},
-        {label: "标签", value: s.tags, icon: Hash, color: "text-[#FFD700]"},
+        { label: "文章", value: s.posts, icon: FileText, color: "text-[#6366F1]" },
+        { label: "浏览", value: s.views, icon: Eye, color: "text-[#FF0080]" },
+        { label: "评论", value: s.comments, icon: MessageSquare, color: "text-[#00E096]" },
+        { label: "标签", value: s.tags, icon: Hash, color: "text-[#FFD700]" },
         {
             label: "最后更新",
             value: s.lastUpdated,
@@ -6136,11 +6143,11 @@ const StatsStrip = ({isDarkMode, stats}) => {
     return (
         <div
             className={`sticky z-40 ${bg} ${text_cls} border-b-4 border-black`}
-            style={{top: headerHeight}}
+            style={{ top: headerHeight }}
         >
             <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
                 <div className="flex items-center gap-2 mr-8 flex-shrink-0">
-                    <Activity className="text-[#00E096] animate-pulse"/>
+                    <Activity className="text-[#00E096] animate-pulse" />
                     <span className="font-black tracking-widest uppercase">System Status</span>
                 </div>
 
@@ -6148,7 +6155,7 @@ const StatsStrip = ({isDarkMode, stats}) => {
                     {items.map((item, idx) => (
                         <div key={idx} className="flex items-center gap-2 flex-shrink-0 group cursor-default relative">
                             <item.icon size={16}
-                                       className={`${item.color} group-hover:scale-125 transition-transform`}/>
+                                className={`${item.color} group-hover:scale-125 transition-transform`} />
 
                             {item.isDate ? (
                                 <div className="relative group/date">
@@ -6176,21 +6183,21 @@ const StatsStrip = ({isDarkMode, stats}) => {
 };
 
 const ArticleList = ({
-                         setView,
-                         setArticleId,
-                         isDarkMode,
-                         postsData,
-                         categoriesData,
-                         tagsData,
-                         stats,
-                         author,
-                         activeParent,
-                         setActiveParent,
-                         activeSub,
-                         setActiveSub,
-                         recentComments,
-                         onScrollToPosts
-                     }) => {
+    setView,
+    setArticleId,
+    isDarkMode,
+    postsData,
+    categoriesData,
+    tagsData,
+    stats,
+    author,
+    activeParent,
+    setActiveParent,
+    activeSub,
+    setActiveSub,
+    recentComments,
+    onScrollToPosts
+}) => {
     const [showWechat, setShowWechat] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [konamiActive, setKonamiActive] = useState(false);
@@ -6237,7 +6244,7 @@ const ArticleList = ({
         if (onScrollToPosts) {
             onScrollToPosts();
         } else {
-            document.getElementById('posts')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+            document.getElementById('posts')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, [onScrollToPosts]);
 
@@ -6333,7 +6340,7 @@ const ArticleList = ({
 
     return (
         <>
-            <StatsStrip isDarkMode={isDarkMode} stats={stats}/>
+            <StatsStrip isDarkMode={isDarkMode} stats={stats} />
             {konamiActive && (
                 <div
                     className="fixed inset-0 z-[100] bg-black mix-blend-difference pointer-events-none animate-pulse flex items-center justify-center">
@@ -6347,19 +6354,19 @@ const ArticleList = ({
                         <div
                             className={`${sidebarBg} border-2 border-black p-6 shadow-[8px_8px_0px_0px_#000] text-center relative ${text}`}>
                             <motion.div
-                                animate={{rotate: avatarClicks * 360}}
-                                transition={{duration: 0.5}}
+                                animate={{ rotate: avatarClicks * 360 }}
+                                transition={{ duration: 0.5 }}
                                 onClick={() => setAvatarClicks(p => p + 1)}
                                 className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 bg-[#FFD700] rounded-full border-2 border-black flex items-center justify-center cursor-pointer"
                             >
-                                <img src={authorAvatar} className="w-full h-full object-cover rounded-full"/>
+                                <img src={authorAvatar} className="w-full h-full object-cover rounded-full" />
                             </motion.div>
                             <h3 className="mt-12 font-black text-2xl">{displayAuthor.displayName || displayAuthor.username}</h3>
                             <p className={`text-sm font-bold mb-4 ${subText}`}>{displayAuthor.bio || displayAuthor.title || '保持热爱，持续创作。'}</p>
                             <div className="flex justify-center gap-2">
                                 <PopButton variant="ghost" className={`!p-2 border-2 border-black ${socialButtonClass}`}
-                                           onClick={() => window.open(displayAuthor.github || MOCK_USER.social.github)}><Github
-                                    size={20}/></PopButton>
+                                    onClick={() => window.open(displayAuthor.github || MOCK_USER.social.github)}><Github
+                                        size={20} /></PopButton>
 
                                 <div
                                     className="relative"
@@ -6367,21 +6374,21 @@ const ArticleList = ({
                                     onMouseLeave={() => setShowWechat(false)}
                                 >
                                     <PopButton variant="ghost"
-                                               className={`!p-2 border-2 border-black ${wechatButtonClass}`}>
-                                        <MessageCircle size={20}/>
+                                        className={`!p-2 border-2 border-black ${wechatButtonClass}`}>
+                                        <MessageCircle size={20} />
                                     </PopButton>
                                     <AnimatePresence>
                                         {showWechat && (
                                             <motion.div
-                                                initial={{opacity: 0, scale: 0.8, y: 10}}
-                                                animate={{opacity: 1, scale: 1, y: 0}}
-                                                exit={{opacity: 0, scale: 0.8, y: 10}}
+                                                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.8, y: 10 }}
                                                 className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
                                             >
                                                 <div
                                                     className="bg-white p-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] w-40 h-40 flex flex-col items-center justify-center">
                                                     <img src={authorWechat}
-                                                         className="w-32 h-32 object-contain border border-gray-200 block"/>
+                                                        className="w-32 h-32 object-contain border border-gray-200 block" />
                                                     <p className="text-center text-[10px] font-bold mt-1 bg-black text-white w-full">SCAN
                                                         ME</p>
                                                 </div>
@@ -6396,7 +6403,7 @@ const ArticleList = ({
 
                         <div>
                             <h4 className="font-black text-xl mb-4 flex items-center gap-2 bg-black text-white p-2 transform -rotate-1 w-max">
-                                <Filter size={20}/> NAVIGATOR
+                                <Filter size={20} /> NAVIGATOR
                             </h4>
                             <div className="flex flex-col gap-3">
                                 {categories.map(cat => (
@@ -6408,20 +6415,20 @@ const ArticleList = ({
                                             }}
                                             className={`w-full text-left p-3 font-bold border-2 border-black transition-all flex justify-between items-center
                           ${activeParent === cat.id
-                            ? (isDarkMode
-                                ? 'bg-[#FFD700] text-black border-[#FFD700] shadow-[4px_4px_0px_0px_#000] -translate-y-1'
-                                : 'bg-[#6366F1] text-white shadow-[4px_4px_0px_0px_#000] -translate-y-1')
-                            : `${sidebarBg} ${text} ${isDarkMode ? 'hover:bg-gray-700 hover:text-white' : 'hover:bg-gray-100'}`}
+                                                    ? (isDarkMode
+                                                        ? 'bg-[#FFD700] text-black border-[#FFD700] shadow-[4px_4px_0px_0px_#000] -translate-y-1'
+                                                        : 'bg-[#6366F1] text-white shadow-[4px_4px_0px_0px_#000] -translate-y-1')
+                                                    : `${sidebarBg} ${text} ${isDarkMode ? 'hover:bg-gray-700 hover:text-white' : 'hover:bg-gray-100'}`}
                         `}
                                         >
                                             {cat.label}
                                             <ChevronRight size={16}
-                                                          className={`transition-transform ${activeParent === cat.id ? 'rotate-90' : ''}`}/>
+                                                className={`transition-transform ${activeParent === cat.id ? 'rotate-90' : ''}`} />
                                         </button>
                                         <AnimatePresence>
                                             {activeParent === cat.id && cat.children.length > 0 && (
                                                 <motion.div
-                                                    initial={{height: 0}} animate={{height: 'auto'}} exit={{height: 0}}
+                                                    initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
                                                     className={`overflow-hidden border-l-4 border-black ml-4 ${sidebarBg}`}
                                                 >
                                                     {cat.children.map(sub => (
@@ -6447,7 +6454,7 @@ const ArticleList = ({
                         <div className={`${sidebarBg} border-2 border-black p-5 shadow-[6px_6px_0px_0px_#000]`}>
                             <div className="flex items-center justify-between gap-3">
                                 <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                                    <MessageCircle size={18} className={isDarkMode ? 'text-white' : 'text-black'}/> 最新评论
+                                    <MessageCircle size={18} className={isDarkMode ? 'text-white' : 'text-black'} /> 最新评论
                                 </h4>
                                 <span className={`text-[10px] font-mono ${subText}`}>NEW X {recentList.length}</span>
                             </div>
@@ -6462,10 +6469,10 @@ const ArticleList = ({
                                     };
                                     return (
                                         <div key={comment.id || `recent-${comment.postId || 'post'}-${index}`}
-                                             className={`border-2 border-black p-3 rounded-xl ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-[4px_4px_0px_0px_#000]`}>
+                                            className={`border-2 border-black p-3 rounded-xl ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-[4px_4px_0px_0px_#000]`}>
                                             <div className="flex items-center gap-3">
                                                 <img src={avatar} alt={comment.authorName || '访客'}
-                                                     className="w-10 h-10 rounded-full border-2 border-black object-cover bg-[#FFD700]"/>
+                                                    className="w-10 h-10 rounded-full border-2 border-black object-cover bg-[#FFD700]" />
                                                 <div>
                                                     <p className="font-black text-sm">{comment.authorName || '访客'}</p>
                                                     <p className="text-[11px] text-gray-500">{comment.time || ''}</p>
@@ -6489,7 +6496,7 @@ const ArticleList = ({
                         <div className={`${sidebarBg} border-2 border-black p-5 shadow-[6px_6px_0px_0px_#000]`}>
                             <div className="flex items-center justify-between gap-3">
                                 <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                                    <Hash size={18} className={isDarkMode ? 'text-white' : 'text-black'}/> 全部标签
+                                    <Hash size={18} className={isDarkMode ? 'text-white' : 'text-black'} /> 全部标签
                                 </h4>
                                 <span className={`text-[10px] font-mono ${subText}`}>{allTags.length} TAGS</span>
                             </div>
@@ -6526,7 +6533,7 @@ const ArticleList = ({
                                                         <motion.span
                                                             layoutId="tag-filter-highlight"
                                                             className="absolute inset-0 rounded-full bg-[#FFD700]"
-                                                            transition={{duration: 0.09, ease: 'easeInOut', delay: 0.05}}
+                                                            transition={{ duration: 0.09, ease: 'easeInOut', delay: 0.05 }}
                                                         />
                                                     )}
                                                     <span className="relative z-10">#{tag}</span>
@@ -6560,9 +6567,9 @@ const ArticleList = ({
                                     return (
                                         <motion.div
                                             key={post.id}
-                                            initial={{opacity: 0, y: 50}}
-                                            animate={{opacity: 1, y: 0}}
-                                            transition={{delay: idx * 0.1, duration: 0.5}}
+                                            initial={{ opacity: 0, y: 50 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.1, duration: 0.5 }}
                                             whileHover="hover"
                                         >
                                             <TiltCard onClick={() => {
@@ -6577,16 +6584,16 @@ const ArticleList = ({
                                                             initial="rest"
                                                             animate="rest"
                                                             variants={{
-                                                                rest: {opacity: 0.2, scale: 1},
-                                                                hover: {opacity: 0.4, scale: 1.08}
+                                                                rest: { opacity: 0.2, scale: 1 },
+                                                                hover: { opacity: 0.4, scale: 1.08 }
                                                             }}
-                                                            transition={{type: 'spring', stiffness: 260, damping: 30}}
+                                                            transition={{ type: 'spring', stiffness: 260, damping: 30 }}
                                                         >
-                                                            <Code size={120}/>
+                                                            <Code size={120} />
                                                         </motion.div>
                                                         <span className="relative z-10 font-black text-5xl opacity-50">
-                              {(idx + 1 + (currentPage - 1) * PAGE_SIZE).toString().padStart(2, '0')}
-                            </span>
+                                                            {(idx + 1 + (currentPage - 1) * PAGE_SIZE).toString().padStart(2, '0')}
+                                                        </span>
                                                         <div className="relative z-10">
                                                             <span
                                                                 className="bg-black text-white px-2 py-1 text-xs font-bold uppercase mb-2 inline-block">{post.parentCategory}</span>
@@ -6598,7 +6605,7 @@ const ArticleList = ({
                                                         <div className="flex flex-wrap gap-2 mb-4">
                                                             {post.tags.map(t => (
                                                                 <span key={t}
-                                                                      className={`px-2 py-1 border border-black text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
+                                                                    className={`px-2 py-1 border border-black text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
                                                             ))}
                                                         </div>
                                                         <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -6606,7 +6613,7 @@ const ArticleList = ({
                                                             {isPostNew(post.date) && (
                                                                 <span
                                                                     className="inline-flex items-center gap-1 px-3 py-1 text-xs font-black uppercase tracking-widest border-2 border-black bg-[#FF0080] text-white shadow-[2px_2px_0px_0px_#000] animate-pulse">
-                                                                    <Sparkles size={14} strokeWidth={3}/>
+                                                                    <Sparkles size={14} strokeWidth={3} />
                                                                     NEW
                                                                 </span>
                                                             )}
@@ -6620,10 +6627,10 @@ const ArticleList = ({
                                                             <div className={`flex gap-4 font-bold text-sm ${text}`}>
                                                                 <span
                                                                     className="flex items-center gap-1 hover:text-[#FF0080]"><Eye
-                                                                    size={18}/> {viewCount}</span>
+                                                                        size={18} /> {viewCount}</span>
                                                                 <span
                                                                     className="flex items-center gap-1 hover:text-[#6366F1]"><MessageSquare
-                                                                    size={18}/> {commentCount}</span>
+                                                                        size={18} /> {commentCount}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -6653,11 +6660,11 @@ const ArticleList = ({
                                     }}
                                     className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
                                 >
-                                    <ChevronLeft size={20} strokeWidth={3}/>
+                                    <ChevronLeft size={20} strokeWidth={3} />
                                 </button>
 
                                 <div className="flex gap-2">
-                                    {Array.from({length: totalPages}, (_, i) => i + 1).map(p => (
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                                         <button
                                             key={p}
                                             onClick={() => {
@@ -6681,7 +6688,7 @@ const ArticleList = ({
                                     }}
                                     className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
                                 >
-                                    <ChevronRight size={20} strokeWidth={3}/>
+                                    <ChevronRight size={20} strokeWidth={3} />
                                 </button>
                             </div>
                         )}
@@ -6703,7 +6710,7 @@ const ArticleList = ({
     );
 };
 
-const LoginView = ({setView, setUser, isDarkMode, doLogin}) => {
+const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -6760,7 +6767,7 @@ const LoginView = ({setView, setUser, isDarkMode, doLogin}) => {
                         className="bg-red-500 text-white p-2 font-bold text-sm border-2 border-black">{error}</div>}
                     <div className="flex gap-4">
                         <PopButton variant="primary" className="w-full justify-center"
-                                   disabled={loading}>{loading ? 'Accessing...' : 'Login'}</PopButton>
+                            disabled={loading}>{loading ? 'Accessing...' : 'Login'}</PopButton>
                         <PopButton variant="ghost" type="button" onClick={() => setView('home')}>Cancel</PopButton>
                     </div>
                 </form>
