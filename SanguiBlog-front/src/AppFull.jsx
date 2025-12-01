@@ -1143,6 +1143,37 @@ const Navigation = ({
     const roleInfo = user ? ROLES[user.role] : null;
     const isFrontNav = true; // Use a flag for front-end vs back-end styling
     const activeView = currentView || 'home';
+    const [logoClicks, setLogoClicks] = useState(0);
+    const [devUnlocked, setDevUnlocked] = useState(false);
+    const logoResetTimer = useRef(null);
+    const devMessageTimer = useRef(null);
+
+    const handleLogoClick = useCallback(() => {
+        setView('home');
+        setLogoClicks((prev) => {
+            const next = prev + 1;
+            if (logoResetTimer.current) {
+                clearTimeout(logoResetTimer.current);
+            }
+            if (next >= 5) {
+                setDevUnlocked(true);
+                if (devMessageTimer.current) {
+                    clearTimeout(devMessageTimer.current);
+                }
+                devMessageTimer.current = setTimeout(() => setDevUnlocked(false), 2500);
+                return 0;
+            }
+            logoResetTimer.current = setTimeout(() => setLogoClicks(0), 1500);
+            return next;
+        });
+    }, [setView]);
+
+    useEffect(() => {
+        return () => {
+            if (logoResetTimer.current) clearTimeout(logoResetTimer.current);
+            if (devMessageTimer.current) clearTimeout(devMessageTimer.current);
+        };
+    }, []);
 
     return (
         <motion.nav
@@ -1154,7 +1185,7 @@ const Navigation = ({
         >
             <div
                 className="flex items-center gap-2 cursor-pointer group"
-                onClick={() => setView('home')}
+                onClick={handleLogoClick}
             >
                 <div
                     className={`w-12 h-12 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'} flex items-center justify-center border-2 border-black group-hover:bg-[#FFD700] group-hover:text-black transition-colors`}>
@@ -1232,6 +1263,21 @@ const Navigation = ({
                 </button>
             </div>
 
+            <AnimatePresence>
+                {devUnlocked && (
+                    <motion.div
+                        className="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 px-6 py-2 text-sm md:text-base font-black uppercase tracking-[0.2em] bg-black text-[#FFD700] border-2 border-white rounded-full shadow-[4px_4px_0px_0px_#000] z-50"
+                        style={{filter: 'drop-shadow(0 0 6px rgba(255,215,0,0.8))'}}
+                        initial={{opacity: 0, y: 10, scale: 0.9}}
+                        animate={{opacity: 1, y: 0, scale: 1}}
+                        exit={{opacity: 0, y: -10, scale: 0.9}}
+                        transition={{type: 'spring', stiffness: 260, damping: 20}}
+                    >
+                        DEV MODE READY
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <button
                 className="md:hidden p-2 border-2 border-black bg-[#FFD700] shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none"
                 onClick={toggleMenu}>
@@ -1293,7 +1339,7 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.32'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.35'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5464,6 +5510,8 @@ const ScrollToTop = ({isDarkMode}) => {
     const [isVisible, setIsVisible] = useState(false);
     const [scrollPercent, setScrollPercent] = useState(0);
     const scrollProgress = useSpring(0, {stiffness: 160, damping: 28, mass: 0.6});
+    const [sparks, setSparks] = useState([]);
+    const sparkTimersRef = useRef([]);
     const [position, setPosition] = useState(() => {
         if (typeof window === 'undefined') return {x: 24, y: 24};
         try {
@@ -5483,6 +5531,7 @@ const ScrollToTop = ({isDarkMode}) => {
     const dragMetaRef = useRef({active: false, moved: false, ignoreClick: false, offsetX: 0, offsetY: 0});
     const buttonRef = useRef(null);
     const latestPositionRef = useRef(position);
+    const sparklePalette = useMemo(() => ['#FFD700', '#FF0080', '#6366F1', '#4ADE80'], []);
 
     const clampPosition = useCallback((pos) => {
         if (typeof window === 'undefined') return pos;
@@ -5519,6 +5568,12 @@ const ScrollToTop = ({isDarkMode}) => {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, [clampPosition]);
+
+    useEffect(() => {
+        return () => {
+            sparkTimersRef.current.forEach((timer) => clearTimeout(timer));
+        };
+    }, []);
 
     useEffect(() => {
         const handlePointerMove = (event) => {
@@ -5579,6 +5634,27 @@ const ScrollToTop = ({isDarkMode}) => {
         };
     }, [scrollProgress]);
 
+    const spawnSparkles = useCallback(() => {
+        const baseId = Date.now();
+        const burstCount = 14;
+        const burst = Array.from({length: burstCount}).map((_, index) => {
+            const angle = (Math.PI * 2 * index) / burstCount + Math.random() * 0.4;
+            const distance = 28 + Math.random() * 22;
+            return {
+                id: `${baseId}-${index}`,
+                dx: Math.cos(angle) * distance,
+                dy: Math.sin(angle) * distance,
+                color: sparklePalette[index % sparklePalette.length]
+            };
+        });
+        const ids = burst.map((spark) => spark.id);
+        setSparks((prev) => [...prev, ...burst]);
+        const timer = setTimeout(() => {
+            setSparks((prev) => prev.filter((spark) => !ids.includes(spark.id)));
+        }, 900);
+        sparkTimersRef.current.push(timer);
+    }, [sparklePalette]);
+
     const scrollToTop = () => {
         window.scrollTo({
             top: 0,
@@ -5606,6 +5682,9 @@ const ScrollToTop = ({isDarkMode}) => {
             event.preventDefault();
             dragMetaRef.current.ignoreClick = false;
             return;
+        }
+        if (scrollPercent > 0.95) {
+            spawnSparkles();
         }
         scrollToTop();
     };
@@ -5661,6 +5740,18 @@ const ScrollToTop = ({isDarkMode}) => {
                                 strokeLinecap="round"
                             />
                         </motion.svg>
+                        <span className="pointer-events-none absolute inset-0 overflow-visible">
+                            {sparks.map((spark) => (
+                                <motion.span
+                                    key={spark.id}
+                                    className="absolute w-2.5 h-2.5 rounded-full"
+                                    style={{left: '50%', top: '50%', backgroundColor: spark.color}}
+                                    initial={{opacity: 0.95, x: 0, y: 0, scale: 0.5, rotate: 0}}
+                                    animate={{opacity: 0, x: spark.dx, y: spark.dy, scale: 1.3, rotate: 180}}
+                                    transition={{duration: 0.85, ease: 'easeOut'}}
+                                />
+                            ))}
+                        </span>
                     </span>
                 </motion.button>
             )}
@@ -5996,7 +6087,7 @@ export default function SanGuiBlog({initialView = 'home', initialArticleId = nul
                                     layoutId="nav-pulse-line"
                                     animate={{opacity: notification.isOpen ? 0.85 : 0.65}}
                                     transition={{type: 'spring', stiffness: 300, damping: 30}}
-                                    className="h-1 w-full bg-gradient-to-r from-[#FFD700] via-[#FF0080] to-[#6366F1]"
+                                    className="relative z-0 h-1 w-full bg-gradient-to-r from-[#FFD700] via-[#FF0080] to-[#6366F1]"
                                 />
                             </AnimateSharedLayout>
                         </div>
