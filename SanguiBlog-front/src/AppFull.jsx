@@ -89,16 +89,143 @@ const randomBlobShape = () => {
 };
 const randomAngle = () => Math.round(Math.random() * 360);
 const randomSprayPolygon = () => {
-    const count = 8 + Math.floor(Math.random() * 5);
+    const count = 8 + Math.floor(Math.random() * 4);
     const points = [];
     for (let i = 0; i < count; i += 1) {
-        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
-        const radius = 35 + Math.random() * 30;
-        const x = Math.min(100, Math.max(0, 50 + radius * Math.cos(angle)));
-        const y = Math.min(100, Math.max(0, 50 + radius * Math.sin(angle)));
-        points.push(`${x.toFixed(2)}% ${y.toFixed(2)}%`);
+        const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.35);
+        const radius = 35 + Math.random() * 25;
+        const x = 50 + radius * Math.cos(angle);
+        const y = 50 + radius * Math.sin(angle);
+        points.push(`${Math.min(100, Math.max(0, x)).toFixed(1)}% ${Math.min(100, Math.max(0, y)).toFixed(1)}%`);
     }
     return `polygon(${points.join(',')})`;
+};
+const createTendrils = (toDark) => {
+    if (!toDark) return [];
+    const palette = ['rgba(255,215,0,0.65)', 'rgba(99,102,241,0.45)', 'rgba(245,56,136,0.5)'];
+    const count = 2 + Math.floor(Math.random() * 2);
+    return Array.from({ length: count }, () => ({
+        angle: Math.random() * 360,
+        length: 0.4 + Math.random() * 0.3,
+        width: 10 + Math.random() * 10,
+        delay: Math.random() * 0.1,
+        color: palette[Math.floor(Math.random() * palette.length)]
+    }));
+};
+
+
+const BackgroundEasterEggs = ({ isDarkMode }) => {
+    const stars = useMemo(() => Array.from({ length: 80 }, (_, idx) => ({
+        top: Math.random() * 90,
+        left: Math.random() * 90,
+        size: Math.random() * 2.6 + 1,
+        delay: Math.random() * 3,
+        id: idx
+    })), []);
+    const meteors = useMemo(() => Array.from({ length: 10 }, (_, idx) => ({
+        top: 5 + Math.random() * 50,
+        left: -40 - Math.random() * 30,
+        delay: Math.random() * 2.5,
+        duration: 2.8 + Math.random() * 1.5,
+        id: idx
+    })), []);
+
+    if (!isDarkMode) {
+        const clouds = [
+            { left: '5%', top: '12%', scale: 1.2 },
+            { left: '40%', top: '19%', scale: 1.6 },
+            { left: '70%', top: '11%', scale: 1.1 }
+        ];
+        return (
+            <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
+                <div className="absolute inset-0 bg-gradient-to-b from-[#DFF2FF] via-white to-transparent" />
+                <motion.div
+                    className="absolute w-64 h-64 rounded-full bg-gradient-to-br from-[#FFD54F] via-[#FFB703] to-white border border-white/70 shadow-[0_0_80px_rgba(255,213,79,0.95)]"
+                    style={{ left: 'calc(50% - 50rem)', top: '34%' }}
+                    animate={{ scale: [1, 1.08, 1], rotate: [0, 12, 0] }}
+                    transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                    className="absolute w-[95vw] h-[95vw] rounded-full blur-[120px] mix-blend-screen"
+                    style={{ right: '-35%', top: '-40%', background: 'radial-gradient(circle, rgba(255,223,122,0.55), transparent 70%)' }}
+                    animate={{ opacity: [0.35, 0.75, 0.35] }}
+                    transition={{ duration: 9, repeat: Infinity }}
+                />
+                <motion.div
+                    className="absolute w-56 h-56 rounded-full bg-gradient-to-br from-white to-transparent blur-[25px]"
+                    style={{ right: '10%', top: '14%' }}
+                    animate={{ opacity: [0.4, 0.8, 0.4] }}
+                    transition={{ duration: 7, repeat: Infinity }}
+                />
+                {clouds.map((cloud, idx) => (
+                    <motion.div
+                        key={`cloud-${idx}`}
+                        className="absolute h-24 bg-gradient-to-r from-white via-[#E0F2FE] to-white rounded-full shadow-[0_18px_40px_rgba(148,163,184,0.25)]"
+                        style={{
+                            width: '26rem',
+                            left: cloud.left,
+                            top: cloud.top,
+                            transform: `scale(${cloud.scale})`
+                        }}
+                        animate={{ x: ['-10%', '10%', '-10%'], opacity: [0.8, 1, 0.8] }}
+                        transition={{ duration: 20 + idx * 3, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                ))}
+                <motion.div
+                    className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#FFF5C0]/85 via-transparent to-transparent"
+                    animate={{ opacity: [0.45, 0.68, 0.45] }}
+                    transition={{ duration: 12, repeat: Infinity }}
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#010512]/95 via-transparent to-transparent" />
+            <motion.div
+                className="absolute w-44 h-44 rounded-full bg-gradient-to-br from-white via-slate-200 to-slate-500 shadow-[0_0_90px_rgba(191,219,254,0.7)]"
+                style={{ left: 'calc(50% - 55rem)', top: '36%' }}
+                animate={{ rotate: [-6, 6, -6], opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+                className="absolute w-[90vw] h-[90vw] rounded-full blur-[110px] mix-blend-screen"
+                style={{ left: '-30%', top: '-30%', background: 'radial-gradient(circle, rgba(79,70,229,0.35), transparent 65%)' }}
+                animate={{ rotate: [0, 25, 0] }}
+                transition={{ duration: 26, repeat: Infinity }}
+            />
+            {stars.map((star) => (
+                <motion.span
+                    key={star.id}
+                    className="absolute rounded-full bg-white"
+                    style={{
+                        width: star.size,
+                        height: star.size,
+                        top: `${star.top}%`,
+                        left: `${star.left}%`,
+                        boxShadow: '0 0 22px rgba(255,255,255,0.8)'
+                    }}
+                    animate={{ opacity: [0.05, star.size > 2 ? 1 : 0.6, 0.05] }}
+                    transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, ease: 'easeInOut', delay: star.delay }}
+                />
+            ))}
+            {meteors.map((meteor) => (
+                <motion.span
+                    key={`meteor-${meteor.id}`}
+                    className="absolute h-3 w-60 bg-gradient-to-r from-transparent via-white to-transparent blur-[1px]"
+                    style={{ top: `${meteor.top}%`, left: `${meteor.left}%`, transform: 'rotate(-20deg)' }}
+                    animate={{ x: ['0%', '180%'], y: ['0%', '70%'], opacity: [0, 1, 0] }}
+                    transition={{ duration: meteor.duration, repeat: Infinity, delay: meteor.delay, ease: 'linear' }}
+                />
+            ))}
+            <motion.div
+                className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#020617] via-transparent to-transparent"
+                animate={{ opacity: [0.35, 0.6, 0.35] }}
+                transition={{ duration: 12, repeat: Infinity }}
+            />
+        </div>
+    );
 };
 
 const extractHexFromBgClass = (value = '', fallback = '#6366F1') => {
@@ -1356,7 +1483,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.47'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.52'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5816,7 +5943,16 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         }
         return false;
     }); // Persisted dark mode state
-    const [themeBlast, setThemeBlast] = useState({ active: false, x: 0, y: 0, toDark: false, swirl: randomAngle(), id: 0, mask: randomSprayPolygon() });
+    const [themeBlast, setThemeBlast] = useState({
+        active: false,
+        x: 0,
+        y: 0,
+        toDark: false,
+        swirl: randomAngle(),
+        id: 0,
+        mask: randomSprayPolygon(),
+        tendrils: []
+    });
     const themeBlastTimers = useRef([]);
     useEffect(() => () => {
         themeBlastTimers.current.forEach((timer) => clearTimeout(timer));
@@ -5828,7 +5964,16 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
         const targetMode = !isDarkMode;
         const blastId = Date.now();
-        setThemeBlast({ active: true, x, y, toDark: targetMode, swirl: randomAngle(), id: blastId, mask: randomSprayPolygon() });
+        setThemeBlast({
+            active: true,
+            x,
+            y,
+            toDark: targetMode,
+            swirl: randomAngle(),
+            id: blastId,
+            mask: randomSprayPolygon(),
+            tendrils: createTendrils(targetMode)
+        });
         themeBlastTimers.current.forEach((timer) => clearTimeout(timer));
         themeBlastTimers.current = [];
         themeBlastTimers.current.push(setTimeout(() => {
@@ -5865,7 +6010,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.47';
+    const siteVersion = meta?.version || 'V1.3.52';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6105,7 +6250,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     return (
         <PermissionContext.Provider value={permissionContextValue}>
             <LayoutOffsetContext.Provider value={layoutContextValue}>
-                <div className={`min-h-screen relative ${globalBg}`}>
+            <div className={`min-h-screen relative ${globalBg}`}>
+                <BackgroundEasterEggs isDarkMode={isDarkMode} />
+                <div className="relative z-10">
                     <ClickRipple />
                     <ScrollToTop isDarkMode={isDarkMode} />
                     <AnimatePresence>
@@ -6138,6 +6285,28 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 0.95, ease: [0.45, 0, 0.25, 1] }}
                                 />
+                                {themeBlast.tendrils.map((tendril, idx) => (
+                                    <motion.div
+                                        key={`${themeBlast.id}-t-${idx}`}
+                                        className="absolute pointer-events-none"
+                                        style={{
+                                            width: '60vw',
+                                            height: '20vw',
+                                            left: themeBlast.x,
+                                            top: themeBlast.y,
+                                            marginLeft: '-30vw',
+                                            marginTop: '-5vw',
+                                            filter: 'blur(20px)',
+                                            mixBlendMode: 'screen',
+                                            background: `linear-gradient(90deg, transparent 0%, ${tendril.color} 55%, transparent 100%)`,
+                                            transformOrigin: 'center center'
+                                        }}
+                                        initial={{ opacity: 0.3, scaleX: 0.2, rotate: tendril.angle }}
+                                        animate={{ opacity: 0.7, scaleX: tendril.length, rotate: tendril.angle + (themeBlast.toDark ? 40 : -40) }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.85, ease: 'easeOut', delay: tendril.delay }}
+                                    />
+                                ))}
                                 <motion.div
                                     className="absolute inset-0"
                                     initial={{ opacity: 0.25 }}
@@ -6193,6 +6362,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         </motion.main>
                     </AnimatePresence>
                 </div>
+            </div>
             </LayoutOffsetContext.Provider>
         </PermissionContext.Provider>
     );
