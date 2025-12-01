@@ -83,6 +83,23 @@ const THEME_COLOR_PRESETS = [
 ];
 const DEFAULT_THEME_COLOR = 'bg-[#6366F1]';
 const HERO_NOISE_TEXTURE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyB2aWV3Qm94PScwIDAgMTIwIDEyMCc+PGZpbHRlciBpZD0nbicgeD0nMCcgeT0nMCc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuNCcvPjwvc3ZnPg==";
+const randomBlobShape = () => {
+    const rand = () => `${30 + Math.round(Math.random() * 40)}%`;
+    return `${rand()} ${rand()} ${rand()} ${rand()} / ${rand()} ${rand()} ${rand()} ${rand()}`;
+};
+const randomAngle = () => Math.round(Math.random() * 360);
+const randomSprayPolygon = () => {
+    const count = 8 + Math.floor(Math.random() * 5);
+    const points = [];
+    for (let i = 0; i < count; i += 1) {
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+        const radius = 35 + Math.random() * 30;
+        const x = Math.min(100, Math.max(0, 50 + radius * Math.cos(angle)));
+        const y = Math.min(100, Math.max(0, 50 + radius * Math.sin(angle)));
+        points.push(`${x.toFixed(2)}% ${y.toFixed(2)}%`);
+    }
+    return `polygon(${points.join(',')})`;
+};
 
 const extractHexFromBgClass = (value = '', fallback = '#6366F1') => {
     if (typeof value !== 'string') return fallback;
@@ -1339,7 +1356,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.43'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.47'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5799,7 +5816,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         }
         return false;
     }); // Persisted dark mode state
-    const [themeBlast, setThemeBlast] = useState({ active: false, x: 0, y: 0, toDark: false });
+    const [themeBlast, setThemeBlast] = useState({ active: false, x: 0, y: 0, toDark: false, swirl: randomAngle(), id: 0, mask: randomSprayPolygon() });
     const themeBlastTimers = useRef([]);
     useEffect(() => () => {
         themeBlastTimers.current.forEach((timer) => clearTimeout(timer));
@@ -5810,7 +5827,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
         const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
         const targetMode = !isDarkMode;
-        setThemeBlast({ active: true, x, y, toDark: targetMode });
+        const blastId = Date.now();
+        setThemeBlast({ active: true, x, y, toDark: targetMode, swirl: randomAngle(), id: blastId, mask: randomSprayPolygon() });
         themeBlastTimers.current.forEach((timer) => clearTimeout(timer));
         themeBlastTimers.current = [];
         themeBlastTimers.current.push(setTimeout(() => {
@@ -5821,10 +5839,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 }
                 return next;
             });
-        }, 220));
+        }, 320));
         themeBlastTimers.current.push(setTimeout(() => {
-            setThemeBlast((prev) => ({ ...prev, active: false }));
-        }, 900));
+            setThemeBlast((prev) => (prev.id === blastId ? { ...prev, active: false } : prev));
+        }, 950));
     }, [isDarkMode]);
     const [permissionState, setPermissionState] = useState({ permissions: [], loading: false, error: '' });
     const lastRecordedArticleRef = useRef(null);
@@ -5847,7 +5865,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.43';
+    const siteVersion = meta?.version || 'V1.3.47';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6093,17 +6111,46 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     <AnimatePresence>
                         {themeBlast.active && (
                             <motion.div
-                                className="fixed inset-0 pointer-events-none z-[60] mix-blend-screen"
-                                initial={{ clipPath: `circle(0% at ${themeBlast.x}px ${themeBlast.y}px)`, opacity: 0.85 }}
-                                animate={{ clipPath: `circle(160% at ${themeBlast.x}px ${themeBlast.y}px)`, opacity: 1 }}
+                                key={themeBlast.id}
+                                className="fixed inset-0 pointer-events-none z-[60]"
+                                initial={{ clipPath: `circle(0% at ${themeBlast.x}px ${themeBlast.y}px)` }}
+                                animate={{ clipPath: `circle(160% at ${themeBlast.x}px ${themeBlast.y}px)` }}
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 0.7, ease: 'easeInOut' }}
-                                style={{
-                                    background: themeBlast.toDark
-                                        ? 'radial-gradient(circle, rgba(255,215,0,0.4) 0%, rgba(99,102,241,0.35) 40%, rgba(0,0,0,0.85) 100%)'
-                                        : 'radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(99,102,241,0.3) 30%, rgba(255,255,255,0.95) 100%)'
-                                }}
-                            />
+                                transition={{ duration: 0.95, ease: [0.45, 0, 0.25, 1] }}
+                            >
+                                <motion.div
+                                    className="absolute mix-blend-screen blur-[14px]"
+                                    style={{
+                                        width: '80vw',
+                                        height: '80vw',
+                                        left: themeBlast.x,
+                                        top: themeBlast.y,
+                                        marginLeft: '-40vw',
+                                        marginTop: '-40vw',
+                                        borderRadius: '50%',
+                                        clipPath: themeBlast.mask,
+                                        background: themeBlast.toDark
+                                            ? 'conic-gradient(from 0deg, rgba(255,215,0,0.6), rgba(99,102,241,0.45), rgba(17,24,39,0.85), rgba(255,215,0,0.6))'
+                                            : 'conic-gradient(from 0deg, rgba(17,24,39,0.8), rgba(99,102,241,0.35), rgba(255,255,255,0.9), rgba(17,24,39,0.8))'
+                                    }}
+                                    initial={{ scale: 0.15, rotate: themeBlast.swirl, opacity: 0.95 }}
+                                    animate={{ scale: 2.3, rotate: themeBlast.swirl + (themeBlast.toDark ? 220 : -220), opacity: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.95, ease: [0.45, 0, 0.25, 1] }}
+                                />
+                                <motion.div
+                                    className="absolute inset-0"
+                                    initial={{ opacity: 0.25 }}
+                                    animate={{ opacity: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.9, ease: 'easeInOut' }}
+                                    style={{
+                                        background: themeBlast.toDark
+                                            ? 'radial-gradient(circle at center, rgba(0,0,0,0.7), transparent 55%)'
+                                            : 'radial-gradient(circle at center, rgba(255,255,255,0.85), transparent 55%)'
+                                    }}
+                                />
+                            </motion.div>
                         )}
                     </AnimatePresence>
                     <div className="fixed top-0 left-0 right-0 z-50">
