@@ -1293,7 +1293,7 @@ const Hero = ({setView, isDarkMode, onStartReading, version}) => {
                     initial={{scale: 0}} animate={{scale: 1}}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.25'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.26'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6418,6 +6418,7 @@ const ArticleList = ({
                                             initial={{opacity: 0, y: 50}}
                                             animate={{opacity: 1, y: 0}}
                                             transition={{delay: idx * 0.1, duration: 0.5}}
+                                            whileHover="hover"
                                         >
                                             <TiltCard onClick={() => {
                                                 setArticleId(post.id);
@@ -6426,10 +6427,18 @@ const ArticleList = ({
                                                 <div className="flex flex-col md:flex-row">
                                                     <div
                                                         className={`md:w-1/3 h-48 md:h-auto ${post.color} border-b-2 md:border-b-0 md:border-r-2 border-black p-6 flex flex-col justify-between text-white relative overflow-hidden group`}>
-                                                        <div
-                                                            className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity transform group-hover:scale-110 duration-500">
+                                                        <motion.div
+                                                            className="absolute top-0 right-0 p-4"
+                                                            initial="rest"
+                                                            animate="rest"
+                                                            variants={{
+                                                                rest: {opacity: 0.2, scale: 1},
+                                                                hover: {opacity: 0.4, scale: 1.08}
+                                                            }}
+                                                            transition={{type: 'spring', stiffness: 260, damping: 30}}
+                                                        >
                                                             <Code size={120}/>
-                                                        </div>
+                                                        </motion.div>
                                                         <span className="relative z-10 font-black text-5xl opacity-50">
                               {(idx + 1 + (currentPage - 1) * PAGE_SIZE).toString().padStart(2, '0')}
                             </span>
