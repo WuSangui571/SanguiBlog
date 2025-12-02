@@ -71,7 +71,7 @@ import {
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
     ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
-    RefreshCw, Plus, Trash2, Save, ImagePlus
+    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 
 const THEME_COLOR_PRESETS = [
@@ -1458,7 +1458,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.62'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.64'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6018,7 +6018,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.62';
+    const siteVersion = meta?.version || 'V1.3.64';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6953,6 +6953,16 @@ const ArticleList = ({
                                 <button
                                     disabled={currentPage === 1}
                                     onClick={() => {
+                                        setCurrentPage(1);
+                                        scrollToPostsTop();
+                                    }}
+                                    className={`px-3 py-2 border-2 border-black font-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
+                                >
+                                    <ChevronsLeft size={18} strokeWidth={3} />
+                                </button>
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => {
                                         setCurrentPage(p => Math.max(1, p - 1));
                                         scrollToPostsTop();
                                     }}
@@ -6987,6 +6997,16 @@ const ArticleList = ({
                                     className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
                                 >
                                     <ChevronRight size={20} strokeWidth={3} />
+                                </button>
+                                <button
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => {
+                                        setCurrentPage(totalPages);
+                                        scrollToPostsTop();
+                                    }}
+                                    className={`px-3 py-2 border-2 border-black font-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
+                                >
+                                    <ChevronsRight size={18} strokeWidth={3} />
                                 </button>
                             </div>
                         )}
