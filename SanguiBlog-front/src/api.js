@@ -1,4 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+// 这是本机测试的 API_BASE
+//const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+// 勿该下面配置，这是专门用于测试部署的 API_BASE
+const API_BASE = "/api";
 
 const deriveApiOrigin = () => {
   if (API_BASE.startsWith("http")) {
@@ -37,8 +40,21 @@ const request = async (path, options = {}) => {
   });
   if (!res.ok) {
     const txt = await res.text();
-    const error = new Error(txt || res.statusText);
+    let payload = null;
+    let message = txt || res.statusText;
+    if (txt) {
+      try {
+        payload = JSON.parse(txt);
+        if (payload && typeof payload === "object") {
+          message = payload.message || payload.msg || message;
+        }
+      } catch {
+        // ignore JSON parse errors, fallback to raw text
+      }
+    }
+    const error = new Error(message || res.statusText);
     error.status = res.status;
+    if (payload) error.payload = payload;
     throw error;
   }
   return res.json();

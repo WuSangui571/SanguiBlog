@@ -39,10 +39,10 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 storage:
-    base-path: ${STORAGE_BASE_PATH:uploads}
-#  base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
+#    base-path: ${STORAGE_BASE_PATH:uploads}
+    base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.21"
+  version: "V1.3.53"
   footer:
     year: 2025
     brand: 三桂博客
