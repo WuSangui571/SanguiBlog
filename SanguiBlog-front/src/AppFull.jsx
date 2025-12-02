@@ -1458,7 +1458,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.60'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.62'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5803,13 +5803,13 @@ const ScrollToTop = ({ isDarkMode }) => {
         scrollToTop();
     };
 
-    const indicatorRadius = 16;
-    const indicatorStroke = 3;
+    const indicatorRadius = 28;
+    const indicatorStroke = 4;
     const indicatorSize = indicatorRadius * 2 + indicatorStroke * 2;
     const circumference = 2 * Math.PI * indicatorRadius;
     const dashOffset = useTransform(scrollProgress, (value) => (1 - value) * circumference);
-    const trackColor = isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)';
-    const progressColor = isDarkMode ? '#F9FAFB' : '#111827';
+    const trackColor = isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(255,215,0,0.35)';
+    const progressColor = isDarkMode ? '#F9FAFB' : '#FFD700';
     const percentLabel = Math.round(scrollPercent * 100);
 
     return (
@@ -5825,47 +5825,48 @@ const ScrollToTop = ({ isDarkMode }) => {
                     onClick={handleClick}
                     style={{ left: `${position.x}px`, top: `${position.y}px` }}
                     aria-label={`返回顶部（已滚动 ${percentLabel}%）`}
-                    className={`fixed z-50 p-3 rounded-full shadow-lg transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-white hover:bg-gray-800'} ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    className={`fixed z-50 p-3 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,0.45)] transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-[#FFD700] hover:bg-gray-900'} ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 >
                     <span className="relative flex items-center justify-center w-10 h-10">
                         <ArrowUp size={24} className="relative z-10" />
-                        <motion.svg
-                            className="absolute inset-0"
-                            width={indicatorSize}
-                            height={indicatorSize}
-                            viewBox={`0 0 ${indicatorSize} ${indicatorSize}`}
-                            fill="none"
-                        >
-                            <circle
-                                cx={indicatorSize / 2}
-                                cy={indicatorSize / 2}
-                                r={indicatorRadius}
-                                stroke={trackColor}
-                                strokeWidth={indicatorStroke}
+                    </span>
+                    <motion.svg
+                        className="absolute pointer-events-none"
+                        width={indicatorSize}
+                        height={indicatorSize}
+                        viewBox={`0 0 ${indicatorSize} ${indicatorSize}`}
+                        style={{ left: `calc(50% - ${indicatorSize / 2}px)`, top: `calc(50% - ${indicatorSize / 2}px)` }}
+                        fill="none"
+                    >
+                        <circle
+                            cx={indicatorSize / 2}
+                            cy={indicatorSize / 2}
+                            r={indicatorRadius}
+                            stroke={trackColor}
+                            strokeWidth={indicatorStroke}
+                        />
+                        <motion.circle
+                            cx={indicatorSize / 2}
+                            cy={indicatorSize / 2}
+                            r={indicatorRadius}
+                            stroke={progressColor}
+                            strokeWidth={indicatorStroke}
+                            strokeDasharray={circumference}
+                            style={{ strokeDashoffset: dashOffset }}
+                            strokeLinecap="round"
+                        />
+                    </motion.svg>
+                    <span className="pointer-events-none absolute inset-0 overflow-visible">
+                        {sparks.map((spark) => (
+                            <motion.span
+                                key={spark.id}
+                                className="absolute w-2.5 h-2.5 rounded-full"
+                                style={{ left: '50%', top: '50%', backgroundColor: spark.color }}
+                                initial={{ opacity: 0.95, x: 0, y: 0, scale: 0.5, rotate: 0 }}
+                                animate={{ opacity: 0, x: spark.dx, y: spark.dy, scale: 1.3, rotate: 180 }}
+                                transition={{ duration: 0.85, ease: 'easeOut' }}
                             />
-                            <motion.circle
-                                cx={indicatorSize / 2}
-                                cy={indicatorSize / 2}
-                                r={indicatorRadius}
-                                stroke={progressColor}
-                                strokeWidth={indicatorStroke}
-                                strokeDasharray={circumference}
-                                style={{ strokeDashoffset: dashOffset }}
-                                strokeLinecap="round"
-                            />
-                        </motion.svg>
-                        <span className="pointer-events-none absolute inset-0 overflow-visible">
-                            {sparks.map((spark) => (
-                                <motion.span
-                                    key={spark.id}
-                                    className="absolute w-2.5 h-2.5 rounded-full"
-                                    style={{ left: '50%', top: '50%', backgroundColor: spark.color }}
-                                    initial={{ opacity: 0.95, x: 0, y: 0, scale: 0.5, rotate: 0 }}
-                                    animate={{ opacity: 0, x: spark.dx, y: spark.dy, scale: 1.3, rotate: 180 }}
-                                    transition={{ duration: 0.85, ease: 'easeOut' }}
-                                />
-                            ))}
-                        </span>
+                        ))}
                     </span>
                 </motion.button>
             )}
@@ -6017,7 +6018,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.60';
+    const siteVersion = meta?.version || 'V1.3.62';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
