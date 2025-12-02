@@ -30,6 +30,7 @@ import {
     adminUpdateRolePermissions,
     fetchMyPermissions,
     fetchCategories,
+    fetchPosts,
     fetchTags,
     fetchComments,
     createComment,
@@ -1031,6 +1032,7 @@ const GENERATE_POSTS = () => {
 const MOCK_POSTS = GENERATE_POSTS();
 const PAGE_SIZE = 5;
 const TAG_PREVIEW_COUNT = 9;
+const ARCHIVE_MONTH_LABELS = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
 const AnalyticsSummaryContext = React.createContext({
     summary: null,
@@ -1475,7 +1477,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.55'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.56'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5924,6 +5926,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     });
     const [emergencyHeight, setEmergencyHeight] = useState(0);
     const [error, setError] = useState(null);
+    const [archivePosts, setArchivePosts] = useState([]);
+    const [archiveLoading, setArchiveLoading] = useState(false);
+    const [archiveError, setArchiveError] = useState('');
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sangui-theme') === 'dark';
@@ -5990,6 +5995,27 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             behavior: 'smooth'
         });
     }, []);
+
+    const loadArchivePosts = useCallback(async () => {
+        setArchiveLoading(true);
+        setArchiveError('');
+        try {
+            const res = await fetchPosts({ page: 1, size: 200, status: 'PUBLISHED' });
+            const data = res.data || res;
+            setArchivePosts(data?.records || data || []);
+        } catch (err) {
+            console.warn('load archive posts failed', err);
+            setArchiveError(err?.message || '无法加载归档文章');
+        } finally {
+            setArchiveLoading(false);
+        }
+    }, []);
+
+    const handleArchiveArticleOpen = useCallback((postId) => {
+        if (!postId) return;
+        setArticleId(postId);
+        setView('article');
+    }, [setArticleId, setView]);
     const footerInfo = meta?.footer || {};
     const footerYear = footerInfo.year || new Date().getFullYear();
     const footerBrand = footerInfo.brand || 'SANGUI BLOG';
@@ -5997,7 +6023,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.55';
+    const siteVersion = meta?.version || 'V1.3.56';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6104,9 +6130,21 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, [view, articleId, loadPosts, loadArticle]);
 
     useEffect(() => {
+        if (view === 'archive' && archivePosts.length === 0 && !archiveLoading) {
+            loadArchivePosts();
+        }
+    }, [view, archivePosts.length, archiveLoading, loadArchivePosts]);
+
+    useEffect(() => {
         if (view === 'home') {
             recordPageView({
                 pageTitle: 'Home',
+                referrer: getReferrer(),
+                geo: getGeoHint()
+            });
+        } else if (view === 'archive') {
+            recordPageView({
+                pageTitle: 'Archive',
                 referrer: getReferrer(),
                 geo: getGeoHint()
             });
@@ -6160,6 +6198,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         }
     };
 
+    const archiveData = archivePosts && archivePosts.length ? archivePosts : posts;
+
     const renderView = () => {
         switch (view) {
             case 'home':
@@ -6203,6 +6243,18 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                             )}
                         </footer>
                     </>
+                );
+            case 'archive':
+                return (
+                    <ArchiveView
+                        postsData={archiveData}
+                        isDarkMode={isDarkMode}
+                        loading={archiveLoading}
+                        error={archiveError}
+                        onBackHome={() => setView('home')}
+                        onReload={loadArchivePosts}
+                        onOpenArticle={handleArchiveArticleOpen}
+                    />
                 );
             case 'article':
                 return (
@@ -6940,6 +6992,214 @@ const ArticleList = ({
                 </div>
             </section>
         </>
+    );
+};
+
+const ArchiveView = ({
+    postsData,
+    isDarkMode,
+    onBackHome,
+    onOpenArticle,
+    loading,
+    error,
+    onReload
+}) => {
+    const postsSource = useMemo(() => (Array.isArray(postsData) && postsData.length ? postsData : MOCK_POSTS), [postsData]);
+
+    const normalizedList = useMemo(() => {
+        return postsSource
+            .map((post, index) => {
+                const rawDate = post.publishedAt || post.published_at || post.date || post.createdAt || post.created_at;
+                const parsed = rawDate ? new Date(rawDate) : null;
+                const isValidDate = parsed && !Number.isNaN(parsed.getTime());
+                const timestamp = isValidDate ? parsed.getTime() : 0;
+                const year = isValidDate ? `${parsed.getFullYear()}` : '未归档';
+                const monthIndex = isValidDate ? parsed.getMonth() : -1;
+                const dateLabel = isValidDate
+                    ? `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`
+                    : (rawDate || '日期待定');
+                return {
+                    post,
+                    timestamp,
+                    year,
+                    monthIndex,
+                    monthLabel: monthIndex >= 0 ? ARCHIVE_MONTH_LABELS[monthIndex] : '日期待定',
+                    displayDate: dateLabel,
+                    fallbackKey: `${post.id || index}-${timestamp}`
+                };
+            })
+            .sort((a, b) => b.timestamp - a.timestamp);
+    }, [postsSource]);
+
+    const timelineData = useMemo(() => {
+        const grouped = new Map();
+        normalizedList.forEach((item) => {
+            if (!grouped.has(item.year)) {
+                grouped.set(item.year, new Map());
+            }
+            const monthKey = item.monthIndex >= 0 ? item.monthIndex : `unknown-${item.fallbackKey}`;
+            const monthLabel = item.monthIndex >= 0 ? item.monthLabel : '日期待定';
+            const monthMap = grouped.get(item.year);
+            if (!monthMap.has(monthKey)) {
+                monthMap.set(monthKey, {
+                    label: monthLabel,
+                    sortIndex: item.monthIndex,
+                    posts: []
+                });
+            }
+            monthMap.get(monthKey).posts.push(item);
+        });
+        return Array.from(grouped.entries())
+            .map(([year, monthMap]) => {
+                const yearValue = Number(year);
+                const sortValue = Number.isNaN(yearValue) ? -Infinity : yearValue;
+                const months = Array.from(monthMap.values()).map((month) => ({
+                    ...month,
+                    posts: month.posts.sort((a, b) => b.timestamp - a.timestamp)
+                })).sort((a, b) => {
+                    const aIndex = typeof a.sortIndex === 'number' ? a.sortIndex : -1;
+                    const bIndex = typeof b.sortIndex === 'number' ? b.sortIndex : -1;
+                    return bIndex - aIndex;
+                });
+                return {
+                    year,
+                    sortValue,
+                    months,
+                    total: months.reduce((sum, month) => sum + month.posts.length, 0)
+                };
+            })
+            .sort((a, b) => b.sortValue - a.sortValue);
+    }, [normalizedList]);
+
+    const totalCount = normalizedList.length;
+    const totalYears = timelineData.length;
+    const lastUpdated = normalizedList[0]?.displayDate || '-';
+
+    const sectionBg = isDarkMode ? 'bg-[#05060c] text-gray-100' : 'bg-[#F7F8FA] text-gray-900';
+    const cardBg = isDarkMode ? 'bg-[#111827]/80' : 'bg-white';
+    const borderColor = isDarkMode ? 'border-gray-700' : 'border-black';
+
+    const handleArticleClick = (postId) => {
+        if (!postId || typeof onOpenArticle !== 'function') return;
+        onOpenArticle(postId);
+    };
+
+    return (
+        <section className={`${sectionBg} min-h-screen pt-32 pb-20`}>
+            <div className="max-w-6xl mx-auto px-4 md:px-8">
+                <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+                    <div>
+                        <p className="text-xs tracking-[0.4em] uppercase text-gray-500">ARCHIVE // TIMELINE</p>
+                        <h1 className="text-4xl md:text-5xl font-black mt-3">归档时间线</h1>
+                        <p className="mt-4 text-base md:text-lg text-gray-500 dark:text-gray-300 max-w-2xl">
+                            将所有文章按年份与月份折叠成一条可追溯的时间轴，方便快速定位历史输出。点击任意条目即可跳转至文章详情。
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        <PopButton variant="ghost" onClick={onBackHome}>返回首页</PopButton>
+                        <PopButton variant="primary" onClick={onReload} disabled={loading}>
+                            {loading ? '加载中…' : '刷新归档'}
+                        </PopButton>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
+                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
+                        <p className="text-xs font-bold uppercase text-gray-500">累计文章</p>
+                        <p className="text-3xl font-black mt-2">{totalCount}</p>
+                    </div>
+                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
+                        <p className="text-xs font-bold uppercase text-gray-500">覆盖年份</p>
+                        <p className="text-3xl font-black mt-2">{totalYears}</p>
+                    </div>
+                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
+                        <p className="text-xs font-bold uppercase text-gray-500">最近更新</p>
+                        <p className="text-xl font-black mt-2">{lastUpdated}</p>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="mt-8 border-2 border-red-500 bg-red-100/60 text-red-700 font-bold px-4 py-3 rounded-xl">
+                        {error}
+                    </div>
+                )}
+
+                {loading && (
+                    <div className="mt-12 space-y-6">
+                        {[1, 2, 3].map((skeleton) => (
+                            <div key={skeleton} className={`h-32 ${cardBg} border-2 border-dashed ${borderColor} rounded-2xl animate-pulse`}></div>
+                        ))}
+                    </div>
+                )}
+
+                {!loading && !timelineData.length && (
+                    <div className={`mt-12 ${cardBg} border-2 ${borderColor} rounded-2xl p-12 text-center`}>
+                        <p className="text-lg font-black">暂无归档文章</p>
+                        <p className="text-sm text-gray-500 mt-2">发布新文章后会自动出现在这里。</p>
+                    </div>
+                )}
+
+                <div className="mt-12 space-y-12">
+                    {timelineData.map((yearBlock) => (
+                        <div key={yearBlock.year}>
+                            <div className="flex items-center gap-4">
+                                <span className="text-3xl md:text-4xl font-black">{yearBlock.year}</span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-black/60 to-transparent"></div>
+                                <span className="text-xs font-bold tracking-widest text-gray-500">{yearBlock.total} 篇</span>
+                            </div>
+                            <div className="mt-6 space-y-8">
+                                {yearBlock.months.map((monthBlock, monthIdx) => (
+                                    <div key={`${yearBlock.year}-${monthIdx}`} className="relative pl-6 border-l-4 border-black/40">
+                                        <span className="absolute -left-3 top-2 w-5 h-5 rounded-full border-2 border-black bg-[#FFD700]"></span>
+                                        <div className="flex items-baseline justify-between flex-wrap gap-4">
+                                            <div>
+                                                <p className="text-lg font-black">{monthBlock.label}</p>
+                                                <p className="text-xs font-bold text-gray-500">{monthBlock.posts.length} 篇</p>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 space-y-3">
+                                            {monthBlock.posts.map(({ post, displayDate }) => {
+                                                const tags = Array.isArray(post.tags)
+                                                    ? post.tags.map((tag) => (typeof tag === 'string' ? tag : tag?.name || tag?.label)).filter(Boolean)
+                                                    : [];
+                                                const category = post.category || post.parentCategory || post?.summary?.category || '未分类';
+                                                const views = post.views ?? post.viewsCount ?? 0;
+                                                const comments = post.comments ?? post.commentsCount ?? 0;
+                                                return (
+                                                    <button
+                                                        key={`archive-${post.id || displayDate}`}
+                                                        onClick={() => handleArticleClick(post.id)}
+                                                        className={`w-full text-left border-2 border-black rounded-2xl px-4 py-3 flex flex-col gap-2 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#000] ${cardBg}`}
+                                                    >
+                                                        <div className="flex items-center justify-between gap-3">
+                                                            <p className="text-xl font-black flex-1">{post.title}</p>
+                                                            <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
+                                                                <Clock size={14} />
+                                                                <span>{displayDate}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-3 text-xs font-bold text-gray-600 dark:text-gray-300">
+                                                            <span className="px-2 py-1 border border-black rounded-full bg-[#FFF5C0] text-black">{category}</span>
+                                                            {tags.slice(0, 4).map((tag) => (
+                                                                <span key={`${post.id}-${tag}`} className="px-2 py-1 border border-dashed border-black/50 rounded-full">{tag}</span>
+                                                            ))}
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-xs font-mono text-gray-500">
+                                                            <span>阅读 {views}</span>
+                                                            <span>评论 {comments}</span>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
     );
 };
 

@@ -738,3 +738,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.55 (2025-12-02)
 - **模块/页面**：`buildAssetUrl` 现在会识别 `site.asset-base-url`/`VITE_ASSET_ORIGIN` 中额外的路径（如 `.../uploads`），自动去重重复的段落，确保文章内图片不会再次出现 `uploads/uploads/...` 的错误链接。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.55`。
+
+## V1.3.56 (2025-12-02)
+- **模块/页面**：完成“归档”视图，按年份与月份展示完整文章时间轴，支持快速跳转文章、刷新归档数据与返回首页，并保持 Neo-Brutalism 风格。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.56`。

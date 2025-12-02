@@ -74,6 +74,10 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   自动携带 `localStorage` 中的 `sg_token`。
     *   `API_BASE`: 默认为 `http://localhost:8080/api`。
     *   接口报错时优先解析 JSON，若包含 `message`/`msg` 字段则只返回该文本给前台提示，避免把整段响应 JSON 暴露给终端用户。
+*   **归档视图 (`ArchiveView`)**：
+    *   导航“归档”会懒加载 `/api/posts?page=1&size=200&status=PUBLISHED`，按年/月对文章进行分组，默认展示最近 200 篇。
+    *   每个条目展示标题、日期、分类、标签、阅读/评论统计，点击后通过 `setArticleId + setView('article')` 跳转文章详情。
+    *   若 `site.asset-base-url` 带路径前缀，`buildAssetUrl` 会自动去除重复段，保障归档页图片展示一致。
 *   首页文章卡片所展示的“浏览量 / 评论数”直接读取后端 `PostSummaryDto` 中的 `viewsCount` 与 `comments` 字段，其中评论数由后端实时统计 `APPROVED` 状态的评论数量。
 *   首页文章卡片若发布时间在 7 天内，会在标题旁展示带有闪动效果的 “NEW” 徽章，提示访客这是近一周的新内容。
 *   首页底部版权信息来自 `/site/meta.footer`，支持在 `application.yaml` 的 `site.footer.*` 中自定义年份、品牌、备案号/链接以及 Powered by 文案；备案号始终以新窗口打开工信部或自定义链接。
