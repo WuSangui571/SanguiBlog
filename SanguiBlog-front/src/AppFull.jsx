@@ -134,48 +134,44 @@ const BackgroundEasterEggs = ({ isDarkMode }) => {
 
     if (!isDarkMode) {
         const clouds = [
-            { left: '5%', top: '12%', scale: 1.2 },
-            { left: '40%', top: '19%', scale: 1.6 },
-            { left: '70%', top: '11%', scale: 1.1 }
+            { left: '5%', top: '18%', width: '26rem', height: '14rem', duration: 22 },
+            { left: '42%', top: '10%', width: '30rem', height: '16rem', duration: 25 },
+            { left: '68%', top: '20%', width: '22rem', height: '12rem', duration: 20 }
         ];
         return (
-            <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#DFF2FF] via-white to-transparent" />
+            <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+                <div className="absolute inset-0 bg-gradient-to-b from-[#E6F4FF] via-white to-transparent" />
                 <motion.div
-                    className="absolute w-64 h-64 rounded-full bg-gradient-to-br from-[#FFD54F] via-[#FFB703] to-white border border-white/70 shadow-[0_0_80px_rgba(255,213,79,0.95)]"
-                    style={{ left: 'calc(50% - 50rem)', top: '34%' }}
-                    animate={{ scale: [1, 1.08, 1], rotate: [0, 12, 0] }}
-                    transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <motion.div
-                    className="absolute w-[95vw] h-[95vw] rounded-full blur-[120px] mix-blend-screen"
-                    style={{ right: '-35%', top: '-40%', background: 'radial-gradient(circle, rgba(255,223,122,0.55), transparent 70%)' }}
-                    animate={{ opacity: [0.35, 0.75, 0.35] }}
-                    transition={{ duration: 9, repeat: Infinity }}
-                />
-                <motion.div
-                    className="absolute w-56 h-56 rounded-full bg-gradient-to-br from-white to-transparent blur-[25px]"
-                    style={{ right: '10%', top: '14%' }}
-                    animate={{ opacity: [0.4, 0.8, 0.4] }}
-                    transition={{ duration: 7, repeat: Infinity }}
+                    className="absolute w-72 h-72 rounded-full bg-gradient-to-br from-[#FFD54F] via-[#FFB703] to-white border border-white/70 shadow-[0_0_80px_rgba(255,213,79,0.9)]"
+                    style={{ left: 'calc(50% - 55rem)', top: '28%' }}
+                    animate={{ scale: [0.95, 1.08, 0.95], rotate: [0, 15, 0] }}
+                    transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 {clouds.map((cloud, idx) => (
                     <motion.div
                         key={`cloud-${idx}`}
-                        className="absolute h-24 bg-gradient-to-r from-white via-[#E0F2FE] to-white rounded-full shadow-[0_18px_40px_rgba(148,163,184,0.25)]"
+                        className="absolute rounded-full bg-white/85 shadow-[0_20px_60px_rgba(148,163,184,0.35)]"
                         style={{
-                            width: '26rem',
+                            width: cloud.width,
+                            height: cloud.height,
                             left: cloud.left,
                             top: cloud.top,
-                            transform: `scale(${cloud.scale})`
+                            filter: 'blur(0.5px)'
                         }}
-                        animate={{ x: ['-10%', '10%', '-10%'], opacity: [0.8, 1, 0.8] }}
-                        transition={{ duration: 20 + idx * 3, repeat: Infinity, ease: 'easeInOut' }}
-                    />
+                        animate={{
+                            x: ['-6%', '6%', '-6%'],
+                            y: ['-2%', '3%', '-2%'],
+                            opacity: [0.7, 0.95, 0.7]
+                        }}
+                        transition={{ duration: cloud.duration, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white via-[#E0F2FE] to-white rounded-full opacity-80" />
+                        <div className="absolute inset-0 mix-blend-screen blur-3xl bg-gradient-to-br from-[#A5F3FC] to-[#FDE68A]/70" />
+                    </motion.div>
                 ))}
                 <motion.div
-                    className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#FFF5C0]/85 via-transparent to-transparent"
-                    animate={{ opacity: [0.45, 0.68, 0.45] }}
+                    className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#FFF5C0]/90 via-transparent to-transparent"
+                    animate={{ opacity: [0.45, 0.75, 0.45] }}
                     transition={{ duration: 12, repeat: Infinity }}
                 />
             </div>
@@ -183,7 +179,7 @@ const BackgroundEasterEggs = ({ isDarkMode }) => {
     }
 
     return (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
+        <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
             <div className="absolute inset-0 bg-gradient-to-b from-[#010512]/95 via-transparent to-transparent" />
             <motion.div
                 className="absolute w-44 h-44 rounded-full bg-gradient-to-br from-white via-slate-200 to-slate-500 shadow-[0_0_90px_rgba(191,219,254,0.7)]"
@@ -1479,7 +1475,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.57'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.58'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6027,7 +6023,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.57';
+    const siteVersion = meta?.version || 'V1.3.58';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -7072,7 +7068,10 @@ const ArchiveView = ({
                 const sortValue = Number.isNaN(yearValue) ? -Infinity : yearValue;
                 const months = Array.from(monthMap.values()).map((month) => ({
                     ...month,
-                    posts: month.posts.sort((a, b) => b.timestamp - a.timestamp)
+                    posts: month.posts.sort((a, b) => b.timestamp - a.timestamp),
+                    anchorId: typeof month.sortIndex === 'number' && month.sortIndex >= 0
+                        ? `archive-${year}-${String(month.sortIndex + 1).padStart(2, '0')}`
+                        : null
                 })).sort((a, b) => {
                     const aIndex = typeof a.sortIndex === 'number' ? a.sortIndex : -1;
                     const bIndex = typeof b.sortIndex === 'number' ? b.sortIndex : -1;
@@ -7091,11 +7090,29 @@ const ArchiveView = ({
     const totalCount = normalizedList.length;
     const totalYears = timelineData.length;
     const lastUpdated = normalizedList[0]?.displayDate || '-';
+    const handleMonthJump = useCallback((anchorId) => {
+        if (typeof document === 'undefined' || !anchorId) return;
+        const el = document.getElementById(anchorId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, []);
+    const monthShortcuts = useMemo(() => (
+        timelineData.flatMap((yearBlock) => (
+            yearBlock.months
+                .filter((month) => month.anchorId)
+                .map((month) => ({
+                    id: month.anchorId,
+                    label: `${yearBlock.year}年${month.label}`
+                }))
+        ))
+    ), [timelineData]);
 
     const sectionText = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const secondaryText = isDarkMode ? 'text-gray-300' : 'text-gray-600';
     const cardBg = isDarkMode ? 'bg-[#0F172A]/85 text-gray-100' : 'bg-white/90 text-gray-900';
     const borderColor = isDarkMode ? 'border-gray-700' : 'border-black';
+    const quickJumpBtn = isDarkMode
+        ? 'bg-[#111827]/80 text-white hover:bg-[#1F2937]'
+        : 'bg-white/90 text-black hover:bg-[#FFD700]';
 
     const handleArticleClick = (postId) => {
         if (!postId || typeof onOpenArticle !== 'function') return;
@@ -7160,66 +7177,90 @@ const ArchiveView = ({
                     </div>
                 )}
 
-                <div className="mt-12 space-y-12">
-                    {timelineData.map((yearBlock) => (
-                        <div key={yearBlock.year}>
-                            <div className="flex items-center gap-4">
-                                <span className="text-3xl md:text-4xl font-black">{yearBlock.year}</span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-black/60 to-transparent"></div>
-                                <span className="text-xs font-bold tracking-widest text-gray-500">{yearBlock.total} 篇</span>
-                            </div>
-                            <div className="mt-6 space-y-8">
-                                {yearBlock.months.map((monthBlock, monthIdx) => (
-                                    <div key={`${yearBlock.year}-${monthIdx}`} className="relative pl-6 border-l-4 border-black/40">
-                                        <span className="absolute -left-3 top-2 w-5 h-5 rounded-full border-2 border-black bg-[#FFD700]"></span>
-                                        <div className="flex items-baseline justify-between flex-wrap gap-4">
-                                            <div>
-                                                <p className="text-lg font-black">{monthBlock.label}</p>
-                                                <p className="text-xs font-bold text-gray-500">{monthBlock.posts.length} 篇</p>
+                <div className="mt-12 flex flex-col lg:flex-row gap-8">
+                    <div className="flex-1 space-y-12">
+                        {timelineData.map((yearBlock) => (
+                            <div key={yearBlock.year}>
+                                <div className="flex items-center gap-4">
+                                    <span className="text-3xl md:text-4xl font-black">{yearBlock.year}</span>
+                                    <div className="h-px flex-1 bg-gradient-to-r from-black/60 to-transparent"></div>
+                                    <span className="text-xs font-bold tracking-widest text-gray-500">{yearBlock.total} 篇</span>
+                                </div>
+                                <div className="mt-6 space-y-8">
+                                    {yearBlock.months.map((monthBlock, monthIdx) => (
+                                        <div
+                                            key={`${yearBlock.year}-${monthIdx}`}
+                                            id={monthBlock.anchorId || undefined}
+                                            className="relative pl-6 border-l-4 border-black/40"
+                                        >
+                                            <span className="absolute -left-3 top-2 w-5 h-5 rounded-full border-2 border-black bg-[#FFD700]"></span>
+                                            <div className="flex items-baseline justify-between flex-wrap gap-4">
+                                                <div>
+                                                    <p className="text-lg font-black">{monthBlock.label}</p>
+                                                    <p className="text-xs font-bold text-gray-500">{monthBlock.posts.length} 篇</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 space-y-3">
+                                                {monthBlock.posts.map(({ post, displayDate }) => {
+                                                    const tags = Array.isArray(post.tags)
+                                                        ? post.tags.map((tag) => (typeof tag === 'string' ? tag : tag?.name || tag?.label)).filter(Boolean)
+                                                        : [];
+                                                    const category = post.category || post.parentCategory || post?.summary?.category || '未分类';
+                                                    const views = post.views ?? post.viewsCount ?? 0;
+                                                    const comments = post.comments ?? post.commentsCount ?? 0;
+                                                    return (
+                                                        <button
+                                                            key={`archive-${post.id || displayDate}`}
+                                                            onClick={() => handleArticleClick(post.id)}
+                                                            className={`w-full text-left border-2 border-black rounded-2xl px-4 py-3 flex flex-col gap-2 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#000] ${cardBg}`}
+                                                        >
+                                                            <div className="flex items-center justify-between gap-3">
+                                                                <p className="text-xl font-black flex-1">{post.title}</p>
+                                                                <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
+                                                                    <Clock size={14} />
+                                                                    <span>{displayDate}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-3 text-xs font-bold">
+                                                                <span className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">{category}</span>
+                                                                {tags.slice(0, 4).map((tag) => (
+                                                                    <span key={`${post.id}-${tag}`} className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">
+                                                                        {tag}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-xs font-mono text-gray-500">
+                                                                <span>阅读 {views}</span>
+                                                                <span>评论 {comments}</span>
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-                                        <div className="mt-4 space-y-3">
-                                            {monthBlock.posts.map(({ post, displayDate }) => {
-                                                const tags = Array.isArray(post.tags)
-                                                    ? post.tags.map((tag) => (typeof tag === 'string' ? tag : tag?.name || tag?.label)).filter(Boolean)
-                                                    : [];
-                                                const category = post.category || post.parentCategory || post?.summary?.category || '未分类';
-                                                const views = post.views ?? post.viewsCount ?? 0;
-                                                const comments = post.comments ?? post.commentsCount ?? 0;
-                                                return (
-                                                    <button
-                                                        key={`archive-${post.id || displayDate}`}
-                                                        onClick={() => handleArticleClick(post.id)}
-                                                        className={`w-full text-left border-2 border-black rounded-2xl px-4 py-3 flex flex-col gap-2 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#000] ${cardBg}`}
-                                                    >
-                                                        <div className="flex items-center justify-between gap-3">
-                                                            <p className="text-xl font-black flex-1">{post.title}</p>
-                                                            <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-                                                                <Clock size={14} />
-                                                                <span>{displayDate}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-3 text-xs font-bold">
-                                                            <span className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">{category}</span>
-                                                            {tags.slice(0, 4).map((tag) => (
-                                                                <span key={`${post.id}-${tag}`} className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">
-                                                                    {tag}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-xs font-mono text-gray-500">
-                                                            <span>阅读 {views}</span>
-                                                            <span>评论 {comments}</span>
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                    {monthShortcuts.length > 0 && (
+                        <aside className="w-full lg:w-64">
+                            <div className={`${cardBg} border-2 ${borderColor} rounded-2xl p-5 sticky top-32 shadow-[6px_6px_0px_0px_#000]`}>
+                                <p className="text-sm font-black mb-4">快速跳转</p>
+                                <div className="space-y-2 max-h-[70vh] overflow-auto pr-1">
+                                    {monthShortcuts.map((shortcut) => (
+                                        <button
+                                            key={shortcut.id}
+                                            onClick={() => handleMonthJump(shortcut.id)}
+                                        className={`w-full text-left text-xs font-black tracking-wide border-2 border-black rounded-xl px-3 py-2 transition-transform hover:-translate-y-0.5 ${quickJumpBtn}`}
+                                    >
+                                        {shortcut.label}
+                                    </button>
+                                ))}
+                                </div>
+                            </div>
+                        </aside>
+                    )}
                 </div>
             </div>
         </section>
