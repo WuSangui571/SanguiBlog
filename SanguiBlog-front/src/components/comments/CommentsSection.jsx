@@ -251,12 +251,13 @@ const CommentsSection = ({
                 <div className="flex gap-2">
                     <PopButton onClick={handleSubmit}>发布评论</PopButton>
                     {currentUser && (
-                        <button
+                        <PopButton
+                            variant="secondary"
                             onClick={() => setView && setView('admin')}
-                            className="px-3 py-1 border-2 border-black font-bold shadow-[2px_2px_0px_0px_#000] bg-gray-200"
+                            className={`${isDarkMode ? '!bg-gray-100 !text-black' : '!bg-white !text-black'} shadow-[2px_2px_0px_0px_#000]`}
                         >
                             后台管理
-                        </button>
+                        </PopButton>
                     )}
                 </div>
             </div>

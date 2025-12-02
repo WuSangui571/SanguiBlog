@@ -410,7 +410,8 @@ const ArticleDetail = ({
     onDeleteComment,
     onUpdateComment,
     currentUser,
-    onCategoryClick
+    onCategoryClick,
+    onBackToPrevious
 }) => {
     const { meta: siteMeta } = useBlog();
     const summary = articleData?.summary;
@@ -439,6 +440,7 @@ const ArticleDetail = ({
     const comments = commentsData && commentsData.length ? commentsData : [];
     const text = isDarkMode ? 'text-gray-100' : 'text-black';
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
+    const pageBackground = 'bg-transparent';
     const articleContentRef = useRef(null);
     const { headerHeight } = useLayoutOffsets();
     const fixedTopOffset = headerHeight + 16;
@@ -713,7 +715,7 @@ const ArticleDetail = ({
     return (
         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`min-h-screen px-4 md:px-0 pb-20 ${surface} ${text}`}
+            className={`min-h-screen px-4 md:px-0 pb-20 ${pageBackground} ${text}`}
             style={{ paddingTop: articleTopPadding }}>
             {/* Share Toast Notification */}
             <AnimatePresence>
@@ -738,7 +740,7 @@ const ArticleDetail = ({
             >
                 <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
                     <motion.button
-                        onClick={() => setView('home')}
+                        onClick={() => (onBackToPrevious ? onBackToPrevious() : setView('home'))}
                         initial={{ opacity: 0, x: -50 }}
                         animate={{ opacity: 1, x: 0 }}
                         whileHover={{ scale: 1.05 }}
@@ -746,7 +748,7 @@ const ArticleDetail = ({
                     >
                         <div className="flex items-center gap-2">
                             <ChevronRight size={20} className="rotate-180" />
-                            <span>返回首页</span>
+                            <span>首页</span>
                         </div>
                     </motion.button>
                     <motion.button
@@ -758,7 +760,7 @@ const ArticleDetail = ({
                     >
                         <div className="flex items-center gap-2">
                             <MessageCircle size={18} />
-                            <span>去评论</span>
+                            <span>评论</span>
                         </div>
                     </motion.button>
                 </div>
@@ -1477,7 +1479,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.56'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.57'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5929,6 +5931,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const [archivePosts, setArchivePosts] = useState([]);
     const [archiveLoading, setArchiveLoading] = useState(false);
     const [archiveError, setArchiveError] = useState('');
+    const lastViewRef = useRef(initialView);
+    const [articleBackTarget, setArticleBackTarget] = useState(initialView === 'article' ? 'home' : initialView || 'home');
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sangui-theme') === 'dark';
@@ -6023,7 +6027,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.56';
+    const siteVersion = meta?.version || 'V1.3.57';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6115,6 +6119,14 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, [view, articleId]);
 
     useEffect(() => {
+        const previousView = lastViewRef.current;
+        if (view === 'article' && previousView !== 'article') {
+            setArticleBackTarget(previousView && previousView !== 'article' ? previousView : 'home');
+        }
+        lastViewRef.current = view;
+    }, [view]);
+
+    useEffect(() => {
         if (typeof window === 'undefined') return;
         if (view === 'article') {
             window.scrollTo({ top: 0, behavior: 'auto' });
@@ -6199,6 +6211,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     };
 
     const archiveData = archivePosts && archivePosts.length ? archivePosts : posts;
+    const handleArticleBack = useCallback(() => {
+        const target = (articleBackTarget && articleBackTarget !== 'article') ? articleBackTarget : 'home';
+        setView(target);
+    }, [articleBackTarget, setView]);
 
     const renderView = () => {
         switch (view) {
@@ -6268,7 +6284,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         onDeleteComment={(commentId) => removeComment && articleId && removeComment(articleId, commentId)}
                         onUpdateComment={(commentId, content) => editComment && articleId && editComment(articleId, commentId, content)}
                         currentUser={user}
-                        onCategoryClick={handleCategoryClick}
+                        onBackToPrevious={handleArticleBack}
+                         onCategoryClick={handleCategoryClick}
                     />
                 );
             case 'login':
