@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useBlog } from "../../hooks/useBlogData";
 import { updateProfile, uploadAvatar } from "../../api";
+import { buildAssetUrl } from "../../utils/asset.js";
 import {
   User,
   Image,
@@ -36,12 +37,6 @@ const InfoBadge = ({ label, value, isDarkMode }) => {
       </span>
     </div>
   );
-};
-
-const buildMediaUrl = (raw) => {
-  if (!raw) return "";
-  if (raw.startsWith("http")) return raw;
-  return `http://localhost:8080${raw}`;
 };
 
 export default function AdminProfile({ isDarkMode = false }) {
@@ -89,7 +84,7 @@ export default function AdminProfile({ isDarkMode = false }) {
       oldPassword: "",
       newPassword: "",
     }));
-    setAvatarPreview(buildMediaUrl(currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url));
+    setAvatarPreview(buildAssetUrl(currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url, ""));
     setMeta({
       role: mapRole(currentUser.role),
       id: currentUser.id ?? "-",
@@ -153,7 +148,7 @@ export default function AdminProfile({ isDarkMode = false }) {
       if (!newPath) throw new Error("上传返回结果为空");
       await updateProfile({ avatarUrl: newPath });
       setForm((prev) => ({ ...prev, avatarUrl: newPath }));
-      setAvatarPreview(buildMediaUrl(newPath));
+      setAvatarPreview(buildAssetUrl(newPath, ""));
       setStatus({ type: "success", text: "头像上传成功" });
     } catch (err) {
       setStatus({ type: "error", text: `头像上传失败：${err.message}` });

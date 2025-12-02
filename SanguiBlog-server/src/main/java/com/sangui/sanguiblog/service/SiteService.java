@@ -50,6 +50,8 @@ public class SiteService {
         private String footerPoweredBy;
         @Value("${site.version:V1.0.0}")
         private String siteVersion;
+        @Value("${site.asset-base-url:}")
+        private String siteAssetBaseUrl;
 
         public SiteMetaDto meta() {
                 long postCount = postRepository.count();
@@ -142,6 +144,7 @@ public class SiteService {
                                                 .copyrightText(String.format("Copyright © %d %s All rights reserved.",
                                                                 footerYear, footerBrand))
                                                 .build())
+                                .assetBaseUrl(resolveAssetBaseUrl())
                                 .version(siteVersion)
                                 .build();
         }
@@ -181,5 +184,16 @@ public class SiteService {
                 }
                 String normalized = style.trim().toUpperCase();
                 return SUPPORTED_BROADCAST_STYLES.contains(normalized) ? normalized : DEFAULT_BROADCAST_STYLE;
+        }
+
+        private String resolveAssetBaseUrl() {
+                if (siteAssetBaseUrl == null) {
+                        return "";
+                }
+                String trimmed = siteAssetBaseUrl.trim();
+                if (trimmed.isEmpty()) {
+                        return "";
+                }
+                return trimmed.replaceAll("/+$", "");
         }
 }

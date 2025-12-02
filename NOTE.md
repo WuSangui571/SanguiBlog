@@ -184,7 +184,7 @@ ole_permissions in bulk.
 *   **数据库字段**：`users.avatar_url` 保存头像文件名或 `avatar/` 相对路径；`posts.slug` 现改为记录文章图片文件夹的相对路径（如 `posts/20241124/abc123`），后端返回数据时会携带该路径以便前端按需拼接。
 *   **静态映射**：`WebConfig` 将 `/avatar/**` 与 `/uploads/**` 映射到实际文件系统目录，无需重新打包 `static/` 资源即可即时读取最新上传内容。文章图片可直接通过 `http://<server>/uploads/<slug>/xxx.png` 访问。
 *   **前端处理**：`/admin/create-post` 的“插入图片”按钮会携带预留的 `slug` 调用 `/api/upload/post-assets`，后端在不清空目录的情况下追加文件并返回 `files`、`urls` 以及用分号拼接好的 `joined` 字符串；前端据此插入 Markdown，若需要把图片地址落库可直接使用 `joined`。`slug` 现改为按需懒生成：仅在首次上传图片或点击“立即发布”时才调用 `/api/upload/post-assets/reserve`，生成后在同一编辑会话内复用，发布成功会清空该值以避免产生空目录。
-*   **静态资源域名**：前端通过 `VITE_ASSET_ORIGIN`（可选）或 `VITE_API_BASE` 提供的域名来拼接 `/uploads/**` 与 `/avatar/**` 绝对地址；若均未配置，在开发模式会自动回落到 `http://localhost:8080`，保证本地调试时文章与头像资源可用。生产部署到 CDN 或反向代理节点时请显式设置 `VITE_ASSET_ORIGIN`。
+*   **静态资源域名**：`application.yaml` 中新增 `site.asset-base-url`（可挂靠环境变量）用于声明图片 CDN/网关的完整域名，`/api/site/meta` 会把该值透传为 `assetBaseUrl`，前端的 `buildAssetUrl` 会优先使用它拼接 `/uploads/**`、`/avatar/**`、`/contact/**` 等路径；若未配置，则依次回落到 `VITE_ASSET_ORIGIN` → `VITE_API_BASE` 对应域名 → `window.location.origin` → `http://localhost:8080`，本地调试与线上部署都能拿到正确的资源地址。若 `asset-base-url` 本身带有路径（如 `https://cdn.example.com/uploads`），前端会自动去重重复的 `uploads/` 段，不会生成 `uploads/uploads/...`。
 *   **文章图片预览**：文章详情页会为 Markdown/HTML 中的所有 `<img>` 元素注入 `cursor-zoom-in` 样式，并在点击时打开全屏遮罩预览，图片路径自动经过 `resolveAssetPath` 补全，关闭遮罩后恢复页面滚动。
 
 ### 4.5 评论与楼中楼

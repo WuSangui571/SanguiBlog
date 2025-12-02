@@ -33,16 +33,27 @@ function useProvideBlog() {
   const [recentComments, setRecentComments] = useState([]);
   const [user, setUser] = useState(null);
 
+  const applyAssetOrigin = useCallback((origin) => {
+    if (typeof window === "undefined") return;
+    const normalized = origin ? origin.replace(/\/$/, "") : "";
+    if (normalized) {
+      window.__SG_ASSET_ORIGIN__ = normalized;
+    } else if (window.__SG_ASSET_ORIGIN__) {
+      delete window.__SG_ASSET_ORIGIN__;
+    }
+  }, []);
+
   const loadMeta = useCallback(async () => {
     try {
       const res = await fetchSiteMeta();
       const data = res.data || res;
       setMeta(data);
+      applyAssetOrigin(data?.assetBaseUrl);
       // if (data?.author) setUser(data.author);
     } catch (e) {
       console.warn("load meta failed", e);
     }
-  }, []);
+  }, [applyAssetOrigin]);
 
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("sg_token");

@@ -730,3 +730,11 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.53 (2025-12-02)
 - **模块/页面**：登录视图在认证失败时仅展示响应内的 `message` 字段，API 层同步提取该字段避免再次把整段 JSON 原文暴露给用户。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.53`。
+
+## V1.3.54 (2025-12-02)
+- **模块/页面**：新增 `site.asset-base-url` 配置并通过 `/api/site/meta.assetBaseUrl` 暴露给前端，`buildAssetUrl`、首页导航、文章列表和管理员资料页统一引用该域名生成 `/uploads`、`/avatar`、`/contact` 图片地址，避免硬编码 `localhost` 导致外网无法访问。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.54`。
+
+## V1.3.55 (2025-12-02)
+- **模块/页面**：`buildAssetUrl` 现在会识别 `site.asset-base-url`/`VITE_ASSET_ORIGIN` 中额外的路径（如 `.../uploads`），自动去重重复的段落，确保文章内图片不会再次出现 `uploads/uploads/...` 的错误链接。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.55`。

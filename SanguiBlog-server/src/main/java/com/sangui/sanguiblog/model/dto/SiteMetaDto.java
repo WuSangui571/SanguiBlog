@@ -14,6 +14,7 @@ public class SiteMetaDto {
     private List<TrafficSourceDto> trafficSources;
     private List<RecentActivityDto> recentActivity;
     private FooterInfo footer;
+    private String assetBaseUrl;
     private String version;
 
     @Data

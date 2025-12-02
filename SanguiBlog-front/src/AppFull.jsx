@@ -42,9 +42,9 @@ import {
     uploadPostAssets,
     reservePostAssetsFolder,
     createPost,
-    updatePost,
-    ASSET_ORIGIN
+    updatePost
 } from "./api";
+import { buildAssetUrl } from "./utils/asset.js";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -83,6 +83,7 @@ const THEME_COLOR_PRESETS = [
 ];
 const DEFAULT_THEME_COLOR = 'bg-[#6366F1]';
 const HERO_NOISE_TEXTURE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyB2aWV3Qm94PScwIDAgMTIwIDEyMCc+PGZpbHRlciBpZD0nbicgeD0nMCcgeT0nMCc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuNCcvPjwvc3ZnPg==";
+const DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/identicon/svg?seed=sanguiblog';
 const randomBlobShape = () => {
     const rand = () => `${30 + Math.round(Math.random() * 40)}%`;
     return `${rand()} ${rand()} ${rand()} ${rand()} / ${rand()} ${rand()} ${rand()} ${rand()}`;
@@ -502,22 +503,13 @@ const ArticleDetail = ({
         }
     };
 
-    const assetOrigin = useMemo(() => {
-        if (ASSET_ORIGIN) return ASSET_ORIGIN.replace(/\/$/, "");
-        if (typeof window !== "undefined" && window.location?.origin) {
-            return window.location.origin.replace(/\/$/, "");
-        }
-        return "";
-    }, []);
-
     const prefixAssetOrigin = useCallback(
         (path = "") => {
             if (!path) return path;
-            if (!assetOrigin) return path;
             const normalized = path.startsWith("/") ? path : `/${path}`;
-            return `${assetOrigin}${normalized}`.replace(/([^:]\/)\/+/g, "$1");
+            return buildAssetUrl(normalized, normalized);
         },
-        [assetOrigin]
+        []
     );
 
     const slugPath = summary?.slug || articleData?.slug || null;
@@ -1377,7 +1369,7 @@ const Navigation = ({
                             onClick={onProfileClick || (() => setView('admin'))}>
                             <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
                                 <img
-                                    src={user.avatar?.startsWith('http') ? user.avatar : `http://localhost:8080${user.avatar}`}
+                                    src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)}
                                     className="w-full h-full object-cover" />
                             </div>
                             <div className="flex flex-col items-start">
@@ -1483,7 +1475,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.53'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.55'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -4717,12 +4709,7 @@ const UserManagementView = ({ isDarkMode }) => {
         return preferred?.code || roleList[0].code;
     };
 
-    const resolveMediaUrl = (path) => {
-        if (!path) return '';
-        if (path.startsWith('http')) return path;
-        if (!path.startsWith('/')) return `http://localhost:8080/${path}`;
-        return `http://localhost:8080${path}`;
-    };
+    const resolveMediaUrl = (path) => buildAssetUrl(path, '');
     const resolveUserAvatar = (user) => resolveMediaUrl(user?.avatar || user?.avatarUrl || user?.avatar_url);
 
     const loadRoles = useCallback(async () => {
@@ -6010,7 +5997,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.53';
+    const siteVersion = meta?.version || 'V1.3.55';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6536,14 +6523,9 @@ const ArticleList = ({
 
     // Use API author data if available, otherwise fallback to MOCK_USER
     const displayAuthor = author || MOCK_USER;
-    const buildMediaUrl = (path, fallback) => {
-        if (!path) return fallback;
-        if (path.startsWith('http')) return path;
-        if (!path.startsWith('/')) return `http://localhost:8080/${path}`;
-        return `http://localhost:8080${path}`;
-    };
+    const buildMediaUrl = (path, fallback) => buildAssetUrl(path, fallback);
     const authorAvatar = buildMediaUrl(displayAuthor.avatar, MOCK_USER.avatar);
-    const authorWechat = "http://localhost:8080/contact/wechat.jpg";
+    const authorWechat = buildMediaUrl("/contact/wechat.jpg");
     const allTags = useMemo(() => {
         if (Array.isArray(tagsData) && tagsData.length) {
             const normalized = tagsData

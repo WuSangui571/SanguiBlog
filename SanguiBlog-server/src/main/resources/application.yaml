@@ -42,7 +42,9 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:uploads}
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.53"
+  version: "V1.3.55"
+#  asset-base-url: http://localhost:8080
+  asset-base-url: https://nonmature-scraggily-fermin.ngrok-free.dev/uploads
   footer:
     year: 2025
     brand: 三桂博客

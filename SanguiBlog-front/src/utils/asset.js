@@ -3,11 +3,33 @@ export const buildAssetUrl = (path, fallback = null) => {
     if (/^(https?:)?\/\//i.test(path)) return path;
 
     const normalized = path.startsWith('/') ? path : `/${path}`;
-    const assetOrigin = (import.meta.env.VITE_ASSET_ORIGIN || '').replace(/\/$/, '');
+    const runtimeOrigin = typeof window !== 'undefined' && window.__SG_ASSET_ORIGIN__
+        ? window.__SG_ASSET_ORIGIN__
+        : '';
+    const assetOrigin = (runtimeOrigin || import.meta.env.VITE_ASSET_ORIGIN || '').replace(/\/$/, '');
 
     const resolveWithOrigin = (origin) => {
         if (!origin) return null;
-        return `${origin}${normalized}`.replace(/([^:]\/)\/+/g, '$1');
+        const sanitizedOrigin = origin.replace(/\/+$/, '');
+        try {
+            const parsed = new URL(sanitizedOrigin);
+            const prefix = `${parsed.protocol}//${parsed.host}`;
+            const basePath = parsed.pathname ? parsed.pathname.replace(/\/+$/, '') : '';
+            let suffix = normalized;
+            if (!suffix.startsWith('/')) suffix = `/${suffix}`;
+            if (basePath && suffix.toLowerCase().startsWith(basePath.toLowerCase())) {
+                suffix = suffix.slice(basePath.length);
+                if (!suffix || suffix === '') {
+                    suffix = '';
+                } else if (!suffix.startsWith('/')) {
+                    suffix = `/${suffix}`;
+                }
+            }
+            const combined = `${prefix}${basePath}${suffix}`.replace(/([^:]\/)\/+/g, '$1');
+            return combined.endsWith('/') && suffix === '' ? combined.slice(0, -1) : combined;
+        } catch {
+            return `${sanitizedOrigin}${normalized}`.replace(/([^:]\/)\/+/g, '$1');
+        }
     };
 
     const directOrigin = resolveWithOrigin(assetOrigin);
