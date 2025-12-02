@@ -133,11 +133,6 @@ const BackgroundEasterEggs = ({ isDarkMode }) => {
     })), []);
 
     if (!isDarkMode) {
-        const clouds = [
-            { left: '5%', top: '18%', width: '26rem', height: '14rem', duration: 22 },
-            { left: '42%', top: '10%', width: '30rem', height: '16rem', duration: 25 },
-            { left: '68%', top: '20%', width: '22rem', height: '12rem', duration: 20 }
-        ];
         return (
             <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
                 <div className="absolute inset-0 bg-gradient-to-b from-[#E6F4FF] via-white to-transparent" />
@@ -147,28 +142,6 @@ const BackgroundEasterEggs = ({ isDarkMode }) => {
                     animate={{ scale: [0.95, 1.08, 0.95], rotate: [0, 15, 0] }}
                     transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
                 />
-                {clouds.map((cloud, idx) => (
-                    <motion.div
-                        key={`cloud-${idx}`}
-                        className="absolute rounded-full bg-white/85 shadow-[0_20px_60px_rgba(148,163,184,0.35)]"
-                        style={{
-                            width: cloud.width,
-                            height: cloud.height,
-                            left: cloud.left,
-                            top: cloud.top,
-                            filter: 'blur(0.5px)'
-                        }}
-                        animate={{
-                            x: ['-6%', '6%', '-6%'],
-                            y: ['-2%', '3%', '-2%'],
-                            opacity: [0.7, 0.95, 0.7]
-                        }}
-                        transition={{ duration: cloud.duration, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-white via-[#E0F2FE] to-white rounded-full opacity-80" />
-                        <div className="absolute inset-0 mix-blend-screen blur-3xl bg-gradient-to-br from-[#A5F3FC] to-[#FDE68A]/70" />
-                    </motion.div>
-                ))}
                 <motion.div
                     className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#FFF5C0]/90 via-transparent to-transparent"
                     animate={{ opacity: [0.45, 0.75, 0.45] }}
@@ -1475,7 +1448,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.58'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.59'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6023,7 +5996,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.58';
+    const siteVersion = meta?.version || 'V1.3.59';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -7252,7 +7225,7 @@ const ArchiveView = ({
                                         <button
                                             key={shortcut.id}
                                             onClick={() => handleMonthJump(shortcut.id)}
-                                        className={`w-full text-left text-xs font-black tracking-wide border-2 border-black rounded-xl px-3 py-2 transition-transform hover:-translate-y-0.5 ${quickJumpBtn}`}
+                                        className={`w-full text-left text-xs font-black tracking-wide border-2 border-black rounded-xl px-3 py-2 transition-all duration-200 hover:shadow-[4px_4px_0px_0px_#000] ${quickJumpBtn}`}
                                     >
                                         {shortcut.label}
                                     </button>
