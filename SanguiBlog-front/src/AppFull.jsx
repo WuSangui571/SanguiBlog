@@ -1247,7 +1247,9 @@ const Navigation = ({
     toggleMenu,
     isDarkMode,
     onToggleTheme,
-    onProfileClick
+    onProfileClick,
+    backgroundEnabled = true,
+    onToggleBackground
 }) => {
     const roleInfo = user ? ROLES[user.role] : null;
     const activeView = currentView || 'home';
@@ -1364,6 +1366,14 @@ const Navigation = ({
                     <PopButton onClick={() => setView('login')} icon={LogIn}>Login</PopButton>
                 )}
                 <button
+                    onClick={onToggleBackground}
+                    className={`flex items-center gap-2 px-4 py-2 border-2 border-black rounded-full font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${backgroundEnabled ? 'bg-[#FFE066] text-black' : (isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-600')}`}
+                    title={backgroundEnabled ? '关闭太阳 / 月亮彩蛋' : '启用太阳 / 月亮彩蛋'}
+                >
+                    <Sparkles size={16} />
+                    <span>{backgroundEnabled ? '彩蛋 ON' : '彩蛋 OFF'}</span>
+                </button>
+                <button
                     onClick={handleThemeButton}
                     className={`p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-[#FFD700] text-black hover:bg-white' : 'bg-black text-white hover:bg-[#6366F1]'}`}
                     title="Toggle Dark Mode"
@@ -1448,7 +1458,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.59'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.60'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5902,6 +5912,17 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const [archiveError, setArchiveError] = useState('');
     const lastViewRef = useRef(initialView);
     const [articleBackTarget, setArticleBackTarget] = useState(initialView === 'article' ? 'home' : initialView || 'home');
+    const [backgroundEnabled, setBackgroundEnabled] = useState(() => {
+        if (typeof window === 'undefined') return true;
+        const stored = window.localStorage.getItem('sg_background_enabled');
+        if (stored === null) return true;
+        return stored !== 'false';
+    });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem('sg_background_enabled', String(backgroundEnabled));
+    }, [backgroundEnabled]);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sangui-theme') === 'dark';
@@ -5996,7 +6017,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.59';
+    const siteVersion = meta?.version || 'V1.3.60';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6184,6 +6205,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         const target = (articleBackTarget && articleBackTarget !== 'article') ? articleBackTarget : 'home';
         setView(target);
     }, [articleBackTarget, setView]);
+    const handleBackgroundToggle = useCallback(() => {
+        setBackgroundEnabled((prev) => !prev);
+    }, []);
 
     const renderView = () => {
         switch (view) {
@@ -6276,9 +6300,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         <PermissionContext.Provider value={permissionContextValue}>
             <LayoutOffsetContext.Provider value={layoutContextValue}>
             <div className={`min-h-screen relative ${globalBg}`}>
-                <BackgroundEasterEggs isDarkMode={isDarkMode} />
-                <div className="relative z-10">
-                    <ClickRipple />
+                {backgroundEnabled && <BackgroundEasterEggs isDarkMode={isDarkMode} />}
+                    <div className="relative z-10">
+                        <ClickRipple />
                     <ScrollToTop isDarkMode={isDarkMode} />
                     <AnimatePresence>
                         {themeBlast.active && (
@@ -6365,6 +6389,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 isDarkMode={isDarkMode}
                                 onToggleTheme={handleThemeToggle}
                                 onProfileClick={handleProfileNav}
+                                backgroundEnabled={backgroundEnabled}
+                                onToggleBackground={handleBackgroundToggle}
                             />
                             <motion.div
                                 initial={false}
