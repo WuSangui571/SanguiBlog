@@ -7075,8 +7075,9 @@ const ArchiveView = ({
     const totalYears = timelineData.length;
     const lastUpdated = normalizedList[0]?.displayDate || '-';
 
-    const sectionBg = isDarkMode ? 'bg-[#05060c] text-gray-100' : 'bg-[#F7F8FA] text-gray-900';
-    const cardBg = isDarkMode ? 'bg-[#111827]/80' : 'bg-white';
+    const sectionText = isDarkMode ? 'text-gray-100' : 'text-gray-900';
+    const secondaryText = isDarkMode ? 'text-gray-300' : 'text-gray-600';
+    const cardBg = isDarkMode ? 'bg-[#0F172A]/85 text-gray-100' : 'bg-white/90 text-gray-900';
     const borderColor = isDarkMode ? 'border-gray-700' : 'border-black';
 
     const handleArticleClick = (postId) => {
@@ -7085,19 +7086,22 @@ const ArchiveView = ({
     };
 
     return (
-        <section className={`${sectionBg} min-h-screen pt-32 pb-20`}>
-            <div className="max-w-6xl mx-auto px-4 md:px-8">
+        <section className="relative min-h-screen pt-32 pb-20 overflow-hidden">
+            <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-[#020617]/80 via-transparent to-[#020617]/70' : 'bg-gradient-to-b from-white/80 via-white/30 to-white/70'} backdrop-blur-[2px]`} />
+            <div className={`relative z-10 max-w-6xl mx-auto px-4 md:px-8 ${sectionText}`}>
                 <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
                     <div>
                         <p className="text-xs tracking-[0.4em] uppercase text-gray-500">ARCHIVE // TIMELINE</p>
                         <h1 className="text-4xl md:text-5xl font-black mt-3">归档时间线</h1>
-                        <p className="mt-4 text-base md:text-lg text-gray-500 dark:text-gray-300 max-w-2xl">
+                        <p className={`mt-4 text-base md:text-lg ${secondaryText} max-w-2xl`}>
                             将所有文章按年份与月份折叠成一条可追溯的时间轴，方便快速定位历史输出。点击任意条目即可跳转至文章详情。
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                        <PopButton variant="ghost" onClick={onBackHome}>返回首页</PopButton>
-                        <PopButton variant="primary" onClick={onReload} disabled={loading}>
+                        <PopButton variant="accent" onClick={onBackHome} className="shadow-[6px_6px_0px_0px_#000]">
+                            返回首页
+                        </PopButton>
+                        <PopButton variant="primary" onClick={onReload} disabled={loading} className="shadow-[6px_6px_0px_0px_#000]">
                             {loading ? '加载中…' : '刷新归档'}
                         </PopButton>
                     </div>
@@ -7178,10 +7182,12 @@ const ArchiveView = ({
                                                                 <span>{displayDate}</span>
                                                             </div>
                                                         </div>
-                                                        <div className="flex flex-wrap gap-3 text-xs font-bold text-gray-600 dark:text-gray-300">
-                                                            <span className="px-2 py-1 border border-black rounded-full bg-[#FFF5C0] text-black">{category}</span>
+                                                        <div className="flex flex-wrap gap-3 text-xs font-bold">
+                                                            <span className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">{category}</span>
                                                             {tags.slice(0, 4).map((tag) => (
-                                                                <span key={`${post.id}-${tag}`} className="px-2 py-1 border border-dashed border-black/50 rounded-full">{tag}</span>
+                                                                <span key={`${post.id}-${tag}`} className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">
+                                                                    {tag}
+                                                                </span>
                                                             ))}
                                                         </div>
                                                         <div className="flex items-center justify-between text-xs font-mono text-gray-500">
