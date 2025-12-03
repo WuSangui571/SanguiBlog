@@ -1530,7 +1530,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.71'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.72'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6121,7 +6121,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.71';
+    const siteVersion = meta?.version || 'V1.3.72';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -7404,9 +7404,81 @@ const ArchiveView = ({
 };
 
 function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
-    const surface = isDarkMode ? 'bg-[#0B1221]/85' : 'bg-white/92';
+    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
-    const cardBorder = isDarkMode ? 'border-gray-700' : 'border-black';
+    const cardBorder = 'border-black';
+    const [aboutPreview, setAboutPreview] = useState(null);
+    const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
+
+    const markdownComponents = useMemo(() => ({
+        img: ({ src, alt, className = '', ...props }) => (
+            <img
+                src={src}
+                alt={alt}
+                loading="lazy"
+                {...props}
+                className={`cursor-zoom-in max-w-full h-auto ${className}`.trim()}
+                onClick={() => setAboutPreview(src)}
+            />
+        ),
+        code({ inline, className, children, ...props }) {
+            const rawText = String(children);
+            const textContent = rawText.replace(/\n$/, '');
+            const hasLanguage = typeof className === 'string' && className.includes('language-');
+            const isMultiline = textContent.includes('\n');
+            const shouldInline = inline ?? (!hasLanguage && !isMultiline);
+            if (shouldInline) {
+                const backtickCount = (textContent.match(/`/g) || []).length;
+                if (backtickCount > 0 && backtickCount % 2 === 0) {
+                    const parts = textContent.split('`');
+                    return (
+                        <>
+                            {parts.map((part, i) => {
+                                if (i % 2 === 0) {
+                                    return (
+                                        <code
+                                            key={i}
+                                            className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+                                            {...props}
+                                        >
+                                            {part}
+                                        </code>
+                                    );
+                                }
+                                return <span key={i}>{part}</span>;
+                            })}
+                        </>
+                    );
+                }
+                return (
+                    <code
+                        className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+                        {...props}
+                    >
+                        {textContent}
+                    </code>
+                );
+            }
+            return (
+                <div
+                    className={`not-prose my-6 rounded-2xl border-2 border-black overflow-hidden shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'border-gray-600' : ''}`}>
+                    <div
+                        className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
+                        <div className="w-4 h-4 rounded-full bg-[#FF5F56] border border-black/10"></div>
+                        <div className="w-4 h-4 rounded-full bg-[#FFBD2E] border border-black/10"></div>
+                        <div className="w-4 h-4 rounded-full bg-[#27C93F] border border-black/10"></div>
+                        <span className="ml-2 text-[10px] font-black tracking-[0.2em]">CODE</span>
+                    </div>
+                    <pre
+                        className={`p-5 overflow-auto m-0 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
+                        <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
+                            {textContent}
+                        </code>
+                    </pre>
+                </div>
+            );
+        }
+    }), [inlineCodeBg, isDarkMode]);
 
     return (
         <section className="relative pt-28 pb-20 min-h-screen">
@@ -7442,23 +7514,9 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
                     {about && about.contentMd ? (
                         <article className={`prose prose-xl max-w-none prose-headings:font-black prose-p:font-medium prose-code:before:content-none prose-code:after:content-none prose-pre:p-0 prose-pre:bg-transparent ${isDarkMode ? 'prose-invert' : ''}`}>
                             <ReactMarkdown
-                                remarkPlugins={[remarkGfm, remarkMath]}
+                                remarkPlugins={[remarkGfm, remarkMath, remarkHighlight]}
                                 rehypePlugins={[rehypeRaw, rehypeKatex]}
-                                components={{
-                                    pre({ children }) {
-                                        return (
-                                            <div className="my-4 rounded-2xl border-2 border-black shadow-[6px_6px_0px_0px_#000] overflow-hidden">
-                                                <div className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
-                                                    <span className="w-4 h-4 rounded-full bg-[#FF5F56] border border-black/10"></span>
-                                                    <span className="w-4 h-4 rounded-full bg-[#FFBD2E] border border-black/10"></span>
-                                                    <span className="w-4 h-4 rounded-full bg-[#27C93F] border border-black/10"></span>
-                                                    <span className="ml-2 text-[10px] font-black tracking-[0.2em]">CODE</span>
-                                                </div>
-                                                <pre className={`p-5 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'} overflow-auto`}>{children}</pre>
-                                            </div>
-                                        );
-                                    }
-                                }}
+                                components={markdownComponents}
                             >
                                 {about.contentMd}
                             </ReactMarkdown>
@@ -7476,6 +7534,27 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
                     </div>
                 </div>
             </div>
+
+            <AnimatePresence>
+                {aboutPreview && (
+                    <motion.div
+                        className="fixed inset-0 z-[75] bg-black/80 flex items-center justify-center p-6"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setAboutPreview(null)}
+                    >
+                        <motion.img
+                            src={aboutPreview}
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="max-w-full max-h-full rounded-lg shadow-[10px_10px_0px_0px_#000] border-4 border-white cursor-zoom-out"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </section>
     );
 }
