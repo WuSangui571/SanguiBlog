@@ -1529,7 +1529,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.69'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.70'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6120,7 +6120,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.69';
+    const siteVersion = meta?.version || 'V1.3.70';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -7406,7 +7406,7 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
 
     return (
         <section className={`pt-28 pb-20 min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-            <div className="max-w-4xl mx-auto px-4 space-y-6">
+            <div className="max-w-5xl mx-auto px-4 space-y-8">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm font-mono uppercase tracking-[0.2em] text-[#FF0080]">About</p>
@@ -7433,9 +7433,16 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
                     </div>
                 </div>
 
-                <div className={`border-4 ${cardBorder} shadow-[10px_10px_0px_0px_#000] rounded-2xl p-8 ${surface} ${text}`}>
-                    {about && about.contentHtml ? (
-                        <article className="prose prose-lg max-w-none prose-headings:font-black prose-p:leading-relaxed prose-a:text-indigo-600" dangerouslySetInnerHTML={{ __html: about.contentHtml }} />
+                <div className={`border-4 ${cardBorder} shadow-[10px_10px_0px_0px_#000] rounded-2xl p-6 md:p-10 ${surface} ${text}`}>
+                    {about && about.contentMd ? (
+                        <article className={`prose max-w-none prose-headings:font-black prose-img:rounded-xl prose-pre:border-2 prose-pre:border-black ${isDarkMode ? 'prose-invert' : ''}`}>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm, remarkMath]}
+                                rehypePlugins={[rehypeRaw, rehypeKatex]}
+                            >
+                                {about.contentMd}
+                            </ReactMarkdown>
+                        </article>
                     ) : (
                         <div className="text-center py-16 space-y-3">
                             <div className="text-2xl font-black">还没有“关于本站”内容</div>
@@ -7459,7 +7466,9 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [assetsFolder, setAssetsFolder] = useState('');
     const fileInputRef = useRef(null);
+    const imageInputRef = useRef(null);
 
     const loadAboutAdmin = useCallback(async () => {
         setLoading(true);
@@ -7479,6 +7488,49 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
     useEffect(() => {
         loadAboutAdmin();
     }, [loadAboutAdmin]);
+
+    const ensureAssetsSlug = useCallback(async () => {
+        if (assetsFolder) return assetsFolder;
+        const res = await reservePostAssetsFolder();
+        const data = res.data || res;
+        if (!data?.folder) throw new Error('未获取到资源目录');
+        setAssetsFolder(data.folder);
+        return data.folder;
+    }, [assetsFolder]);
+
+    const insertImagesAtCursor = (urls = []) => {
+        if (!urls.length) return;
+        const snippet = urls.map((url, idx) => `![about-${idx + 1}](${url})`).join('\n') + '\n';
+        setContent((prev) => {
+            const textarea = document.getElementById('about-md-editor');
+            if (!textarea) return `${prev}${prev.endsWith('\n') ? '' : '\n'}${snippet}`;
+            const start = textarea.selectionStart ?? prev.length;
+            const end = textarea.selectionEnd ?? start;
+            const before = prev.slice(0, start);
+            const after = prev.slice(end);
+            return `${before}${snippet}${after}`;
+        });
+    };
+
+    const handleInlineImageUpload = async (event) => {
+        const files = Array.from(event.target.files || []);
+        if (!files.length) return;
+        setMessage('图片上传中…');
+        setError('');
+        try {
+            const slug = await ensureAssetsSlug();
+            const res = await uploadPostAssets(files, slug);
+            const data = res.data || res;
+            const urls = data?.urls || [];
+            if (urls.length) insertImagesAtCursor(urls);
+            setMessage('图片已上传并插入 Markdown');
+        } catch (e) {
+            setError(e.message || '图片上传失败');
+        } finally {
+            setSaving(false);
+            event.target.value = null;
+        }
+    };
 
     const handleFileUpload = async (event) => {
         const file = event.target.files?.[0];
@@ -7554,48 +7606,44 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
                 </div>
             )}
 
-            <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6`}>
-                <div className={`${surface} ${text} border-2 border-black rounded-2xl p-4 space-y-3 shadow-[8px_8px_0px_0px_#000]`}>
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-black">Markdown 正文</h3>
-                        <div className="flex gap-2">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".md,.markdown,.txt"
-                                onChange={handleFileUpload}
-                                className="hidden"
-                            />
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
-                            >上传 MD</button>
-                        </div>
-                    </div>
-                    <textarea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        rows={22}
-                        className={`${inputClass} font-mono text-sm leading-6 min-h-[520px]`}
-                        placeholder="在此粘贴或输入 Markdown 内容…"
-                    />
-                </div>
-
-                <div className={`${surface} ${text} border-2 border-black rounded-2xl p-4 space-y-3 shadow-[8px_8px_0px_0px_#000]`}>
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-black">实时预览</h3>
-                        <span className="text-xs text-gray-500">保存后前台“关于”页立即生效</span>
-                    </div>
-                    <div className={`prose prose-sm md:prose lg:prose-lg max-w-none ${isDarkMode ? 'prose-invert' : ''}`}>
-                        {content?.trim() ? (
-                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw, rehypeKatex]}>
-                                {content}
-                            </ReactMarkdown>
-                        ) : (
-                            <p className="text-gray-500">暂无内容</p>
-                        )}
+            <div className={`${surface} ${text} border-2 border-black rounded-2xl p-4 space-y-4 shadow-[8px_8px_0px_0px_#000]`}>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-black">Markdown 正文</h3>
+                    <div className="flex gap-2">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".md,.markdown,.txt"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                        />
+                        <input
+                            ref={imageInputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleInlineImageUpload}
+                            className="hidden"
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                        >上传 MD</button>
+                        <button
+                            onClick={() => imageInputRef.current?.click()}
+                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                        >上传图片</button>
                     </div>
                 </div>
+                <textarea
+                    id="about-md-editor"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    rows={28}
+                    className={`${inputClass} font-mono text-sm leading-6 min-h-[520px]`}
+                    placeholder="在此粘贴或输入 Markdown 内容…"
+                />
+                <div className="text-xs text-gray-500">提示：图片上传会自动将 Markdown 链接插入光标处，资源目录自动生成。</div>
             </div>
         </div>
     );
