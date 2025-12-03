@@ -28,6 +28,8 @@ import {
     adminDeleteMyAnalyticsLogs,
     adminFetchPermissionMatrix,
     adminUpdateRolePermissions,
+    adminFetchAbout,
+    adminSaveAbout,
     fetchMyPermissions,
     fetchCategories,
     fetchPosts,
@@ -1527,7 +1529,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.68'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.69'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5421,7 +5423,7 @@ const PermissionsView = ({ isDarkMode }) => {
 
 // 4.5 The main Admin Panel structure
 // 4.5 The main Admin Panel structure
-const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout }) => {
+const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [broadcastSaving, setBroadcastSaving] = useState(false);
@@ -5451,6 +5453,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         { key: 'comments', label: '评论管理', icon: MessageCircle, permissions: ['COMMENT_VIEW'] },
         { key: 'categories', label: '二级分类', icon: Layers, permissions: ['CATEGORY_MANAGE'] },
         { key: 'taxonomy', label: '标签管理', icon: Tag, permissions: ['TAG_MANAGE'] },
+        { key: 'about', label: '关于站点', icon: BookOpen, permissions: [], role: 'SUPER_ADMIN' },
         { key: 'users', label: '用户管理', icon: Users, permissions: ['USER_MANAGE'] },
         { key: 'permissions', label: '权限管理', icon: Shield, permissions: ['PERMISSION_MANAGE'] },
         { key: 'settings', label: '系统设置', icon: Settings, permissions: ['PERMISSION_MANAGE'] },
@@ -5462,16 +5465,17 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             return tabDefinitions;
         }
         return tabDefinitions.filter((tab) => {
+            if (tab.role && user?.role !== tab.role) return false;
             if (!tab.permissions || tab.permissions.length === 0) return true;
             return tab.permissions.some((code) => hasPermission(code));
         });
-    }, [tabDefinitions, permissionLoading, hasPermission]);
+    }, [tabDefinitions, permissionLoading, hasPermission, user]);
 
     const navSections = useMemo(() => {
         const groups = [
             { title: '概览', keys: ['dashboard'] },
             { title: '创作管理', keys: ['create-post', 'posts'] },
-            { title: '内容体系', keys: ['categories', 'taxonomy'] },
+            { title: '内容体系', keys: ['categories', 'taxonomy', 'about'] },
             { title: '运营互动', keys: ['analytics', 'comments'] },
             { title: '用户与权限', keys: ['users', 'permissions'] },
             { title: '个人与系统', keys: ['profile', 'settings'] },
@@ -5645,6 +5649,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             <Route path="comments" element={<CommentsAdminView isDarkMode={isDarkMode} />} />
                             <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode} />} />
                             <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode} />} />
+                            <Route path="about" element={<AboutAdminView isDarkMode={isDarkMode} user={user} onSaved={onAboutSaved} />} />
                             <Route path="posts" element={<PostsView isDarkMode={isDarkMode} />} />
                             <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
                             <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
@@ -5980,8 +5985,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         article,
         comments,
         recentComments,
+        about,
         loadPosts,
         loadArticle,
+        loadAbout,
         submitComment,
         removeComment,
         editComment,
@@ -6113,7 +6120,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.68';
+    const siteVersion = meta?.version || 'V1.3.69';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6384,7 +6391,17 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     return <div className="p-20 text-center text-lg font-bold">请先登录后再访问管理后台</div>;
                 }
                 return <AdminPanel setView={setView} notification={notification} setNotification={setNotification}
-                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} />;
+                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} />;
+            case 'about':
+                return (
+                    <AboutView
+                        about={about}
+                        isDarkMode={isDarkMode}
+                        onReload={loadAbout}
+                        onEdit={user?.role === 'SUPER_ADMIN' ? () => { setView('admin'); navigate('/admin/about'); } : null}
+                        isSuperAdmin={user?.role === 'SUPER_ADMIN'}
+                    />
+                );
             default:
                 return <div className="pt-32 text-center">404</div>;
         }
@@ -7381,6 +7398,208 @@ const ArchiveView = ({
         </section>
     );
 };
+
+function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
+    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
+    const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
+    const cardBorder = isDarkMode ? 'border-gray-700' : 'border-black';
+
+    return (
+        <section className={`pt-28 pb-20 min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <div className="max-w-4xl mx-auto px-4 space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-sm font-mono uppercase tracking-[0.2em] text-[#FF0080]">About</p>
+                        <h1 className="text-4xl md:text-5xl font-black leading-tight mt-2">关于本站</h1>
+                        <p className="text-sm text-gray-500 mt-2">由超级管理员维护的单页介绍，访客与管理员均可阅读。</p>
+                    </div>
+                    <div className="flex gap-3">
+                        {onReload && (
+                            <button
+                                onClick={onReload}
+                                className={`px-4 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                            >
+                                刷新
+                            </button>
+                        )}
+                        {isSuperAdmin && onEdit && (
+                            <button
+                                onClick={onEdit}
+                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000] hover:translate-y-[-2px] transition"
+                            >
+                                编辑关于
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <div className={`border-4 ${cardBorder} shadow-[10px_10px_0px_0px_#000] rounded-2xl p-8 ${surface} ${text}`}>
+                    {about && about.contentHtml ? (
+                        <article className="prose prose-lg max-w-none prose-headings:font-black prose-p:leading-relaxed prose-a:text-indigo-600" dangerouslySetInnerHTML={{ __html: about.contentHtml }} />
+                    ) : (
+                        <div className="text-center py-16 space-y-3">
+                            <div className="text-2xl font-black">还没有“关于本站”内容</div>
+                            <p className="text-sm text-gray-500">等待超级管理员添加或上传一份 Markdown 正文。</p>
+                        </div>
+                    )}
+
+                    <div className="mt-6 text-xs text-gray-500 flex items-center justify-between">
+                        <span>最后更新：{about?.updatedAt ? new Date(about.updatedAt).toLocaleString() : '暂无'}</span>
+                        <span>维护人：{about?.updatedBy || '未记录'}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function AboutAdminView({ isDarkMode, user, onSaved }) {
+    const [content, setContent] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const fileInputRef = useRef(null);
+
+    const loadAboutAdmin = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const res = await adminFetchAbout();
+            const data = res.data || res;
+            setContent(data?.contentMd || '');
+        } catch (e) {
+            setError(e.message || '加载关于页失败');
+            setContent('');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadAboutAdmin();
+    }, [loadAboutAdmin]);
+
+    const handleFileUpload = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            setContent(text);
+            setMessage(`已载入文件：${file.name}`);
+        } catch (e) {
+            setError(e.message || '读取文件失败');
+        } finally {
+            event.target.value = null;
+        }
+    };
+
+    const handleSave = async () => {
+        if (!content.trim()) {
+            setError('正文不能为空');
+            setMessage('');
+            return;
+        }
+        setSaving(true);
+        setError('');
+        setMessage('');
+        try {
+            await adminSaveAbout({ contentMd: content });
+            setMessage('已保存');
+            if (typeof onSaved === 'function') {
+                onSaved();
+            }
+            await loadAboutAdmin();
+        } catch (e) {
+            setError(e.message || '保存失败');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (!user || user.role !== 'SUPER_ADMIN') {
+        return <PermissionNotice title="无权限" description="仅超级管理员可以编辑“关于本站”页面" />;
+    }
+
+    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
+    const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
+    const inputClass = `w-full p-3 border-2 rounded-lg ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-black'} focus:border-indigo-500 outline-none`;
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#FF0080]">About Page</p>
+                    <h2 className="text-3xl font-black">关于本站单页</h2>
+                    <p className="text-sm text-gray-500 mt-1">只需填写 Markdown 正文或上传 .md 文件，其余元信息全部省略。</p>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        onClick={loadAboutAdmin}
+                        className={`px-4 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                    >刷新</button>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className={`px-4 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[4px_4px_0px_0px_#000] ${saving ? 'opacity-60 cursor-not-allowed' : 'bg-[#00E096] hover:-translate-y-0.5'} `}
+                    >{saving ? '保存中…' : '保存'}</button>
+                </div>
+            </div>
+
+            {(loading || error || message) && (
+                <div className="flex gap-3 items-center text-sm">
+                    {loading && <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">加载中…</span>}
+                    {message && <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold">{message}</span>}
+                    {error && <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 font-bold">{error}</span>}
+                </div>
+            )}
+
+            <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6`}>
+                <div className={`${surface} ${text} border-2 border-black rounded-2xl p-4 space-y-3 shadow-[8px_8px_0px_0px_#000]`}>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-black">Markdown 正文</h3>
+                        <div className="flex gap-2">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".md,.markdown,.txt"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                            >上传 MD</button>
+                        </div>
+                    </div>
+                    <textarea
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        rows={22}
+                        className={`${inputClass} font-mono text-sm leading-6 min-h-[520px]`}
+                        placeholder="在此粘贴或输入 Markdown 内容…"
+                    />
+                </div>
+
+                <div className={`${surface} ${text} border-2 border-black rounded-2xl p-4 space-y-3 shadow-[8px_8px_0px_0px_#000]`}>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-black">实时预览</h3>
+                        <span className="text-xs text-gray-500">保存后前台“关于”页立即生效</span>
+                    </div>
+                    <div className={`prose prose-sm md:prose lg:prose-lg max-w-none ${isDarkMode ? 'prose-invert' : ''}`}>
+                        {content?.trim() ? (
+                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw, rehypeKatex]}>
+                                {content}
+                            </ReactMarkdown>
+                        ) : (
+                            <p className="text-gray-500">暂无内容</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const [username, setUsername] = useState("");

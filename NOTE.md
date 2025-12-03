@@ -267,3 +267,10 @@ npm install
 npm run dev
 # 璁块棶 http://localhost:5173
 ```
+### ?? 关于页（单页介绍）
+* 数据库：新增表 bout_page，字段 content_md/content_html、updated_by、时间戳；初始化一条 id=1 的空记录（见 sanguiblog_db.sql 末尾）。
+* 公共接口：GET /api/about 返回最新关于内容（可能为 null）。
+* 后台接口（仅 SUPER_ADMIN）：
+  * GET /api/admin/about 读取当前 Markdown 与渲染后的 HTML。
+  * PUT /api/admin/about 保存 Markdown 正文并服务端渲染 HTML，更新人取自当前登录用户。
+* 前端：导航“关于”页读取 /api/about；后台“关于站点”编辑页提供 Markdown 文本框/上传 md 文件，保存即刻生效。

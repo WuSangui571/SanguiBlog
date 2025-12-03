@@ -12,6 +12,7 @@ import {
   updateComment,
   login as apiLogin,
   fetchCurrentUser,
+  fetchAbout,
 } from "../api";
 
 const BlogContext = createContext(null);
@@ -31,6 +32,7 @@ function useProvideBlog() {
   const [article, setArticle] = useState(null);
   const [comments, setComments] = useState([]);
   const [recentComments, setRecentComments] = useState([]);
+  const [about, setAbout] = useState(null);
   const [user, setUser] = useState(null);
 
   const applyAssetOrigin = useCallback((origin) => {
@@ -121,6 +123,17 @@ function useProvideBlog() {
     }
   }, []);
 
+  const loadAbout = useCallback(async () => {
+    try {
+      const res = await fetchAbout();
+      const data = res.data || res;
+      setAbout(data || null);
+    } catch (e) {
+      console.warn("load about failed", e);
+      setAbout(null);
+    }
+  }, []);
+
   const loadArticle = useCallback(async (id) => {
     setArticle(null);
     setComments([]);
@@ -174,8 +187,9 @@ function useProvideBlog() {
     loadTags();
     loadPosts();
     loadRecentComments();
+    loadAbout();
     checkAuth();
-  }, [loadCategories, loadTags, loadMeta, loadPosts, loadRecentComments, checkAuth]);
+  }, [loadCategories, loadTags, loadMeta, loadPosts, loadRecentComments, loadAbout, checkAuth]);
 
   return useMemo(
     () => ({
@@ -186,6 +200,7 @@ function useProvideBlog() {
       article,
       comments,
        recentComments,
+      about,
       user,
       loadPosts,
       loadArticle,
@@ -193,9 +208,10 @@ function useProvideBlog() {
       removeComment,
       editComment,
       loadRecentComments,
+      loadAbout,
       doLogin,
       logout,
     }),
-    [meta, categories, tags, posts, article, comments, recentComments, user, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, doLogin, logout]
+    [meta, categories, tags, posts, article, comments, recentComments, about, user, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
   );
 }

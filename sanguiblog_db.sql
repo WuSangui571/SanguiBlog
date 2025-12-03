@@ -456,3 +456,20 @@ INSERT INTO system_broadcasts
 (content, style, is_active, created_by, active_from)
 VALUES
 ('系统将于今晚 00:00 停机维护', 'ALERT', 1, 1, '2025-11-21 00:00:00');
+
+-- About ��ҳ
+CREATE TABLE IF NOT EXISTS about_page (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    content_md MEDIUMTEXT,
+    content_html MEDIUMTEXT,
+    updated_by BIGINT UNSIGNED,
+    created_at DATETIME,
+    updated_at DATETIME,
+    CONSTRAINT fk_about_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
+);
+
+-- ��ʼ��һ���ռ�¼�����ں����ύ�༭
+INSERT INTO about_page (id, content_md, content_html, updated_by, created_at, updated_at)
+SELECT 1, NULL, NULL, NULL, NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM about_page WHERE id = 1);
+

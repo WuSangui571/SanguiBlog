@@ -162,6 +162,15 @@ export const fetchRecentComments = (size = 5) => {
   return request(`/comments/recent${query}`);
 };
 
+// About 单页
+export const fetchAbout = () => request("/about");
+export const adminFetchAbout = () => request("/admin/about");
+export const adminSaveAbout = (payload) =>
+  request("/admin/about", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
 export const createComment = (postId, payload) =>
   request(`/posts/${postId}/comments`, {
     method: "POST",
