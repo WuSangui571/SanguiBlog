@@ -4,6 +4,7 @@ import com.sangui.sanguiblog.model.dto.PermissionMatrixDto;
 import com.sangui.sanguiblog.model.entity.Permission;
 import com.sangui.sanguiblog.model.entity.Role;
 import com.sangui.sanguiblog.model.entity.RolePermission;
+import com.sangui.sanguiblog.model.entity.RolePermissionId;
 import com.sangui.sanguiblog.model.permission.PermissionDefinition;
 import com.sangui.sanguiblog.model.repository.PermissionRepository;
 import com.sangui.sanguiblog.model.repository.RolePermissionRepository;
@@ -12,16 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.time.Instant;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +38,11 @@ public class PermissionService {
             });
             permission.setName(definition.getActionLabel());
             permission.setDescription(definition.getDescription());
+            Instant now = Instant.now();
+            if (permission.getCreatedAt() == null) {
+                permission.setCreatedAt(now);
+            }
+            permission.setUpdatedAt(now);
             permissionRepository.save(permission);
         }
 
@@ -112,11 +110,11 @@ public class PermissionService {
 
         List<Permission> permissions = permissionRepository.findByCodeIn(permissionCodes);
         Set<String> validCodes = permissions.stream().map(Permission::getCode).collect(Collectors.toSet());
-        permissionCodes.forEach(code -> {
+        for (String code : permissionCodes) {
             if (!validCodes.contains(code)) {
-                throw new IllegalArgumentException("未知的权限编码：" + code);
+                throw new IllegalArgumentException("未知权限编码：" + code);
             }
-        });
+        }
 
         Map<String, Permission> permissionMap = permissions.stream()
                 .collect(Collectors.toMap(Permission::getCode, p -> p));
@@ -167,7 +165,7 @@ public class PermissionService {
                 RolePermission rp = new RolePermission();
                 rp.setRole(role);
                 rp.setPermission(permission);
-                rp.setId(new com.sangui.sanguiblog.model.entity.RolePermissionId(role.getId(), permission.getId()));
+                rp.setId(new RolePermissionId(role.getId(), permission.getId()));
                 rolePermissionRepository.save(rp);
             }
         }
@@ -185,10 +183,11 @@ public class PermissionService {
             case "POSTS" -> "文章的创建、编辑、发布与删除权限";
             case "COMMENTS" -> "评论审核、回复与删除相关权限";
             case "TAXONOMY" -> "分类与标签维护";
-            case "ANALYTICS" -> "仪表盘/数据分析访问权限";
+            case "ANALYTICS" -> "仪表盘数据分析访问权限";
             case "USERS" -> "后台账号的增删改查";
             case "PERMISSIONS" -> "调整角色权限矩阵";
             case "PROFILE" -> "个人资料修改与安全设置";
+            case "SYSTEM" -> "系统维护与存储清理";
             default -> "";
         };
     }

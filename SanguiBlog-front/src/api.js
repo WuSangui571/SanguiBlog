@@ -356,3 +356,12 @@ export const adminUpdateRolePermissions = (roleCode, permissions) =>
   });
 
 export const fetchMyPermissions = () => request("/permissions/me");
+
+// Maintenance - unused asset cleanup (SUPER_ADMIN)
+export const adminScanUnusedAssets = () => request("/admin/maintenance/unused-assets");
+
+export const adminDeleteUnusedAssets = (paths = []) =>
+  request("/admin/maintenance/unused-assets/delete", {
+    method: "POST",
+    body: JSON.stringify({ paths }),
+  });

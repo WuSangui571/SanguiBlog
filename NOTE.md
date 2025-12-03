@@ -279,3 +279,7 @@ npm run dev
 - 开发调试：设置环境变量 `SPRING_PROFILES_ACTIVE=dev`，加载 `application-dev.yaml` 自动开启 `/swagger-ui.html` 与 `/api-docs`；发布前务必移除该 profile。
 ### 角色初始化更新
 - 自 V1.3.76 起，`DataInitializer` 仅创建基础角色（SUPER_ADMIN / ADMIN / USER）并同步默认权限，不再为固定用户名自动分配角色；请通过后台或 SQL 显式授予角色，避免弱口令账户被静默升权。
+### 未引用图片清理（仅超级管理员）
+- 后端提供 `/api/admin/maintenance/unused-assets`（GET 扫描）与 `/api/admin/maintenance/unused-assets/delete`（POST 删除，Body: paths[]）。
+- 扫描范围：所有文章（任意状态）与关于页的 Markdown/HTML 中引用的 `/uploads/posts/**` 资源；头像目录不在清理范围内。
+- 删除前需二次确认；删除后会尝试清理空目录，仅作用于 `uploads/posts/` 下的图片扩展名文件。

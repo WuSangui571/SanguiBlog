@@ -28,7 +28,9 @@ public enum PermissionDefinition {
 
     PERMISSION_MANAGE("权限管理", "PERMISSIONS", "PERMISSION_MANAGE", "管理权限", "调整管理员/用户的模块权限", List.of("SUPER_ADMIN"), 6, 1),
 
-    PROFILE_UPDATE("个人资料", "PROFILE", "PROFILE_UPDATE", "修改个人资料", "修改自己的账号资料", List.of("SUPER_ADMIN", "ADMIN", "USER"), 7, 1);
+    PROFILE_UPDATE("个人资料", "PROFILE", "PROFILE_UPDATE", "修改个人资料", "修改自己的账号资料", List.of("SUPER_ADMIN", "ADMIN", "USER"), 7, 1),
+
+    SYSTEM_CLEAN_STORAGE("系统维护", "SYSTEM", "SYSTEM_CLEAN_STORAGE", "清理未引用图片", "扫描并删除未被文章/关于页引用的上传图片，仅限超级管理员", List.of("SUPER_ADMIN"), 8, 1);
 
     private final String moduleLabel;
     private final String moduleCode;

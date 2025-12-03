@@ -28,6 +28,8 @@ import {
     adminDeleteMyAnalyticsLogs,
     adminFetchPermissionMatrix,
     adminUpdateRolePermissions,
+    adminScanUnusedAssets,
+    adminDeleteUnusedAssets,
     adminFetchAbout,
     adminSaveAbout,
     fetchMyPermissions,
@@ -1530,7 +1532,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.76'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.77'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5421,6 +5423,216 @@ const PermissionsView = ({ isDarkMode }) => {
     );
 };
 
+// 4.5 Sub-Component: System Settings - Unused Asset Cleanup (Super Admin Only)
+const SystemSettingsView = ({ isDarkMode, user }) => {
+    const [loading, setLoading] = useState(true);
+    const [deleting, setDeleting] = useState(false);
+    const [assets, setAssets] = useState([]);
+    const [totalSize, setTotalSize] = useState(0);
+    const [selected, setSelected] = useState(new Set());
+    const [error, setError] = useState('');
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmChecked, setConfirmChecked] = useState(false);
+    const { notice, showNotice, hideNotice } = useTimedNotice();
+    const { hasPermission } = usePermissionContext();
+
+    const formatSize = (bytes) => {
+        if (!bytes || bytes <= 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${units[i]}`;
+    };
+
+    const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
+
+    const loadAssets = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        setSelected(new Set());
+        try {
+            const res = await adminScanUnusedAssets();
+            const data = res.data || res;
+            setAssets(data?.unused || []);
+            setTotalSize(data?.totalSize || 0);
+        } catch (err) {
+            setError(err.message || '扫描未引用图片失败');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadAssets();
+    }, [loadAssets]);
+
+    const toggleSelect = (path) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(path)) {
+                next.delete(path);
+            } else {
+                next.add(path);
+            }
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (selected.size === assets.length) {
+            setSelected(new Set());
+        } else {
+            setSelected(new Set(assets.map((a) => a.path)));
+        }
+    };
+
+    const openConfirm = () => {
+        if (!selected.size) return;
+        setConfirmChecked(false);
+        setConfirmOpen(true);
+    };
+
+    const handleDelete = async () => {
+        setDeleting(true);
+        setError('');
+        try {
+            const res = await adminDeleteUnusedAssets(Array.from(selected));
+            const data = res.data || res;
+            showNotice(`已删除 ${data?.deletedCount || 0} 个文件，释放 ${formatSize(data?.freedSize || 0)}`);
+            setConfirmOpen(false);
+            await loadAssets();
+        } catch (err) {
+            setError(err.message || '删除失败');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    if (!hasPermission('SYSTEM_CLEAN_STORAGE') || user?.role !== 'SUPER_ADMIN') {
+        return <PermissionNotice title="仅超级管理员可用" description="清理未引用图片的操作仅限超级管理员。" />;
+    }
+
+    return (
+        <div className="space-y-6">
+            <AdminNoticeBar notice={notice} onClose={hideNotice} />
+            <div className={`${surface} rounded-2xl shadow-lg p-6 flex flex-wrap gap-4 items-center justify-between`}>
+                <div>
+                    <h3 className="text-xl font-bold">未引用图片清理</h3>
+                    <p className="text-sm text-gray-500 mt-1">扫描文章（含任何状态）与“关于本站”引用，未引用的上传图片可被删除以释放磁盘。</p>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        type="button"
+                        onClick={loadAssets}
+                        disabled={loading}
+                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                    >
+                        {loading ? '扫描中...' : '重新扫描'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={openConfirm}
+                        disabled={!selected.size || deleting || loading}
+                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                    >
+                        {deleting ? '删除中...' : `删除选中 (${selected.size})`}
+                    </button>
+                </div>
+            </div>
+
+            <div className={`${surface} rounded-2xl shadow-lg p-6`}>
+                <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
+                    <span className="font-bold">未引用文件：{assets.length} 个</span>
+                    <span className="text-gray-500">预计可释放：{formatSize(totalSize)}</span>
+                    <button
+                        type="button"
+                        onClick={toggleSelectAll}
+                        disabled={!assets.length}
+                        className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
+                    >
+                        {selected.size === assets.length ? '取消全选' : '全选'}
+                    </button>
+                </div>
+
+                {error && <div className="text-sm text-red-500 mb-4">{error}</div>}
+                {loading ? (
+                    <div className="p-8 text-center text-sm text-gray-500">扫描中，请稍候...</div>
+                ) : assets.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-emerald-600 font-bold">没有发现未引用的图片，保持现状即可。</div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {assets.map((item) => (
+                            <div key={item.path} className="border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0px_0px_#000]">
+                                <div className="relative">
+                                    <img src={item.url} alt={item.path} className="w-full h-44 object-cover bg-gray-100" />
+                                    <label className="absolute top-2 left-2 flex items-center gap-2 bg-white/90 px-2 py-1 rounded border border-black shadow">
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.has(item.path)}
+                                            onChange={() => toggleSelect(item.path)}
+                                            className="w-4 h-4 accent-red-500"
+                                        />
+                                        <span className="text-xs font-bold">选择</span>
+                                    </label>
+                                </div>
+                                <div className="p-3 space-y-1 text-sm">
+                                    <div className="font-mono break-all text-xs">{item.path}</div>
+                                    <div className="text-gray-500">大小：{formatSize(item.size)}</div>
+                                    <div className="text-gray-500">预览：<a className="underline" href={item.url} target="_blank" rel="noreferrer">新窗口打开</a></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {confirmOpen && (
+                <div className="fixed inset-0 z-[120] bg-black/70 flex items-center justify-center px-4">
+                    <div className={`${surface} max-w-4xl w-full rounded-2xl shadow-2xl p-6 space-y-4`}>
+                        <h4 className="text-lg font-bold">确认删除 {selected.size} 个未引用图片？</h4>
+                        <p className="text-sm text-red-500">操作不可恢复，请确认这些图片未被引用。</p>
+                        <div className="grid gap-3 md:grid-cols-3 max-h-[50vh] overflow-auto pr-1">
+                            {Array.from(selected).map((path) => {
+                                const item = assets.find((a) => a.path === path);
+                                return (
+                                    <div key={path} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                                        {item && <img src={item.url} alt={path} className="w-full h-32 object-cover bg-gray-100" />}
+                                        <div className="p-2 text-xs font-mono break-all">{path}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <label className="flex items-center gap-2 text-sm font-semibold">
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4 accent-red-500"
+                                checked={confirmChecked}
+                                onChange={(e) => setConfirmChecked(e.target.checked)}
+                            />
+                            我已检查列表，确认删除
+                        </label>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmOpen(false)}
+                                disabled={deleting}
+                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
+                            >
+                                取消
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                disabled={!confirmChecked || deleting}
+                                className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            >
+                                {deleting ? '正在删除...' : '确认删除'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 // 4.5 The main Admin Panel structure
 // 4.5 The main Admin Panel structure
@@ -5457,7 +5669,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         { key: 'about', label: '关于站点', icon: BookOpen, permissions: [], role: 'SUPER_ADMIN' },
         { key: 'users', label: '用户管理', icon: Users, permissions: ['USER_MANAGE'] },
         { key: 'permissions', label: '权限管理', icon: Shield, permissions: ['PERMISSION_MANAGE'] },
-        { key: 'settings', label: '系统设置', icon: Settings, permissions: ['PERMISSION_MANAGE'] },
+        { key: 'settings', label: '系统设置', icon: Settings, permissions: ['SYSTEM_CLEAN_STORAGE'] },
         { key: 'profile', label: '个人资料', icon: User, permissions: ['PROFILE_UPDATE'] },
     ]), []);
 
@@ -5662,6 +5874,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
                             <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
                             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} />} />
+                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} />} />
                             <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
                             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
                         </Routes>
@@ -6128,7 +6341,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.76';
+    const siteVersion = meta?.version || 'V1.3.77';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
