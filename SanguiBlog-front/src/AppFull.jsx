@@ -1253,6 +1253,7 @@ const Navigation = ({
 }) => {
     const roleInfo = user ? ROLES[user.role] : null;
     const activeView = currentView || 'home';
+    const [settingsOpen, setSettingsOpen] = useState(false);
     const [logoClicks, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
     const logoResetTimer = useRef(null);
@@ -1281,6 +1282,15 @@ const Navigation = ({
         };
     }, []);
 
+    useEffect(() => {
+        if (!settingsOpen || typeof document === 'undefined') return undefined;
+        const original = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = original;
+        };
+    }, [settingsOpen]);
+
     const handleThemeButton = useCallback((event) => {
         if (typeof onToggleTheme === 'function') {
             onToggleTheme(event);
@@ -1288,6 +1298,7 @@ const Navigation = ({
     }, [onToggleTheme]);
 
     return (
+        <>
         <motion.nav
             initial={{ y: -100 }}
             animate={{ y: 0 }}
@@ -1354,11 +1365,6 @@ const Navigation = ({
                                 </span>
                             </div>
                         </div>
-                        {(user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && (
-                            <button onClick={() => setView('admin')}
-                                className="p-2 hover:bg-black hover:text-white border-2 border-transparent hover:border-black rounded-full transition-all">
-                                <Settings size={20} /></button>
-                        )}
                         <button onClick={handleLogout} className="p-2 hover:text-[#F97316] transition-colors"><LogOut
                             size={20} /></button>
                     </div>
@@ -1366,12 +1372,11 @@ const Navigation = ({
                     <PopButton onClick={() => setView('login')} icon={LogIn}>Login</PopButton>
                 )}
                 <button
-                    onClick={onToggleBackground}
-                    className={`flex items-center gap-2 px-4 py-2 border-2 border-black rounded-full font-black text-xs uppercase tracking-wide shadow-[4px_4px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${backgroundEnabled ? 'bg-[#FFE066] text-black' : (isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-600')}`}
-                    title={backgroundEnabled ? '关闭太阳 / 月亮彩蛋' : '启用太阳 / 月亮彩蛋'}
+                    onClick={() => setSettingsOpen(true)}
+                    className={`p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+                    title="系统设定"
                 >
-                    <Sparkles size={16} />
-                    <span>{backgroundEnabled ? '彩蛋 ON' : '彩蛋 OFF'}</span>
+                    <Settings size={20} />
                 </button>
                 <button
                     onClick={handleThemeButton}
@@ -1403,6 +1408,70 @@ const Navigation = ({
                 <Menu size={24} />
             </button>
         </motion.nav>
+
+        <AnimatePresence>
+            {settingsOpen && (
+                <motion.div
+                    className="fixed inset-0 z-[70] flex items-start justify-end p-4 md:p-8 bg-black/40 backdrop-blur-[2px]"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setSettingsOpen(false)}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        className={`w-full max-w-md border-4 border-black shadow-[10px_10px_0px_0px_#000] rounded-2xl ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                    >
+                        <div className="flex items-center justify-between px-5 py-4 border-b-2 border-black bg-gradient-to-r from-[#FFD700]/60 via-white to-transparent">
+                            <div className="flex items-center gap-2 font-black text-lg">
+                                <Settings size={20} />
+                                <span>系统设定</span>
+                            </div>
+                            <button
+                                onClick={() => setSettingsOpen(false)}
+                                className={`p-2 border-2 border-black rounded-full ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                                aria-label="关闭设定"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="p-5 space-y-4">
+                            <div className={`flex items-center justify-between gap-4 p-4 border-2 border-black rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                                <div className="space-y-1">
+                                    <div className="font-bold text-sm">彩蛋背景</div>
+                                    <div className="text-xs text-gray-500">显示/隐藏太阳与月亮动效（本地记忆）</div>
+                                </div>
+                                <button
+                                    onClick={() => onToggleBackground && onToggleBackground()}
+                                    className={`relative w-16 h-9 border-2 border-black rounded-full transition-colors ${backgroundEnabled ? 'bg-[#FFE066]' : (isDarkMode ? 'bg-gray-700' : 'bg-gray-200')}`}
+                                    aria-pressed={backgroundEnabled}
+                                    aria-label="切换彩蛋背景"
+                                >
+                                    <span
+                                        className={`absolute top-1 left-1 w-7 h-7 rounded-full border-2 border-black bg-white shadow-[2px_2px_0px_0px_#000] transition-transform ${backgroundEnabled ? 'translate-x-6' : 'translate-x-0'}`}
+                                    />
+                                    <span className="absolute inset-y-0 right-2 flex items-center text-[10px] font-black uppercase">
+                                        {backgroundEnabled ? 'ON' : 'OFF'}
+                                    </span>
+                                </button>
+                            </div>
+
+                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                更多开关可在此扩展，当前仅包含彩蛋背景；设定对所有用户可见并存储在本地浏览器。
+                            </div>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    </>
     );
 };
 // ... (Hero, StatsStrip, ArticleList, CommentsSection, ArticleDetail, LoginView components are kept unchanged in functionality, but are wrapped in the main App with the dark mode context.)
@@ -1458,7 +1527,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.66'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.68'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6044,7 +6113,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.66';
+    const siteVersion = meta?.version || 'V1.3.68';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
