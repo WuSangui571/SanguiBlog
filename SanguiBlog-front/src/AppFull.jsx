@@ -598,15 +598,16 @@ const ArticleDetail = ({
             }
             return (
                 <div
-                    className={`not-prose my-6 rounded-lg border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'border-gray-600 shadow-none' : ''}`}>
-                    <div
-                        className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-[#F0F0F0]'}`}>
-                        <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-black/20"></div>
-                        <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-black/20"></div>
-                        <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-black/20"></div>
-                    </div>
+                    className={`not-prose my-6 rounded-2xl border-2 border-black overflow-hidden shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'border-gray-600' : ''}`}>
+                        <div
+                            className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
+                        <div className="w-4 h-4 rounded-full bg-[#FF5F56] border border-black/10"></div>
+                        <div className="w-4 h-4 rounded-full bg-[#FFBD2E] border border-black/10"></div>
+                        <div className="w-4 h-4 rounded-full bg-[#27C93F] border border-black/10"></div>
+                        <span className="ml-2 text-[10px] font-black tracking-[0.2em]">CODE</span>
+                        </div>
                     <pre
-                        className={`p-4 overflow-auto m-0 ${isDarkMode ? 'bg-[#1E1E1E] text-gray-200' : 'bg-[#282c34] text-white'}`}>
+                        className={`p-5 overflow-auto m-0 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
                         <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
                             {textContent}
                         </code>
@@ -1529,7 +1530,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.70'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.71'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6120,7 +6121,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.70';
+    const siteVersion = meta?.version || 'V1.3.71';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -7447,13 +7448,13 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
                                     pre({ children }) {
                                         return (
                                             <div className="my-4 rounded-2xl border-2 border-black shadow-[6px_6px_0px_0px_#000] overflow-hidden">
-                                                <div className="flex items-center gap-1 px-3 py-2 border-b-2 border-black bg-gray-100 text-xs font-bold uppercase tracking-wide">
-                                                    <span className="w-2 h-2 rounded-full bg-red-400"></span>
-                                                    <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                                                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                                                    <span className="ml-2 text-gray-500">code</span>
+                                                <div className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                    <span className="w-4 h-4 rounded-full bg-[#FF5F56] border border-black/10"></span>
+                                                    <span className="w-4 h-4 rounded-full bg-[#FFBD2E] border border-black/10"></span>
+                                                    <span className="w-4 h-4 rounded-full bg-[#27C93F] border border-black/10"></span>
+                                                    <span className="ml-2 text-[10px] font-black tracking-[0.2em]">CODE</span>
                                                 </div>
-                                                <pre className={`p-4 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-gray-50 text-gray-900'} overflow-auto`}>{children}</pre>
+                                                <pre className={`p-5 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'} overflow-auto`}>{children}</pre>
                                             </div>
                                         );
                                     }
