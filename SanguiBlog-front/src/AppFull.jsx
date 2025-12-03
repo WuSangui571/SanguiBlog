@@ -1530,7 +1530,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.72'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.74'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -5474,7 +5474,6 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
 
     const navSections = useMemo(() => {
         const groups = [
-            { title: '概览', keys: ['dashboard'] },
             { title: '创作管理', keys: ['create-post', 'posts'] },
             { title: '内容体系', keys: ['categories', 'taxonomy', 'about'] },
             { title: '运营互动', keys: ['analytics', 'comments'] },
@@ -5482,7 +5481,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             { title: '个人与系统', keys: ['profile', 'settings'] },
         ];
 
-        return groups
+        const groupedSections = groups
             .map((group) => ({
                 ...group,
                 items: group.keys
@@ -5490,6 +5489,12 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                     .filter(Boolean)
             }))
             .filter((group) => group.items.length > 0);
+
+        const dashboardSection = tabs.find((tab) => tab.key === 'dashboard')
+            ? [{ title: null, items: tabs.filter((tab) => tab.key === 'dashboard') }]
+            : [];
+
+        return [...dashboardSection, ...groupedSections];
     }, [tabs]);
 
     useEffect(() => {
@@ -5576,12 +5581,14 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             <aside
                 className={`w-64 flex-shrink-0 ${sidebarBg} border-r ${sidebarBorder} flex flex-col fixed h-full z-40 transition-colors`}>
                 <nav className="flex-1 p-4 pt-6 space-y-6 overflow-y-auto">
-                    {navSections.map((section) => (
-                        <div key={section.title} className="space-y-2">
-                            <div className={`px-2 text-[11px] font-semibold uppercase tracking-[0.08em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {section.title}
-                            </div>
-                            <div className={`space-y-1 pl-2 border-l ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    {navSections.map((section, idx) => (
+                        <div key={section.title || `section-${idx}`} className="space-y-2">
+                            {section.title && (
+                                <div className={`px-2 text-[11px] font-semibold uppercase tracking-[0.08em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {section.title}
+                                </div>
+                            )}
+                            <div className={`space-y-1 ${section.title ? (isDarkMode ? 'pl-2 border-l border-gray-800' : 'pl-2 border-l border-gray-200') : ''}`}>
                                 {section.items.map(({ key, label, icon: Icon }) => (
                                     <Link
                                         key={key}
@@ -6121,7 +6128,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.72';
+    const siteVersion = meta?.version || 'V1.3.74';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
