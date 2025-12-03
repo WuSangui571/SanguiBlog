@@ -274,3 +274,6 @@ npm run dev
   * GET /api/admin/about ¶ÁÈ¡µ±Ç° Markdown ÓëäÖÈ¾ºóµÄ HTML¡£
   * PUT /api/admin/about ±£´æ Markdown ÕıÎÄ²¢·şÎñ¶ËäÖÈ¾ HTML£¬¸üĞÂÈËÈ¡×Ôµ±Ç°µÇÂ¼ÓÃ»§¡£
 * Ç°¶Ë£ºµ¼º½¡°¹ØÓÚ¡±Ò³¶ÁÈ¡ /api/about£»ºóÌ¨¡°¹ØÓÚÕ¾µã¡±±à¼­Ò³Ìá¹© Markdown ÎÄ±¾¿ò/ÉÏ´« md ÎÄ¼ş£¬±£´æ¼´¿ÌÉúĞ§¡£
+### Swagger å®‰å…¨ç­–ç•¥
+- é»˜è®¤/ç”Ÿäº§ç¯å¢ƒï¼š`springdoc.swagger-ui.enabled=false`ã€`api-docs.enabled=false`ï¼Œæœç»æ¥å£æ¨¡å‹æš´éœ²ã€‚
+- å¼€å‘è°ƒè¯•ï¼šè®¾ç½®ç¯å¢ƒå˜é‡ `SPRING_PROFILES_ACTIVE=dev`ï¼ŒåŠ è½½ `application-dev.yaml` è‡ªåŠ¨å¼€å¯ `/swagger-ui.html` ä¸ `/api-docs`ï¼›å‘å¸ƒå‰åŠ¡å¿…ç§»é™¤è¯¥ profileã€‚

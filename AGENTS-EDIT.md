@@ -820,3 +820,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **安全配置**：`application.yaml` 恢复通过环境变量注入数据库账号、口令与 JWT 密钥，移除硬编码默认值；同步站点版本号为 1.3.74。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.74`
 
+## V1.3.75 (2025-12-03)
+- **Swagger 加固**：默认关闭 `/swagger-ui.html` 与 `/api-docs`，仅在 `dev` Profile 自动开启，避免生产环境暴露接口模型。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.75`
+

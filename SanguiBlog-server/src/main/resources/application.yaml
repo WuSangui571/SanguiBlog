@@ -25,8 +25,10 @@ jwt:
 
 springdoc:
   swagger-ui:
+    enabled: false
     path: /swagger-ui.html
   api-docs:
+    enabled: false
     path: /api-docs
 
 logging:
@@ -39,7 +41,7 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:uploads}
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.74"
+  version: "V1.3.75"
 #  asset-base-url: http://localhost:8080
   asset-base-url: https://nonmature-scraggily-fermin.ngrok-free.dev/uploads
   footer:
