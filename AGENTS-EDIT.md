@@ -824,3 +824,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **Swagger 加固**：默认关闭 `/swagger-ui.html` 与 `/api-docs`，仅在 `dev` Profile 自动开启，避免生产环境暴露接口模型。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.75`
 
+## V1.3.76 (2025-12-03)
+- **角色初始化**：DataInitializer 仅创建基础角色与权限，不再为固定用户名自动分配角色，避免弱口令账号被静默升权。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.76`
+

@@ -277,3 +277,5 @@ npm run dev
 ### Swagger 安全策略
 - 默认/生产环境：`springdoc.swagger-ui.enabled=false`、`api-docs.enabled=false`，杜绝接口模型暴露。
 - 开发调试：设置环境变量 `SPRING_PROFILES_ACTIVE=dev`，加载 `application-dev.yaml` 自动开启 `/swagger-ui.html` 与 `/api-docs`；发布前务必移除该 profile。
+### 角色初始化更新
+- 自 V1.3.76 起，`DataInitializer` 仅创建基础角色（SUPER_ADMIN / ADMIN / USER）并同步默认权限，不再为固定用户名自动分配角色；请通过后台或 SQL 显式授予角色，避免弱口令账户被静默升权。
