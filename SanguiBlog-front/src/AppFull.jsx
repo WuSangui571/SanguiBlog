@@ -1533,7 +1533,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.78'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.81'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1810,9 +1810,30 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         return referrer;
     };
 
-    const renderUserAgent = (ua) => {
-        if (!ua) return '—';
-        return ua.length > 80 ? `${ua.slice(0, 80)}...` : ua;
+    const resolveVisitorAvatar = (visit) => buildAssetUrl(
+        visit?.avatar || visit?.avatarUrl || visit?.avatar_url,
+        ''
+    );
+
+    const renderUserBadge = (visit) => {
+        if (!visit?.loggedIn) {
+            return <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">访客</span>;
+        }
+
+        const displayName = visit.displayName || visit.userName || visit.username || '-';
+        const title = `${visit.userId ?? '-'}-${visit.username || '-'}-${displayName}`;
+        const avatarSrc = resolveVisitorAvatar(visit);
+        const initials = (displayName || 'U').slice(0, 1).toUpperCase();
+
+        return (
+            <div className="flex items-center gap-2" title={title}>
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-pink-500 to-indigo-500 text-white flex items-center justify-center text-sm font-bold">
+                    {avatarSrc
+                        ? <img src={avatarSrc} alt={displayName || 'user'} className="w-full h-full object-cover" />
+                        : initials}
+                </div>
+            </div>
+        );
     };
 
     const loadLogs = useCallback(async (targetPage = 1, targetSize = 20) => {
@@ -1876,7 +1897,10 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                 <div className="flex items-center gap-2 flex-wrap">
                     <div className={`${border} px-3 py-1 rounded-full text-sm`}>共 {total.toLocaleString()} 条</div>
                     <select
-                        className="px-3 py-1 text-sm border rounded-md bg-white dark:bg-gray-800"
+                        className={`px-3 py-1.5 text-sm rounded-full border transition-colors shadow-sm ${isDarkMode
+                            ? 'bg-gray-900/70 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/40'
+                            : 'bg-white border-gray-200 text-gray-800 hover:border-indigo-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
+                        }`}
                         value={size}
                         onChange={(e) => handleSizeChange(e.target.value)}
                     >
@@ -1917,12 +1941,11 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                             <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
                                 <tr>
                                     <th className="px-4 py-3 text-left">时间</th>
-                                    <th className="px-4 py-3 text-left">页面/文章</th>
+                                    <th className="px-4 py-3 text-left">文章</th>
                                     <th className="px-4 py-3 text-left">访客 IP</th>
-                                    <th className="px-4 py-3 text-left">用户</th>
+                                    <th className="px-4 py-3 text-left min-w-[120px]">用户</th>
                                     <th className="px-4 py-3 text-left">来源</th>
                                     <th className="px-4 py-3 text-left">地理</th>
-                                    <th className="px-4 py-3 text-left">User Agent</th>
                                 </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
@@ -1930,23 +1953,14 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                     <tr key={visit.id} className="align-top">
                                         <td className="px-4 py-3 font-mono whitespace-nowrap">{visit.time || '-'}</td>
                                         <td className="px-4 py-3">
-                                            <p className="font-semibold">{visit.title || '未命名页面'}</p>
-                                            {visit.slug && <p className={`text-xs ${textMuted}`}>Slug：{visit.slug}</p>}
+                                            <p className="font-semibold">{visit.title || '未命名文章'}</p>
                                         </td>
                                         <td className="px-4 py-3 font-mono break-all">{visit.ip || '-'}</td>
-                                        <td className="px-4 py-3">
-                                            {visit.loggedIn ? (
-                                                <>
-                                                    <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-600">已登录</span>
-                                                    <p className="text-xs mt-1">{visit.userName || '内部账号'}</p>
-                                                </>
-                                            ) : (
-                                                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">访客</span>
-                                            )}
+                                        <td className="px-4 py-3 min-w-[120px]">
+                                            {renderUserBadge(visit)}
                                         </td>
                                         <td className="px-4 py-3">{renderReferrer(visit.referrer)}</td>
                                         <td className="px-4 py-3">{visit.geo || '未知'}</td>
-                                        <td className="px-4 py-3 max-w-[320px]">{renderUserAgent(visit.userAgent)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -6301,7 +6315,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.78';
+    const siteVersion = meta?.version || 'V1.3.81';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;

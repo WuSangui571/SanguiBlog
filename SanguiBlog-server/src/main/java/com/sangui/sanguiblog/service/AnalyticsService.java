@@ -190,11 +190,13 @@ public class AnalyticsService {
                 .geo(view.getGeoLocation())
                 .loggedIn(view.getUser() != null)
                 .userId(view.getUser() != null ? view.getUser().getId() : null)
+                .username(view.getUser() != null ? view.getUser().getUsername() : null)
                 .userName(view.getUser() != null ? view.getUser().getDisplayName() : null)
                 .userRole(view.getUser() != null && view.getUser().getRole() != null
                         ? view.getUser().getRole().getCode()
                         : null)
                 .userAgent(view.getUserAgent())
+                .avatarUrl(view.getUser() != null ? view.getUser().getAvatarUrl() : null)
                 .build();
     }
 

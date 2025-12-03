@@ -78,8 +78,10 @@ public class AdminAnalyticsSummaryDto {
         private String geo;
         private boolean loggedIn;
         private Long userId;
+        private String username;
         private String userName;
         private String userRole;
         private String userAgent;
+        private String avatarUrl;
     }
 }
