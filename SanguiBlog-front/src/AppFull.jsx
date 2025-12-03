@@ -6398,7 +6398,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         about={about}
                         isDarkMode={isDarkMode}
                         onReload={loadAbout}
-                        onEdit={user?.role === 'SUPER_ADMIN' ? () => { setView('admin'); navigate('/admin/about'); } : null}
+                        onEdit={user?.role === 'SUPER_ADMIN' ? () => {
+                            setView('admin');
+                            setTimeout(() => navigate('/admin/about'), 0);
+                        } : null}
                         isSuperAdmin={user?.role === 'SUPER_ADMIN'}
                     />
                 );
@@ -7400,18 +7403,19 @@ const ArchiveView = ({
 };
 
 function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
-    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
+    const surface = isDarkMode ? 'bg-[#0B1221]/85' : 'bg-white/92';
     const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const cardBorder = isDarkMode ? 'border-gray-700' : 'border-black';
 
     return (
-        <section className={`pt-28 pb-20 min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-            <div className="max-w-5xl mx-auto px-4 space-y-8">
+        <section className="relative pt-28 pb-20 min-h-screen">
+            <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-[#020617]/70 via-transparent to-[#020617]/70' : 'bg-gradient-to-b from-white/70 via-white/50 to-white/70'} backdrop-blur-[2px] pointer-events-none`} />
+            <div className="relative max-w-5xl mx-auto px-4 space-y-8">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm font-mono uppercase tracking-[0.2em] text-[#FF0080]">About</p>
-                        <h1 className="text-4xl md:text-5xl font-black leading-tight mt-2">关于本站</h1>
-                        <p className="text-sm text-gray-500 mt-2">由超级管理员维护的单页介绍，访客与管理员均可阅读。</p>
+                        <h1 className={`text-4xl md:text-5xl font-black leading-tight mt-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>关于本站</h1>
+                        <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>由超级管理员维护的单页介绍，访客与管理员均可阅读。</p>
                     </div>
                     <div className="flex gap-3">
                         {onReload && (
@@ -7435,10 +7439,25 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
 
                 <div className={`border-4 ${cardBorder} shadow-[10px_10px_0px_0px_#000] rounded-2xl p-6 md:p-10 ${surface} ${text}`}>
                     {about && about.contentMd ? (
-                        <article className={`prose max-w-none prose-headings:font-black prose-img:rounded-xl prose-pre:border-2 prose-pre:border-black ${isDarkMode ? 'prose-invert' : ''}`}>
+                        <article className={`prose prose-xl max-w-none prose-headings:font-black prose-p:font-medium prose-code:before:content-none prose-code:after:content-none prose-pre:p-0 prose-pre:bg-transparent ${isDarkMode ? 'prose-invert' : ''}`}>
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm, remarkMath]}
                                 rehypePlugins={[rehypeRaw, rehypeKatex]}
+                                components={{
+                                    pre({ children }) {
+                                        return (
+                                            <div className="my-4 rounded-2xl border-2 border-black shadow-[6px_6px_0px_0px_#000] overflow-hidden">
+                                                <div className="flex items-center gap-1 px-3 py-2 border-b-2 border-black bg-gray-100 text-xs font-bold uppercase tracking-wide">
+                                                    <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                                                    <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                                    <span className="ml-2 text-gray-500">code</span>
+                                                </div>
+                                                <pre className={`p-4 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-gray-50 text-gray-900'} overflow-auto`}>{children}</pre>
+                                            </div>
+                                        );
+                                    }
+                                }}
                             >
                                 {about.contentMd}
                             </ReactMarkdown>
