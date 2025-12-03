@@ -55,6 +55,7 @@ public class PostService {
     private final AnalyticsPageViewRepository analyticsPageViewRepository;
     private final PostAssetService postAssetService;
     private final AnalyticsService analyticsService;
+    private final GeoIpService geoIpService;
     private static final java.util.concurrent.ConcurrentHashMap<String, Long> VIEW_RATE_LIMITER = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
@@ -92,19 +93,19 @@ public class PostService {
     }
 
     @Transactional
-    public PostDetailDto getPublishedDetail(Long id, String ip) {
+    public PostDetailDto getPublishedDetail(Long id, String ip, String userAgent, Long userId) {
         Post post = postRepository.findById(id)
                 .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
                 .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
-        incrementViews(post, ip);
+        incrementViews(post, ip, userAgent, userId);
         return toDetail(post);
     }
 
     @Transactional
-    public PostDetailDto getPublishedDetailBySlug(String slug, String ip) {
+    public PostDetailDto getPublishedDetailBySlug(String slug, String ip, String userAgent, Long userId) {
         Post post = postRepository.findBySlugAndStatus(slug, "PUBLISHED")
                 .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
-        incrementViews(post, ip);
+        incrementViews(post, ip, userAgent, userId);
         return toDetail(post);
     }
 
@@ -280,7 +281,7 @@ public class PostService {
                 .build();
     }
 
-    private void incrementViews(Post post, String ip) {
+    private void incrementViews(Post post, String ip, String userAgent, Long userId) {
         // 1. Memory Check (Fast, handles race conditions/StrictMode)
         String key = ip + "_" + post.getId();
         long now = System.currentTimeMillis();
@@ -311,10 +312,10 @@ public class PostService {
         long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
         post.setViewsCount(current + 1);
         postRepository.save(post);
-        recordAnalyticsPageView(post, ip);
+        recordAnalyticsPageView(post, ip, userAgent, userId);
     }
 
-    private void recordAnalyticsPageView(Post post, String ip) {
+    private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId) {
         if (post == null) {
             return;
         }
@@ -324,24 +325,37 @@ public class PostService {
                 PageViewRequest request = new PageViewRequest();
                 request.setPostId(post.getId());
                 request.setPageTitle(post.getTitle());
-                analyticsService.recordPageView(request, ip, null, null);
+                analyticsService.recordPageView(request, ip, userAgent, userId);
                 recorded = true;
             } catch (Exception ex) {
                 log.warn("调用 AnalyticsService.recordPageView 失败，将启用直接写库兜底, postId={}, ip={}", post.getId(), ip, ex);
             }
         }
         if (!recorded) {
-            persistAnalyticsPageView(post, ip);
+            persistAnalyticsPageView(post, ip, userAgent, userId);
         }
     }
 
-    private void persistAnalyticsPageView(Post post, String ip) {
+    private void persistAnalyticsPageView(Post post, String ip, String userAgent, Long userId) {
         try {
             AnalyticsPageView pv = new AnalyticsPageView();
             pv.setPost(post);
             pv.setPageTitle(post.getTitle());
-            pv.setViewerIp(StringUtils.hasText(ip) ? ip : "0.0.0.0");
+            String normalizedIp = StringUtils.hasText(ip) ? ip : "0.0.0.0";
+            pv.setViewerIp(normalizedIp);
             pv.setReferrerUrl("server-fallback");
+            pv.setUserAgent(userAgent);
+            if (userId != null) {
+                userRepository.findById(userId).ifPresent(pv::setUser);
+            }
+            String geo = geoIpService.lookup(normalizedIp);
+            if (geo != null && geo.length() > 128) {
+                geo = geo.substring(0, 128);
+            }
+            if (!StringUtils.hasText(geo)) {
+                geo = "未知";
+            }
+            pv.setGeoLocation(geo);
             pv.setViewedAt(LocalDateTime.now());
             analyticsPageViewRepository.save(pv);
         } catch (Exception ex) {

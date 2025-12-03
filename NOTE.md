@@ -1,285 +1,290 @@
-# SanguiBlog 技术手册 (Technical Manual)
-
-> **文档生成时间**: 2025-11-23
-> **适用对象**: 后端开发人员、前端开发人员、运维人员
-> **项目状态**: 开发中 (Active Development)
-
-## 1. 项目概述 (Project Overview)
-
-SanguiBlog 是一个前后端分离的个人博客系统。
-- **后端**: 基于 Spring Boot 3.2.5 构建的 RESTful API 服务。
-- **前端**: 基于 React 19 + Vite 构建的单页应用 (SPA)，使用 TailwindCSS 进行样式设计。
-- **核心目标**: 提供高性能、高交互性的博客阅读与管理体验。
-
----
-
-## 2. 技术栈 (Tech Stack)
-
-### 2.1 后端 (SanguiBlog-server)
-| 技术 | 版本 | 说明 |
-| :--- | :--- | :--- |
-| **Java** | **21** | 使用最新 LTS 版本，利用新特性 (Virtual Threads 等潜力) |
-| **Spring Boot** | 3.2.5 | 核心框架 |
-| **Database** | MySQL 8.0+ | 数据存储 |
-| **ORM** | Spring Data JPA | 数据持久层 |
-| **Security** | Spring Security + JJWT (0.11.5) | 无状态认证 (Stateless Auth) |
-| **API Docs** | SpringDoc OpenAPI (Swagger) 2.5.0 | 接口文档 (`/swagger-ui.html`) |
-| **Utils** | Lombok, Commonmark | 代码简化与 Markdown 处理 |
-
-### 2.2 前端 (SanguiBlog-front)
-| 技术 | 版本 | 说明 |
-| :--- | :--- | :--- |
-| **React** | **19.2.0** | 使用最新的 React 核心 |
-| **Build Tool** | Vite 7.2.4 | 极速构建工具 |
-| **Router** | React Router DOM 7.1.1 | 路由管理 |
-| **Styling** | **TailwindCSS 4.1.17** | 原子化 CSS 框架 (v4 版本) |
-| **UI/Icons** | Lucide React | 图标库 |
-| **Animation** | Framer Motion 12.x | 复杂动画实现 |
-| **Markdown** | React Markdown + Remark GFM | 前端 Markdown 渲染 |
-
----
-
-## 3. 架构与代码实现 (Architecture & Implementation)
-
-### 3.1 后端架构
-采用标准的 Spring Boot 分层架构：
-`Controller` (API 层) -> `Service` (业务逻辑) -> `Repository` (数据访问) -> `Database`
-
-*   **入口**: `com.sangui.sanguiblog.SanguiBlogServerApplication`
-*   **配置**: `src/main/resources/application.yaml`
-    *   **端口**: 8080
-    *   **JPA**: `ddl-auto: none` (**注意**: 数据库表结构不会自动更新，需手动维护 SQL)
-    *   **JWT**: 密钥配置在 `jwt.secret`，默认有效期 180 分钟。
-
-#### 关键模块
-*   **认证 (Auth)**:
-    *   `SecurityConfig.java`: 配置了安全过滤器链。`/api/auth/login` 公开，写操作 (`POST/PUT/DELETE`) 需 `ADMIN` 权限。
-    *   `JwtAuthenticationFilter`: 拦截请求，解析 `Authorization: Bearer <token>` 头。
-*   **内容管理**:
-    *   `PostController`: 处理文章的 CRUD。
-    *   `Post` 实体: 存储 `contentMd` (Markdown 原文) 和 `contentHtml` (渲染后的 HTML)。
-
-### 3.2 前端架构
-单页应用，入口为 `src/main.jsx` -> `AppFull.jsx`。
-
-*   **路由 (`AppFull.jsx`)**:
-    *   `/`: 首页 (Hero + 文章列表)
-    *   `/posts/:id`: 文章详情页
-    *   `/admin/*`: 后台管理面板 (Dashboard, 编辑器等)
-*   **状态管理 (`hooks/useBlogData.jsx`)**:
-    *   使用 React Context (`BlogContext`) 管理全局状态：`user`, `posts`, `categories`。
-    *   封装了所有 API 调用 (`loadPosts`, `doLogin` 等)。
-*   **API 层 (`api.js`)**:
-    *   统一封装 `fetch` 请求。
-    *   自动携带 `localStorage` 中的 `sg_token`。
-    *   `API_BASE`: 默认为 `http://localhost:8080/api`。
-    *   接口报错时优先解析 JSON，若包含 `message`/`msg` 字段则只返回该文本给前台提示，避免把整段响应 JSON 暴露给终端用户。
-*   **归档视图 (`ArchiveView`)**：
-    *   导航“归档”会懒加载 `/api/posts?page=1&size=200&status=PUBLISHED`，按年/月对文章进行分组，默认展示最近 200 篇，并在右侧提供“月份速选”面板（`sticky` + 平滑滚动）快速定位到指定月份。
-    *   每个条目展示标题、日期、分类、标签、阅读/评论统计，点击后通过 `setArticleId + setView('article')` 跳转文章详情。
-    *   若 `site.asset-base-url` 带路径前缀，`buildAssetUrl` 会自动去除重复段，保障归档页图片展示一致。
-*   首页文章卡片所展示的“浏览量 / 评论数”直接读取后端 `PostSummaryDto` 中的 `viewsCount` 与 `comments` 字段，其中评论数由后端实时统计 `APPROVED` 状态的评论数量。
-*   首页文章卡片若发布时间在 7 天内，会在标题旁展示带有闪动效果的 “NEW” 徽章，提示访客这是近一周的新内容。
-*   首页底部版权信息来自 `/site/meta.footer`，支持在 `application.yaml` 的 `site.footer.*` 中自定义年份、品牌、备案号/链接以及 Powered by 文案；备案号始终以新窗口打开工信部或自定义链接。
-*   “全部标签”区展示真实标签列表，点击任意标签会立即过滤右侧文章列表，只保留包含该标签的文章，再次点击或点击“清除筛选”即可恢复全部文章。
-
-### 3.3 Markdown 渲染策略
-*   `ArticleDetail` 组件优先使用 `contentMd`，通过 `ReactMarkdown` 渲染；若后端仅返回 `contentHtml` 则采用 `dangerouslySetInnerHTML` 兜底。
-*   插件链：
-    *   `remark-gfm`: 表格、任务列表、删除线等 GitHub 风格扩展。
-    *   `remark-math` + `rehype-katex`: 支持 `$...$` 行内、`$$...$$` 块级公式，样式依赖 `katex/dist/katex.min.css`（在 `AppFull.jsx` 头部全局引入）。
-    *   `rehype-raw`: 允许 Markdown 中的原生 HTML（如 `<p style="color:red">`）直接渲染，满足自定义排版需求。
-    *   **扩展高亮**：通过自定义 `remarkHighlight` 插件把 `==文本==` 转换为 `<mark>` 标签，兼容 Markdown 与 HTML 渲染路径，便于作者强调关键词。
-*   标题锚点：`AppFull.jsx` 自定义 `createHeading` 渲染器为 `h1-h6` 自动生成 `id`（兼容中文 slug 并支持重名去重），每次渲染都会重置 slug 映射，避免重复渲染导致 `xxx-2` 等随机锚点；同时拦截 Markdown 中 `href="#..."` 的点击事件，若直接匹配不到元素则自动尝试 slug 化后的 ID 并回退到原始 `#标题`，确保 `[目录](#某标题)` 语法能准确跳转。
-*   代码块渲染保持自定义的 Neo-Brutalism 包装（窗口按钮 + 阴影），行内代码继续使用定制逻辑裁剪反引号，保证视觉一致性。
-
-### 3.4 后台标签管理
-
-*   `/admin/taxonomy` 页面由 `TaxonomyView` 负责，支持标签的新增、编辑、删除、刷新、分页与模糊搜索（按名称/slug），界面提供实时表格与行内编辑体验。
-*   所有操作调用受保护的 `/api/admin/tags` 接口（POST/PUT/DELETE/GET），需 `ADMIN` 及以上权限；接口层会校验名称与 slug 唯一性，并在后端自动生成 slug（兼容中文）。
-*   公共 `/api/tags` 接口保留只读模式，前台依旧可以匿名获取标签列表；后台则通过新增的 admin API 获得包含描述、时间戳、分页信息的完整版数据。
-
-### 3.5 后台文章管理
-
-*   `/admin/posts` 页面由 `PostsView` 负责，提供文章分页列表、关键字搜索、按分类筛选，并将“编辑”按钮跳转到独立的 `/admin/posts/edit` 页；列表侧仅做导航入口，不再行内修改正文或元信息。
-*   列表首列只显示标题，Slug 仅做后台检索用；同时根据 `status` 值为每行附加绿色/琥珀色/灰色底纹，分别对应“已发布 / 草稿 / 已归档”，管理员无需点进详情即可直观分辨状态。
-*   `/admin/posts/edit` 由 `EditPostView` 渲染，支持通过 URL 携带 `postId` 定位文章；若未携带参数，会先列出可选文章供管理员点选。页面可同步编辑标题、Slug、摘要、主题色、状态、分类、标签及 Markdown 正文，色盘/预设颜色会直接写入 `theme_color`（如 `bg-[#FF0080]`）。
-*   对应的 `GET /api/admin/posts/{id}` 返回 `AdminPostDetailDto`，包含 Markdown 正文与标签/分类 ID；保存时调用 `PUT /api/posts/{id}` 仍沿用 `SavePostRequest`，后端在更新主题色的同时继续校验 slug 唯一性、分类存在性并维护 `post_tags`。
-*   保存成功后会在右上角弹出霓虹风格提示栏，4 秒后自动收起，管理员也可点击关闭；失败时仍以内联红字提示，确保错误信息不会被遮挡。
-
-### 3.6 管理端个人资料
-*   顶部导航头像会打开 `/admin/profile`，页面包含头像上传、基础资料、Bio、GitHub、密码重置和只读账户信息等模块（微信二维码字段已废弃，不再显示）。
-*   头像上传保存至 `src/main/resources/static/avatar`，数据库仅存储文件名；响应给前端时自动补全 `/avatar/<filename>`，同时在更新时删除旧文件，防止残留。
-*   头像上传走 `/api/upload/avatar`，成功后立即调用 `updateProfile` 持久化路径；密码修改需先验证原密码，通过后输入新密码才可提交。
-*   页面支持暗色模式，并提供明确的状态提示与校验反馈。
-
-### 3.7 后台文章发布
-*   `/admin/create-post` 页面采用“自动预留 slug + 光标插图”的流程：进入页面即调用 `/api/upload/post-assets/reserve` 申请唯一资源目录，Markdown 编辑区右上方的“插入图片”按钮会在当前光标处上传所选图片，直接写入 `/uploads/<slug>/` 后马上把对应 Markdown 片段插入正文。
-*   资源标识卡片内置主题色选择器，可直接输入 `bg-[#xxxxxx]` 类名、使用色盘或点选 6 个预设颜色，提交时会作为 `theme_color` 存入数据库，CreatePost 与 EditPost 均复用同一组件，确保展示色与后台数据一致。
-*   Markdown 文件通过本地读取填充正文，若标题输入框仍为空会自动使用文件名（去除扩展名）；摘要可自定义，也可以在提交前由正文前 160 字自动生成。
-*   仅支持选择二级分类（先点一级分类再点下方子类），以及至少一个标签；三项均完成后才能启用“立即发布”按钮，避免漏填元数据。
-*   发布会调用 `POST /api/posts`，其中 `slug` 必须传入预留得到的目录名称；后端会校验唯一性并在必要时创建空目录，确保数据库与磁盘一一对应。
-*   发布成功会触发同样的右上角提示栏，用于展示文章 ID 等摘要信息，提醒管理员等待 4 秒即可自动消失或手动关闭；若失败仍在按钮下方互斥显示红字错误，避免重复反馈。
-
-### 3.8 用户管理
-*   `/admin/users` 页面由 `UserManagementView` 渲染，左侧表格可按关键词、角色和分页浏览全部后台账号，右侧表单同时支持创建/编辑，密码字段无需原密码即可重置。
-*   创建/更新接口均允许填写基础资料（用户名、显示名、邮箱、头衔、简介、GitHub、微信二维码）并直接选择角色；表单新增头像上传控件，沿用 `/api/upload/avatar` 上传后立即写入 `avatarUrl`，列表中也会显示缩略头像以便校对。后端 `AdminUserService` 会像个人资料页一样规范化 `avatarUrl` 并在写入新路径后删除旧头像文件，确保数据库与文件系统保持一致。
-*   创建用户时默认角色会优先选用 `USER`（若存在），防止误把新账号设为 SUPER_ADMIN；只读信息（ID、创建时间、最近登录）在表单下方展示，仍不可手动修改。
-*   对应后端接口：
-    *   `GET /api/admin/users`（支持 `keyword`、`role`、`page`、`size`）返回 `PageResponse<AdminUserDto>`；
-    *   `GET /api/admin/users/{id}` / `POST /api/admin/users` / `PUT /api/admin/users/{id}` / `DELETE /api/admin/users/{id}` 完成完整 CRUD；
-    *   `GET /api/admin/users/roles` 返回可选角色列表（`code` + `name`），供前端下拉框使用。
-
-### 3.9 Backoffice Comment Management
-*   **界面**：`/admin/comments` 由筛选区 + 文章候选列表 + 评论概览三部分组成。筛选区支持“全部文章/指定文章”切换、状态和关键字过滤，并提供刷新按钮；文章列表用于分页加载文章标题，方便快速定位；概览卡片会展示当前范围、筛选状态与符合条件的总数。
-*   **列表操作**：评论表格展示 ID、所属文章、作者/IP/时间、内容与状态。拥有 `COMMENT_REVIEW` 的账号可以在表格行内编辑内容及状态（APPROVED/PENDING/REJECTED/SPAM），拥有 `COMMENT_DELETE` 的账号可以直接删除任意评论；`COMMENT_REPLY` 控制是否可在后台以官方身份回复评论。
-*   **后台回复**：页底提供“发布后台回复”表单，可选择文章、填写显示作者、指定父级评论并提交内容。该表单依旧调用公开的 `POST /api/posts/{id}/comments`，从而保持与前台访客评论一致的流程。
-*   **接口**：`GET /api/admin/comments` 提供分页数据（`PageResponse<AdminCommentItemDto>`），`PUT /api/admin/comments/{id}` 只接受 `{content,status}` 字段用于审核/改写，`DELETE /api/admin/comments/{id}` 删除单条评论及其子节点。所有操作都依赖 `CommentService.searchComments/updateCommentAsAdmin/deleteComment`。
-*   **权限**：`COMMENT_VIEW/COMMENT_CREATE/COMMENT_REPLY/COMMENT_REVIEW/COMMENT_DELETE` 分别对应查看、后台创建、后台回复、审核、删除，各项权限既影响前端按钮是否渲染，也由后端 `@PreAuthorize` 强制校验；超级管理员天然拥有全部权限。
-
-### 3.10 Analytics for Admin
-*   GET /api/admin/analytics/summary?days=<7|14|30>&top=<5>&recent=<30> calls AnalyticsService.loadAdminSummary to aggregate nalytics_page_views + nalytics_traffic_sources and fill AdminAnalyticsSummaryDto (overview, daily trends, top posts, recent visits).
-*   Dashboard widgets consume AnalyticsSummaryContext; KPI cards, charts and tables share the same state and the 
-eload() helper forces a refresh.
-*   /admin/analytics lets admins switch between 7/14/30 days to inspect trend charts, traffic sources, hot posts and detailed visit logs (URL/IP/Geo/login state).
-*   AnalyticsService.recordPageView writes nalytics_page_views and updates traffic sources. PV uses a 1-minute in-memory throttle (IP+post) plus a 10-minute DB dedupe. SUPER_ADMIN is skipped only when pageTitle/referrer contains dmin. If the front-end tracker fails, PostService.incrementViews now builds a PageViewRequest and calls 
-ecordPageView (fallback writes directly). DELETE /api/admin/analytics/page-views/me cleans operator footprints.
-*   updateTrafficSourceStat classifies referrers (search engine / social media / specific domain / Direct / None) and updates nalytics_traffic_sources(stat_date, source_label, visits, percentage).
-
-### 3.11 Permissions Matrix
-*   /admin/permissions shows the role ? permission matrix (batch select + save). AdminNoticeBar + useTimedNotice surfaces success/error and blocks non SUPER_ADMIN visits.
-*   GET /api/admin/permissions, GET /api/admin/permissions/{roleCode}, PUT /api/admin/permissions/{roleCode} are handled by PermissionService, backed by PermissionDefinition. Saving will update 
-ole_permissions in bulk.
-*   permissions_seed.sql seeds permissions/role_permissions; only ADMIN/SUPER_ADMIN can operate this module.
-*   所有后台控制器及 `/api/posts` 写操作均使用 `PERM_*` 权限码进行 `@PreAuthorize` 校验，与 `PermissionDefinition` 中的 code 一一对应；`SUPER_ADMIN` 默认拥有全部权限，其余角色必须在矩阵中勾选后才能调用相应 API。
-*   前端通过全局 `PermissionContext` 缓存 `/api/permissions/me` 返回的 code 列表，导航菜单和具体按钮都会依据 `hasPermission(code)` 结果展示/隐藏，确保 UI 与后端策略一致。
-
-### 4.1 核心数据库表
-*   **`users`**: 用户表。
-    *   `username`: 登录名 (唯一)。
-    *   `role`: 角色 (`SUPER_ADMIN`, `ADMIN`, `USER`)。
-    *   `password_hash`: BCrypt 加密后的密码。
-*   **`posts`**: 文章表。
-    *   `slug`: URL 友好的唯一标识符。
-    *   `status`: 文章状态 (DRAFT, PUBLISHED)。
-*   **`site_settings`**: 全局配置表。
-    *   存储键值对 (Key-Value)，用于动态配置网站标题、SEO 设置等。
-
-### 4.2 认证规则
-1.  用户登录 -> 后端验证 -> 生成 JWT -> 返回 Token。
-2.  前端将 Token 存入 `localStorage` (`key: "sg_token"`).
-3.  前端每次请求 API 时，在 Header 中携带 `Authorization: Bearer <token>`；`checkAuth` 仅在后端明确返回 `401` 时才会清除本地 Token，避免偶发网络错误导致登录状态被误清空。
-
----
-
-### 4.3 API 响应结构说明
-*   **文章详情 (`/api/posts/{id}`)**:
-    *   返回 `PostDetailDto`，包含 `summary` (PostSummaryDto), `contentMd`, `contentHtml`。
-*   **文章详情 (`/api/posts/{id}`)**:
-    *   返回 `PostDetailDto`，包含 `summary` (PostSummaryDto), `contentMd`, `contentHtml`。
-    *   **关键**: 文章的元数据（标题、作者、分类、摘要等）都在 `summary` 字段中，且为扁平化结构（如 `authorName`, `category` 为字符串），而非嵌套对象。
-    *   前端 `ArticleDetail` 组件需优先从 `articleData.summary` 获取这些信息。
-
-### 4.4 静态资源与头像存储 (Static Resources & Avatars)
-*   **根路径配置**：`application.yaml` 暴露 `storage.base-path`（支持环境变量 `STORAGE_BASE_PATH`），用于指定所有本地静态资源的根目录，默认值为仓库根目录下的 `uploads`。应用启动时会自动创建根目录以及 `avatar/`、`posts/` 等必要子目录。
-*   **站点版本**：`application.yaml` 提供 `site.version`，后端会在 `/api/site/meta` 中返回该值；前端首页 Banner 直接读取该字段显示 `SANGUI BLOG // <version>`，统一版本号来源。
-*   **数据库与 JWT 凭证**：`spring.datasource.username/password` 会优先读取 `DB_USERNAME` / `DB_PASSWORD`，若未设置则兼容 Spring Boot 原生的 `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`；`jwt.secret` 亦支持 `JWT_SECRET` 或 `SPRING_JWT_SECRET`。仓库中不再保存明文，生产与本地环境需通过系统环境变量或额外的 `application-local.yaml`（自行创建并忽略）提供真实值。
-*   **目录结构**：头像、文章图片、附件等均放置在根目录下的独立子目录，例如文章资源统一保存在 `<base-path>/posts/<slug>/`。后续扩展新的资源类型时只需在该根目录内再创建子目录即可，部署与备份流程保持一致。
-*   **数据库字段**：`users.avatar_url` 保存头像文件名或 `avatar/` 相对路径；`posts.slug` 现改为记录文章图片文件夹的相对路径（如 `posts/20241124/abc123`），后端返回数据时会携带该路径以便前端按需拼接。
-*   **静态映射**：`WebConfig` 将 `/avatar/**` 与 `/uploads/**` 映射到实际文件系统目录，无需重新打包 `static/` 资源即可即时读取最新上传内容。文章图片可直接通过 `http://<server>/uploads/<slug>/xxx.png` 访问。
-*   **前端处理**：`/admin/create-post` 的“插入图片”按钮会携带预留的 `slug` 调用 `/api/upload/post-assets`，后端在不清空目录的情况下追加文件并返回 `files`、`urls` 以及用分号拼接好的 `joined` 字符串；前端据此插入 Markdown，若需要把图片地址落库可直接使用 `joined`。`slug` 现改为按需懒生成：仅在首次上传图片或点击“立即发布”时才调用 `/api/upload/post-assets/reserve`，生成后在同一编辑会话内复用，发布成功会清空该值以避免产生空目录。
-*   **静态资源域名**：`application.yaml` 中新增 `site.asset-base-url`（可挂靠环境变量）用于声明图片 CDN/网关的完整域名，`/api/site/meta` 会把该值透传为 `assetBaseUrl`，前端的 `buildAssetUrl` 会优先使用它拼接 `/uploads/**`、`/avatar/**`、`/contact/**` 等路径；若未配置，则依次回落到 `VITE_ASSET_ORIGIN` → `VITE_API_BASE` 对应域名 → `window.location.origin` → `http://localhost:8080`，本地调试与线上部署都能拿到正确的资源地址。若 `asset-base-url` 本身带有路径（如 `https://cdn.example.com/uploads`），前端会自动去重重复的 `uploads/` 段，不会生成 `uploads/uploads/...`。
-*   **文章图片预览**：文章详情页会为 Markdown/HTML 中的所有 `<img>` 元素注入 `cursor-zoom-in` 样式，并在点击时打开全屏遮罩预览，图片路径自动经过 `resolveAssetPath` 补全，关闭遮罩后恢复页面滚动。
-
-### 4.5 评论与楼中楼
-*   数据结构：`comments` 表含 `parent_comment_id` 外键（见 `sanguiblog_db.sql`），配合 `ON DELETE SET NULL` 可形成任意深度的树形结构。SQL 文件附带了多条带父级关系的测试评论，可直接导入 MySQL 验证联动效果。
-*   后端：`CommentService#listByPost` 会按 `parent_comment_id` 构建树形 `CommentDto.replies`，前端无需再次聚合；新增、删除、编辑均会触发 `loadComments(postId)` 重新拉取。
-*   头像：若评论由登录用户提交，渲染时优先读取用户当前 `avatar_url`，保证更新头像后历史评论也能展示最新形象；匿名评论则退回 `author_avatar_url` 字段。
-*   前端：`AppFull.jsx` 中的 `CommentsSection` 递归渲染 `replies`，支持楼中楼展示，但从交互上限制两层（顶层评论 + 一次回复），超过一层的节点不再出现“回复”按钮；评论总数通过递归统计所有层级，UI 会同步显示。
-*   为兼顾阅读体验与交流效率，当前实现允许用户回复任意楼层，但当回复目标处于第二层时，仍会以“二级评论”形式展示，并在内容前自动附加 `@原作者：` 以指示引用对象；提交到后端的 `parentId` 始终指向顶层楼层，保持数据结构一致。
-*   接口补充：`GET /api/comments/recent?size=5` 会返回最近通过审核的若干条评论（默认 5 条，上限 20），每条带有 `postId/postTitle/postSlug` 便于前端跳转对应文章。首页左侧的“最新评论”模块直接消费该接口，并在评论增删改后由 `useBlogData` 自动刷新。
-*   安全策略：`/api/comments/recent` 现已加入 Spring Security 的匿名白名单（`SecurityConfig` 中 `permitAll` 列表），未登录访客也可正常获取最新评论；评论的新增、编辑、删除仍受 `/api/posts/**` 写操作权限控制，不会被此调整放开。
-*   交互：从首页“最新评论”点击评论文本会直接跳转到对应文章详情的开头（不再锚定具体评论），提示文案通过 `title="来自《文章》"` 告知来源，保持体验一致且避免滚动失败。
-*   管理权限：登录用户若拥有 `COMMENT_REVIEW` 或 `COMMENT_DELETE`，会在文章详情页的评论项中额外看到“编辑”“删除”按钮；这些操作仍调用 `/api/posts/{postId}/comments/{commentId}`，后端依据 `PERM_*` 判定是否允许越权处理。
-*   安全校验：自 V1.3.21 起，所有 `/api/posts/{postId}/comments/{commentId}` 写操作都会在 Service 层验证评论是否属于当前文章，若 `commentId` 不隶属于 `postId`，后端直接返回 400 以阻断 IDOR；管理员使用 `/api/admin/comments/{id}` 仍可跨文章处理。
-
+# SanguiBlog 技术手册 (Technical Manual)
+
+> **文档生成时间**: 2025-11-23
+> **适用对象**: 后端开发人员、前端开发人员、运维人员
+> **项目状态**: 开发中 (Active Development)
+
+## 1. 项目概述 (Project Overview)
+
+SanguiBlog 是一个前后端分离的个人博客系统。
+- **后端**: 基于 Spring Boot 3.2.5 构建的 RESTful API 服务。
+- **前端**: 基于 React 19 + Vite 构建的单页应用 (SPA)，使用 TailwindCSS 进行样式设计。
+- **核心目标**: 提供高性能、高交互性的博客阅读与管理体验。
+
+---
+
+## 2. 技术栈 (Tech Stack)
+
+### 2.1 后端 (SanguiBlog-server)
+| 技术 | 版本 | 说明 |
+| :--- | :--- | :--- |
+| **Java** | **21** | 使用最新 LTS 版本，利用新特性 (Virtual Threads 等潜力) |
+| **Spring Boot** | 3.2.5 | 核心框架 |
+| **Database** | MySQL 8.0+ | 数据存储 |
+| **ORM** | Spring Data JPA | 数据持久层 |
+| **Security** | Spring Security + JJWT (0.11.5) | 无状态认证 (Stateless Auth) |
+| **API Docs** | SpringDoc OpenAPI (Swagger) 2.5.0 | 接口文档 (`/swagger-ui.html`) |
+| **Utils** | Lombok, Commonmark | 代码简化与 Markdown 处理 |
+
+### 2.2 前端 (SanguiBlog-front)
+| 技术 | 版本 | 说明 |
+| :--- | :--- | :--- |
+| **React** | **19.2.0** | 使用最新的 React 核心 |
+| **Build Tool** | Vite 7.2.4 | 极速构建工具 |
+| **Router** | React Router DOM 7.1.1 | 路由管理 |
+| **Styling** | **TailwindCSS 4.1.17** | 原子化 CSS 框架 (v4 版本) |
+| **UI/Icons** | Lucide React | 图标库 |
+| **Animation** | Framer Motion 12.x | 复杂动画实现 |
+| **Markdown** | React Markdown + Remark GFM | 前端 Markdown 渲染 |
+
+---
+
+## 3. 架构与代码实现 (Architecture & Implementation)
+
+### 3.1 后端架构
+采用标准的 Spring Boot 分层架构：
+`Controller` (API 层) -> `Service` (业务逻辑) -> `Repository` (数据访问) -> `Database`
+
+*   **入口**: `com.sangui.sanguiblog.SanguiBlogServerApplication`
+*   **配置**: `src/main/resources/application.yaml`
+    *   **端口**: 8080
+    *   **JPA**: `ddl-auto: none` (**注意**: 数据库表结构不会自动更新，需手动维护 SQL)
+    *   **JWT**: 密钥配置在 `jwt.secret`，默认有效期 180 分钟。
+
+#### 关键模块
+*   **认证 (Auth)**:
+    *   `SecurityConfig.java`: 配置了安全过滤器链。`/api/auth/login` 公开，写操作 (`POST/PUT/DELETE`) 需 `ADMIN` 权限。
+    *   `JwtAuthenticationFilter`: 拦截请求，解析 `Authorization: Bearer <token>` 头。
+*   **内容管理**:
+    *   `PostController`: 处理文章的 CRUD。
+    *   `Post` 实体: 存储 `contentMd` (Markdown 原文) 和 `contentHtml` (渲染后的 HTML)。
+
+### 3.2 前端架构
+单页应用，入口为 `src/main.jsx` -> `AppFull.jsx`。
+
+*   **路由 (`AppFull.jsx`)**:
+    *   `/`: 首页 (Hero + 文章列表)
+    *   `/posts/:id`: 文章详情页
+    *   `/admin/*`: 后台管理面板 (Dashboard, 编辑器等)
+*   **状态管理 (`hooks/useBlogData.jsx`)**:
+    *   使用 React Context (`BlogContext`) 管理全局状态：`user`, `posts`, `categories`。
+    *   封装了所有 API 调用 (`loadPosts`, `doLogin` 等)。
+*   **API 层 (`api.js`)**:
+    *   统一封装 `fetch` 请求。
+    *   自动携带 `localStorage` 中的 `sg_token`。
+    *   `API_BASE`: 默认为 `http://localhost:8080/api`。
+    *   接口报错时优先解析 JSON，若包含 `message`/`msg` 字段则只返回该文本给前台提示，避免把整段响应 JSON 暴露给终端用户。
+*   **归档视图 (`ArchiveView`)**：
+    *   导航“归档”会懒加载 `/api/posts?page=1&size=200&status=PUBLISHED`，按年/月对文章进行分组，默认展示最近 200 篇，并在右侧提供“月份速选”面板（`sticky` + 平滑滚动）快速定位到指定月份。
+    *   每个条目展示标题、日期、分类、标签、阅读/评论统计，点击后通过 `setArticleId + setView('article')` 跳转文章详情。
+    *   若 `site.asset-base-url` 带路径前缀，`buildAssetUrl` 会自动去除重复段，保障归档页图片展示一致。
+*   首页文章卡片所展示的“浏览量 / 评论数”直接读取后端 `PostSummaryDto` 中的 `viewsCount` 与 `comments` 字段，其中评论数由后端实时统计 `APPROVED` 状态的评论数量。
+*   首页文章卡片若发布时间在 7 天内，会在标题旁展示带有闪动效果的 “NEW” 徽章，提示访客这是近一周的新内容。
+*   首页底部版权信息来自 `/site/meta.footer`，支持在 `application.yaml` 的 `site.footer.*` 中自定义年份、品牌、备案号/链接以及 Powered by 文案；备案号始终以新窗口打开工信部或自定义链接。
+*   “全部标签”区展示真实标签列表，点击任意标签会立即过滤右侧文章列表，只保留包含该标签的文章，再次点击或点击“清除筛选”即可恢复全部文章。
+
+### 3.3 Markdown 渲染策略
+*   `ArticleDetail` 组件优先使用 `contentMd`，通过 `ReactMarkdown` 渲染；若后端仅返回 `contentHtml` 则采用 `dangerouslySetInnerHTML` 兜底。
+*   插件链：
+    *   `remark-gfm`: 表格、任务列表、删除线等 GitHub 风格扩展。
+    *   `remark-math` + `rehype-katex`: 支持 `$...$` 行内、`$$...$$` 块级公式，样式依赖 `katex/dist/katex.min.css`（在 `AppFull.jsx` 头部全局引入）。
+    *   `rehype-raw`: 允许 Markdown 中的原生 HTML（如 `<p style="color:red">`）直接渲染，满足自定义排版需求。
+    *   **扩展高亮**：通过自定义 `remarkHighlight` 插件把 `==文本==` 转换为 `<mark>` 标签，兼容 Markdown 与 HTML 渲染路径，便于作者强调关键词。
+*   标题锚点：`AppFull.jsx` 自定义 `createHeading` 渲染器为 `h1-h6` 自动生成 `id`（兼容中文 slug 并支持重名去重），每次渲染都会重置 slug 映射，避免重复渲染导致 `xxx-2` 等随机锚点；同时拦截 Markdown 中 `href="#..."` 的点击事件，若直接匹配不到元素则自动尝试 slug 化后的 ID 并回退到原始 `#标题`，确保 `[目录](#某标题)` 语法能准确跳转。
+*   代码块渲染保持自定义的 Neo-Brutalism 包装（窗口按钮 + 阴影），行内代码继续使用定制逻辑裁剪反引号，保证视觉一致性。
+
+### 3.4 后台标签管理
+
+*   `/admin/taxonomy` 页面由 `TaxonomyView` 负责，支持标签的新增、编辑、删除、刷新、分页与模糊搜索（按名称/slug），界面提供实时表格与行内编辑体验。
+*   所有操作调用受保护的 `/api/admin/tags` 接口（POST/PUT/DELETE/GET），需 `ADMIN` 及以上权限；接口层会校验名称与 slug 唯一性，并在后端自动生成 slug（兼容中文）。
+*   公共 `/api/tags` 接口保留只读模式，前台依旧可以匿名获取标签列表；后台则通过新增的 admin API 获得包含描述、时间戳、分页信息的完整版数据。
+
+### 3.5 后台文章管理
+
+*   `/admin/posts` 页面由 `PostsView` 负责，提供文章分页列表、关键字搜索、按分类筛选，并将“编辑”按钮跳转到独立的 `/admin/posts/edit` 页；列表侧仅做导航入口，不再行内修改正文或元信息。
+*   列表首列只显示标题，Slug 仅做后台检索用；同时根据 `status` 值为每行附加绿色/琥珀色/灰色底纹，分别对应“已发布 / 草稿 / 已归档”，管理员无需点进详情即可直观分辨状态。
+*   `/admin/posts/edit` 由 `EditPostView` 渲染，支持通过 URL 携带 `postId` 定位文章；若未携带参数，会先列出可选文章供管理员点选。页面可同步编辑标题、Slug、摘要、主题色、状态、分类、标签及 Markdown 正文，色盘/预设颜色会直接写入 `theme_color`（如 `bg-[#FF0080]`）。
+*   对应的 `GET /api/admin/posts/{id}` 返回 `AdminPostDetailDto`，包含 Markdown 正文与标签/分类 ID；保存时调用 `PUT /api/posts/{id}` 仍沿用 `SavePostRequest`，后端在更新主题色的同时继续校验 slug 唯一性、分类存在性并维护 `post_tags`。
+*   保存成功后会在右上角弹出霓虹风格提示栏，4 秒后自动收起，管理员也可点击关闭；失败时仍以内联红字提示，确保错误信息不会被遮挡。
+
+### 3.6 管理端个人资料
+*   顶部导航头像会打开 `/admin/profile`，页面包含头像上传、基础资料、Bio、GitHub、密码重置和只读账户信息等模块（微信二维码字段已废弃，不再显示）。
+*   头像上传保存至 `src/main/resources/static/avatar`，数据库仅存储文件名；响应给前端时自动补全 `/avatar/<filename>`，同时在更新时删除旧文件，防止残留。
+*   头像上传走 `/api/upload/avatar`，成功后立即调用 `updateProfile` 持久化路径；密码修改需先验证原密码，通过后输入新密码才可提交。
+*   页面支持暗色模式，并提供明确的状态提示与校验反馈。
+
+### 3.7 后台文章发布
+*   `/admin/create-post` 页面采用“自动预留 slug + 光标插图”的流程：进入页面即调用 `/api/upload/post-assets/reserve` 申请唯一资源目录，Markdown 编辑区右上方的“插入图片”按钮会在当前光标处上传所选图片，直接写入 `/uploads/<slug>/` 后马上把对应 Markdown 片段插入正文。
+*   资源标识卡片内置主题色选择器，可直接输入 `bg-[#xxxxxx]` 类名、使用色盘或点选 6 个预设颜色，提交时会作为 `theme_color` 存入数据库，CreatePost 与 EditPost 均复用同一组件，确保展示色与后台数据一致。
+*   Markdown 文件通过本地读取填充正文，若标题输入框仍为空会自动使用文件名（去除扩展名）；摘要可自定义，也可以在提交前由正文前 160 字自动生成。
+*   仅支持选择二级分类（先点一级分类再点下方子类），以及至少一个标签；三项均完成后才能启用“立即发布”按钮，避免漏填元数据。
+*   发布会调用 `POST /api/posts`，其中 `slug` 必须传入预留得到的目录名称；后端会校验唯一性并在必要时创建空目录，确保数据库与磁盘一一对应。
+*   发布成功会触发同样的右上角提示栏，用于展示文章 ID 等摘要信息，提醒管理员等待 4 秒即可自动消失或手动关闭；若失败仍在按钮下方互斥显示红字错误，避免重复反馈。
+
+### 3.8 用户管理
+*   `/admin/users` 页面由 `UserManagementView` 渲染，左侧表格可按关键词、角色和分页浏览全部后台账号，右侧表单同时支持创建/编辑，密码字段无需原密码即可重置。
+*   创建/更新接口均允许填写基础资料（用户名、显示名、邮箱、头衔、简介、GitHub、微信二维码）并直接选择角色；表单新增头像上传控件，沿用 `/api/upload/avatar` 上传后立即写入 `avatarUrl`，列表中也会显示缩略头像以便校对。后端 `AdminUserService` 会像个人资料页一样规范化 `avatarUrl` 并在写入新路径后删除旧头像文件，确保数据库与文件系统保持一致。
+*   创建用户时默认角色会优先选用 `USER`（若存在），防止误把新账号设为 SUPER_ADMIN；只读信息（ID、创建时间、最近登录）在表单下方展示，仍不可手动修改。
+*   对应后端接口：
+    *   `GET /api/admin/users`（支持 `keyword`、`role`、`page`、`size`）返回 `PageResponse<AdminUserDto>`；
+    *   `GET /api/admin/users/{id}` / `POST /api/admin/users` / `PUT /api/admin/users/{id}` / `DELETE /api/admin/users/{id}` 完成完整 CRUD；
+    *   `GET /api/admin/users/roles` 返回可选角色列表（`code` + `name`），供前端下拉框使用。
+
+### 3.9 Backoffice Comment Management
+*   **界面**：`/admin/comments` 由筛选区 + 文章候选列表 + 评论概览三部分组成。筛选区支持“全部文章/指定文章”切换、状态和关键字过滤，并提供刷新按钮；文章列表用于分页加载文章标题，方便快速定位；概览卡片会展示当前范围、筛选状态与符合条件的总数。
+*   **列表操作**：评论表格展示 ID、所属文章、作者/IP/时间、内容与状态。拥有 `COMMENT_REVIEW` 的账号可以在表格行内编辑内容及状态（APPROVED/PENDING/REJECTED/SPAM），拥有 `COMMENT_DELETE` 的账号可以直接删除任意评论；`COMMENT_REPLY` 控制是否可在后台以官方身份回复评论。
+*   **后台回复**：页底提供“发布后台回复”表单，可选择文章、填写显示作者、指定父级评论并提交内容。该表单依旧调用公开的 `POST /api/posts/{id}/comments`，从而保持与前台访客评论一致的流程。
+*   **接口**：`GET /api/admin/comments` 提供分页数据（`PageResponse<AdminCommentItemDto>`），`PUT /api/admin/comments/{id}` 只接受 `{content,status}` 字段用于审核/改写，`DELETE /api/admin/comments/{id}` 删除单条评论及其子节点。所有操作都依赖 `CommentService.searchComments/updateCommentAsAdmin/deleteComment`。
+*   **权限**：`COMMENT_VIEW/COMMENT_CREATE/COMMENT_REPLY/COMMENT_REVIEW/COMMENT_DELETE` 分别对应查看、后台创建、后台回复、审核、删除，各项权限既影响前端按钮是否渲染，也由后端 `@PreAuthorize` 强制校验；超级管理员天然拥有全部权限。
+
+### 3.10 Analytics for Admin
+*   GET /api/admin/analytics/summary?days=<7|14|30>&top=<5>&recent=<30> calls AnalyticsService.loadAdminSummary to aggregate nalytics_page_views + nalytics_traffic_sources and fill AdminAnalyticsSummaryDto (overview, daily trends, top posts, recent visits).
+*   Dashboard widgets consume AnalyticsSummaryContext; KPI cards, charts and tables share the same state and the 
+eload() helper forces a refresh.
+*   /admin/analytics lets admins switch between 7/14/30 days to inspect trend charts, traffic sources, hot posts and detailed visit logs (URL/IP/Geo/login state).
+*   AnalyticsService.recordPageView writes nalytics_page_views and updates traffic sources. PV uses a 1-minute in-memory throttle (IP+post) plus a 10-minute DB dedupe. SUPER_ADMIN is skipped only when pageTitle/referrer contains dmin. If the front-end tracker fails, PostService.incrementViews now builds a PageViewRequest and calls 
+ecordPageView (fallback writes directly). DELETE /api/admin/analytics/page-views/me cleans operator footprints.
+*   updateTrafficSourceStat classifies referrers (search engine / social media / specific domain / Direct / None) and updates nalytics_traffic_sources(stat_date, source_label, visits, percentage).
+
+### 3.11 Permissions Matrix
+*   /admin/permissions shows the role ? permission matrix (batch select + save). AdminNoticeBar + useTimedNotice surfaces success/error and blocks non SUPER_ADMIN visits.
+*   GET /api/admin/permissions, GET /api/admin/permissions/{roleCode}, PUT /api/admin/permissions/{roleCode} are handled by PermissionService, backed by PermissionDefinition. Saving will update 
+ole_permissions in bulk.
+*   permissions_seed.sql seeds permissions/role_permissions; only ADMIN/SUPER_ADMIN can operate this module.
+*   所有后台控制器及 `/api/posts` 写操作均使用 `PERM_*` 权限码进行 `@PreAuthorize` 校验，与 `PermissionDefinition` 中的 code 一一对应；`SUPER_ADMIN` 默认拥有全部权限，其余角色必须在矩阵中勾选后才能调用相应 API。
+*   前端通过全局 `PermissionContext` 缓存 `/api/permissions/me` 返回的 code 列表，导航菜单和具体按钮都会依据 `hasPermission(code)` 结果展示/隐藏，确保 UI 与后端策略一致。
+
+### 4.1 核心数据库表
+*   **`users`**: 用户表。
+    *   `username`: 登录名 (唯一)。
+    *   `role`: 角色 (`SUPER_ADMIN`, `ADMIN`, `USER`)。
+    *   `password_hash`: BCrypt 加密后的密码。
+*   **`posts`**: 文章表。
+    *   `slug`: URL 友好的唯一标识符。
+    *   `status`: 文章状态 (DRAFT, PUBLISHED)。
+*   **`site_settings`**: 全局配置表。
+    *   存储键值对 (Key-Value)，用于动态配置网站标题、SEO 设置等。
+
+### 4.2 认证规则
+1.  用户登录 -> 后端验证 -> 生成 JWT -> 返回 Token。
+2.  前端将 Token 存入 `localStorage` (`key: "sg_token"`).
+3.  前端每次请求 API 时，在 Header 中携带 `Authorization: Bearer <token>`；`checkAuth` 仅在后端明确返回 `401` 时才会清除本地 Token，避免偶发网络错误导致登录状态被误清空。
+
+---
+
+### 4.3 API 响应结构说明
+*   **文章详情 (`/api/posts/{id}`)**:
+    *   返回 `PostDetailDto`，包含 `summary` (PostSummaryDto), `contentMd`, `contentHtml`。
+*   **文章详情 (`/api/posts/{id}`)**:
+    *   返回 `PostDetailDto`，包含 `summary` (PostSummaryDto), `contentMd`, `contentHtml`。
+    *   **关键**: 文章的元数据（标题、作者、分类、摘要等）都在 `summary` 字段中，且为扁平化结构（如 `authorName`, `category` 为字符串），而非嵌套对象。
+    *   前端 `ArticleDetail` 组件需优先从 `articleData.summary` 获取这些信息。
+
+### 4.4 静态资源与头像存储 (Static Resources & Avatars)
+*   **根路径配置**：`application.yaml` 暴露 `storage.base-path`（支持环境变量 `STORAGE_BASE_PATH`），用于指定所有本地静态资源的根目录，默认值为仓库根目录下的 `uploads`。应用启动时会自动创建根目录以及 `avatar/`、`posts/` 等必要子目录。
+*   **站点版本**：`application.yaml` 提供 `site.version`，后端会在 `/api/site/meta` 中返回该值；前端首页 Banner 直接读取该字段显示 `SANGUI BLOG // <version>`，统一版本号来源。
+*   **数据库与 JWT 凭证**：`spring.datasource.username/password` 会优先读取 `DB_USERNAME` / `DB_PASSWORD`，若未设置则兼容 Spring Boot 原生的 `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`；`jwt.secret` 亦支持 `JWT_SECRET` 或 `SPRING_JWT_SECRET`。仓库中不再保存明文，生产与本地环境需通过系统环境变量或额外的 `application-local.yaml`（自行创建并忽略）提供真实值。
+*   **目录结构**：头像、文章图片、附件等均放置在根目录下的独立子目录，例如文章资源统一保存在 `<base-path>/posts/<slug>/`。后续扩展新的资源类型时只需在该根目录内再创建子目录即可，部署与备份流程保持一致。
+*   **数据库字段**：`users.avatar_url` 保存头像文件名或 `avatar/` 相对路径；`posts.slug` 现改为记录文章图片文件夹的相对路径（如 `posts/20241124/abc123`），后端返回数据时会携带该路径以便前端按需拼接。
+*   **静态映射**：`WebConfig` 将 `/avatar/**` 与 `/uploads/**` 映射到实际文件系统目录，无需重新打包 `static/` 资源即可即时读取最新上传内容。文章图片可直接通过 `http://<server>/uploads/<slug>/xxx.png` 访问。
+*   **前端处理**：`/admin/create-post` 的“插入图片”按钮会携带预留的 `slug` 调用 `/api/upload/post-assets`，后端在不清空目录的情况下追加文件并返回 `files`、`urls` 以及用分号拼接好的 `joined` 字符串；前端据此插入 Markdown，若需要把图片地址落库可直接使用 `joined`。`slug` 现改为按需懒生成：仅在首次上传图片或点击“立即发布”时才调用 `/api/upload/post-assets/reserve`，生成后在同一编辑会话内复用，发布成功会清空该值以避免产生空目录。
+*   **静态资源域名**：`application.yaml` 中新增 `site.asset-base-url`（可挂靠环境变量）用于声明图片 CDN/网关的完整域名，`/api/site/meta` 会把该值透传为 `assetBaseUrl`，前端的 `buildAssetUrl` 会优先使用它拼接 `/uploads/**`、`/avatar/**`、`/contact/**` 等路径；若未配置，则依次回落到 `VITE_ASSET_ORIGIN` → `VITE_API_BASE` 对应域名 → `window.location.origin` → `http://localhost:8080`，本地调试与线上部署都能拿到正确的资源地址。若 `asset-base-url` 本身带有路径（如 `https://cdn.example.com/uploads`），前端会自动去重重复的 `uploads/` 段，不会生成 `uploads/uploads/...`。
+*   **文章图片预览**：文章详情页会为 Markdown/HTML 中的所有 `<img>` 元素注入 `cursor-zoom-in` 样式，并在点击时打开全屏遮罩预览，图片路径自动经过 `resolveAssetPath` 补全，关闭遮罩后恢复页面滚动。
+
+### 4.5 评论与楼中楼
+*   数据结构：`comments` 表含 `parent_comment_id` 外键（见 `sanguiblog_db.sql`），配合 `ON DELETE SET NULL` 可形成任意深度的树形结构。SQL 文件附带了多条带父级关系的测试评论，可直接导入 MySQL 验证联动效果。
+*   后端：`CommentService#listByPost` 会按 `parent_comment_id` 构建树形 `CommentDto.replies`，前端无需再次聚合；新增、删除、编辑均会触发 `loadComments(postId)` 重新拉取。
+*   头像：若评论由登录用户提交，渲染时优先读取用户当前 `avatar_url`，保证更新头像后历史评论也能展示最新形象；匿名评论则退回 `author_avatar_url` 字段。
+*   前端：`AppFull.jsx` 中的 `CommentsSection` 递归渲染 `replies`，支持楼中楼展示，但从交互上限制两层（顶层评论 + 一次回复），超过一层的节点不再出现“回复”按钮；评论总数通过递归统计所有层级，UI 会同步显示。
+*   为兼顾阅读体验与交流效率，当前实现允许用户回复任意楼层，但当回复目标处于第二层时，仍会以“二级评论”形式展示，并在内容前自动附加 `@原作者：` 以指示引用对象；提交到后端的 `parentId` 始终指向顶层楼层，保持数据结构一致。
+*   接口补充：`GET /api/comments/recent?size=5` 会返回最近通过审核的若干条评论（默认 5 条，上限 20），每条带有 `postId/postTitle/postSlug` 便于前端跳转对应文章。首页左侧的“最新评论”模块直接消费该接口，并在评论增删改后由 `useBlogData` 自动刷新。
+*   安全策略：`/api/comments/recent` 现已加入 Spring Security 的匿名白名单（`SecurityConfig` 中 `permitAll` 列表），未登录访客也可正常获取最新评论；评论的新增、编辑、删除仍受 `/api/posts/**` 写操作权限控制，不会被此调整放开。
+*   交互：从首页“最新评论”点击评论文本会直接跳转到对应文章详情的开头（不再锚定具体评论），提示文案通过 `title="来自《文章》"` 告知来源，保持体验一致且避免滚动失败。
+*   管理权限：登录用户若拥有 `COMMENT_REVIEW` 或 `COMMENT_DELETE`，会在文章详情页的评论项中额外看到“编辑”“删除”按钮；这些操作仍调用 `/api/posts/{postId}/comments/{commentId}`，后端依据 `PERM_*` 判定是否允许越权处理。
+*   安全校验：自 V1.3.21 起，所有 `/api/posts/{postId}/comments/{commentId}` 写操作都会在 Service 层验证评论是否属于当前文章，若 `commentId` 不隶属于 `postId`，后端直接返回 400 以阻断 IDOR；管理员使用 `/api/admin/comments/{id}` 仍可跨文章处理。
+
 ### 4.6 Data Collection
-*   POST /api/analytics/page-view accepts PageViewRequest(postId,pageTitle,referrer,geo,userAgent) plus the client IP and inserts into nalytics_page_views. Empty referrers are treated as Direct visits.
-*   PV uses ?1-minute in-memory throttle (IP + post) + 10-minute DB dedupe?. Since V1.3.2 PostService.incrementViews also creates a PageViewRequest and calls 
-ecordPageView; if that fails it writes the record directly so admin dashboards never go blank.
-*   AnalyticsService.updateTrafficSourceStat classifies referrers and maintains nalytics_traffic_sources(stat_date, source_label, visits, percentage) (default Direct / None).
-*   AnalyticsService.recordPageView now runs in its own transaction (REQUIRES_NEW) and traffic-source upserts retry once before logging a warning, ensuring view counters never roll back even when analytics aggregation encounters conflicts.
-*   DELETE /api/admin/analytics/page-views/me lets administrators purge their own visits.
+* PV ??
+  * POST `/api/analytics/page-view`??? PageViewRequest(postId,pageTitle,referrer,geo,userAgent)????? IpUtils ???? IP/UA ? JWT ???? referrer ?? Direct / None?
+  * ?????PostController ???? IP/UA ??? PostService.incrementViews??? +1 ????? page_view?1 ???????IP+post?+10 ????????
+* ??????
+  * viewer_ip??? X-Forwarded-For / X-Real-IP?loopback ??? 127.0.0.1?
+  * user_id????? JWT ????????? NULL?
+  * geo_location?GeoIpService ?????/??????? ipapi.co ?????????????
+* ?????
+  * GET `/api/admin/analytics/summary`??????/?????
+  * GET `/api/admin/analytics/page-views?page=&size=`????? analytics_page_views?viewed_at ????????????????????
+  * DELETE `/api/admin/analytics/page-views/me`?? SUPER_ADMIN??????????
 
-### 4.7 Initial Accounts & Default Passwords
-*   DataInitializer now only ensures the default roles exist and assigns them to `sangui` / `admin_user1` / `editor_user2` when these users lack a role; it no longer changes or resets their passwords automatically.
-*   There is no longer any `app.bootstrap.*-password` override. Operators must rotate credentials manually（SQL 或后台重置均可），并在首次登录后及时修改密码且不要把默认口令写入代码库/脚本。
-*   After each manual reset, verify `/admin/profile` 可正常登录，并在 NOTE 中同步记录密码策略（仅写流程，不写明口令）。
-
-## 5. 易错点与注意事项 (Common Pitfalls & Gotchas)
-
-### ⚠️ 1. 数据来源混合 (Hybrid Data Source)
-**现状**: 前端代码中存在 **真实 API 数据** 与 **Mock 数据** 混用的情况。
-*   **文章/评论**: 主要走真实 API (`useBlogData` -> `api.js`).
-*   **后台仪表盘 (Dashboard)**: `AppFull.jsx` 中的 `DashboardView` 组件目前大量使用了 **`MOCK_ANALYTICS`** (硬编码数据)。
-    *   **风险**: 管理员看到的“流量统计”可能不是实时的数据库数据。
-    *   **建议**: 后续需将 Dashboard 对接 `/api/analytics` 接口。
-
-### ⚠️ 2. 数据库 Schema 维护
-*   **配置**: `spring.jpa.hibernate.ddl-auto = none`
-*   **后果**: 修改 Java Entity (`User`, `Post` 等) **不会** 自动更新数据库表结构。
-*   **操作**: 每次修改字段，必须手动编写 SQL 并在数据库中执行 `ALTER TABLE`。
-
-### ⚠️ 3. 跨域配置 (CORS)
-*   后端 `SecurityConfig.java` 中硬编码了允许的源：
-    *   `http://localhost:5173`
-    *   `http://127.0.0.1:5173`
-    *   `http://localhost:5174`
-    *   `http://127.0.0.1:5174`
-    *   `http://localhost:3000`
-*   **注意**: 如果前端部署在其他域名或端口，**必须** 修改后端代码并重新编译，否则会报 CORS 错误。
-
-### ⚠️ 4. React 19 兼容性
-*   项目使用了 React 19 (RC/Beta 阶段特性)。
-*   **注意**: 某些第三方库可能尚未完全适配 React 19。如果遇到奇怪的渲染错误，检查 `package.json` 中的依赖版本。
-
-### ⚠️ 5. 紧急广播 (System Broadcast)
-*   前端实现了“紧急广播”功能 (`EmergencyBar`)。
-*   广播记录包含 `content`、`active` 与 `style` 字段，其中 `style` 目前支持 `ALERT`（红色紧急告警，带闪烁提醒）与 `ANNOUNCE`（温和公告，暖色系展示），默认值为 `ALERT`；数据库对应 `system_broadcasts.style`，后端 `SiteService.updateBroadcast` 会自动兜底非法值。
-*   `/api/site/meta.broadcast` 会把 `style` 同步到前端，后台“紧急广播设置”表单在保存时需携带该字段以保持风格一致；前端的 AdminPanel 已提供按钮/下拉同时设置内容、开关与展示样式。
-*   **状态**: 目前广播状态可能仅保存在前端内存或简单的后端接口，刷新页面后的一致性需重点测试 (依赖 `/site/broadcast` 接口)。
-
----
-
-## 6. 快速开始 (Quick Start)
-
-### 后端启动
-```bash
-cd SanguiBlog-server
-mvn spring-boot:run
-# 确保 MySQL 运行在 3306，且数据库 sanguiblog_db 存在
-```
-
-### 前端启动
-```bash
-cd SanguiBlog-front
-npm install
-npm run dev
-# 访问 http://localhost:5173
-```
-### ?? ����ҳ����ҳ���ܣ�
-* ���ݿ⣺������ bout_page���ֶ� content_md/content_html��updated_by��ʱ�������ʼ��һ�� id=1 �Ŀռ�¼���� sanguiblog_db.sql ĩβ����
-* �����ӿڣ�GET /api/about �������¹������ݣ�����Ϊ null����
-* ��̨�ӿڣ��� SUPER_ADMIN����
-  * GET /api/admin/about ��ȡ��ǰ Markdown ����Ⱦ��� HTML��
-  * PUT /api/admin/about ���� Markdown ���Ĳ��������Ⱦ HTML��������ȡ�Ե�ǰ��¼�û���
-* ǰ�ˣ����������ڡ�ҳ��ȡ /api/about����̨������վ�㡱�༭ҳ�ṩ Markdown �ı���/�ϴ� md �ļ������漴����Ч��
-### Swagger 安全策略
-- 默认/生产环境：`springdoc.swagger-ui.enabled=false`、`api-docs.enabled=false`，杜绝接口模型暴露。
-- 开发调试：设置环境变量 `SPRING_PROFILES_ACTIVE=dev`，加载 `application-dev.yaml` 自动开启 `/swagger-ui.html` 与 `/api-docs`；发布前务必移除该 profile。
-### 角色初始化更新
-- 自 V1.3.76 起，`DataInitializer` 仅创建基础角色（SUPER_ADMIN / ADMIN / USER）并同步默认权限，不再为固定用户名自动分配角色；请通过后台或 SQL 显式授予角色，避免弱口令账户被静默升权。
-### 未引用图片清理（仅超级管理员）
-- 后端提供 `/api/admin/maintenance/unused-assets`（GET 扫描）与 `/api/admin/maintenance/unused-assets/delete`（POST 删除，Body: paths[]）。
-- 扫描范围：所有文章（任意状态）与关于页的 Markdown/HTML 中引用的 `/uploads/posts/**` 资源；头像目录不在清理范围内。
-- 删除前需二次确认；删除后会尝试清理空目录，仅作用于 `uploads/posts/` 下的图片扩展名文件。
+### 4.7 Initial Accounts & Default Passwords
+*   DataInitializer now only ensures the default roles exist and assigns them to `sangui` / `admin_user1` / `editor_user2` when these users lack a role; it no longer changes or resets their passwords automatically.
+*   There is no longer any `app.bootstrap.*-password` override. Operators must rotate credentials manually（SQL 或后台重置均可），并在首次登录后及时修改密码且不要把默认口令写入代码库/脚本。
+*   After each manual reset, verify `/admin/profile` 可正常登录，并在 NOTE 中同步记录密码策略（仅写流程，不写明口令）。
+
+## 5. 易错点与注意事项 (Common Pitfalls & Gotchas)
+
+### ⚠️ 1. 数据来源混合 (Hybrid Data Source)
+**现状**: 前端代码中存在 **真实 API 数据** 与 **Mock 数据** 混用的情况。
+*   **文章/评论**: 主要走真实 API (`useBlogData` -> `api.js`).
+*   **后台仪表盘 (Dashboard)**: `AppFull.jsx` 中的 `DashboardView` 组件目前大量使用了 **`MOCK_ANALYTICS`** (硬编码数据)。
+    *   **风险**: 管理员看到的“流量统计”可能不是实时的数据库数据。
+    *   **建议**: 后续需将 Dashboard 对接 `/api/analytics` 接口。
+
+### ⚠️ 2. 数据库 Schema 维护
+*   **配置**: `spring.jpa.hibernate.ddl-auto = none`
+*   **后果**: 修改 Java Entity (`User`, `Post` 等) **不会** 自动更新数据库表结构。
+*   **操作**: 每次修改字段，必须手动编写 SQL 并在数据库中执行 `ALTER TABLE`。
+
+### ⚠️ 3. 跨域配置 (CORS)
+*   后端 `SecurityConfig.java` 中硬编码了允许的源：
+    *   `http://localhost:5173`
+    *   `http://127.0.0.1:5173`
+    *   `http://localhost:5174`
+    *   `http://127.0.0.1:5174`
+    *   `http://localhost:3000`
+*   **注意**: 如果前端部署在其他域名或端口，**必须** 修改后端代码并重新编译，否则会报 CORS 错误。
+
+### ⚠️ 4. React 19 兼容性
+*   项目使用了 React 19 (RC/Beta 阶段特性)。
+*   **注意**: 某些第三方库可能尚未完全适配 React 19。如果遇到奇怪的渲染错误，检查 `package.json` 中的依赖版本。
+
+### ⚠️ 5. 紧急广播 (System Broadcast)
+*   前端实现了“紧急广播”功能 (`EmergencyBar`)。
+*   广播记录包含 `content`、`active` 与 `style` 字段，其中 `style` 目前支持 `ALERT`（红色紧急告警，带闪烁提醒）与 `ANNOUNCE`（温和公告，暖色系展示），默认值为 `ALERT`；数据库对应 `system_broadcasts.style`，后端 `SiteService.updateBroadcast` 会自动兜底非法值。
+*   `/api/site/meta.broadcast` 会把 `style` 同步到前端，后台“紧急广播设置”表单在保存时需携带该字段以保持风格一致；前端的 AdminPanel 已提供按钮/下拉同时设置内容、开关与展示样式。
+*   **状态**: 目前广播状态可能仅保存在前端内存或简单的后端接口，刷新页面后的一致性需重点测试 (依赖 `/site/broadcast` 接口)。
+
+---
+
+## 6. 快速开始 (Quick Start)
+
+### 后端启动
+```bash
+cd SanguiBlog-server
+mvn spring-boot:run
+# 确保 MySQL 运行在 3306，且数据库 sanguiblog_db 存在
+```
+
+### 前端启动
+```bash
+cd SanguiBlog-front
+npm install
+npm run dev
+# 访问 http://localhost:5173
+```
+### ?? ҳҳܣ
+* ݿ⣺ bout_pageֶ content_md/content_htmlupdated_byʱʼһ id=1 Ŀռ¼ sanguiblog_db.sql ĩβ
+* ӿڣGET /api/about ¹ݣΪ null
+* ̨ӿڣ SUPER_ADMIN
+  * GET /api/admin/about ȡǰ Markdown Ⱦ HTML
+  * PUT /api/admin/about  Markdown ĲȾ HTMLȡԵǰ¼û
+* ǰˣڡҳȡ /api/about̨վ㡱༭ҳṩ Markdown ı/ϴ md ļ漴Ч
+### Swagger 安全策略
+- 默认/生产环境：`springdoc.swagger-ui.enabled=false`、`api-docs.enabled=false`，杜绝接口模型暴露。
+- 开发调试：设置环境变量 `SPRING_PROFILES_ACTIVE=dev`，加载 `application-dev.yaml` 自动开启 `/swagger-ui.html` 与 `/api-docs`；发布前务必移除该 profile。
+### 角色初始化更新
+- 自 V1.3.76 起，`DataInitializer` 仅创建基础角色（SUPER_ADMIN / ADMIN / USER）并同步默认权限，不再为固定用户名自动分配角色；请通过后台或 SQL 显式授予角色，避免弱口令账户被静默升权。
+### 未引用图片清理（仅超级管理员）
+- 后端提供 `/api/admin/maintenance/unused-assets`（GET 扫描）与 `/api/admin/maintenance/unused-assets/delete`（POST 删除，Body: paths[]）。
+- 扫描范围：所有文章（任意状态）与关于页的 Markdown/HTML 中引用的 `/uploads/posts/**` 资源；头像目录不在清理范围内。
+- 删除前需二次确认；删除后会尝试清理空目录，仅作用于 `uploads/posts/` 下的图片扩展名文件。

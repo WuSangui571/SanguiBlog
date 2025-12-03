@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.service;
 
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsSummaryDto;
+import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
 import com.sangui.sanguiblog.model.entity.AnalyticsTrafficSource;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,6 +47,7 @@ public class AnalyticsService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final AnalyticsTrafficSourceRepository analyticsTrafficSourceRepository;
+    private final GeoIpService geoIpService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId) {
@@ -68,9 +72,10 @@ public class AnalyticsService {
 
         pv.setUser(viewer);
         pv.setPageTitle(normalizePageTitle(request.getPageTitle()));
-        pv.setViewerIp(normalizeViewerIp(ip));
+        String normalizedIp = normalizeViewerIp(ip);
+        pv.setViewerIp(normalizedIp);
         pv.setReferrerUrl(trimToLength(request.getReferrer(), 512));
-        pv.setGeoLocation(trimToLength(request.getGeo(), 128));
+        pv.setGeoLocation(resolveGeoLocation(normalizedIp, request.getGeo()));
         pv.setUserAgent(trimToLength(userAgent, 512));
         pv.setViewedAt(LocalDateTime.now());
         analyticsPageViewRepository.save(pv);
@@ -127,24 +132,10 @@ public class AnalyticsService {
 
         List<AdminAnalyticsSummaryDto.RecentVisit> recentVisits = analyticsPageViewRepository
                 .findAllByOrderByViewedAtDesc(PageRequest.of(0, safeRecent))
+                .getContent()
                 .stream()
-                .map(view -> AdminAnalyticsSummaryDto.RecentVisit.builder()
-                        .id(view.getId())
-                        .title(view.getPost() != null ? view.getPost().getTitle() : view.getPageTitle())
-                        .postId(view.getPost() != null ? view.getPost().getId() : null)
-                        .slug(view.getPost() != null ? view.getPost().getSlug() : null)
-                        .ip(view.getViewerIp())
-                        .time(view.getViewedAt() != null ? DATE_TIME_FMT.format(view.getViewedAt()) : "")
-                        .referrer(view.getReferrerUrl())
-                        .geo(view.getGeoLocation())
-                        .loggedIn(view.getUser() != null)
-                        .userId(view.getUser() != null ? view.getUser().getId() : null)
-                        .userName(view.getUser() != null ? view.getUser().getDisplayName() : null)
-                        .userRole(view.getUser() != null && view.getUser().getRole() != null
-                                ? view.getUser().getRole().getCode()
-                                : null)
-                        .userAgent(view.getUserAgent())
-                        .build())
+                .map(this::toRecentVisit)
+                .filter(Objects::nonNull)
                 .toList();
 
         return AdminAnalyticsSummaryDto.builder()
@@ -169,6 +160,42 @@ public class AnalyticsService {
     @Transactional
     public long deletePageViewsByUser(Long userId) {
         return analyticsPageViewRepository.deleteByUser_Id(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AdminAnalyticsSummaryDto.RecentVisit> loadPageViews(int page, int size) {
+        int p = Math.max(page, 1) - 1;
+        int s = Math.min(Math.max(size, 1), 200);
+        Page<AnalyticsPageView> result = analyticsPageViewRepository.findAll(
+                PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "viewedAt")));
+        List<AdminAnalyticsSummaryDto.RecentVisit> records = result.getContent().stream()
+                .map(this::toRecentVisit)
+                .filter(Objects::nonNull)
+                .toList();
+        return new PageResponse<>(records, result.getTotalElements(), result.getNumber() + 1, result.getSize());
+    }
+
+    private AdminAnalyticsSummaryDto.RecentVisit toRecentVisit(AnalyticsPageView view) {
+        if (view == null) {
+            return null;
+        }
+        return AdminAnalyticsSummaryDto.RecentVisit.builder()
+                .id(view.getId())
+                .title(view.getPost() != null ? view.getPost().getTitle() : view.getPageTitle())
+                .postId(view.getPost() != null ? view.getPost().getId() : null)
+                .slug(view.getPost() != null ? view.getPost().getSlug() : null)
+                .ip(view.getViewerIp())
+                .time(view.getViewedAt() != null ? DATE_TIME_FMT.format(view.getViewedAt()) : "")
+                .referrer(view.getReferrerUrl())
+                .geo(view.getGeoLocation())
+                .loggedIn(view.getUser() != null)
+                .userId(view.getUser() != null ? view.getUser().getId() : null)
+                .userName(view.getUser() != null ? view.getUser().getDisplayName() : null)
+                .userRole(view.getUser() != null && view.getUser().getRole() != null
+                        ? view.getUser().getRole().getCode()
+                        : null)
+                .userAgent(view.getUserAgent())
+                .build();
     }
 
     private List<AdminAnalyticsSummaryDto.TrendPoint> buildTrendPoints(LocalDate startDate, int safeDays) {
@@ -272,6 +299,22 @@ public class AnalyticsService {
         } catch (Exception ignored) {
         }
         return referrer;
+    }
+
+    private String resolveGeoLocation(String normalizedIp, String requestGeo) {
+        String geo = null;
+        try {
+            geo = geoIpService.lookup(normalizedIp);
+        } catch (Exception ex) {
+            log.debug("Geo lookup failed for ip {}", normalizedIp, ex);
+        }
+        if (!StringUtils.hasText(geo) && StringUtils.hasText(requestGeo)) {
+            geo = trimToLength(requestGeo, 128);
+        }
+        if (!StringUtils.hasText(geo)) {
+            geo = "未知";
+        }
+        return trimToLength(geo, 128);
     }
 
     private String normalizePageTitle(String title) {

@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.controller;
 
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsSummaryDto;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
+import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.service.AnalyticsService;
 import com.sangui.sanguiblog.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,14 @@ public class AdminAnalyticsController {
             @RequestParam(value = "top", defaultValue = "5") int top,
             @RequestParam(value = "recent", defaultValue = "30") int recent) {
         return ApiResponse.ok(analyticsService.loadAdminSummary(days, top, recent));
+    }
+
+    @GetMapping("/page-views")
+    @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW')")
+    public ApiResponse<PageResponse<AdminAnalyticsSummaryDto.RecentVisit>> pageViews(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        return ApiResponse.ok(analyticsService.loadPageViews(page, size));
     }
 
     @DeleteMapping("/page-views/me")

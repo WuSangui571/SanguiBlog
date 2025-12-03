@@ -4,6 +4,7 @@ import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.security.UserPrincipal;
 import com.sangui.sanguiblog.service.AnalyticsService;
+import com.sangui.sanguiblog.util.IpUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class AnalyticsController {
     public ApiResponse<Void> record(@RequestBody PageViewRequest request,
                                     HttpServletRequest httpServletRequest,
                                     @AuthenticationPrincipal UserPrincipal principal) {
-        String ip = httpServletRequest.getRemoteAddr();
+        String ip = IpUtils.resolveIp(httpServletRequest);
         String userAgent = httpServletRequest.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
         analyticsService.recordPageView(request, ip, userAgent, userId);

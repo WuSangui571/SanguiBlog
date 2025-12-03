@@ -25,6 +25,7 @@ import {
     adminDeleteUser,
     adminFetchRoles,
     adminFetchAnalyticsSummary,
+    adminFetchPageViewLogs,
     adminDeleteMyAnalyticsLogs,
     adminFetchPermissionMatrix,
     adminUpdateRolePermissions,
@@ -1532,7 +1533,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.77'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.78'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1782,15 +1783,15 @@ const DashboardView = ({ isDarkMode }) => {
     );
 };
 
-// 4.2 Sub-Component: Analytics View (Detailed Data)
+// 4.2 Sub-Component: Analytics View (实时访问日志)
 const AnalyticsView = ({ isDarkMode, user }) => {
-    const { summary, loading, error, reload, rangeDays } = useAdminAnalytics();
-    const overview = summary?.overview;
-    const dailyTrends = summary?.dailyTrends || [];
-    const trafficSources = summary?.trafficSources || [];
-    const topPosts = summary?.topPosts || [];
-    const recentVisits = summary?.recentVisits || [];
-    const rangeOptions = [7, 14, 30];
+    const { reload } = useAdminAnalytics();
+    const [logs, setLogs] = useState([]);
+    const [page, setPage] = useState(1);
+    const [size, setSize] = useState(20);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const [clearing, setClearing] = useState(false);
     const [clearMessage, setClearMessage] = useState('');
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
@@ -1799,33 +1800,6 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const border = isDarkMode ? 'border border-gray-700' : 'border border-gray-200';
     const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const textMuted = isDarkMode ? 'text-gray-400' : 'text-gray-500';
-
-    const formatNumber = (value, fallback = '--') => {
-        if (typeof value === 'number') return value.toLocaleString();
-        return fallback;
-    };
-
-    const Chart = ({ data }) => {
-        if (!data.length) return <p className={`text-sm ${textMuted}`}>暂无趋势数据</p>;
-        const max = Math.max(...data.map(d => d.views), 1);
-        const points = data.map((item, index) => {
-            const x = (index / Math.max(data.length - 1, 1)) * 100;
-            const y = 100 - (item.views / max) * 100;
-            return `${x},${y}`;
-        }).join(' ');
-        return (
-            <svg viewBox="0 0 100 100" className="w-full h-64">
-                <polyline
-                    fill="none"
-                    stroke="#FF0080"
-                    strokeWidth="3"
-                    points={points}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                />
-            </svg>
-        );
-    };
 
     const renderReferrer = (referrer) => {
         if (!referrer) return 'Direct / None';
@@ -1836,6 +1810,45 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         return referrer;
     };
 
+    const renderUserAgent = (ua) => {
+        if (!ua) return '—';
+        return ua.length > 80 ? `${ua.slice(0, 80)}...` : ua;
+    };
+
+    const loadLogs = useCallback(async (targetPage = 1, targetSize = 20) => {
+        setLoading(true);
+        setError('');
+        try {
+            const res = await adminFetchPageViewLogs({ page: targetPage, size: targetSize });
+            const data = res.data || res;
+            setLogs(data.records || []);
+            setTotal(Number(data.total || 0));
+            setPage(Number(data.page || targetPage));
+            setSize(Number(data.size || targetSize));
+        } catch (err) {
+            setError(err.message || '加载访问日志失败');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadLogs(1, size);
+    }, [loadLogs]);
+
+    const totalPages = Math.max(1, Math.ceil((total || 0) / size) || 1);
+
+    const handlePageChange = (target) => {
+        const safe = Math.min(Math.max(target, 1), totalPages);
+        loadLogs(safe, size);
+    };
+
+    const handleSizeChange = (nextSize) => {
+        const parsed = Number(nextSize);
+        if (!parsed || parsed < 1) return;
+        loadLogs(1, parsed);
+    };
+
     const handleClearLogs = async () => {
         if (!isSuperAdmin) return;
         if (!window.confirm('确定要删除你在本站的所有访问日志吗？')) return;
@@ -1844,7 +1857,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         try {
             await adminDeleteMyAnalyticsLogs();
             setClearMessage('已清理当前账户的访问日志。');
-            reload(rangeDays);
+            await loadLogs(1, size);
+            if (reload) reload();
         } catch (err) {
             setClearMessage(err.message || '清理失败，请稍后重试。');
         } finally {
@@ -1853,23 +1867,30 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h2 className="text-3xl font-black flex items-center gap-2"><TrendingUp /> 数据分析</h2>
-                    <p className={`text-sm ${textMuted}`}>来自 `analytics_page_views` 与 `analytics_traffic_sources` 的实时统计</p>
+                    <h2 className="text-3xl font-black flex items-center gap-2"><TrendingUp /> 实时访问日志</h2>
+                    <p className={`text-sm ${textMuted}`}>按时间倒序展示 analytics_page_views 全量记录，含 IP / 用户 / 来源 / 地理位置。</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    {rangeOptions.map((size) => (
-                        <button
-                            key={size}
-                            type="button"
-                            onClick={() => reload(size)}
-                            className={`px-3 py-1 text-sm font-bold border-2 border-black rounded-full transition ${rangeDays === size ? 'bg-[#FF0080] text-white' : 'bg-white text-black hover:bg-[#FFD700]'}`}
-                        >
-                            {size} 天
-                        </button>
-                    ))}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <div className={`${border} px-3 py-1 rounded-full text-sm`}>共 {total.toLocaleString()} 条</div>
+                    <select
+                        className="px-3 py-1 text-sm border rounded-md bg-white dark:bg-gray-800"
+                        value={size}
+                        onChange={(e) => handleSizeChange(e.target.value)}
+                    >
+                        {[10, 20, 50, 100].map((opt) => (
+                            <option key={opt} value={opt}>{opt} 条/页</option>
+                        ))}
+                    </select>
+                    <button
+                        type="button"
+                        onClick={() => loadLogs(page, size)}
+                        className="px-3 py-1 text-sm font-semibold rounded-md bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
+                    >
+                        刷新
+                    </button>
                     {isSuperAdmin && (
                         <button
                             type="button"
@@ -1885,117 +1906,34 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             {error && <p className="text-sm text-red-500">{error}</p>}
             {clearMessage && <p className="text-sm text-emerald-500">{clearMessage}</p>}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className={`${surface} ${border} p-5 rounded-2xl shadow-xl`}>
-                    <p className={`text-xs uppercase tracking-[0.3em] ${textMuted}`}>区间 PV</p>
-                    <p className="text-3xl font-black mt-2">{formatNumber(overview?.periodViews)}</p>
-                </div>
-                <div className={`${surface} ${border} p-5 rounded-2xl shadow-xl`}>
-                    <p className={`text-xs uppercase tracking-[0.3em] ${textMuted}`}>独立访客</p>
-                    <p className="text-3xl font-black mt-2">{formatNumber(overview?.uniqueVisitors)}</p>
-                </div>
-                <div className={`${surface} ${border} p-5 rounded-2xl shadow-xl`}>
-                    <p className={`text-xs uppercase tracking-[0.3em] ${textMuted}`}>日均访问</p>
-                    <p className="text-3xl font-black mt-2">
-                        {overview ? (overview.avgViewsPerDay?.toFixed(1) || '0.0') : '--'}
-                    </p>
-                </div>
-            </div>
-
-            <div className={`${surface} ${border} p-6 rounded-2xl shadow-xl`}>
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h3 className={`text-2xl font-bold ${text}`}>访问曲线</h3>
-                        <p className={`text-xs ${textMuted}`}>{overview?.rangeLabel || `最近${rangeDays}天`}</p>
-                    </div>
-                    {loading && <span className={`text-xs ${textMuted}`}>数据加载中...</span>}
-                </div>
-                <Chart data={dailyTrends} />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                    <h3 className={`text-xl font-bold ${text}`}>流量来源</h3>
-                    {trafficSources.length === 0 ? (
-                        <p className={`text-sm mt-4 ${textMuted}`}>暂无流量来源数据</p>
-                    ) : (
-                        <div className="mt-4 space-y-3">
-                            {trafficSources.map((source, idx) => (
-                                <div key={`${source.label}-${idx}`}>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span>{source.label}</span>
-                                        <span className="font-semibold">{Math.round(source.value * 10) / 10}%</span>
-                                    </div>
-                                    <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                        <div
-                                            className="h-full rounded-full bg-[#00E096]"
-                                            style={{ width: `${Math.min(source.value, 100)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div className="lg:col-span-2">
-                    <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className={`text-xl font-bold ${text}`}>热门文章</h3>
-                            <span className={`text-xs ${textMuted}`}>按 PV 排序</span>
-                        </div>
-                        {topPosts.length === 0 ? (
-                            <p className={`text-sm ${textMuted}`}>暂无文章访问</p>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full text-sm">
-                                    <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
-                                        <tr>
-                                            <th className="px-4 py-2 text-left">文章</th>
-                                            <th className="px-4 py-2 text-left">Slug</th>
-                                            <th className="px-4 py-2 text-right">PV</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                                        {topPosts.map((post) => (
-                                            <tr key={post.postId}>
-                                                <td className="px-4 py-3 font-semibold">{post.title || '未命名文章'}</td>
-                                                <td className={`px-4 py-3 ${textMuted}`}>{post.slug || '—'}</td>
-                                                <td className="px-4 py-3 text-right font-bold">{formatNumber(post.views, '0')}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
             <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                <h3 className={`text-2xl font-bold mb-4 ${text}`}>实时访问日志</h3>
-                {recentVisits.length === 0 ? (
+                {loading ? (
+                    <p className={`text-sm ${textMuted}`}>数据加载中...</p>
+                ) : logs.length === 0 ? (
                     <p className={`text-sm ${textMuted}`}>暂无访问记录</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm">
                             <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
                                 <tr>
+                                    <th className="px-4 py-3 text-left">时间</th>
                                     <th className="px-4 py-3 text-left">页面/文章</th>
                                     <th className="px-4 py-3 text-left">访客 IP</th>
                                     <th className="px-4 py-3 text-left">用户</th>
-                                    <th className="px-4 py-3 text-left">时间</th>
                                     <th className="px-4 py-3 text-left">来源</th>
                                     <th className="px-4 py-3 text-left">地理</th>
+                                    <th className="px-4 py-3 text-left">User Agent</th>
                                 </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                                {recentVisits.map((visit) => (
+                                {logs.map((visit) => (
                                     <tr key={visit.id} className="align-top">
+                                        <td className="px-4 py-3 font-mono whitespace-nowrap">{visit.time || '-'}</td>
                                         <td className="px-4 py-3">
                                             <p className="font-semibold">{visit.title || '未命名页面'}</p>
                                             {visit.slug && <p className={`text-xs ${textMuted}`}>Slug：{visit.slug}</p>}
                                         </td>
-                                        <td className="px-4 py-3 font-mono">{visit.ip || '-'}</td>
+                                        <td className="px-4 py-3 font-mono break-all">{visit.ip || '-'}</td>
                                         <td className="px-4 py-3">
                                             {visit.loggedIn ? (
                                                 <>
@@ -2006,15 +1944,37 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                                 <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">访客</span>
                                             )}
                                         </td>
-                                        <td className="px-4 py-3">{visit.time || '-'}</td>
                                         <td className="px-4 py-3">{renderReferrer(visit.referrer)}</td>
                                         <td className="px-4 py-3">{visit.geo || '未知'}</td>
+                                        <td className="px-4 py-3 max-w-[320px]">{renderUserAgent(visit.userAgent)}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 )}
+
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                    <div className={`text-xs ${textMuted}`}>第 {page} / {totalPages} 页</div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => handlePageChange(page - 1)}
+                            disabled={page <= 1}
+                            className="px-3 py-1 text-sm rounded-md border disabled:opacity-50"
+                        >
+                            上一页
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handlePageChange(page + 1)}
+                            disabled={page >= totalPages}
+                            className="px-3 py-1 text-sm rounded-md border disabled:opacity-50"
+                        >
+                            下一页
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -6341,7 +6301,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.77';
+    const siteVersion = meta?.version || 'V1.3.78';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;

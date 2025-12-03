@@ -2,6 +2,8 @@ package com.sangui.sanguiblog.model.repository;
 
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,6 +31,7 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
         Long getViews();
     }
 
+    @EntityGraph(attributePaths = {"post"})
     List<AnalyticsPageView> findTop20ByOrderByViewedAtDesc();
 
     boolean existsByPostIdAndViewerIpAndViewedAtAfter(Long postId, String viewerIp, LocalDateTime viewedAt);
@@ -58,7 +61,8 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
             + "ORDER BY COUNT(apv) DESC")
     List<TopPostAggregation> findTopPostsSince(@Param("start") LocalDateTime start, Pageable pageable);
 
-    List<AnalyticsPageView> findAllByOrderByViewedAtDesc(Pageable pageable);
+    @EntityGraph(attributePaths = {"post", "user", "user.role"})
+    Page<AnalyticsPageView> findAllByOrderByViewedAtDesc(Pageable pageable);
 
     long deleteByUser_Id(Long userId);
 }
