@@ -22,7 +22,7 @@ public enum PermissionDefinition {
     CATEGORY_MANAGE("分类管理", "TAXONOMY", "CATEGORY_MANAGE", "管理分类", "创建/编辑/删除分类", List.of("SUPER_ADMIN", "ADMIN"), 3, 1),
     TAG_MANAGE("标签管理", "TAXONOMY", "TAG_MANAGE", "管理标签", "创建/编辑/删除标签", List.of("SUPER_ADMIN", "ADMIN"), 3, 2),
 
-    ANALYTICS_VIEW("数据分析", "ANALYTICS", "ANALYTICS_VIEW", "查看分析页", "访问仪表盘与分析页", List.of("SUPER_ADMIN", "ADMIN"), 4, 1),
+    ANALYTICS_VIEW("访问日志", "ANALYTICS", "ANALYTICS_VIEW", "查看访问日志", "访问仪表盘与访问日志", List.of("SUPER_ADMIN", "ADMIN"), 4, 1),
 
     USER_MANAGE("用户管理", "USERS", "USER_MANAGE", "管理用户", "创建/编辑/禁用后台账号", List.of("SUPER_ADMIN"), 5, 1),
 

@@ -183,7 +183,7 @@ public class PermissionService {
             case "POSTS" -> "文章的创建、编辑、发布与删除权限";
             case "COMMENTS" -> "评论审核、回复与删除相关权限";
             case "TAXONOMY" -> "分类与标签维护";
-            case "ANALYTICS" -> "仪表盘数据分析访问权限";
+            case "ANALYTICS" -> "仪表盘访问日志权限";
             case "USERS" -> "后台账号的增删改查";
             case "PERMISSIONS" -> "调整角色权限矩阵";
             case "PROFILE" -> "个人资料修改与安全设置";

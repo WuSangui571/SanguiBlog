@@ -1581,7 +1581,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.96'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.97'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1890,6 +1890,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const border = isDarkMode ? 'border border-gray-700' : 'border border-gray-200';
     const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const textMuted = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    const refreshButtonClass = [
+        'px-3 py-1 text-sm font-semibold rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+        isDarkMode
+            ? 'border border-gray-700 bg-gray-900 text-gray-100 hover:bg-gray-800 focus-visible:ring-indigo-400 focus-visible:ring-offset-gray-900'
+            : 'bg-black text-white hover:bg-gray-800 focus-visible:ring-gray-700 focus-visible:ring-offset-white'
+    ].join(' ');
 
     const renderReferrer = (referrer) => {
         if (!referrer) return '未知来源';
@@ -2044,7 +2050,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     <button
                         type="button"
                         onClick={() => loadLogs(page, size)}
-                        className="px-3 py-1 text-sm font-semibold rounded-md bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
+                        className={refreshButtonClass}
                     >
                         刷新
                     </button>
@@ -5769,7 +5775,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         { key: 'dashboard', label: '仪表盘', icon: Home, permissions: ['ANALYTICS_VIEW'] },
         { key: 'create-post', label: '发布文章', icon: Edit, permissions: ['POST_CREATE'] },
         { key: 'posts', label: '文章列表', icon: FileText, permissions: ['POST_VIEW'] },
-        { key: 'analytics', label: '数据分析', icon: BarChart3, permissions: ['ANALYTICS_VIEW'] },
+        { key: 'analytics', label: '访问日志', icon: BarChart3, permissions: ['ANALYTICS_VIEW'] },
         { key: 'comments', label: '评论管理', icon: MessageCircle, permissions: ['COMMENT_VIEW'] },
         { key: 'categories', label: '二级分类', icon: Layers, permissions: ['CATEGORY_MANAGE'] },
         { key: 'taxonomy', label: '标签管理', icon: Tag, permissions: ['TAG_MANAGE'] },
