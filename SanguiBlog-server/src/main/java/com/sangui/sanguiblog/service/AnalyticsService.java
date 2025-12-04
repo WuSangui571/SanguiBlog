@@ -83,10 +83,11 @@ public class AnalyticsService {
         analyticsPageViewRepository.save(pv);
 
         try {
-            updateTrafficSourceStat(request.getReferrer(), pv.getViewedAt());
+            updateTrafficSourceStat(request.getSourceLabel(), request.getReferrer(), pv.getViewedAt());
         } catch (DataIntegrityViolationException ex) {
             log.warn("流量来源统计写入冲突，已忽略本次来源，上报维度 date={}, label={}",
                     pv.getViewedAt() != null ? pv.getViewedAt().toLocalDate() : LocalDate.now(),
+
                     determineSourceLabel(request.getReferrer()));
         } catch (Exception ex) {
             log.warn("流量来源统计写入失败，已忽略本次来源记录", ex);
@@ -251,9 +252,9 @@ public class AnalyticsService {
                 .collect(Collectors.toList());
     }
 
-    private void updateTrafficSourceStat(String referrer, LocalDateTime viewedAt) {
+    private void updateTrafficSourceStat(String preferredLabel, String referrer, LocalDateTime viewedAt) {
         LocalDate statDate = viewedAt != null ? viewedAt.toLocalDate() : LocalDate.now();
-        String label = determineSourceLabel(referrer);
+        String label = determineSourceLabel(preferredLabel, referrer);
         try {
             analyticsTrafficSourceRepository.upsertSourceVisit(statDate, label);
             recalculateTrafficSourcePercentages(statDate);
@@ -281,23 +282,15 @@ public class AnalyticsService {
         analyticsTrafficSourceRepository.saveAll(sources);
     }
 
+    private String determineSourceLabel(String preferredLabel, String referrer) {
+        if (preferredLabel != null && !preferredLabel.isBlank()) {
+            return trimToLength(preferredLabel, 255);
+        }
+        return localizeReferrerLabel(referrer);
+    }
+
     private String determineSourceLabel(String referrer) {
-        if (referrer == null || referrer.isBlank()) {
-            return "Direct / None";
-        }
-        String host = extractHost(referrer).toLowerCase();
-        if (host.isBlank()) {
-            return "Direct / None";
-        }
-        if (host.contains("google") || host.contains("bing") || host.contains("baidu") || host.contains("yahoo")) {
-            return "Search Engine";
-        }
-        if (host.contains("twitter") || host.contains("x.com") || host.contains("weibo")
-                || host.contains("wechat") || host.contains("facebook") || host.contains("douyin")
-                || host.contains("instagram")) {
-            return "Social Media";
-        }
-        return host;
+        return determineSourceLabel(null, referrer);
     }
 
     private String extractHost(String referrer) {

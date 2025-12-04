@@ -888,3 +888,13 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.92 (2025-12-04)
 - **来源占比优化**：剔除复杂 SQL JOIN，改为在服务层重新查询当天所有来源并用 `BigDecimal` 精确计算百分比再批量保存，确保 `percentage` 字段实时非空、四舍五入到两位小数，兼容任意数据源。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.92`
+
+## V1.3.93 (2025-12-04)
+- **埋点去重**：前端不再对文章详情重复调用 `recordPageView`，避免与后端 `PostService` 的兜底统计叠加，单次访问仅计 1 次。
+- **来源中文化**：`source_label` 优先采纳前端上报的中文描述（如“来自首页”“外部链接：example.com”），缺省时回落到与 `referrer_url` 一致的本地化字符串。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.93`
+
+## V1.3.94 (2025-12-04)
+- **模块/页面**：Analytics 前端埋点新增视图守卫，Home/Archive/Admin 仅首入一次上报 PV，彻底杜绝 analytics_page_views 三连记录并在 NOTE.md 记录该机制。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.94`
+

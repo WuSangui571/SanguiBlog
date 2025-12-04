@@ -1075,6 +1075,26 @@ const getGeoHint = () => {
     return '';
 };
 
+const AUTO_PAGE_VIEW_GUARD = {
+    lastKey: ''
+};
+
+const claimAutoPageView = (key) => {
+    if (!key) {
+        return false;
+    }
+    if (AUTO_PAGE_VIEW_GUARD.lastKey === key) {
+        return false;
+    }
+    AUTO_PAGE_VIEW_GUARD.lastKey = key;
+    return true;
+};
+
+const resetAutoPageViewGuard = () => {
+    AUTO_PAGE_VIEW_GUARD.lastKey = '';
+};
+
+
 // --- 2. 炫酷 UI 组件库 (不变) ---
 
 const TiltCard = ({ children, className = "", onClick }) => {
@@ -1561,7 +1581,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.92'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.94'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6389,7 +6409,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.92';
+    const siteVersion = meta?.version || 'V1.3.94';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6541,36 +6561,36 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     useEffect(() => {
         if (view === 'home') {
-            sendPageView({
-                pageTitle: 'Home',
-                geo: getGeoHint()
-            });
+            if (claimAutoPageView('home')) {
+                sendPageView({
+                    pageTitle: 'Home',
+                    geo: getGeoHint()
+                });
+            }
         } else if (view === 'archive') {
-            sendPageView({
-                pageTitle: 'Archive',
-                geo: getGeoHint()
-            });
+            if (claimAutoPageView('archive')) {
+                sendPageView({
+                    pageTitle: 'Archive',
+                    geo: getGeoHint()
+                });
+            }
         } else if (view === 'admin') {
-            sendPageView({
-                pageTitle: 'Admin Panel',
-                geo: getGeoHint()
-            });
+            if (claimAutoPageView('admin')) {
+                sendPageView({
+                    pageTitle: 'Admin Panel',
+                    geo: getGeoHint()
+                });
+            }
+        } else {
+            resetAutoPageViewGuard();
         }
     }, [view, sendPageView]);
 
     useEffect(() => {
-        if (view === 'article' && articleId && article && article.id === articleId) {
-            if (lastRecordedArticleRef.current === articleId) return;
-            sendPageView({
-                postId: Number(articleId),
-                pageTitle: article.title || `Article #${articleId}`,
-                geo: getGeoHint()
-            });
-            lastRecordedArticleRef.current = articleId;
-        } else if (view !== 'article') {
+        if (view !== 'article') {
             lastRecordedArticleRef.current = null;
         }
-    }, [view, articleId, article, sendPageView]);
+    }, [view, articleId]);
 
     const handleLogout = () => {
         logout && logout();

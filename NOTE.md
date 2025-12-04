@@ -412,10 +412,12 @@ ole_permissions in bulk.
 * PV 采集
   * POST `/api/analytics/page-view`：前端在首页/Archive/Admin/文章详情等视图中调用 `recordPageView`，提交 `PageViewRequest(postId,pageTitle,referrer,geo,userAgent,clientIp)`；后台 `AnalyticsController` 通过 `IpUtils` 解析真实 IP、记录 UA 并结合 JWT 判定 `userId`，`referrer` 为空时统一写成 `Direct / None`。
   * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；代码内还做了 1 分钟的内存限流（IP+post）与 10 分钟的数据库去重，避免刷量。
+  * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV。
+  * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，仅首次进入这些视图时才会调用 `recordPageView`，一旦切换到其它视图即重置标记，彻底杜绝 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录。
 * 数据落库
   * `viewer_ip`：优先读取 `X-Forwarded-For`/`X-Real-IP`，若最终仍是回环 `127.0.0.1`/`::1`，自 V1.3.86 起会启用前端上传的 `clientIp`（由 `https://api.ipify.org?format=json` 获取）并经 `IpUtils.normalizeIp` 去除 IPv6 映射后落库，方便本地调试也能看到公网地址。
   * `referrer_url`：自 V1.3.87 起记录中文来源描述。前端在埋点时会根据 `document.referrer` 自动生成 `sourceLabel`，例如“来自首页”“来自归档页”“来自站内文章”“外部链接：example.com”或“直接访问”，由后端直接落库；若前端埋点失败，兜底记录为“系统兜底（前端埋点失败）”。
-  * `analytics_traffic_sources`：自 V1.3.88 起表结构默认 `CURRENT_TIMESTAMP`，实体也通过 `@CreationTimestamp/@UpdateTimestamp` 自动填充，避免 `created_at/updated_at` 为 NULL；V1.3.90 起 `updateTrafficSourceStat` 直接调用 `INSERT ... ON DUPLICATE KEY UPDATE`，数据库负责自增 visits，再无 Hibernate Session 冲突；V1.3.92 之后在服务层重新查询当天来源并以 `BigDecimal` 精确计算占比（四舍五入 2 位），写回 `percentage` 供仪表盘直接消费。
+  * `analytics_traffic_sources`：自 V1.3.88 起表结构默认 `CURRENT_TIMESTAMP`，实体也通过 `@CreationTimestamp/@UpdateTimestamp` 自动填充，避免 `created_at/updated_at` 为 NULL；V1.3.90 起 `updateTrafficSourceStat` 直接调用 `INSERT ... ON DUPLICATE KEY UPDATE`，数据库负责自增 visits，再无 Hibernate Session 冲突；V1.3.92 之后在服务层重新查询当天来源并以 `BigDecimal` 精确计算占比（四舍五入 2 位），写回 `percentage` 供仪表盘直接消费；V1.3.93 起 `source_label` 优先使用前端上报的中文描述（如“来自首页”“外部链接：example.com”）。
   * `user_id`：根据 JWT 中的主体 ID 关联 `users` 表，未登录访客则写入 `NULL`。
   * `geo_location`：默认通过 `GeoIpService` 调用 ipapi.co 反查；前端传入的 `geo`（本地时区）仅作兜底。
 * 管理端读取
