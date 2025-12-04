@@ -848,3 +848,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.82 (2025-12-03)
 - **模块/页面**：数据分析页头像解析与用户列表保持一致（多字段兼容，空缺回退首字母），悬停提示改为`id-username-display_name`格式并移除头像右侧用户名；分页条数下拉样式改为浅色圆角风格，消除黑色突兀感。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.82`
+
+## V1.3.83 (2025-12-04)
+- **模块/页面**：后台数据分析日志的头像路径统一补全 `/uploads/avatar/` 前缀并兼容 `avatar/avatarUrl/avatar_url/avatarPath` 字段，防止破图；tooltip 按 `id-username-display_name` 显示真实昵称，首字母兜底逻辑保持不变。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.83`

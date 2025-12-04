@@ -419,7 +419,7 @@ ole_permissions in bulk.
 * ?????
   * GET `/api/admin/analytics/summary`??????/?????
   * GET `/api/admin/analytics/page-views?page=&size=`????? analytics_page_views?viewed_at ????????????????????????? userId/username/displayName/avatarUrl ??????????????
-  * 数据分析页头像：前端复用用户列表的头像解析（avatar/avatarUrl/avatar_url → buildAssetUrl），无头像时以首字母色块兜底；头像悬停提示为 `id-username-displayName`，与用户管理列表保持一致。
+  * 数据分析页头像：前端复用用户列表的头像解析（avatar/avatarUrl/avatar_url → buildAssetUrl），无头像时以首字母色块兜底；头像悬停提示为 `id-username-display_name`，与用户管理列表保持一致。自 V1.3.83 起，AnalyticsView 会将缺少目录层级的存储路径强制归一化为 `/uploads/avatar/<file>`，避免 `uploads/<file>` 被错误渲染成破图。
   * DELETE `/api/admin/analytics/page-views/me`?? SUPER_ADMIN??????????
 
 ### 4.7 Initial Accounts & Default Passwords

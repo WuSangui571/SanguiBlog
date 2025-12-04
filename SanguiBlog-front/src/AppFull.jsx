@@ -1533,7 +1533,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.81'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.83'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1810,18 +1810,48 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         return referrer;
     };
 
-    const resolveVisitorAvatar = (visit) => buildAssetUrl(
-        visit?.avatar || visit?.avatarUrl || visit?.avatar_url,
-        ''
-    );
+    const normalizeVisitorAvatarPath = (rawValue) => {
+        if (!rawValue || typeof rawValue !== 'string') return '';
+        const trimmed = rawValue.trim();
+        if (!trimmed) return '';
+        if (/^(https?:)?\/\//i.test(trimmed)) return trimmed;
+
+        const uploadsPrefix = '/uploads/';
+        let normalized = trimmed.replace(/\\/g, '/');
+        if (!normalized.startsWith('/')) normalized = `/${normalized}`;
+
+        if (normalized.startsWith('/avatar/')) {
+            normalized = `${uploadsPrefix.slice(0, -1)}${normalized}`;
+        } else if (normalized.startsWith(uploadsPrefix)) {
+            const rest = normalized.slice(uploadsPrefix.length).replace(/^\/+/, '');
+            if (!rest.startsWith('avatar/')) {
+                normalized = `${uploadsPrefix}avatar/${rest}`;
+            } else {
+                normalized = `${uploadsPrefix}${rest}`;
+            }
+        } else {
+            normalized = `${uploadsPrefix}avatar/${normalized.replace(/^\/+/, '')}`;
+        }
+
+        return normalized.replace(/\/{2,}/g, '/');
+    };
+
+    const resolveVisitorAvatar = (visit) => {
+        const rawPath = visit?.avatar || visit?.avatarPath || visit?.avatarUrl || visit?.avatar_url;
+        const normalized = normalizeVisitorAvatarPath(rawPath);
+        if (!normalized) return '';
+        return buildAssetUrl(normalized, '');
+    };
 
     const renderUserBadge = (visit) => {
         if (!visit?.loggedIn) {
             return <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">访客</span>;
         }
 
-        const displayName = visit.displayName || visit.userName || visit.username || '-';
-        const title = `${visit.userId ?? '-'}-${visit.username || '-'}-${displayName}`;
+        const userId = visit.userId ?? visit.user_id ?? '-';
+        const username = visit.username || visit.userName || visit.user_name || '-';
+        const displayName = visit.displayName || visit.display_name || visit.nickName || visit.nickname || username || '-';
+        const title = `${userId}-${username}-${displayName}`;
         const avatarSrc = resolveVisitorAvatar(visit);
         const initials = (displayName || 'U').slice(0, 1).toUpperCase();
 
@@ -6315,7 +6345,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.81';
+    const siteVersion = meta?.version || 'V1.3.83';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;

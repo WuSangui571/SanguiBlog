@@ -7,7 +7,8 @@ export default defineConfig({
     // 新加的为了测试的域名
     server: {
         allowedHosts: [
-            'nonmature-scraggily-fermin.ngrok-free.dev'
+            // 'nonmature-scraggily-fermin.ngrok-free.dev'
+            'puristic-david-unsorely.ngrok-free.dev'
         ],
         host: true,
         // // 允许 ngrok 域名访问 dev server
