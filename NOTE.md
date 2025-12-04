@@ -409,18 +409,19 @@ ole_permissions in bulk.
 
 
 ### 4.6 Data Collection
-* PV ??
-  * POST `/api/analytics/page-view`??? PageViewRequest(postId,pageTitle,referrer,geo,userAgent)????? IpUtils ???? IP/UA ? JWT ???? referrer ?? Direct / None?
-  * ?????PostController ???? IP/UA ??? PostService.incrementViews??? +1 ????? page_view?1 ???????IP+post?+10 ????????
-* ??????
-* viewer_ip??? X-Forwarded-For / X-Real-IP?loopback ??? 127.0.0.1? V1.3.86 å¼€å§‹ï¼Œå‰ç«¯åœ¨åˆå§‹åˆ‡æ¢æ—¶ä¼šè°ƒç¨ `https://api.ipify.org?format=json` èŽ·å–å…¬ç½‘ IP å¹¶é€šè¿‡ `clientIp` å­—æ®µéš¶æœºå‘ `/api/analytics/page-view` æ??äº¤ï¼ŒåŽç«¯å¦‚æžœæŽ¥æ”¶åˆ°å›žçŽ¯åœ°å?`127.0.0.1` æˆ? `::1` å°†å›žè½ä½¿ç”¨è¯¥å­—æ®µï¼Œå¼ºåˆ¶ç» `IpUtils.normalizeIp` æ ¸éªŒã€�åŽ»æŽ‰ IPv6 æ˜ å°„ã€‚
-  * user_id????? JWT ????????? NULL?
-  * geo_location?GeoIpService ?????/??????? ipapi.co ?????????????
-* ?????
-  * GET `/api/admin/analytics/summary`??????/?????
-  * GET `/api/admin/analytics/page-views?page=&size=`????? analytics_page_views?viewed_at ????????????????????????? userId/username/displayName/avatarUrl ??????????????
+* PV 采集
+  * POST `/api/analytics/page-view`：前端在首页/Archive/Admin/文章详情等视图中调用 `recordPageView`，提交 `PageViewRequest(postId,pageTitle,referrer,geo,userAgent,clientIp)`；后台 `AnalyticsController` 通过 `IpUtils` 解析真实 IP、记录 UA 并结合 JWT 判定 `userId`，`referrer` 为空时统一写成 `Direct / None`。
+  * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；代码内还做了 1 分钟的内存限流（IP+post）与 10 分钟的数据库去重，避免刷量。
+* 数据落库
+  * `viewer_ip`：优先读取 `X-Forwarded-For`/`X-Real-IP`，若最终仍是回环 `127.0.0.1`/`::1`，自 V1.3.86 起会启用前端上传的 `clientIp`（由 `https://api.ipify.org?format=json` 获取）并经 `IpUtils.normalizeIp` 去除 IPv6 映射后落库，方便本地调试也能看到公网地址。
+  * `referrer_url`：自 V1.3.87 起记录中文来源描述。前端在埋点时会根据 `document.referrer` 自动生成 `sourceLabel`，例如“来自首页”“来自归档页”“来自站内文章”“外部链接：example.com”或“直接访问”，由后端直接落库；若前端埋点失败，兜底记录为“系统兜底（前端埋点失败）”。
+  * `user_id`：根据 JWT 中的主体 ID 关联 `users` 表，未登录访客则写入 `NULL`。
+  * `geo_location`：默认通过 `GeoIpService` 调用 ipapi.co 反查；前端传入的 `geo`（本地时区）仅作兜底。
+* 管理端读取
+  * GET `/api/admin/analytics/summary` 聚合 PV、UV、来源、热门文章、最近访问等指标，用于仪表盘。
+  * GET `/api/admin/analytics/page-views?page=&size=` 返回 `analytics_page_views` 分页结果（含 viewed_at/IP/Geo/userId/username/display_name/avatarUrl 等），供后台“数据分析-实时访问日志”使用。
   * 数据分析页头像：前端复用用户列表的头像解析（avatar/avatarUrl/avatar_url → buildAssetUrl），无头像时以首字母色块兜底；头像悬停提示为 `id-username-display_name`，与用户管理列表保持一致。自 V1.3.85 起，后端 `AdminAnalyticsSummaryDto.RecentVisit` 直接返回 `display_name` 字段，前端也会将缺少目录层级的存储路径归一化为 `/uploads/avatar/<file>`，避免因裸文件名导致破图或昵称缺失。
-  * DELETE `/api/admin/analytics/page-views/me`?? SUPER_ADMIN??????????
+  * DELETE `/api/admin/analytics/page-views/me` 仅 SUPER_ADMIN 可用，用来秒清自身的访问记录。
 
 ### 4.7 Initial Accounts & Default Passwords
 
@@ -534,19 +535,19 @@ npm run dev
 
 ```
 
-### ?? ҳҳܣ
+### 关于页维护
 
-* ݿ⣺ bout_pageֶ content_md/content_htmlupdated_byʱʼһ id=1 Ŀռ¼ sanguiblog_db.sql ĩβ
+* 数据库：`about_page` 表保存 `content_md`、`content_html`、`updated_by`、`updated_at` 等字段，初始化脚本 (`sanguiblog_db.sql`) 会插入 `id=1` 的占位记录，避免新增时还要建行。
 
-* ӿڣGET /api/about ¹ݣΪ null
+* 前台接口：`GET /api/about` 返回 Markdown/HTML，如果尚未配置内容则直接返回 `null` 供前端显示“敬请期待”。
 
-* ̨ӿڣ SUPER_ADMIN
+* 后台接口（需 `SUPER_ADMIN`）：
 
-  * GET /api/admin/about ȡǰ Markdown Ⱦ HTML
+  * GET `/api/admin/about` 拉取当前 Markdown 及渲染后的 HTML。
 
-  * PUT /api/admin/about  Markdown ĲȾ HTMLȡԵǰ¼û
+  * PUT `/api/admin/about` 保存新的 Markdown，服务端会同步渲染 HTML 并记录最后编辑人。
 
-* ǰˣڡҳȡ /api/about̨վ㡱༭ҳṩ Markdown ı/ϴ md ļ漴Ч
+* 前端：站点 `/about` 页面直接消费 `/api/about`；后台“关于页”编辑器提供 Markdown 输入与附件上传，保存成功后刷新前台内容。
 
 ### Swagger 安全策略
 

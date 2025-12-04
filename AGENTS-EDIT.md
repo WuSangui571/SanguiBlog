@@ -864,3 +864,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.86 (2025-12-04)
 - **访问信息**：新增 `clientIp` 字段，前端在浏览器侧调用公网 IP 服务后随 PV 请求附带，后端在检测到本地回环地址时会优先采用该值并通过 `IpUtils` 校验归一化；本地联调亦可展示真实公网 IP。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.86`
+
+## V1.3.87 (2025-12-04)
+- **来源本地化**：PV 请求新增 `sourceLabel`，前端依据 `document.referrer` 自动生成“来自首页/归档/站内文章/外部链接”等中文描述；后端优先使用该字段写入 `referrer_url` 并在兜底场景记录“系统兜底”，Analytics 列表不再出现英文 `Direct / None`/`server-fallback`。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.87`

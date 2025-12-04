@@ -74,7 +74,7 @@ public class AnalyticsService {
         pv.setPageTitle(normalizePageTitle(request.getPageTitle()));
         String normalizedIp = normalizeViewerIp(ip);
         pv.setViewerIp(normalizedIp);
-        pv.setReferrerUrl(trimToLength(request.getReferrer(), 512));
+        pv.setReferrerUrl(resolveReferrerLabel(request));
         pv.setGeoLocation(resolveGeoLocation(normalizedIp, request.getGeo()));
         pv.setUserAgent(trimToLength(userAgent, 512));
         pv.setViewedAt(LocalDateTime.now());
@@ -302,6 +302,33 @@ public class AnalyticsService {
         } catch (Exception ignored) {
         }
         return referrer;
+    }
+
+    private String resolveReferrerLabel(PageViewRequest request) {
+        if (request != null && StringUtils.hasText(request.getSourceLabel())) {
+            return trimToLength(request.getSourceLabel(), 255);
+        }
+        return localizeReferrerLabel(request != null ? request.getReferrer() : null);
+    }
+
+    private String localizeReferrerLabel(String referrer) {
+        if (!StringUtils.hasText(referrer)) {
+            return "直接访问";
+        }
+        String host = extractHost(referrer);
+        if (!StringUtils.hasText(host)) {
+            return "直接访问";
+        }
+        String lower = host.toLowerCase(Locale.ROOT);
+        if (lower.contains("google") || lower.contains("bing") || lower.contains("baidu") || lower.contains("yahoo")) {
+            return "来自搜索引擎：" + host;
+        }
+        if (lower.contains("twitter") || lower.contains("x.com") || lower.contains("weibo")
+                || lower.contains("wechat") || lower.contains("facebook") || lower.contains("douyin")
+                || lower.contains("instagram")) {
+            return "来自社交平台：" + host;
+        }
+        return "外部链接：" + host;
     }
 
     private String resolveGeoLocation(String normalizedIp, String requestGeo) {

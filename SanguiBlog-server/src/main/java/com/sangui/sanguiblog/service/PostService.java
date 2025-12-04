@@ -343,7 +343,7 @@ public class PostService {
             pv.setPageTitle(post.getTitle());
             String normalizedIp = StringUtils.hasText(ip) ? ip : "0.0.0.0";
             pv.setViewerIp(normalizedIp);
-            pv.setReferrerUrl("server-fallback");
+            pv.setReferrerUrl("系统兜底（前端埋点失败）");
             pv.setUserAgent(userAgent);
             if (userId != null) {
                 userRepository.findById(userId).ifPresent(pv::setUser);

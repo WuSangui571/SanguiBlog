@@ -10,4 +10,5 @@ public class PageViewRequest {
     private String geo;
     private String userAgent;
     private String clientIp;
+    private String sourceLabel;
 }

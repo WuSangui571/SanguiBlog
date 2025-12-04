@@ -1030,9 +1030,37 @@ const PermissionNotice = ({ title = '权限不足', description = '请联系超�
     </div>
 );
 
-const getReferrer = () => {
-    if (typeof document === 'undefined') return '';
-    return document.referrer || '';
+const getReferrerMeta = () => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+        return { referrer: '', sourceLabel: '直接访问' };
+    }
+    const referrer = document.referrer || '';
+    if (!referrer) {
+        return { referrer: '', sourceLabel: '直接访问' };
+    }
+    try {
+        const parsed = new URL(referrer);
+        const currentOrigin = window.location.origin;
+        if (currentOrigin && parsed.origin === currentOrigin) {
+            const path = parsed.pathname || '/';
+            if (path === '/' || path === '') {
+                return { referrer, sourceLabel: '来自首页' };
+            }
+            if (path.startsWith('/admin')) {
+                return { referrer, sourceLabel: '来自后台页面' };
+            }
+            if (path.startsWith('/archive')) {
+                return { referrer, sourceLabel: '来自归档页' };
+            }
+            if (path.startsWith('/posts') || path.startsWith('/article')) {
+                return { referrer, sourceLabel: '来自站内文章' };
+            }
+            return { referrer, sourceLabel: `来自站内：${path}` };
+        }
+        return { referrer, sourceLabel: `外部链接：${parsed.hostname}` };
+    } catch (err) {
+        return { referrer, sourceLabel: '直接访问' };
+    }
 };
 
 const getGeoHint = () => {
@@ -1533,7 +1561,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.86'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.87'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1802,10 +1830,17 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const textMuted = isDarkMode ? 'text-gray-400' : 'text-gray-500';
 
     const renderReferrer = (referrer) => {
-        if (!referrer) return 'Direct / None';
-        if (referrer.startsWith('http')) {
+        if (!referrer) return '未知来源';
+        if (/^(https?:)?\/\//i.test(referrer)) {
+            let label = referrer;
+            try {
+                const parsed = new URL(referrer);
+                label = `外部链接：${parsed.hostname}`;
+            } catch {
+                label = referrer;
+            }
             return <a className="text-indigo-500 hover:underline" href={referrer} target="_blank"
-                rel="noopener noreferrer">{referrer}</a>;
+                rel="noopener noreferrer">{label}</a>;
         }
         return referrer;
     };
@@ -6354,7 +6389,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.86';
+    const siteVersion = meta?.version || 'V1.3.87';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6401,7 +6436,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     const sendPageView = useCallback((payload = {}) => {
         const ip = clientIpRef.current;
-        const body = ip ? { ...payload, clientIp: ip } : payload;
+        const refMeta = getReferrerMeta();
+        const body = { ...refMeta, ...payload };
+        if (ip) {
+            body.clientIp = ip;
+        }
         recordPageView(body);
     }, []);
 
@@ -6504,19 +6543,16 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         if (view === 'home') {
             sendPageView({
                 pageTitle: 'Home',
-                referrer: getReferrer(),
                 geo: getGeoHint()
             });
         } else if (view === 'archive') {
             sendPageView({
                 pageTitle: 'Archive',
-                referrer: getReferrer(),
                 geo: getGeoHint()
             });
         } else if (view === 'admin') {
             sendPageView({
                 pageTitle: 'Admin Panel',
-                referrer: getReferrer(),
                 geo: getGeoHint()
             });
         }
@@ -6528,7 +6564,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             sendPageView({
                 postId: Number(articleId),
                 pageTitle: article.title || `Article #${articleId}`,
-                referrer: getReferrer(),
                 geo: getGeoHint()
             });
             lastRecordedArticleRef.current = articleId;
