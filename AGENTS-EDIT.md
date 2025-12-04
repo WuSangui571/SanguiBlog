@@ -876,3 +876,11 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.89 (2025-12-04)
 - **流量来源幂等**：`updateTrafficSourceStat` 采用“查询→更新/插入 + 重试”策略，并在冲突时清理 EntityManager，彻底消除唯一键并发冲突导致的 500；构造器注入 `EntityManager` 支持刷新。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.89`
+
+## V1.3.90 (2025-12-04)
+- **流量来源幂等（v2）**：改用数据库 `INSERT ... ON DUPLICATE KEY UPDATE`（`upsertSourceVisit`）一次性自增 visits，消除 Hibernate Session 异常；AnalyticsService 取消手动重试逻辑，避免事务被标记 rollback。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.90`
+
+## V1.3.91 (2025-12-04)
+- **来源占比**：`analytics_traffic_sources` 在每次 upsert 后立即刷新 `percentage = visits / 总访次`，百分比保留两位小数，后台“来源”卡片可直接展示实时占比；新增 `refreshPercentage` 原生 SQL，确保更新在数据库端完成。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.91`
