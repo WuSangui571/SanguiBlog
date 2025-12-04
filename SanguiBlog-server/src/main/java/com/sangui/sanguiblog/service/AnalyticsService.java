@@ -192,6 +192,7 @@ public class AnalyticsService {
                 .userId(view.getUser() != null ? view.getUser().getId() : null)
                 .username(view.getUser() != null ? view.getUser().getUsername() : null)
                 .userName(view.getUser() != null ? view.getUser().getDisplayName() : null)
+                .displayName(view.getUser() != null ? view.getUser().getDisplayName() : null)
                 .userRole(view.getUser() != null && view.getUser().getRole() != null
                         ? view.getUser().getRole().getCode()
                         : null)

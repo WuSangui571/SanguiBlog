@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -80,6 +81,8 @@ public class AdminAnalyticsSummaryDto {
         private Long userId;
         private String username;
         private String userName;
+        @JsonProperty("display_name")
+        private String displayName;
         private String userRole;
         private String userAgent;
         private String avatarUrl;

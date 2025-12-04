@@ -7,6 +7,7 @@ import com.sangui.sanguiblog.service.AnalyticsService;
 import com.sangui.sanguiblog.util.IpUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,14 @@ public class AnalyticsController {
                                     HttpServletRequest httpServletRequest,
                                     @AuthenticationPrincipal UserPrincipal principal) {
         String ip = IpUtils.resolveIp(httpServletRequest);
+        if (request != null && StringUtils.hasText(request.getClientIp())) {
+            String candidate = IpUtils.normalizeIp(request.getClientIp());
+            if (StringUtils.hasText(candidate)
+                    && !IpUtils.isLoopback(candidate)
+                    && IpUtils.isLoopback(ip)) {
+                ip = candidate;
+            }
+        }
         String userAgent = httpServletRequest.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
         analyticsService.recordPageView(request, ip, userAgent, userId);

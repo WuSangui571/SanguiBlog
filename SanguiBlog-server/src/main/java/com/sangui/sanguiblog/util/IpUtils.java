@@ -37,14 +37,14 @@ public final class IpUtils {
                         .findFirst()
                         .orElse(null);
                 if (StringUtils.hasText(ip)) {
-                    return normalize(ip);
+                    return normalizeIp(ip);
                 }
             }
         }
-        return normalize(request.getRemoteAddr());
+        return normalizeIp(request.getRemoteAddr());
     }
 
-    private static String normalize(String ip) {
+    public static String normalizeIp(String ip) {
         if (!StringUtils.hasText(ip)) {
             return "0.0.0.0";
         }
@@ -60,5 +60,13 @@ public final class IpUtils {
             return "127.0.0.1";
         }
         return trimmed.length() > 45 ? trimmed.substring(0, 45) : trimmed;
+    }
+
+    public static boolean isLoopback(String ip) {
+        if (!StringUtils.hasText(ip)) {
+            return true;
+        }
+        String normalized = normalizeIp(ip);
+        return "127.0.0.1".equals(normalized) || "::1".equals(normalized) || "0:0:0:0:0:0:0:1".equals(normalized);
     }
 }

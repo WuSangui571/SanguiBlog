@@ -1533,7 +1533,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.83'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.86'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1850,7 +1850,13 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
         const userId = visit.userId ?? visit.user_id ?? '-';
         const username = visit.username || visit.userName || visit.user_name || '-';
-        const displayName = visit.displayName || visit.display_name || visit.nickName || visit.nickname || username || '-';
+        const displayName = visit.displayName
+            || visit.display_name
+            || visit.userName
+            || visit.nickName
+            || visit.nickname
+            || username
+            || '-';
         const title = `${userId}-${username}-${displayName}`;
         const avatarSrc = resolveVisitorAvatar(visit);
         const initials = (displayName || 'U').slice(0, 1).toUpperCase();
@@ -6305,6 +6311,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, [isDarkMode]);
     const [permissionState, setPermissionState] = useState({ permissions: [], loading: false, error: '' });
     const lastRecordedArticleRef = useRef(null);
+    const clientIpRef = useRef(
+        typeof window !== 'undefined' && window.__SG_CLIENT_IP__ ? window.__SG_CLIENT_IP__ : ''
+    );
     const scrollToPostsTop = useCallback(() => {
         if (typeof window === 'undefined') return;
         const element = document.getElementById('posts');
@@ -6345,7 +6354,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.83';
+    const siteVersion = meta?.version || 'V1.3.86';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6367,8 +6376,34 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }), [emergencyHeight]);
 
     useEffect(() => {
+        if (typeof window === 'undefined' || clientIpRef.current) return;
+        let cancelled = false;
+        fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (cancelled || !data || !data.ip) return;
+                clientIpRef.current = data.ip;
+                if (typeof window !== 'undefined') {
+                    window.__SG_CLIENT_IP__ = data.ip;
+                }
+            })
+            .catch(() => {
+                /* 忽略 IP 查询失败 */
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
         if (blogUser) setUser(blogUser);
     }, [blogUser]);
+
+    const sendPageView = useCallback((payload = {}) => {
+        const ip = clientIpRef.current;
+        const body = ip ? { ...payload, clientIp: ip } : payload;
+        recordPageView(body);
+    }, []);
 
     useEffect(() => {
         if (!user) {
@@ -6467,30 +6502,30 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     useEffect(() => {
         if (view === 'home') {
-            recordPageView({
+            sendPageView({
                 pageTitle: 'Home',
                 referrer: getReferrer(),
                 geo: getGeoHint()
             });
         } else if (view === 'archive') {
-            recordPageView({
+            sendPageView({
                 pageTitle: 'Archive',
                 referrer: getReferrer(),
                 geo: getGeoHint()
             });
         } else if (view === 'admin') {
-            recordPageView({
+            sendPageView({
                 pageTitle: 'Admin Panel',
                 referrer: getReferrer(),
                 geo: getGeoHint()
             });
         }
-    }, [view]);
+    }, [view, sendPageView]);
 
     useEffect(() => {
         if (view === 'article' && articleId && article && article.id === articleId) {
             if (lastRecordedArticleRef.current === articleId) return;
-            recordPageView({
+            sendPageView({
                 postId: Number(articleId),
                 pageTitle: article.title || `Article #${articleId}`,
                 referrer: getReferrer(),
@@ -6500,7 +6535,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         } else if (view !== 'article') {
             lastRecordedArticleRef.current = null;
         }
-    }, [view, articleId, article]);
+    }, [view, articleId, article, sendPageView]);
 
     const handleLogout = () => {
         logout && logout();

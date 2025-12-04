@@ -9,4 +9,5 @@ public class PageViewRequest {
     private String referrer;
     private String geo;
     private String userAgent;
+    private String clientIp;
 }

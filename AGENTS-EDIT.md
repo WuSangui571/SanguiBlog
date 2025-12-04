@@ -852,3 +852,15 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.83 (2025-12-04)
 - **模块/页面**：后台数据分析日志的头像路径统一补全 `/uploads/avatar/` 前缀并兼容 `avatar/avatarUrl/avatar_url/avatarPath` 字段，防止破图；tooltip 按 `id-username-display_name` 显示真实昵称，首字母兜底逻辑保持不变。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.83`
+
+## V1.3.84 (2025-12-04)
+- **模块/页面**：数据分析页 tooltip 追加对 `display_name/userName` 的读取，确保悬停提示展示真实昵称而非重复用户名；同步版本号 `V1.3.84`，便于后台确认修复。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.84`
+
+## V1.3.85 (2025-12-04)
+- **接口**：`/admin/analytics/page-views` 响应新增 `display_name` 字段（同步 DTO 与 Service），让前端无需降级回退即可直接展示用户昵称；版本号同步至 `V1.3.85`。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.85`
+
+## V1.3.86 (2025-12-04)
+- **访问信息**：新增 `clientIp` 字段，前端在浏览器侧调用公网 IP 服务后随 PV 请求附带，后端在检测到本地回环地址时会优先采用该值并通过 `IpUtils` 校验归一化；本地联调亦可展示真实公网 IP。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.86`
