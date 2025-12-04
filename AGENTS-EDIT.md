@@ -872,3 +872,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.88 (2025-12-04)
 - **统计稳定性**：`AnalyticsTrafficSource` 增加自动创建/更新时间戳，避免 `created_at`/`updated_at` 为空导致 PV 统计写入失败；`sanguiblog_db.sql` 同步默认值，确保初始化环境一致。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.88`
+
+## V1.3.89 (2025-12-04)
+- **流量来源幂等**：`updateTrafficSourceStat` 采用“查询→更新/插入 + 重试”策略，并在冲突时清理 EntityManager，彻底消除唯一键并发冲突导致的 500；构造器注入 `EntityManager` 支持刷新。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.89`

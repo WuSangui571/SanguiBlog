@@ -12,6 +12,7 @@ import com.sangui.sanguiblog.model.repository.AnalyticsTrafficSourceRepository;
 import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -249,28 +250,35 @@ public class AnalyticsService {
                 .collect(Collectors.toList());
     }
 
+    private final EntityManager entityManager;
+
     private void updateTrafficSourceStat(String referrer, LocalDateTime viewedAt) {
         LocalDate statDate = viewedAt != null ? viewedAt.toLocalDate() : LocalDate.now();
         String label = determineSourceLabel(referrer);
-        for (int attempt = 0; attempt < 2; attempt++) {
+        for (int attempt = 0; attempt < 3; attempt++) {
             try {
-                analyticsTrafficSourceRepository.findByStatDateAndSourceLabel(statDate, label)
-                        .ifPresentOrElse(ts -> {
-                            ts.setVisits(ts.getVisits() == null ? 1 : ts.getVisits() + 1);
-                            analyticsTrafficSourceRepository.save(ts);
-                        }, () -> {
-                            AnalyticsTrafficSource ts = new AnalyticsTrafficSource();
-                            ts.setStatDate(statDate);
-                            ts.setSourceLabel(label);
-                            ts.setVisits(1);
-                            analyticsTrafficSourceRepository.save(ts);
+                AnalyticsTrafficSource ts = analyticsTrafficSourceRepository
+                        .findByStatDateAndSourceLabel(statDate, label)
+                        .orElseGet(() -> {
+                            AnalyticsTrafficSource created = new AnalyticsTrafficSource();
+                            created.setStatDate(statDate);
+                            created.setSourceLabel(label);
+                            created.setVisits(0);
+                            return created;
                         });
+                ts.setVisits((ts.getVisits() == null ? 0 : ts.getVisits()) + 1);
+                analyticsTrafficSourceRepository.save(ts);
                 return;
             } catch (DataIntegrityViolationException ex) {
-                if (attempt == 0) {
-                    log.warn("流量来源统计存在并发写入，准备重试一次。date={}, label={}", statDate, label);
-                } else {
+                if (attempt == 2) {
                     throw ex;
+                }
+                log.warn("流量来源统计存在并发写入，准备重试一次。date={}, label={}", statDate, label);
+                try {
+                    entityManager.flush();
+                    entityManager.clear();
+                } catch (Exception flushEx) {
+                    log.debug("重试前清理实体管理器失败", flushEx);
                 }
             }
         }
