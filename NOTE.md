@@ -284,9 +284,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   /admin/analytics 当前仅包含“概览 + 区间筛选”、“最近 14 天 PV/UV 折线”、“流量来源”和“实时访问日志”四块，热门文章/最新访问/紧急广播全部下线，视觉保持与 Home/Admin 主题一致。
 
-*   AnalyticsService.recordPageView writes nalytics_page_views and updates traffic sources. PV uses a 1-minute in-memory throttle (IP+post) plus a 10-minute DB dedupe. SUPER_ADMIN is skipped only when pageTitle/referrer contains dmin. If the front-end tracker fails, PostService.incrementViews now builds a PageViewRequest and calls 
+*   AnalyticsService.recordPageView 负责写入 analytics_page_views 并同步流量来源：PV 端做 1 分钟 (IP+post) 内存限流与 10 分钟数据库去重，SUPER_ADMIN 仅当 pageTitle/referrer 含 admin 时跳过；若前端埋点失败，PostService.incrementViews 会即时构造 PageViewRequest 再兜底写入。自 V1.3.96 起，DELETE `/api/admin/analytics/page-views/me` 会先删除 user_id=本人 的日志，再依据这些记录包含的全部 viewer_ip 清理 user_id 为空且 IP 命中的访客日志，从而把登录前的自访数据一并抹掉（多 IP 会逐一匹配）。
 
-ecordPageView (fallback writes directly). DELETE /api/admin/analytics/page-views/me cleans operator footprints.
 
 *   updateTrafficSourceStat classifies referrers (search engine / social media / specific domain / Direct / None) and updates nalytics_traffic_sources(stat_date, source_label, visits, percentage).
 
@@ -422,7 +421,7 @@ ole_permissions in bulk.
   * GET `/api/admin/analytics/summary` 聚合 PV、UV、来源、热门文章、最近访问等指标，用于仪表盘。
   * GET `/api/admin/analytics/page-views?page=&size=` 返回 `analytics_page_views` 分页结果（含 viewed_at/IP/Geo/userId/username/display_name/avatarUrl 等），供后台“数据分析-实时访问日志”使用。
   * 数据分析页头像：前端复用用户列表的头像解析（avatar/avatarUrl/avatar_url → buildAssetUrl），无头像时以首字母色块兜底；头像悬停提示为 `id-username-display_name`，与用户管理列表保持一致。自 V1.3.85 起，后端 `AdminAnalyticsSummaryDto.RecentVisit` 直接返回 `display_name` 字段，前端也会将缺少目录层级的存储路径归一化为 `/uploads/avatar/<file>`，避免因裸文件名导致破图或昵称缺失。
-  * DELETE `/api/admin/analytics/page-views/me` 仅 SUPER_ADMIN 可用，用来秒清自身的访问记录。
+  * DELETE `/api/admin/analytics/page-views/me` 仅 SUPER_ADMIN 可用；V1.3.96 起会先收集该账号历史日志中的全部 viewer_ip，再连同 user_id 为空且 IP 命中的访客记录一并清理，避免登录前遗留的自访数据被漏删。
 
 ### 4.7 Initial Accounts & Default Passwords
 

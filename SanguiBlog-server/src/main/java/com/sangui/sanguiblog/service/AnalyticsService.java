@@ -30,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -177,9 +178,24 @@ public class AnalyticsService {
                 .build();
     }
 
+
     @Transactional
     public long deletePageViewsByUser(Long userId) {
-        return analyticsPageViewRepository.deleteByUser_Id(userId);
+        if (userId == null) {
+            return 0L;
+        }
+        List<String> knownIps = analyticsPageViewRepository.findDistinctViewerIpByUserId(userId);
+        List<String> sanitizedIps = knownIps == null ? Collections.emptyList() : knownIps.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        long deleted = analyticsPageViewRepository.deleteByUser_Id(userId);
+        if (!sanitizedIps.isEmpty()) {
+            deleted += analyticsPageViewRepository.deleteByUserIsNullAndViewerIpIn(sanitizedIps);
+        }
+        return deleted;
     }
 
     @Transactional(readOnly = true)

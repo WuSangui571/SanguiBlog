@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPageView, Long> {
@@ -77,4 +78,9 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
     Page<AnalyticsPageView> findAllByOrderByViewedAtDesc(Pageable pageable);
 
     long deleteByUser_Id(Long userId);
+
+    @Query("select distinct apv.viewerIp from AnalyticsPageView apv where apv.user.id = :userId and apv.viewerIp is not null")
+    List<String> findDistinctViewerIpByUserId(@Param("userId") Long userId);
+
+    long deleteByUserIsNullAndViewerIpIn(Collection<String> viewerIps);
 }
