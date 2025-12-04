@@ -415,7 +415,7 @@ ole_permissions in bulk.
 * 数据落库
   * `viewer_ip`：优先读取 `X-Forwarded-For`/`X-Real-IP`，若最终仍是回环 `127.0.0.1`/`::1`，自 V1.3.86 起会启用前端上传的 `clientIp`（由 `https://api.ipify.org?format=json` 获取）并经 `IpUtils.normalizeIp` 去除 IPv6 映射后落库，方便本地调试也能看到公网地址。
   * `referrer_url`：自 V1.3.87 起记录中文来源描述。前端在埋点时会根据 `document.referrer` 自动生成 `sourceLabel`，例如“来自首页”“来自归档页”“来自站内文章”“外部链接：example.com”或“直接访问”，由后端直接落库；若前端埋点失败，兜底记录为“系统兜底（前端埋点失败）”。
-  * `analytics_traffic_sources`：自 V1.3.88 起表结构默认 `CURRENT_TIMESTAMP`，实体也通过 `@CreationTimestamp/@UpdateTimestamp` 自动填充，避免 `created_at/updated_at` 为 NULL；V1.3.90 起 `updateTrafficSourceStat` 直接调用 `INSERT ... ON DUPLICATE KEY UPDATE`，数据库负责自增 visits，再无 Hibernate Session 冲突；V1.3.91 进一步在每次 upsert 后执行原生 `refreshPercentage(stat_date)`，将 `percentage` 更新为当日占比（四舍五入到 2 位小数），供仪表盘直接使用。
+  * `analytics_traffic_sources`：自 V1.3.88 起表结构默认 `CURRENT_TIMESTAMP`，实体也通过 `@CreationTimestamp/@UpdateTimestamp` 自动填充，避免 `created_at/updated_at` 为 NULL；V1.3.90 起 `updateTrafficSourceStat` 直接调用 `INSERT ... ON DUPLICATE KEY UPDATE`，数据库负责自增 visits，再无 Hibernate Session 冲突；V1.3.92 之后在服务层重新查询当天来源并以 `BigDecimal` 精确计算占比（四舍五入 2 位），写回 `percentage` 供仪表盘直接消费。
   * `user_id`：根据 JWT 中的主体 ID 关联 `users` 表，未登录访客则写入 `NULL`。
   * `geo_location`：默认通过 `GeoIpService` 调用 ipapi.co 反查；前端传入的 `geo`（本地时区）仅作兜底。
 * 管理端读取

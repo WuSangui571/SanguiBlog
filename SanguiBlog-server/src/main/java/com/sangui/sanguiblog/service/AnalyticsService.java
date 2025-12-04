@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -254,10 +256,29 @@ public class AnalyticsService {
         String label = determineSourceLabel(referrer);
         try {
             analyticsTrafficSourceRepository.upsertSourceVisit(statDate, label);
-            analyticsTrafficSourceRepository.refreshPercentage(statDate);
+            recalculateTrafficSourcePercentages(statDate);
         } catch (DataIntegrityViolationException ex) {
             log.warn("流量来源统计写入失败（已忽略本次来源记录）date={}, label={}", statDate, label, ex);
         }
+    }
+
+    private void recalculateTrafficSourcePercentages(LocalDate statDate) {
+        List<AnalyticsTrafficSource> sources =
+                analyticsTrafficSourceRepository.findByStatDateOrderByVisitsDesc(statDate);
+        long totalVisits = sources.stream()
+                .mapToLong(ts -> ts.getVisits() == null ? 0L : ts.getVisits())
+                .sum();
+        if (totalVisits <= 0) {
+            sources.forEach(ts -> ts.setPercentage(BigDecimal.ZERO));
+        } else {
+            sources.forEach(ts -> {
+                long visits = ts.getVisits() == null ? 0L : ts.getVisits();
+                BigDecimal percent = BigDecimal.valueOf(visits * 100.0 / totalVisits)
+                        .setScale(2, RoundingMode.HALF_UP);
+                ts.setPercentage(percent);
+            });
+        }
+        analyticsTrafficSourceRepository.saveAll(sources);
     }
 
     private String determineSourceLabel(String referrer) {

@@ -884,3 +884,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.91 (2025-12-04)
 - **来源占比**：`analytics_traffic_sources` 在每次 upsert 后立即刷新 `percentage = visits / 总访次`，百分比保留两位小数，后台“来源”卡片可直接展示实时占比；新增 `refreshPercentage` 原生 SQL，确保更新在数据库端完成。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.91`
+
+## V1.3.92 (2025-12-04)
+- **来源占比优化**：剔除复杂 SQL JOIN，改为在服务层重新查询当天所有来源并用 `BigDecimal` 精确计算百分比再批量保存，确保 `percentage` 字段实时非空、四舍五入到两位小数，兼容任意数据源。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.92`

@@ -24,22 +24,4 @@ public interface AnalyticsTrafficSourceRepository extends JpaRepository<Analytic
             ON DUPLICATE KEY UPDATE visits = visits + 1, updated_at = CURRENT_TIMESTAMP
             """, nativeQuery = true)
     void upsertSourceVisit(@Param("statDate") LocalDate statDate, @Param("label") String label);
-
-    @Modifying
-    @Transactional
-    @Query(value = """
-            UPDATE analytics_traffic_sources ts
-            JOIN (
-                SELECT stat_date, SUM(visits) AS total
-                FROM analytics_traffic_sources
-                WHERE stat_date = :statDate
-                GROUP BY stat_date
-            ) agg ON agg.stat_date = ts.stat_date
-            SET ts.percentage = ROUND(
-                CASE WHEN agg.total = 0 THEN 0 ELSE ts.visits * 100.0 / agg.total END
-            , 2),
-                ts.updated_at = CURRENT_TIMESTAMP
-            WHERE ts.stat_date = :statDate
-            """, nativeQuery = true)
-    void refreshPercentage(@Param("statDate") LocalDate statDate);
 }
