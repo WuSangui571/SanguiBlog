@@ -868,3 +868,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.87 (2025-12-04)
 - **来源本地化**：PV 请求新增 `sourceLabel`，前端依据 `document.referrer` 自动生成“来自首页/归档/站内文章/外部链接”等中文描述；后端优先使用该字段写入 `referrer_url` 并在兜底场景记录“系统兜底”，Analytics 列表不再出现英文 `Direct / None`/`server-fallback`。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.87`
+
+## V1.3.88 (2025-12-04)
+- **统计稳定性**：`AnalyticsTrafficSource` 增加自动创建/更新时间戳，避免 `created_at`/`updated_at` 为空导致 PV 统计写入失败；`sanguiblog_db.sql` 同步默认值，确保初始化环境一致。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.88`
