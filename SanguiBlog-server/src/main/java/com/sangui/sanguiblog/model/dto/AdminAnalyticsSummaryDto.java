@@ -30,6 +30,7 @@ public class AdminAnalyticsSummaryDto {
         private double avgViewsPerDay;
         private long postCount;
         private long commentCount;
+        private long commentEntries;
         private int rangeDays;
         private String rangeLabel;
     }

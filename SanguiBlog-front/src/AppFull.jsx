@@ -1015,7 +1015,7 @@ const AnalyticsSummaryContext = React.createContext({
     summary: null,
     loading: false,
     error: '',
-    rangeDays: 14,
+    rangeDays: 7,
     reload: () => {
     }
 });
@@ -1581,7 +1581,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.94'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.95'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1629,127 +1629,166 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
 
 // 4.1 Sub-Component: Dashboard View
 const DashboardView = ({ isDarkMode }) => {
-    const { summary, loading, error, reload } = useAdminAnalytics();
+    const { summary, loading, error, reload, rangeDays } = useAdminAnalytics();
     const overview = summary?.overview;
-    const dailyTrends = summary?.dailyTrends || [];
+    const dailyTrends = (summary?.dailyTrends || []).slice(-14);
     const trafficSources = summary?.trafficSources || [];
-    const topPosts = (summary?.topPosts || []).slice(0, 5);
-    const recentVisits = (summary?.recentVisits || []).slice(0, 6);
-    const rangeLabel = overview?.rangeLabel || '最近14天';
+    const normalizedRange = rangeDays === 0 ? -1 : (rangeDays || 7);
+    const rangeLabel = overview?.rangeLabel || (normalizedRange === -1 ? "全部历史" : `最近${normalizedRange}天`);
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
-    const border = isDarkMode ? 'border border-gray-700' : 'border border-gray-200';
-    const textPrimary = isDarkMode ? 'text-gray-100' : 'text-gray-900';
-    const textMuted = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    const border = isDarkMode ? "border border-gray-700" : "border border-gray-200";
+    const textPrimary = isDarkMode ? "text-gray-100" : "text-gray-900";
+    const textMuted = isDarkMode ? "text-gray-400" : "text-gray-500";
+    const rangeOptions = [
+        { label: "1天", value: 1 },
+        { label: "7天", value: 7 },
+        { label: "30天", value: 30 },
+        { label: "全部", value: -1 },
+    ];
 
-    const formatNumber = (value, fallback = '--') => {
-        if (typeof value === 'number') return value.toLocaleString();
+    const formatNumber = (value, fallback = "--") => {
+        if (typeof value === "number") return value.toLocaleString();
         return fallback;
     };
 
-    const Card = ({ title, value, icon: Icon, color, desc }) => (
-        <div className={`${surface} ${border} p-5 rounded-xl shadow-lg`}>
+    const handleRangeClick = (value) => {
+        if (value === normalizedRange) return;
+        reload?.(value);
+    };
+
+    const StatCard = ({ title, value, desc, icon: Icon, accent }) => (
+        <div className={`${surface} ${border} rounded-2xl p-5 shadow-lg relative overflow-hidden`}>
             <div className="flex items-center justify-between">
                 <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${textMuted}`}>{title}</p>
-                {Icon && <Icon size={20} className={color} />}
+                {Icon && (
+                    <span className={`p-2 rounded-full ${accent}`}>
+                        <Icon size={16} className="text-white" />
+                    </span>
+                )}
             </div>
             <div className="mt-3 text-3xl font-black">{value}</div>
             {desc && <p className={`text-xs mt-1 ${textMuted}`}>{desc}</p>}
         </div>
     );
 
-    const Sparkline = ({ data }) => {
-        if (!data.length) {
-            return <p className={`text-sm ${textMuted}`}>暂无数据</p>;
-        }
-        const max = Math.max(...data.map((item) => item.views), 1);
-        const points = data.map((item, index) => {
-            const x = (index / Math.max(data.length - 1, 1)) * 100;
-            const y = 100 - (item.views / max) * 100;
-            return `${x},${y}`;
-        }).join(' ');
-        return (
-            <svg viewBox="0 0 100 100" className="w-full h-32">
-                <polyline
-                    fill="none"
-                    stroke={isDarkMode ? '#FFD700' : '#FF0080'}
-                    strokeWidth="3"
-                    points={points}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                />
-            </svg>
-        );
-    };
+    const metrics = [
+        {
+            title: "累计浏览",
+            value: formatNumber(overview?.totalViews),
+            desc: "posts.views_count 汇总",
+            icon: Activity,
+            accent: "bg-gradient-to-br from-indigo-500 to-purple-500",
+        },
+        {
+            title: "评论总数",
+            value: formatNumber(overview?.commentCount),
+            desc: "posts.comments_count 汇总",
+            icon: MessageSquare,
+            accent: "bg-gradient-to-br from-rose-500 to-orange-400",
+        },
+        {
+            title: "区间 PV",
+            value: formatNumber(overview?.periodViews),
+            desc: rangeLabel,
+            icon: BarChart3,
+            accent: "bg-gradient-to-br from-pink-500 to-amber-400",
+        },
+        {
+            title: "区间 UV",
+            value: formatNumber(overview?.uniqueVisitors),
+            desc: "登录优先，再按 IP 去重",
+            icon: Users,
+            accent: "bg-gradient-to-br from-emerald-500 to-lime-500",
+        },
+        {
+            title: "文章总数",
+            value: formatNumber(overview?.postCount),
+            desc: "仅统计已发布文章",
+            icon: FileText,
+            accent: "bg-gradient-to-br from-slate-500 to-slate-700",
+        },
+        {
+            title: "评论总数（实时）",
+            value: formatNumber(overview?.commentEntries),
+            desc: "comments 表实时计数",
+            icon: MessageCircle,
+            accent: "bg-gradient-to-br from-sky-500 to-indigo-500",
+        },
+    ];
+
+    const peakViews = dailyTrends.length ? Math.max(...dailyTrends.map((d) => d.views || 0)) : 0;
+    const peakVisitors = dailyTrends.length ? Math.max(...dailyTrends.map((d) => d.visitors || 0)) : 0;
+    const lastPoint = dailyTrends[dailyTrends.length - 1] || {};
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <h2 className="text-2xl font-black flex items-center gap-2">
+                    <h2 className="text-3xl font-black flex items-center gap-2">
                         <Activity /> 仪表盘概览
                     </h2>
-                    <p className={`text-sm ${textMuted}`}>{rangeLabel}，实时同步访客、文章与评论概况</p>
+                    <p className={`text-sm ${textMuted}`}>{rangeLabel} · 数据实时刷新</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    {error && <span className="text-sm text-red-500">{error}</span>}
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className={`${surface} ${border} flex items-center gap-2 rounded-full px-2 py-1`}>
+                        {rangeOptions.map((option) => {
+                            const active = option.value === normalizedRange;
+                            return (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => handleRangeClick(option.value)}
+                                    className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
+                                        active
+                                            ? "bg-indigo-600 text-white"
+                                            : `${isDarkMode ? "text-gray-300" : "text-gray-600"} hover:text-indigo-500`
+                                    }`}
+                                >
+                                    {option.label}
+                                </button>
+                            );
+                        })}
+                    </div>
                     <button
                         type="button"
-                        onClick={() => reload()}
+                        onClick={() => reload?.()}
                         disabled={loading}
                         className="px-4 py-2 border-2 border-black text-sm font-bold bg-[#FFD700] rounded-full hover:-translate-y-0.5 transition disabled:opacity-50"
                     >
-                        {loading ? '刷新中...' : '刷新数据'}
+                        {loading ? "刷新中..." : "刷新数据"}
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <Card title="累计浏览" value={formatNumber(overview?.totalViews)} icon={BarChart3} color="text-indigo-500"
-                    desc="含所有文章与页面" />
-                <Card title="区间 PV" value={formatNumber(overview?.periodViews)} icon={Activity}
-                    color="text-pink-500" desc={rangeLabel} />
-                <Card title="独立访客" value={formatNumber(overview?.uniqueVisitors)} icon={Users}
-                    color="text-green-500"
-                    desc="按 IP 去重" />
-                <Card title="登录访问" value={formatNumber(overview?.loggedInViews)} icon={Shield}
-                    color="text-yellow-500"
-                    desc="含后台/前台已登录用户" />
+            {error && <div className="text-sm text-red-500">{error}</div>}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {metrics.map((metric) => (
+                    <StatCard key={metric.title} {...metric} />
+                ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <Card title="文章总数" value={SITE_STATS.posts} icon={FileText} color="text-slate-500"
-                    desc={`最后更新：${SITE_STATS.lastUpdated || '—'}`} />
-                <Card title="评论总数" value={SITE_STATS.comments} icon={MessageSquare} color="text-emerald-500"
-                    desc="包含前台所有回复" />
-                <Card title="日均 PV" value={overview ? (overview.avgViewsPerDay?.toFixed(1) || '0.0') : '--'}
-                    icon={TrendingUp} color="text-purple-500" desc={rangeLabel} />
-                <Card title="区间评论" value={formatNumber(SITE_STATS.comments)} icon={MessageCircle}
-                    color="text-orange-500"
-                    desc="历史累计" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className={`lg:col-span-2 ${surface} ${border} rounded-2xl p-6 shadow-xl`}>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div className={`xl:col-span-2 ${surface} ${border} rounded-2xl p-6 shadow-xl`}>
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className={`text-xl font-bold ${textPrimary}`}>访客走势</h3>
-                            <p className={`text-xs ${textMuted}`}>{rangeLabel} PV & UV</p>
+                            <h3 className={`text-xl font-bold ${textPrimary}`}>访客走势图</h3>
+                            <p className={`text-xs ${textMuted}`}>最近14天 PV & UV</p>
                         </div>
                         <span className="text-xs font-mono">{dailyTrends.length} 天</span>
                     </div>
-                    <div className="mt-4">
-                        <Sparkline data={dailyTrends} />
-                    </div>
-                    {dailyTrends.length > 0 && (
-                        <div className="flex flex-wrap gap-4 text-xs mt-2">
-                            <span>最高日 PV：{formatNumber(Math.max(...dailyTrends.map(d => d.views), 0))}</span>
-                            <span>最近一天 UV：{formatNumber(dailyTrends[dailyTrends.length - 1].visitors)}</span>
+                    <TrendChart data={dailyTrends} isDarkMode={isDarkMode} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs mt-4">
+                        <div className={`p-3 rounded-xl ${surface}`}>最高日 PV：{formatNumber(peakViews, "0")}</div>
+                        <div className={`p-3 rounded-xl ${surface}`}>最高日 UV：{formatNumber(peakVisitors, "0")}</div>
+                        <div className={`p-3 rounded-xl ${surface}`}>
+                            最近一日 PV/UV：{formatNumber(lastPoint.views, "0")}/{formatNumber(lastPoint.visitors, "0")}
                         </div>
-                    )}
+                    </div>
                 </div>
                 <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
                     <h3 className={`text-xl font-bold ${textPrimary}`}>流量来源</h3>
-                    <p className={`text-xs ${textMuted} mb-4`}>来自 `analytics_traffic_sources`</p>
+                    <p className={`text-xs ${textMuted} mb-4`}>analytics_traffic_sources 实时占比</p>
                     {trafficSources.length === 0 ? (
                         <p className={`text-sm ${textMuted}`}>暂无流量来源统计</p>
                     ) : (
@@ -1772,60 +1811,63 @@ const DashboardView = ({ isDarkMode }) => {
                     )}
                 </div>
             </div>
+        </div>
+    );
+};
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                    <div className="flex items-center justify-between">
-                        <h3 className={`text-xl font-bold ${textPrimary}`}>热门文章</h3>
-                        <span className={`text-xs ${textMuted}`}>{rangeLabel}</span>
-                    </div>
-                    {topPosts.length === 0 ? (
-                        <p className={`text-sm mt-3 ${textMuted}`}>暂无文章访问记录</p>
-                    ) : (
-                        <div className="mt-4 space-y-3">
-                            {topPosts.map((post, index) => (
-                                <div key={post.postId || index}
-                                    className="flex items-center justify-between text-sm border-b border-dashed border-gray-200 dark:border-gray-700 pb-2 last:border-none last:pb-0">
-                                    <div>
-                                        <p className="font-semibold">{post.title || '未命名文章'}</p>
-                                        {post.slug && (
-                                            <p className={`text-xs ${textMuted}`}>Slug：{post.slug}</p>
-                                        )}
-                                    </div>
-                                    <span className="text-lg font-black">{formatNumber(post.views)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                    <div className="flex items-center justify-between">
-                        <h3 className={`text-xl font-bold ${textPrimary}`}>最新访问</h3>
-                        <span className={`text-xs ${textMuted}`}>展示最近 6 条 PV</span>
-                    </div>
-                    {recentVisits.length === 0 ? (
-                        <p className={`text-sm mt-3 ${textMuted}`}>暂无访问记录</p>
-                    ) : (
-                        <div className="mt-4 space-y-3">
-                            {recentVisits.map((visit) => (
-                                <div key={visit.id} className="p-3 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <p className="font-semibold">{visit.title || '未命名页面'}</p>
-                                        {visit.loggedIn ? (
-                                            <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-600">已登录</span>
-                                        ) : (
-                                            <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">访客</span>
-                                        )}
-                                    </div>
-                                    <div className={`text-xs mt-2 ${textMuted} flex flex-wrap gap-3`}>
-                                        <span>IP：{visit.ip || '-'}</span>
-                                        <span>时间：{visit.time || '-'}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+const TrendChart = ({ data, isDarkMode }) => {
+    const textMuted = isDarkMode ? "text-gray-400" : "text-gray-500";
+    if (!data.length) {
+        return <p className={`mt-6 text-sm ${textMuted}`}>暂无趋势数据</p>;
+    }
+    const maxValue = Math.max(...data.map((item) => Math.max(item.views || 0, item.visitors || 0)), 1);
+    const buildPoints = (key) => {
+        const lastIndex = Math.max(data.length - 1, 1);
+        return data
+            .map((item, index) => {
+                const x = (index / lastIndex) * 100;
+                const value = item[key] || 0;
+                const y = 100 - (value / maxValue) * 100;
+                return `${x},${y}`;
+            })
+            .join(" ");
+    };
+    const axisLabels = data.map((item) => item.date?.slice(5));
+    return (
+        <div className="mt-6">
+            <div className="relative">
+                <svg viewBox="0 0 100 100" className="w-full h-56">
+                    <polyline
+                        fill="none"
+                        stroke="#FF0080"
+                        strokeWidth="3"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        points={buildPoints("views")}
+                    />
+                    <polyline
+                        fill="none"
+                        stroke="#4ADE80"
+                        strokeWidth="3"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        points={buildPoints("visitors")}
+                    />
+                </svg>
+            </div>
+            <div className="flex items-center gap-4 text-xs mt-4">
+                <span className="flex items-center gap-2 text-[#FF0080]">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF0080]" /> PV
+                </span>
+                <span className="flex items-center gap-2 text-emerald-500">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> UV
+                </span>
+                <span className={`text-[11px] ${textMuted}`}>横轴：日期（MM-DD）</span>
+            </div>
+            <div className="grid grid-cols-7 text-[10px] uppercase tracking-widest text-gray-400 mt-2">
+                {axisLabels.map((label, index) => (
+                    <span key={`${label}-${index}`} className="text-center">{label}</span>
+                ))}
             </div>
         </div>
     );
@@ -5712,7 +5754,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     const [analyticsSummary, setAnalyticsSummary] = useState(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [analyticsError, setAnalyticsError] = useState('');
-    const [analyticsRange, setAnalyticsRange] = useState(14);
+    const [analyticsRange, setAnalyticsRange] = useState(7);
     const { loading: permissionLoading, error: permissionError, hasPermission } = usePermissionContext();
     const { headerHeight } = useLayoutOffsets();
 
@@ -5820,13 +5862,17 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         }
     }, [analyticsRange, fetchAnalyticsSummary]);
 
+    const analyticsRangeValue = typeof analyticsSummary?.overview?.rangeDays === 'number'
+        ? analyticsSummary.overview.rangeDays
+        : analyticsRange;
+
     const analyticsContextValue = useMemo(() => ({
         summary: analyticsSummary,
         loading: analyticsLoading,
         error: analyticsError,
-        rangeDays: analyticsRange,
+        rangeDays: analyticsRangeValue,
         reload: reloadAnalytics
-    }), [analyticsSummary, analyticsLoading, analyticsError, analyticsRange, reloadAnalytics]);
+    }), [analyticsSummary, analyticsLoading, analyticsError, analyticsRangeValue, reloadAnalytics]);
 
     const handleBroadcastToggle = async () => {
         if (broadcastSaving) return;
@@ -5945,57 +5991,6 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                         </Routes>
                     </AnalyticsSummaryContext.Provider>
 
-                    {/* General Notification System for Super Admin */}
-                    {(activeTab === 'dashboard' || activeTab === 'settings') && user.role === 'SUPER_ADMIN' && (
-                        <div
-                            className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-lg border shadow-sm mt-8`}>
-                            <h3 className={`font-bold mb-4 text-sm uppercase tracking-wide text-gray-500`}>紧急广播设置</h3>
-                            <div className="flex flex-col gap-4">
-                                <input
-                                    className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                    value={notification.content}
-                                    onChange={(e) => setNotification({ ...notification, content: e.target.value })}
-                                    placeholder="请输入广播内容，如“热烈庆祝五一国际劳工节成立100周年！”"
-                                />
-                                <div className="flex flex-wrap gap-3 items-center">
-                                    <span className="text-xs font-bold uppercase tracking-wide text-gray-500">显示样式</span>
-                                    <div className="flex gap-2">
-                                        {BROADCAST_STYLES.map((style) => (
-                                            <button
-                                                key={style.value}
-                                                type="button"
-                                                onClick={() => setNotification(prev => ({
-                                                    ...prev,
-                                                    style: style.value
-                                                }))}
-                                                className={`px-3 py-1 text-xs font-bold border-2 border-black rounded shadow-[2px_2px_0px_0px_#000] transition-colors ${notification.style === style.value ? 'bg-black text-white' : (style.value === 'ANNOUNCE' ? 'bg-[#FFF7CC] text-black' : 'bg-[#FF0080] text-white')}`}
-                                            >
-                                                {style.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="flex gap-4">
-                                    <select
-                                        className={`w-48 border rounded px-3 py-2 text-sm ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                        value={notification.style}
-                                        onChange={(e) => setNotification({ ...notification, style: e.target.value })}
-                                    >
-                                        {BROADCAST_STYLES.map((style) => (
-                                            <option key={style.value} value={style.value}>{style.label}</option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        onClick={handleBroadcastToggle}
-                                        disabled={broadcastSaving}
-                                        className={`px-4 py-2 rounded text-sm font-bold text-white transition-colors ${notification.isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} ${broadcastSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                    >
-                                        {notification.isOpen ? '关闭并保存' : '开启并保存'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </main>
             </div>
         </div>
@@ -6409,7 +6404,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.94';
+    const siteVersion = meta?.version || 'V1.3.95';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;

@@ -96,30 +96,40 @@ public class AnalyticsService {
 
     @Transactional(readOnly = true)
     public AdminAnalyticsSummaryDto loadAdminSummary(int days, int topLimit, int recentLimit) {
-        int safeDays = Math.max(1, Math.min(days, 60));
+        Integer safeRangeDays = days <= 0 ? null : Math.max(1, Math.min(days, 60));
         int safeTop = Math.max(1, Math.min(topLimit, 20));
         int safeRecent = Math.max(1, Math.min(recentLimit, 100));
 
         LocalDate today = LocalDate.now();
-        LocalDate startDate = today.minusDays(safeDays - 1L);
-        LocalDateTime start = startDate.atStartOfDay();
+        final int trendDays = 14;
+        LocalDate trendStartDate = today.minusDays(trendDays - 1L);
+        LocalDateTime overviewStart = safeRangeDays != null ? today.minusDays(safeRangeDays - 1L).atStartOfDay() : null;
 
-        long totalViews = analyticsPageViewRepository.count();
-        long periodViews = analyticsPageViewRepository.countByViewedAtAfter(start);
-        long uniqueVisitors = analyticsPageViewRepository.countDistinctViewerIpSince(start);
-        long loggedInViews = analyticsPageViewRepository.countByUserIsNotNullAndViewedAtAfter(start);
-        double avgViewsPerDay = safeDays > 0 ? (double) periodViews / safeDays : periodViews;
+        Long aggregatedViews = postRepository.sumViewsByStatus("PUBLISHED");
+        Long aggregatedComments = postRepository.sumCommentsByStatus("PUBLISHED");
+        long totalViews = aggregatedViews != null ? aggregatedViews : 0L;
+        long commentCount = aggregatedComments != null ? aggregatedComments : 0L;
+        long commentEntries = commentRepository.count();
+        long postCount = postRepository.countByStatus("PUBLISHED");
 
-        long postCount = postRepository.count();
-        long commentCount = commentRepository.count();
+        LocalDateTime topPostStart = overviewStart != null
+                ? overviewStart
+                : LocalDate.of(1970, 1, 1).atStartOfDay();
 
-        List<AdminAnalyticsSummaryDto.TrendPoint> dailyTrends = buildTrendPoints(startDate, safeDays);
+        long periodViews = analyticsPageViewRepository.countViewsSince(overviewStart);
+        long uniqueVisitors = analyticsPageViewRepository.countDistinctVisitorsSince(overviewStart);
+        long loggedInViews = analyticsPageViewRepository.countLoggedInViewsSince(overviewStart);
+        double avgViewsPerDay = safeRangeDays != null && safeRangeDays > 0
+                ? (double) periodViews / safeRangeDays
+                : 0d;
+
+        List<AdminAnalyticsSummaryDto.TrendPoint> dailyTrends = buildTrendPoints(trendStartDate, trendDays);
         List<AdminAnalyticsSummaryDto.TopPost> topPosts = analyticsPageViewRepository
-                .findTopPostsSince(start, PageRequest.of(0, safeTop))
+                .findTopPostsSince(topPostStart, PageRequest.of(0, safeTop))
                 .stream()
                 .map(tp -> AdminAnalyticsSummaryDto.TopPost.builder()
                         .postId(tp.getPostId())
-                        .title(tp.getTitle() != null ? tp.getTitle() : "未知文章")
+                        .title(tp.getTitle() != null ? tp.getTitle() : "\u672a\u77e5\u6587\u7ae0")
                         .slug(tp.getSlug())
                         .views(tp.getViews() != null ? tp.getViews() : 0L)
                         .build())
@@ -141,17 +151,24 @@ public class AnalyticsService {
                 .filter(Objects::nonNull)
                 .toList();
 
+        String rangeLabel = safeRangeDays != null
+                ? (safeRangeDays == 1 ? "\u6700\u8fd11\u5929" : "\u6700\u8fd1" + safeRangeDays + "\u5929")
+                : "\u5168\u90e8\u5386\u53f2";
+        int rangeDaysValue = safeRangeDays != null ? safeRangeDays : 0;
+        double normalizedAvgViews = Math.round(avgViewsPerDay * 10d) / 10d;
+
         return AdminAnalyticsSummaryDto.builder()
                 .overview(AdminAnalyticsSummaryDto.Overview.builder()
                         .totalViews(totalViews)
                         .periodViews(periodViews)
                         .uniqueVisitors(uniqueVisitors)
                         .loggedInViews(loggedInViews)
-                        .avgViewsPerDay(Math.round(avgViewsPerDay * 10d) / 10d)
+                        .avgViewsPerDay(normalizedAvgViews)
                         .postCount(postCount)
                         .commentCount(commentCount)
-                        .rangeDays(safeDays)
-                        .rangeLabel("最近" + safeDays + "天")
+                        .commentEntries(commentEntries)
+                        .rangeDays(rangeDaysValue)
+                        .rangeLabel(rangeLabel)
                         .build())
                 .trafficSources(trafficSources)
                 .dailyTrends(dailyTrends)

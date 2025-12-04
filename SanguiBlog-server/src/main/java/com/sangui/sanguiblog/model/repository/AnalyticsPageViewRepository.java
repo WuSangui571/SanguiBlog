@@ -1,8 +1,8 @@
 package com.sangui.sanguiblog.model.repository;
 
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -36,17 +36,29 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
 
     boolean existsByPostIdAndViewerIpAndViewedAtAfter(Long postId, String viewerIp, LocalDateTime viewedAt);
 
-    long countByViewedAtAfter(LocalDateTime start);
+    @Query("SELECT COUNT(apv) FROM AnalyticsPageView apv WHERE (:start IS NULL OR apv.viewedAt >= :start)")
+    long countViewsSince(@Param("start") LocalDateTime start);
 
-    long countByUserIsNotNullAndViewedAtAfter(LocalDateTime start);
+    @Query("SELECT COUNT(apv) FROM AnalyticsPageView apv WHERE apv.user IS NOT NULL AND (:start IS NULL OR apv.viewedAt >= :start)")
+    long countLoggedInViewsSince(@Param("start") LocalDateTime start);
 
-    @Query("SELECT COUNT(DISTINCT apv.viewerIp) FROM AnalyticsPageView apv WHERE apv.viewedAt >= :start")
-    long countDistinctViewerIpSince(@Param("start") LocalDateTime start);
+    @Query(value = """
+            SELECT COUNT(DISTINCT CASE
+                       WHEN user_id IS NOT NULL THEN CONCAT('U#', user_id)
+                       ELSE CONCAT('G#', viewer_ip)
+                   END)
+            FROM analytics_page_views
+            WHERE (:start IS NULL OR viewed_at >= :start)
+            """, nativeQuery = true)
+    long countDistinctVisitorsSince(@Param("start") LocalDateTime start);
 
     @Query(value = """
             SELECT DATE(viewed_at) AS stat_date,
                    COUNT(*)        AS views,
-                   COUNT(DISTINCT viewer_ip) AS visitors
+                   COUNT(DISTINCT CASE
+                       WHEN user_id IS NOT NULL THEN CONCAT('U#', user_id)
+                       ELSE CONCAT('G#', viewer_ip)
+                   END)            AS visitors
             FROM analytics_page_views
             WHERE viewed_at >= :start
             GROUP BY DATE(viewed_at)

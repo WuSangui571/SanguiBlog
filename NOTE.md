@@ -278,13 +278,11 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 ### 3.10 Analytics for Admin
 
-*   GET /api/admin/analytics/summary?days=<7|14|30>&top=<5>&recent=<30> calls AnalyticsService.loadAdminSummary to aggregate nalytics_page_views + nalytics_traffic_sources and fill AdminAnalyticsSummaryDto (overview, daily trends, top posts, recent visits).
+*   GET /api/admin/analytics/summary?days=<1|7|30|-1>&top=<5>&recent=<30> 聚合文章表(views_count/comments_count/status=PUBLISHED)、analytics_page_views（PV/UV/登录PV/14 日趋势）与 analytics_traffic_sources，并把“全部历史”请求映射为 days = -1/rangeDays = 0，返回新的 AdminAnalyticsSummaryDto。UV 去重优先使用 user_id，其次使用 viewer_ip。
 
-*   Dashboard widgets consume AnalyticsSummaryContext; KPI cards, charts and tables share the same state and the 
+*   Dashboard 复用 AnalyticsSummaryContext，rangeDays 优先读取 overview.rangeDays；概览卡片统一展示：累计浏览、评论总数、区间 PV、区间 UV、文章总数、评论总数（实时 comments 表），eload(range) 触发 1/7/30/全部区间切换。
 
-eload() helper forces a refresh.
-
-*   /admin/analytics lets admins switch between 7/14/30 days to inspect trend charts, traffic sources, hot posts and detailed visit logs (URL/IP/Geo/login state).
+*   /admin/analytics 当前仅包含“概览 + 区间筛选”、“最近 14 天 PV/UV 折线”、“流量来源”和“实时访问日志”四块，热门文章/最新访问/紧急广播全部下线，视觉保持与 Home/Admin 主题一致。
 
 *   AnalyticsService.recordPageView writes nalytics_page_views and updates traffic sources. PV uses a 1-minute in-memory throttle (IP+post) plus a 10-minute DB dedupe. SUPER_ADMIN is skipped only when pageTitle/referrer contains dmin. If the front-end tracker fails, PostService.incrementViews now builds a PageViewRequest and calls 
 

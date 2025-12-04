@@ -41,7 +41,7 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:uploads}
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.94"
+  version: "V1.3.95"
 #  asset-base-url: http://localhost:8080/uploads
 #  asset-base-url: https://nonmature-scraggily-fermin.ngrok-free.dev/uploads
   asset-base-url: https://puristic-david-unsorely.ngrok-free.dev/uploads
@@ -51,3 +51,4 @@ site:
     icp-number: 娴橧CP澶?025167176鍙?
     icp-link: https://beian.miit.gov.cn/
     powered-by: Powered by Spring Boot 3 & React 19
+

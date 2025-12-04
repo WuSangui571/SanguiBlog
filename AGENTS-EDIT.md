@@ -898,3 +898,6 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **模块/页面**：Analytics 前端埋点新增视图守卫，Home/Archive/Admin 仅首入一次上报 PV，彻底杜绝 analytics_page_views 三连记录并在 NOTE.md 记录该机制。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.94`
 
+## V1.3.95 (2025-12-04)
+- **模块/页面**:重构 /admin 仪表盘(新增 1/7/30/全部概览筛选、14 天 PV/UV 折线、移除热门文章/最新访问/紧急广播)并同步后端统计逻辑(文章 views/comments 聚合、UV 登录优先去重、全部历史=days -1)。
+- **版本**:首页 Banner 更新为 `SANGUI BLOG // V1.3.95`
