@@ -124,6 +124,12 @@ const createTendrils = (toDark) => {
     }));
 };
 
+const countImagesInContent = (content = "") => {
+    if (!content) return 0;
+    const matches = content.match(/!\[[^\]]*]\([^)]+\)/g);
+    return matches ? matches.length : 0;
+};
+
 
 const BackgroundEasterEggs = ({ isDarkMode }) => {
     const stars = useMemo(() => Array.from({ length: 80 }, (_, idx) => ({
@@ -2462,11 +2468,43 @@ const CreatePostView = ({ isDarkMode }) => {
             const data = res.data || res;
             if (data?.folder && data.folder !== assetsFolder) setAssetsFolder(data.folder);
             const urls = data?.urls || [];
-            if (urls.length) {
-                insertImagesAtCursor(urls);
-                setImageUploadMessage(data.joined || urls.join(";"));
-            } else {
+
+            const uploaded = urls.length;
+            if (!uploaded) {
                 setImageUploadMessage("上传成功");
+            } else {
+                const filenameToUrl = {};
+                files.forEach((file, idx) => {
+                    const url = urls[idx] || urls[urls.length - 1];
+                    filenameToUrl[file.name] = url;
+                });
+
+                const beforeCount = countImagesInContent(mdContent);
+                let replacedCount = 0;
+                let nextContent = mdContent.replace(/!\[[^\]]*]\(([^)]+)\)/g, (full, path) => {
+                    const filename = path.split(/[/\\\\]/).pop();
+                    if (filename && filenameToUrl[filename]) {
+                        const url = filenameToUrl[filename];
+                        delete filenameToUrl[filename];
+                        replacedCount += 1;
+                        return full.replace(path, url);
+                    }
+                    return full;
+                });
+
+                const remainingUrls = Object.values(filenameToUrl);
+                if (remainingUrls.length) {
+                    const snippet = remainingUrls.map((url, index) => `![${files[index]?.name || `图片${index + 1}`}](${url})`).join("\n");
+                    const prefix = nextContent.endsWith("\n") || nextContent.length === 0 ? "" : "\n";
+                    nextContent = `${nextContent}${prefix}${snippet}\n`;
+                }
+
+                applyMdContent(nextContent);
+
+                const message = `已上传 ${uploaded} 张，匹配替换 ${replacedCount} 张`;
+                const totalDetected = beforeCount;
+                const complete = totalDetected === 0 || replacedCount === totalDetected;
+                setImageUploadMessage(`${message}，${complete ? '导入成功！' : '自动导入不全，请手动导入！'}`);
             }
         } catch (error) {
             setImageUploadMessage(error.message || "图片上传失败");
@@ -2513,15 +2551,10 @@ const CreatePostView = ({ isDarkMode }) => {
             return { summary: "", body: content };
         };
 
-        const countImages = (content) => {
-            const matches = content.match(/!\[[^\]]*]\([^)]+\)/g);
-            return matches ? matches.length : 0;
-        };
-
         try {
             const rawText = await file.text();
             const { summary, body } = extractSummaryAndBody(rawText);
-            const imageCount = countImages(body);
+            const imageCount = countImagesInContent(body);
             applyMdContent(body);
             setMarkdownFileName(file.name);
 
