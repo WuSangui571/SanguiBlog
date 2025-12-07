@@ -1011,6 +1011,12 @@ const PAGE_SIZE = 5;
 const DEFAULT_HERO_TAGLINE = '拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。';
 const DEFAULT_HOME_QUOTE = '阻挡你的不是别人，而是你自己。';
 const TAG_PREVIEW_COUNT = 9;
+const SPIN_WARNINGS = [
+    '慢点慢点，我的小脑壳有点晕～',
+    '转速太快啦，给我缓口气！',
+    '呀！眩晕警报，请手下留情。',
+    '别急别急，灵感也需要休息。'
+];
 const ARCHIVE_MONTH_LABELS = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
 const AnalyticsSummaryContext = React.createContext({
@@ -1584,7 +1590,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.101'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.103'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6413,7 +6419,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.101';
+    const siteVersion = meta?.version || 'V1.3.103';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -6946,9 +6952,14 @@ const ArticleList = ({
     const konamiSequence = useRef([]);
     const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     const [avatarClicks, setAvatarClicks] = useState(0);
+    const [spinWarning, setSpinWarning] = useState('');
+    const [showSpinWarning, setShowSpinWarning] = useState(false);
     const [expandedTags, setExpandedTags] = useState(false);
     const [activeTag, setActiveTag] = useState('all');
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
+    const warningTimerRef = useRef(null);
+    const lastSpinAtRef = useRef(0);
+    const rapidSpinCountRef = useRef(0);
     const NEW_POST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     const isPostNew = (dateStr) => {
@@ -7005,6 +7016,35 @@ const ArticleList = ({
         setActiveSub(subId);
         scrollToPostsTop();
     }, [scrollToPostsTop]);
+
+    const handleAvatarClick = useCallback(() => {
+        setAvatarClicks((prev) => prev + 1);
+        const now = Date.now();
+        if (now - lastSpinAtRef.current < 350) {
+            rapidSpinCountRef.current += 1;
+        } else {
+            rapidSpinCountRef.current = 1;
+        }
+        lastSpinAtRef.current = now;
+        if (rapidSpinCountRef.current >= 4) {
+            rapidSpinCountRef.current = 0;
+            const message = SPIN_WARNINGS[Math.floor(Math.random() * SPIN_WARNINGS.length)];
+            setSpinWarning(message);
+            setShowSpinWarning(true);
+            if (warningTimerRef.current) {
+                clearTimeout(warningTimerRef.current);
+            }
+            warningTimerRef.current = setTimeout(() => setShowSpinWarning(false), 2200);
+        }
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (warningTimerRef.current) {
+                clearTimeout(warningTimerRef.current);
+            }
+        };
+    }, []);
 
     const filteredPosts = sourcePosts.filter(post => {
         if (activeParent !== "all" && post.parentCategory !== currentParentObj.label) return false;
@@ -7102,6 +7142,32 @@ const ArticleList = ({
     return (
         <>
             <StatsStrip isDarkMode={isDarkMode} stats={stats} />
+            <AnimatePresence>
+                {showSpinWarning && (
+                    <motion.div
+                        className="fixed inset-0 z-[140] flex items-center justify-center px-4 pointer-events-none"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.85, rotate: -4 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            exit={{ scale: 0.8, rotate: 6, opacity: 0 }}
+                            className="relative max-w-md w-full pointer-events-none"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#FF0080] via-[#6366F1] to-[#0EA5E9] opacity-60 blur-3xl" />
+                            <div
+                                className={`relative border-4 border-black px-6 py-5 text-center shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-[#050816] text-[#FFD700]' : 'bg-white text-black'}`}>
+                                <div className="text-[10px] font-mono tracking-[0.6em] text-gray-400 uppercase mb-2">
+                                    SPIN ALERT
+                                </div>
+                                <div className="text-2xl font-black italic leading-snug">{spinWarning}</div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {konamiActive && (
                 <div
                     className="fixed inset-0 z-[100] bg-black mix-blend-difference pointer-events-none animate-pulse flex items-center justify-center">
@@ -7117,7 +7183,7 @@ const ArticleList = ({
                             <motion.div
                                 animate={{ rotate: avatarClicks * 360 }}
                                 transition={{ duration: 0.5 }}
-                                onClick={() => setAvatarClicks(p => p + 1)}
+                                onClick={handleAvatarClick}
                                 className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 bg-[#FFD700] rounded-full border-2 border-black flex items-center justify-center cursor-pointer"
                             >
                                 <img src={authorAvatar} className="w-full h-full object-cover rounded-full" />
