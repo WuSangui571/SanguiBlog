@@ -33,6 +33,8 @@ import {
     adminUpdateRolePermissions,
     adminScanUnusedAssets,
     adminDeleteUnusedAssets,
+    adminScanEmptyFolders,
+    adminDeleteEmptyFolders,
     adminFetchAbout,
     adminSaveAbout,
     fetchMyPermissions,
@@ -2325,6 +2327,8 @@ const CreatePostView = ({ isDarkMode }) => {
     const [mdContent, setMdContent] = useState("");
     const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
     const [hasManualThemeColor, setHasManualThemeColor] = useState(false);
+    const mdHistoryRef = useRef([]);
+    const mdFutureRef = useRef([]);
     const [markdownFileName, setMarkdownFileName] = useState("");
     const [selectedParentId, setSelectedParentId] = useState(null);
     const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -2358,6 +2362,19 @@ const CreatePostView = ({ isDarkMode }) => {
         setAssetsFolder(data.folder);
         return data.folder;
     }, [assetsFolder]);
+
+    const pushMdHistory = useCallback((value) => {
+        mdHistoryRef.current.push(value);
+        if (mdHistoryRef.current.length > 200) {
+            mdHistoryRef.current.shift();
+        }
+    }, []);
+
+    const applyMdContent = useCallback((next) => {
+        pushMdHistory(mdContent);
+        mdFutureRef.current = [];
+        setMdContent(next);
+    }, [mdContent, pushMdHistory]);
 
     const insertImagesAtCursor = useCallback((urls = []) => {
         if (!urls.length) return;
@@ -2505,7 +2522,7 @@ const CreatePostView = ({ isDarkMode }) => {
             const rawText = await file.text();
             const { summary, body } = extractSummaryAndBody(rawText);
             const imageCount = countImages(body);
-            setMdContent(body);
+            applyMdContent(body);
             setMarkdownFileName(file.name);
 
             const baseMsg = summary ? `已解析摘要并加载 ${file.name}` : "未识别摘要格式，请手动填写摘要";
@@ -2735,7 +2752,21 @@ const CreatePostView = ({ isDarkMode }) => {
                             ref={markdownEditorRef}
                             className={`${inputClass} min-h-[420px] font-mono text-sm`}
                             value={mdContent}
-                            onChange={(e) => setMdContent(e.target.value)}
+                            onChange={(e) => {
+                                pushMdHistory(mdContent);
+                                mdFutureRef.current = [];
+                                setMdContent(e.target.value);
+                            }}
+                            onKeyDown={(e) => {
+                                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                                    e.preventDefault();
+                                    if (mdHistoryRef.current.length) {
+                                        const prev = mdHistoryRef.current.pop();
+                                        mdFutureRef.current.push(mdContent);
+                                        setMdContent(prev);
+                                    }
+                                }
+                            }}
                             placeholder="在此粘贴 Markdown 内容"
                         />
                     </div>
