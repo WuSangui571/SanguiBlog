@@ -2343,6 +2343,7 @@ const CreatePostView = ({ isDarkMode }) => {
     const [markdownMessage, setMarkdownMessage] = useState("");
     const [submitNotice, setSubmitNotice] = useState("");
     const [submitError, setSubmitError] = useState("");
+    const [publishBanner, setPublishBanner] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
     const markdownFileInputRef = useRef(null);
@@ -2636,6 +2637,10 @@ const CreatePostView = ({ isDarkMode }) => {
             const res = await createPost(payload);
             const data = res.data || res;
             setSubmitNotice(`发布成功（ID: ${data?.summary?.id || data?.id || "已创建"}）`);
+            setPublishBanner(`发布成功（ID: ${data?.summary?.id || data?.id || "已创建"}）`);
+            if (typeof window !== 'undefined') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
             setTitle("");
             setMdContent("");
             setMarkdownFileName("");
@@ -2689,9 +2694,22 @@ const CreatePostView = ({ isDarkMode }) => {
         showPublishNotice(submitNotice);
     }, [submitNotice, showPublishNotice]);
 
+    useEffect(() => {
+        if (!publishBanner) return;
+        const timer = setTimeout(() => setPublishBanner(""), 4500);
+        return () => clearTimeout(timer);
+    }, [publishBanner]);
+
     return (
         <div className="space-y-8">
             <AdminNoticeBar notice={publishNotice} onClose={hidePublishNotice} />
+            {publishBanner && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+                    <div className="px-6 py-3 rounded-2xl border-2 border-black bg-gradient-to-r from-emerald-400 to-amber-300 shadow-[6px_6px_0px_0px_#000] text-black text-lg font-extrabold tracking-tight">
+                        🎉 {publishBanner}
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
