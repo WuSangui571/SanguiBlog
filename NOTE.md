@@ -165,7 +165,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   首页底部版权信息来自 `/site/meta.footer`，支持在 `application.yaml` 的 `site.footer.*` 中自定义年份、品牌、备案号/链接以及 Powered by 文案；备案号始终以新窗口打开工信部或自定义链接。
 
 *   “全部标签”区展示真实标签列表，点击任意标签会立即过滤右侧文章列表，只保留包含该标签的文章，再次点击或点击“清除筛选”即可恢复全部文章。
-*   自 V1.3.100 起，ArticleList 在页码、一级分类、二级分类或“Reset Filters”改变筛选时都会统一调用 `scrollToPostsTop()`，再次点击已激活的一级分类会退回到“全部”并收起其二级菜单；同时移除了列表包裹层的 `flex: 1` 占位，分页条会紧贴最后一篇文章，不会在不足 PAGE_SIZE 条数据时被大段空白隔开。
+*   自 V1.3.101 起，ArticleList 在页码、一级/二级分类或 “Reset Filters” 改变筛选时都会统一调用 `scrollToPostsTop()`，再次点击已激活的一级分类会退回到“全部”并折叠子分类；首页 Hero 文案与分页金句分别读取 `application.yaml` 中的 `site.hero.tagline` 与 `site.home.signature-quote`，默认仍为 “拒绝平庸…” 与 “阻挡你的不是别人…”，并移除了列表包裹层的 `flex:1` 占位以避免分页下沉。
 
 
 

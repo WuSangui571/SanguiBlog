@@ -41,10 +41,14 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:uploads}
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.100"
+  version: "V1.3.101"
   asset-base-url: http://localhost:8080/uploads
 #  asset-base-url: https://nonmature-scraggily-fermin.ngrok-free.dev/uploads
 #  asset-base-url: https://puristic-david-unsorely.ngrok-free.dev/uploads
+  hero:
+    tagline: 拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。
+  home:
+    signature-quote: 阻挡你的不是别人，而是你自己。
   footer:
     year: 2025
     brand: 三桂博客

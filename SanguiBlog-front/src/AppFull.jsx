@@ -1008,6 +1008,8 @@ const GENERATE_POSTS = () => {
 
 const MOCK_POSTS = GENERATE_POSTS();
 const PAGE_SIZE = 5;
+const DEFAULT_HERO_TAGLINE = '拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。';
+const DEFAULT_HOME_QUOTE = '阻挡你的不是别人，而是你自己。';
 const TAG_PREVIEW_COUNT = 9;
 const ARCHIVE_MONTH_LABELS = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
@@ -1529,7 +1531,7 @@ const Navigation = ({
     );
 };
 // ... (Hero, StatsStrip, ArticleList, CommentsSection, ArticleDetail, LoginView components are kept unchanged in functionality, but are wrapped in the main App with the dark mode context.)
-const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
+const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
     const { scrollY } = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const rotate = useTransform(scrollY, [0, 500], [0, 45]);
@@ -1537,6 +1539,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
     const bgClass = isDarkMode ? THEME.colors.bgDark : THEME.colors.bgLight;
     const textClass = isDarkMode ? 'text-white' : 'text-black';
     const gridColor = isDarkMode ? '#374151' : '#000';
+    const heroCopy = (typeof tagline === 'string' && tagline.trim().length > 0) ? tagline : DEFAULT_HERO_TAGLINE;
 
     return (
         <div
@@ -1581,7 +1584,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.100'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.101'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1597,7 +1600,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     </motion.span>
                 </h1>
                 <p className={`text-xl md:text-2xl font-bold mb-12 max-w-2xl mx-auto border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-600'}`}>
-                    拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。
+                    {heroCopy}
                     <br /><span className="text-sm font-mono text-[#0EA5E9]">{`>>`} PRESS START TO CONTINUE</span>
                 </p>
 
@@ -6410,7 +6413,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.100';
+    const siteVersion = meta?.version || 'V1.3.101';
+    const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
+    const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6633,7 +6638,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             case 'home':
                 return (
                     <>
-                        <Hero setView={setView} isDarkMode={isDarkMode} onStartReading={scrollToPostsTop} version={siteVersion} />
+                        <Hero setView={setView} isDarkMode={isDarkMode} onStartReading={scrollToPostsTop} version={siteVersion} tagline={heroTagline} />
                         <ArticleList
                             setView={setView}
                             setArticleId={setArticleId}
@@ -6649,6 +6654,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                             setActiveParent={setActiveParent}
                             activeSub={activeSub}
                             setActiveSub={setActiveSub}
+                            homeQuote={homeQuote}
                         />
                         <footer
                             className={`py-12 text-center mt-12 border-t-8 ${isDarkMode ? 'bg-gray-900 text-white border-[#FF0080]' : 'bg-black text-white border-[#FFD700]'}`}>
@@ -6930,7 +6936,8 @@ const ArticleList = ({
     activeSub,
     setActiveSub,
     recentComments,
-    onScrollToPosts
+    onScrollToPosts,
+    homeQuote
 }) => {
     const [showWechat, setShowWechat] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -6941,6 +6948,7 @@ const ArticleList = ({
     const [avatarClicks, setAvatarClicks] = useState(0);
     const [expandedTags, setExpandedTags] = useState(false);
     const [activeTag, setActiveTag] = useState('all');
+    const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
     const NEW_POST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     const isPostNew = (dateStr) => {
@@ -7470,7 +7478,7 @@ const ArticleList = ({
                                     className="absolute inset-0 bg-[#FFD700] transform translate-x-2 translate-y-2 border-2 border-black"></div>
                                 <div
                                     className={`relative border-2 border-black px-8 py-4 text-2xl font-black italic ${cardBg} ${text}`}>
-                                    "阻挡你的不是别人，而是你自己。"
+                                    {endingQuote ? `“${endingQuote}”` : ''}
                                 </div>
                             </div>
                         </div>
