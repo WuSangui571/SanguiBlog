@@ -1651,7 +1651,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.111'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.112'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2495,12 +2495,21 @@ const CreatePostView = ({ isDarkMode }) => {
             return { summary: "", body: content };
         };
 
+        const countImages = (content) => {
+            const matches = content.match(/!\[[^\]]*]\([^)]+\)/g);
+            return matches ? matches.length : 0;
+        };
+
         try {
             const rawText = await file.text();
             const { summary, body } = extractSummaryAndBody(rawText);
+            const imageCount = countImages(body);
             setMdContent(body);
             setMarkdownFileName(file.name);
-            setMarkdownMessage(summary ? `已解析摘要并加载 ${file.name}` : "未识别摘要格式，请手动补充摘要");
+
+            const baseMsg = summary ? `已解析摘要并加载 ${file.name}` : "未识别摘要格式，请手动填写摘要";
+            const imageMsg = `📷 本文检测到 ${imageCount} 张图片`;
+            setMarkdownMessage(`${baseMsg} · ${imageMsg}`);
 
             if (!title.trim()) {
                 const inferredTitle = extractTitleFromFilename(file.name);
@@ -6681,7 +6690,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.111';
+    const siteVersion = meta?.version || 'V1.3.112';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
