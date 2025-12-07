@@ -2647,6 +2647,8 @@ const CreatePostView = ({ isDarkMode }) => {
             setSelectedTags([]);
             setExcerpt("");
             setAssetsFolder("");
+            setMarkdownMessage("");
+            setImageUploadMessage("");
             setThemeColor(DEFAULT_THEME_COLOR);
             setHasManualThemeColor(false);
         } catch (error) {
