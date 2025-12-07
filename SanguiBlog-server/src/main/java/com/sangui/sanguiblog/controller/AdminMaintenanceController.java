@@ -1,8 +1,11 @@
 package com.sangui.sanguiblog.controller;
 
 import com.sangui.sanguiblog.model.dto.ApiResponse;
+import com.sangui.sanguiblog.model.dto.DeleteEmptyFoldersRequest;
+import com.sangui.sanguiblog.model.dto.DeleteEmptyFoldersResponse;
 import com.sangui.sanguiblog.model.dto.DeleteUnusedAssetsRequest;
 import com.sangui.sanguiblog.model.dto.DeleteUnusedAssetsResponse;
+import com.sangui.sanguiblog.model.dto.EmptyFolderScanResponse;
 import com.sangui.sanguiblog.model.dto.UnusedAssetScanResponse;
 import com.sangui.sanguiblog.service.MaintenanceService;
 import jakarta.validation.Valid;
@@ -27,9 +30,21 @@ public class AdminMaintenanceController {
         return ApiResponse.ok(maintenanceService.scanUnusedAssets());
     }
 
+    @GetMapping("/empty-folders")
+    @PreAuthorize("hasAuthority('PERM_SYSTEM_CLEAN_STORAGE')")
+    public ApiResponse<EmptyFolderScanResponse> scanEmptyFolders() {
+        return ApiResponse.ok(maintenanceService.scanEmptyFolders());
+    }
+
     @PostMapping("/unused-assets/delete")
     @PreAuthorize("hasAuthority('PERM_SYSTEM_CLEAN_STORAGE')")
     public ApiResponse<DeleteUnusedAssetsResponse> deleteUnusedAssets(@Valid @RequestBody DeleteUnusedAssetsRequest request) {
         return ApiResponse.ok(maintenanceService.deleteUnusedAssets(request));
+    }
+
+    @PostMapping("/empty-folders/delete")
+    @PreAuthorize("hasAuthority('PERM_SYSTEM_CLEAN_STORAGE')")
+    public ApiResponse<DeleteEmptyFoldersResponse> deleteEmptyFolders(@Valid @RequestBody DeleteEmptyFoldersRequest request) {
+        return ApiResponse.ok(maintenanceService.deleteEmptyFolders(request));
     }
 }

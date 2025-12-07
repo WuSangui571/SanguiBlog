@@ -392,3 +392,12 @@ export const adminDeleteUnusedAssets = (paths = []) =>
     method: "POST",
     body: JSON.stringify({ paths }),
   });
+
+// Maintenance - empty folder cleanup (SUPER_ADMIN)
+export const adminScanEmptyFolders = () => request("/admin/maintenance/empty-folders");
+
+export const adminDeleteEmptyFolders = (paths = []) =>
+  request("/admin/maintenance/empty-folders/delete", {
+    method: "POST",
+    body: JSON.stringify({ paths }),
+  });

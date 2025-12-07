@@ -5830,6 +5830,9 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
     const [assets, setAssets] = useState([]);
     const [totalSize, setTotalSize] = useState(0);
     const [selected, setSelected] = useState(new Set());
+    const [emptyFolders, setEmptyFolders] = useState([]);
+    const [emptySelected, setEmptySelected] = useState(new Set());
+    const [emptyLoading, setEmptyLoading] = useState(false);
     const [error, setError] = useState('');
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmChecked, setConfirmChecked] = useState(false);
@@ -5861,9 +5864,25 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
         }
     }, []);
 
+    const loadEmptyFolders = useCallback(async () => {
+        setEmptyLoading(true);
+        setError('');
+        setEmptySelected(new Set());
+        try {
+            const res = await adminScanEmptyFolders();
+            const data = res.data || res;
+            setEmptyFolders(data?.emptyFolders || []);
+        } catch (err) {
+            setError(err.message || '扫描空文件夹失败');
+        } finally {
+            setEmptyLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         loadAssets();
-    }, [loadAssets]);
+        loadEmptyFolders();
+    }, [loadAssets, loadEmptyFolders]);
 
     const toggleSelect = (path) => {
         setSelected((prev) => {
@@ -5885,6 +5904,22 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
         }
     };
 
+    const toggleSelectEmpty = (path) => {
+        setEmptySelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(path)) next.delete(path); else next.add(path);
+            return next;
+        });
+    };
+
+    const toggleSelectAllEmpty = () => {
+        if (emptySelected.size === emptyFolders.length) {
+            setEmptySelected(new Set());
+        } else {
+            setEmptySelected(new Set(emptyFolders));
+        }
+    };
+
     const openConfirm = () => {
         if (!selected.size) return;
         setConfirmChecked(false);
@@ -5902,6 +5937,23 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
             await loadAssets();
         } catch (err) {
             setError(err.message || '删除失败');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleDeleteEmptyFolders = async () => {
+        if (!emptySelected.size) return;
+        setDeleting(true);
+        setError('');
+        try {
+            const res = await adminDeleteEmptyFolders(Array.from(emptySelected));
+            const data = res.data || res;
+            showNotice(`已删除 ${data?.deletedCount || 0} 个空目录`);
+            setEmptySelected(new Set());
+            await loadEmptyFolders();
+        } catch (err) {
+            setError(err.message || '删除空目录失败');
         } finally {
             setDeleting(false);
         }
@@ -6029,6 +6081,65 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
                     </div>
                 </div>
             )}
+
+            <div className={`${surface} rounded-2xl shadow-lg p-6 flex flex-wrap gap-4 items-center justify-between`}>
+                <div>
+                    <h3 className="text-xl font-bold">空目录清理</h3>
+                    <p className="text-sm text-gray-500 mt-1">扫描上传目录下的空文件夹（posts/*），可选择删除无内容的目录。</p>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        type="button"
+                        onClick={loadEmptyFolders}
+                        disabled={emptyLoading}
+                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                    >
+                        {emptyLoading ? '扫描中...' : '重新扫描'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDeleteEmptyFolders}
+                        disabled={!emptySelected.size || deleting || emptyLoading}
+                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                    >
+                        {deleting ? '删除中...' : `删除选中 (${emptySelected.size})`}
+                    </button>
+                </div>
+            </div>
+
+            <div className={`${surface} rounded-2xl shadow-lg p-6`}>
+                <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
+                    <span className="font-bold">空目录：{emptyFolders.length} 个</span>
+                    <button
+                        type="button"
+                        onClick={toggleSelectAllEmpty}
+                        disabled={!emptyFolders.length}
+                        className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
+                    >
+                        {emptySelected.size === emptyFolders.length ? '取消全选' : '全选'}
+                    </button>
+                </div>
+
+                {emptyLoading ? (
+                    <div className="p-8 text-center text-sm text-gray-500">扫描中，请稍候...</div>
+                ) : emptyFolders.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-emerald-600 font-bold">没有空目录。</div>
+                ) : (
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        {emptyFolders.map((path) => (
+                            <div key={path} className="border-2 border-black rounded-xl p-3 shadow-[4px_4px_0px_0px_#000] flex items-center justify-between">
+                                <div className="font-mono text-xs break-all">{path}</div>
+                                <input
+                                    type="checkbox"
+                                    className="w-4 h-4 accent-red-500"
+                                    checked={emptySelected.has(path)}
+                                    onChange={() => toggleSelectEmpty(path)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

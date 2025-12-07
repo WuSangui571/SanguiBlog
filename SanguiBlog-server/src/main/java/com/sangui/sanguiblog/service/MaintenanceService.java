@@ -1,8 +1,11 @@
 package com.sangui.sanguiblog.service;
 
 import com.sangui.sanguiblog.config.StoragePathResolver;
+import com.sangui.sanguiblog.model.dto.DeleteEmptyFoldersRequest;
+import com.sangui.sanguiblog.model.dto.DeleteEmptyFoldersResponse;
 import com.sangui.sanguiblog.model.dto.DeleteUnusedAssetsRequest;
 import com.sangui.sanguiblog.model.dto.DeleteUnusedAssetsResponse;
+import com.sangui.sanguiblog.model.dto.EmptyFolderScanResponse;
 import com.sangui.sanguiblog.model.dto.UnusedAssetDto;
 import com.sangui.sanguiblog.model.dto.UnusedAssetScanResponse;
 import com.sangui.sanguiblog.model.entity.AboutPage;
@@ -71,6 +74,33 @@ public class MaintenanceService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public EmptyFolderScanResponse scanEmptyFolders() {
+        Path postsDir = storagePathResolver.getPostsDir();
+        if (!Files.exists(postsDir)) {
+            return EmptyFolderScanResponse.builder().emptyFolders(List.of()).build();
+        }
+        List<String> empty = new ArrayList<>();
+        try (var walk = Files.walk(postsDir)) {
+            // Collect directories only
+            List<Path> dirs = walk.filter(Files::isDirectory).sorted(Comparator.reverseOrder()).toList();
+            for (Path dir : dirs) {
+                if (dir.equals(postsDir)) continue;
+                try (var children = Files.list(dir)) {
+                    boolean hasAny = children.findAny().isPresent();
+                    if (!hasAny) {
+                        String relative = postsDir.relativize(dir).toString().replace("\\", "/");
+                        empty.add("posts/" + relative);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("扫描空目录失败: " + e.getMessage(), e);
+        }
+        empty.sort(Comparator.naturalOrder());
+        return EmptyFolderScanResponse.builder().emptyFolders(empty).build();
+    }
+
     @Transactional
     public DeleteUnusedAssetsResponse deleteUnusedAssets(DeleteUnusedAssetsRequest request) {
         Set<String> requested = normalizeInputPaths(request.getPaths());
@@ -120,6 +150,59 @@ public class MaintenanceService {
         return DeleteUnusedAssetsResponse.builder()
                 .deletedCount(deleted.size())
                 .freedSize(freed)
+                .deletedPaths(deleted)
+                .skippedPaths(skipped)
+                .build();
+    }
+
+    @Transactional
+    public DeleteEmptyFoldersResponse deleteEmptyFolders(DeleteEmptyFoldersRequest request) {
+        Set<String> requested = normalizeInputPaths(request.getPaths());
+        if (requested.isEmpty()) {
+            return DeleteEmptyFoldersResponse.builder()
+                    .deletedCount(0)
+                    .deletedPaths(List.of())
+                    .skippedPaths(List.of())
+                    .build();
+        }
+
+        Path root = storagePathResolver.getRootPath();
+        Path postsDir = storagePathResolver.getPostsDir();
+        List<String> deleted = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+
+        for (String rel : requested) {
+            Path target = root.resolve(rel).normalize();
+            if (!target.startsWith(postsDir) || target.equals(postsDir)) {
+                skipped.add(rel);
+                continue;
+            }
+            if (!Files.exists(target) || !Files.isDirectory(target)) {
+                skipped.add(rel);
+                continue;
+            }
+            try (var children = Files.list(target)) {
+                boolean hasAny = children.findAny().isPresent();
+                if (hasAny) {
+                    skipped.add(rel);
+                    continue;
+                }
+            } catch (IOException e) {
+                skipped.add(rel);
+                continue;
+            }
+            try {
+                Files.deleteIfExists(target);
+                deleted.add(rel);
+                removeEmptyParents(target.getParent(), postsDir);
+            } catch (IOException e) {
+                log.warn("删除空目录失败 {}: {}", target, e.getMessage());
+                skipped.add(rel);
+            }
+        }
+
+        return DeleteEmptyFoldersResponse.builder()
+                .deletedCount(deleted.size())
                 .deletedPaths(deleted)
                 .skippedPaths(skipped)
                 .build();
