@@ -1581,7 +1581,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.99'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.100'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6410,7 +6410,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.99';
+    const siteVersion = meta?.version || 'V1.3.100';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6983,6 +6983,21 @@ const ArticleList = ({
         }
     }, [onScrollToPosts]);
 
+    const handleParentClick = useCallback((catId) => {
+        setActiveSub('all');
+        if (catId === 'all' || catId === activeParent) {
+            setActiveParent('all');
+        } else {
+            setActiveParent(catId);
+        }
+        scrollToPostsTop();
+    }, [activeParent, scrollToPostsTop]);
+
+    const handleSubClick = useCallback((subId) => {
+        setActiveSub(subId);
+        scrollToPostsTop();
+    }, [scrollToPostsTop]);
+
     const filteredPosts = sourcePosts.filter(post => {
         if (activeParent !== "all" && post.parentCategory !== currentParentObj.label) return false;
         if (activeSub !== "all" && post.category !== subCategories.find(s => s.id === activeSub)?.label) return false;
@@ -7147,11 +7162,7 @@ const ArticleList = ({
                                 {categories.map(cat => (
                                     <div key={cat.id} className="group">
                                         <button
-                                            onClick={() => {
-                                                setActiveParent(cat.id);
-                                                setActiveSub('all');
-                                                scrollToPostsTop();
-                                            }}
+                                            onClick={() => handleParentClick(cat.id)}
                                             className={`w-full text-left p-3 font-bold border-2 border-black transition-all flex justify-between items-center
                           ${activeParent === cat.id
                                                     ? (isDarkMode
@@ -7173,10 +7184,7 @@ const ArticleList = ({
                                                     {cat.children.map(sub => (
                                                         <button
                                                             key={sub.id}
-                                                            onClick={() => {
-                                                                setActiveSub(sub.id);
-                                                                scrollToPostsTop();
-                                                            }}
+                                                            onClick={() => handleSubClick(sub.id)}
                                                             className={`block w-full text-left px-4 py-2 text-sm font-bold ${isDarkMode ? 'border-gray-700' : 'border-black'} border-b last:border-0
                                    ${activeSub === sub.id ? 'bg-[#FFD700] text-black' : `${subText} hover:bg-black/10`}
                                  `}
