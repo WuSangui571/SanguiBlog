@@ -3745,6 +3745,7 @@ const EditPostView = ({ isDarkMode }) => {
     const [imageUploadMessage, setImageUploadMessage] = useState('');
     const [uploadingImages, setUploadingImages] = useState(false);
     const [assetsFolder, setAssetsFolder] = useState('');
+    const [hasManualThemeColorEdit, setHasManualThemeColorEdit] = useState(false);
     const [saving, setSaving] = useState(false);
     const [submitNotice, setSubmitNotice] = useState('');
     const [submitError, setSubmitError] = useState('');
@@ -3850,6 +3851,7 @@ const EditPostView = ({ isDarkMode }) => {
             setSelectedParentId(data.parentCategoryId ? Number(data.parentCategoryId) : null);
             setSelectedTags((data.tagIds || []).map((tid) => Number(tid)));
             setAssetsFolder(data.slug || '');
+            setHasManualThemeColorEdit(false);
             setPostMeta({ publishedAt: data.publishedAt || null });
             setSubmitNotice('');
             setSubmitError('');
@@ -4304,36 +4306,6 @@ const EditPostView = ({ isDarkMode }) => {
                     <div className="space-y-6">
                         <div
                             className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
-                            <div className="space-y-3">
-                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">Slug /
-                                    资源目录</label>
-                                <input
-                                    className={inputClass}
-                                    value={form.slug}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
-                                    placeholder="文章 slug"
-                                />
-                                <ThemeColorSelector
-                                    value={form.themeColor || ''}
-                                    onChange={(next) => setForm((prev) => ({ ...prev, themeColor: next }))}
-                                    inputClass={inputClass}
-                                    isDarkMode={isDarkMode}
-                                />
-                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">状态</label>
-                                <select
-                                    className={inputClass}
-                                    value={form.status}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}
-                                >
-                                    {statusOptions.map((option) => (
-                                        <option key={option.value} value={option.value}>{option.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div
-                            className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
                             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 1</p>
                             <h3 className="font-semibold flex items-center gap-2"><FolderPlus size={16} /> 选择二级分类
                             </h3>
@@ -4355,12 +4327,18 @@ const EditPostView = ({ isDarkMode }) => {
                                 })}
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                {secondLevelCategories.map((child) => {
+                                {secondLevelCategories.map((child, idx) => {
                                     const childId = Number(child.id);
+                                    const presetColor = THEME_COLOR_PRESETS[idx];
                                     return (
                                         <button
                                             key={child.id}
-                                            onClick={() => setSelectedCategoryId(childId)}
+                                            onClick={() => {
+                                                setSelectedCategoryId(childId);
+                                                if (presetColor && !hasManualThemeColorEdit) {
+                                                    setForm((prev) => ({ ...prev, themeColor: presetColor }));
+                                                }
+                                            }}
                                             className={`p-3 rounded-xl border text-left text-sm ${selectedCategoryId === childId ? 'border-pink-500 bg-pink-50 dark:bg-pink-500/10 text-pink-500' : 'border-gray-200 dark:border-gray-700'}`}
                                         >
                                             {child.label}
@@ -4391,6 +4369,40 @@ const EditPostView = ({ isDarkMode }) => {
                                 ))}
                             </div>
                             {!tags.length && <p className="text-xs text-gray-500">还没有标签，请先到标签管理页创建。</p>}
+                        </div>
+
+                        <div
+                            className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+                            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 3</p>
+                            <h3 className="font-semibold flex items-center gap-2"><FolderPlus size={16} /> 资源标识 / 颜色 / 状态</h3>
+                            <div className="space-y-3">
+                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">Slug / 资源目录</label>
+                                <input
+                                    className={inputClass}
+                                    value={form.slug}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
+                                    placeholder="文章 slug"
+                                />
+                                <ThemeColorSelector
+                                    value={form.themeColor || ''}
+                                    onChange={(next) => {
+                                        setHasManualThemeColorEdit(true);
+                                        setForm((prev) => ({ ...prev, themeColor: next }));
+                                    }}
+                                    inputClass={inputClass}
+                                    isDarkMode={isDarkMode}
+                                />
+                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">状态</label>
+                                <select
+                                    className={inputClass}
+                                    value={form.status}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}
+                                >
+                                    {statusOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
                         <div
