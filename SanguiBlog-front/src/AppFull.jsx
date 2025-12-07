@@ -1651,7 +1651,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.113'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.114'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2734,9 +2734,79 @@ const CreatePostView = ({ isDarkMode }) => {
                 <div className="space-y-6">
                     <div
                         className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+                        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 1</p>
+                        <h3 className="font-semibold flex items-center gap-2"><Layers size={16} /> 选择二级分类</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {normalizedCategories.map((cat) => {
+                                const catId = Number(cat.id);
+                                return (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => {
+                                            setSelectedParentId(catId);
+                                            setSelectedCategoryId(null);
+                                        }}
+                                        className={`px-3 py-1 text-xs rounded-full border ${selectedParentId === catId ? 'bg-pink-500 text-white border-pink-500' : 'border-gray-300 dark:border-gray-600'}`}
+                                    >
+                                        {cat.label}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            {secondLevelCategories.map((child, idx) => {
+                                const childId = Number(child.id);
+                                const presetColor = THEME_COLOR_PRESETS[idx];
+                                return (
+                                    <button
+                                        key={child.id}
+                                        onClick={() => {
+                                            setSelectedCategoryId(childId);
+                                            if (presetColor) {
+                                                setThemeColor(presetColor);
+                                            }
+                                        }}
+                                        className={`p-3 rounded-xl border text-left text-sm ${selectedCategoryId === childId ? 'border-pink-500 bg-pink-50 dark:bg-pink-500/10 text-pink-500' : 'border-gray-200 dark:border-gray-700'}`}
+                                    >
+                                        {child.label}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                        {!secondLevelCategories.length && (
+                            <p className="text-xs text-amber-500 flex items-center gap-1">
+                                <AlertTriangle size={14} /> 当前父级暂无二级分类，请先到分类管理中创建。
+                            </p>
+                        )}
+                    </div>
+
+                    <div
+                        className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+                        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 2</p>
+                        <h3 className="font-semibold flex items-center gap-2"><Tag size={16} /> 选择标签</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {tags.map((tag) => (
+                                <button
+                                    key={tag.id}
+                                    onClick={() => toggleTag(tag.id)}
+                                    className={`px-3 py-1 text-xs rounded-full border ${selectedTags.includes(tag.id) ? 'bg-indigo-500 text-white border-indigo-500' : 'border-gray-300 dark:border-gray-600'}`}
+                                >
+                                    {tag.name}
+                                </button>
+                            ))}
+                        </div>
+                        {selectedTags.length === 0 && (
+                            <p className="text-xs text-amber-500 flex items-center gap-1">
+                                <AlertTriangle size={14} /> 至少选择一个标签，用于站内检索。
+                            </p>
+                        )}
+                    </div>
+
+                    <div
+                        className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 1</p>
+                                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 3</p>
                                 <h3 className="font-semibold flex items-center gap-2"><FolderPlus size={16} /> 资源标识
                                 </h3>
                             </div>
@@ -2761,70 +2831,6 @@ const CreatePostView = ({ isDarkMode }) => {
                             inputClass={inputClass}
                             isDarkMode={isDarkMode}
                         />
-                    </div>
-
-                    <div
-                        className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
-                        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 2</p>
-                        <h3 className="font-semibold flex items-center gap-2"><Layers size={16} /> 选择二级分类</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {normalizedCategories.map((cat) => {
-                                const catId = Number(cat.id);
-                                return (
-                                    <button
-                                        key={cat.id}
-                                        onClick={() => {
-                                            setSelectedParentId(catId);
-                                            setSelectedCategoryId(null);
-                                        }}
-                                        className={`px-3 py-1 text-xs rounded-full border ${selectedParentId === catId ? 'bg-pink-500 text-white border-pink-500' : 'border-gray-300 dark:border-gray-600'}`}
-                                    >
-                                        {cat.label}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            {secondLevelCategories.map((child) => {
-                                const childId = Number(child.id);
-                                return (
-                                    <button
-                                        key={child.id}
-                                        onClick={() => setSelectedCategoryId(childId)}
-                                        className={`p-3 rounded-xl border text-left text-sm ${selectedCategoryId === childId ? 'border-pink-500 bg-pink-50 dark:bg-pink-500/10 text-pink-500' : 'border-gray-200 dark:border-gray-700'}`}
-                                    >
-                                        {child.label}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                        {!secondLevelCategories.length && (
-                            <p className="text-xs text-amber-500 flex items-center gap-1">
-                                <AlertTriangle size={14} /> 当前父级暂无二级分类，请先到分类管理中创建。
-                            </p>
-                        )}
-                    </div>
-
-                    <div
-                        className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
-                        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 3</p>
-                        <h3 className="font-semibold flex items-center gap-2"><Tag size={16} /> 选择标签</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {tags.map((tag) => (
-                                <button
-                                    key={tag.id}
-                                    onClick={() => toggleTag(tag.id)}
-                                    className={`px-3 py-1 text-xs rounded-full border ${selectedTags.includes(tag.id) ? 'bg-indigo-500 text-white border-indigo-500' : 'border-gray-300 dark:border-gray-600'}`}
-                                >
-                                    {tag.name}
-                                </button>
-                            ))}
-                        </div>
-                        {selectedTags.length === 0 && (
-                            <p className="text-xs text-amber-500 flex items-center gap-1">
-                                <AlertTriangle size={14} /> 至少选择一个标签，用于站内检索。
-                            </p>
-                        )}
                     </div>
 
                     <div
@@ -6716,7 +6722,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.113';
+    const siteVersion = meta?.version || 'V1.3.114';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 

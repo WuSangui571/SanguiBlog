@@ -41,7 +41,7 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:uploads}
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.113"
+  version: "V1.3.114"
   asset-base-url: http://localhost:8080/uploads
 #  asset-base-url: https://nonmature-scraggily-fermin.ngrok-free.dev/uploads
 #  asset-base-url: https://puristic-david-unsorely.ngrok-free.dev/uploads
