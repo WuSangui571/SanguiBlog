@@ -16,6 +16,7 @@ import {
 } from "../api";
 
 const BlogContext = createContext(null);
+const HOME_POSTS_PAGE_SIZE = 500;
 
 export const BlogProvider = ({ children }) => {
   const value = useProvideBlog();
@@ -95,7 +96,7 @@ function useProvideBlog() {
 
   const loadPosts = useCallback(async (filters = {}) => {
     try {
-      const res = await fetchPosts({ page: 1, size: 20, ...filters });
+      const res = await fetchPosts({ page: 1, size: HOME_POSTS_PAGE_SIZE, ...filters });
       const data = res.data || res;
       setPosts(data?.records || []);
     } catch (e) {
