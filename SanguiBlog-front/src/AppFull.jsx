@@ -1651,7 +1651,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.114'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.115'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2324,6 +2324,7 @@ const CreatePostView = ({ isDarkMode }) => {
     const [excerpt, setExcerpt] = useState("");
     const [mdContent, setMdContent] = useState("");
     const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
+    const [hasManualThemeColor, setHasManualThemeColor] = useState(false);
     const [markdownFileName, setMarkdownFileName] = useState("");
     const [selectedParentId, setSelectedParentId] = useState(null);
     const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -2529,6 +2530,10 @@ const CreatePostView = ({ isDarkMode }) => {
         }
     };
 
+    const handleThemeColorChange = (value) => {
+        setHasManualThemeColor(true);
+        setThemeColor(value);
+    };
     const toggleTag = (id) => {
         const tagId = Number(id);
         setSelectedTags((prev) =>
@@ -2588,6 +2593,7 @@ const CreatePostView = ({ isDarkMode }) => {
             setExcerpt("");
             setAssetsFolder("");
             setThemeColor(DEFAULT_THEME_COLOR);
+            setHasManualThemeColor(false);
         } catch (error) {
             setSubmitError(error.message || "发布失败");
             setSubmitNotice("");
@@ -2607,6 +2613,7 @@ const CreatePostView = ({ isDarkMode }) => {
         setAssetsFolder("");
         setSelectedTags([]);
         setThemeColor(DEFAULT_THEME_COLOR);
+        setHasManualThemeColor(false);
         setSelectedParentId(normalizedCategories[0]?.id ?? null);
         setSelectedCategoryId(null);
         setSubmitError("");
@@ -2762,7 +2769,7 @@ const CreatePostView = ({ isDarkMode }) => {
                                         key={child.id}
                                         onClick={() => {
                                             setSelectedCategoryId(childId);
-                                            if (presetColor) {
+                                            if (presetColor && !hasManualThemeColor) {
                                                 setThemeColor(presetColor);
                                             }
                                         }}
@@ -2827,7 +2834,7 @@ const CreatePostView = ({ isDarkMode }) => {
                         </div>
                         <ThemeColorSelector
                             value={themeColor}
-                            onChange={setThemeColor}
+                            onChange={handleThemeColorChange}
                             inputClass={inputClass}
                             isDarkMode={isDarkMode}
                         />
@@ -6722,7 +6729,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.114';
+    const siteVersion = meta?.version || 'V1.3.115';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
