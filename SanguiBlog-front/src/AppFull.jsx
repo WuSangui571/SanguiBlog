@@ -2690,11 +2690,6 @@ const CreatePostView = ({ isDarkMode }) => {
     };
 
     useEffect(() => {
-        if (!submitNotice) return;
-        showPublishNotice(submitNotice);
-    }, [submitNotice, showPublishNotice]);
-
-    useEffect(() => {
         if (!publishBanner) return;
         const timer = setTimeout(() => setPublishBanner(""), 4500);
         return () => clearTimeout(timer);
@@ -2702,7 +2697,6 @@ const CreatePostView = ({ isDarkMode }) => {
 
     return (
         <div className="space-y-8">
-            <AdminNoticeBar notice={publishNotice} onClose={hidePublishNotice} />
             {publishBanner && (
                 <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
                     <div className="px-6 py-3 rounded-2xl border-2 border-black bg-gradient-to-r from-emerald-400 to-amber-300 shadow-[6px_6px_0px_0px_#000] text-black text-lg font-extrabold tracking-tight">
