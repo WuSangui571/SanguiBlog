@@ -1651,7 +1651,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.116'}`}
+                    {version ? `SANGUI BLOG // ${version}` : 'SANGUI BLOG'}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2629,6 +2629,11 @@ const CreatePostView = ({ isDarkMode }) => {
         setSubmitNotice("");
     };
 
+    const handleResetThemeColor = () => {
+        setThemeColor(DEFAULT_THEME_COLOR);
+        setHasManualThemeColor(false);
+    };
+
     useEffect(() => {
         if (!submitNotice) return;
         showPublishNotice(submitNotice);
@@ -2832,6 +2837,13 @@ const CreatePostView = ({ isDarkMode }) => {
                                 className="text-xs text-indigo-500 hover:text-indigo-400 flex items-center gap-1"
                             >
                                 <RefreshCw size={14} /> 重新生成（不改颜色）
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleResetThemeColor}
+                                className="text-xs text-amber-600 hover:text-amber-500 flex items-center gap-1"
+                            >
+                                <RefreshCw size={14} /> 重置为默认色
                             </button>
                         </div>
                         <div className="text-xs text-gray-500 space-y-2">
@@ -6738,7 +6750,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.116';
+    const siteVersion = meta?.version || '';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 

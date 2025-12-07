@@ -41,10 +41,10 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:uploads}
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.116"
-  asset-base-url: http://localhost:8080/uploads
+  version: "V1.3.117"
+#  asset-base-url: http://localhost:8080/uploads
 #  asset-base-url: https://nonmature-scraggily-fermin.ngrok-free.dev/uploads
-#  asset-base-url: https://puristic-david-unsorely.ngrok-free.dev/uploads
+  asset-base-url: https://puristic-david-unsorely.ngrok-free.dev/uploads
   hero:
     tagline: 拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。
   home:
