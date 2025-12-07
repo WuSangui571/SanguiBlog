@@ -424,6 +424,16 @@ const ArticleDetail = ({
         setPreviewImage(src);
     }, []);
     const closeImagePreview = useCallback(() => setPreviewImage(null), []);
+    const scrollHomeAfterReturn = useCallback(() => {
+        setTimeout(() => {
+            const postsSection = document.getElementById('posts');
+            if (postsSection) {
+                postsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }, 220);
+    }, []);
 
     const quoteBg = isDarkMode ? 'bg-gray-800' : 'bg-[#FFFAF0]';
     const quoteText = isDarkMode ? 'text-gray-300' : 'text-black';
@@ -715,7 +725,14 @@ const ArticleDetail = ({
             >
                 <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
                     <motion.button
-                        onClick={() => (onBackToPrevious ? onBackToPrevious() : setView('home'))}
+                        onClick={() => {
+                            if (onBackToPrevious) {
+                                onBackToPrevious();
+                            } else {
+                                setView('home');
+                                scrollHomeAfterReturn();
+                            }
+                        }}
                         initial={{ opacity: 0, x: -50 }}
                         animate={{ opacity: 1, x: 0 }}
                         whileHover={{ scale: 1.05 }}
@@ -1632,7 +1649,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.108'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.109'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6514,7 +6531,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.108';
+    const siteVersion = meta?.version || 'V1.3.109';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -6729,7 +6746,12 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const handleArticleBack = useCallback(() => {
         const target = (articleBackTarget && articleBackTarget !== 'article') ? articleBackTarget : 'home';
         setView(target);
-    }, [articleBackTarget, setView]);
+        if (target === 'home') {
+            setTimeout(() => {
+                scrollToPostsTop();
+            }, 220);
+        }
+    }, [articleBackTarget, scrollToPostsTop, setView]);
     const handleBackgroundToggle = useCallback(() => {
         setBackgroundEnabled((prev) => !prev);
     }, []);
