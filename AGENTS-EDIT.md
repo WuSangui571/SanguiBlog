@@ -992,3 +992,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.118 (2025-12-07)
 - **模块/页面**：系统设置新增空目录扫描/删除（Super Admin）；清理页面支持重新扫描空目录并批量删除。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.118`
+
+## V1.3.119 (2025-12-07)
+- **模块/页面**：修复系统设置“空目录清理”重新扫描时报 `adminScanEmptyFolders is not defined` 的问题（补全前端 API 导入）。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.119`
