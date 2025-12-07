@@ -1651,7 +1651,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.112'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.113'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2596,6 +2596,23 @@ const CreatePostView = ({ isDarkMode }) => {
         }
     };
 
+    const handleResetForm = () => {
+        if (!window.confirm("确定要清空当前所有输入吗？此操作不可撤销。")) return;
+        setTitle("");
+        setMdContent("");
+        setExcerpt("");
+        setMarkdownFileName("");
+        setMarkdownMessage("");
+        setImageUploadMessage("");
+        setAssetsFolder("");
+        setSelectedTags([]);
+        setThemeColor(DEFAULT_THEME_COLOR);
+        setSelectedParentId(normalizedCategories[0]?.id ?? null);
+        setSelectedCategoryId(null);
+        setSubmitError("");
+        setSubmitNotice("");
+    };
+
     useEffect(() => {
         if (!submitNotice) return;
         showPublishNotice(submitNotice);
@@ -2604,15 +2621,24 @@ const CreatePostView = ({ isDarkMode }) => {
     return (
         <div className="space-y-8">
             <AdminNoticeBar notice={publishNotice} onClose={hidePublishNotice} />
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Admin</p>
                     <h2 className="text-3xl font-black italic text-pink-500 flex items-center gap-2">
                         <Edit /> 发布新文章
                     </h2>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                    上传 Markdown + 资源图片，整理分类与标签后方可发布
+                <div className="flex items-center gap-3 flex-wrap justify-end">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                        上传 Markdown + 资源图片，整理分类与标签后方可发布
+                    </span>
+                    <button
+                        type="button"
+                        onClick={handleResetForm}
+                        className="px-3 py-1.5 text-sm font-semibold border-2 border-amber-500 text-amber-700 bg-amber-50 rounded-full hover:bg-amber-100 dark:border-amber-400 dark:text-amber-200 dark:bg-amber-900/40"
+                    >
+                        清空表单
+                    </button>
                 </div>
             </div>
 
@@ -6690,7 +6716,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.112';
+    const siteVersion = meta?.version || 'V1.3.113';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
