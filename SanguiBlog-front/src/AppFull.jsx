@@ -1651,7 +1651,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.110'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.111'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2463,17 +2463,54 @@ const CreatePostView = ({ isDarkMode }) => {
     const handleMarkdownUpload = async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        try {
-            const text = await file.text();
-            setMdContent(text);
-            setMarkdownFileName(file.name);
-            setMarkdownMessage(`已加载 ${file.name}`);
-            if (!title.trim()) {
-                const inferredTitle = file.name.replace(/\.(md|markdown|txt)$/i, "");
-                setTitle(inferredTitle);
+
+        const extractTitleFromFilename = (filename) => {
+            if (!filename) return "";
+            const nameWithoutExt = filename.replace(/\.(md|markdown|txt)$/i, "");
+            const dashIndex = nameWithoutExt.indexOf("-");
+            if (dashIndex === -1) return nameWithoutExt.trim();
+            return nameWithoutExt.slice(dashIndex + 1).trim();
+        };
+
+        const extractSummaryAndBody = (content) => {
+            const lines = content.split(/\r?\n/);
+            let summary = "";
+            let summaryLineIndex = -1;
+            for (let i = 0; i < lines.length; i += 1) {
+                const match = lines[i].match(/^\s*>\s?(.*)$/);
+                if (match && match[1]) {
+                    summary = match[1].trim();
+                    summaryLineIndex = i;
+                    break;
+                }
             }
-            if (!excerpt.trim()) {
-                const plain = text.replace(/[#>*_`-]/g, "").replace(/\s+/g, " ").trim();
+            if (summaryLineIndex >= 0) {
+                const bodyLines = lines.filter((_, idx) => idx !== summaryLineIndex);
+                // 去掉摘要行后可能留下的首个空行
+                while (bodyLines[0] !== undefined && bodyLines[0].trim() === "") {
+                    bodyLines.shift();
+                }
+                return { summary, body: bodyLines.join("\n") };
+            }
+            return { summary: "", body: content };
+        };
+
+        try {
+            const rawText = await file.text();
+            const { summary, body } = extractSummaryAndBody(rawText);
+            setMdContent(body);
+            setMarkdownFileName(file.name);
+            setMarkdownMessage(summary ? `已解析摘要并加载 ${file.name}` : "未识别摘要格式，请手动补充摘要");
+
+            if (!title.trim()) {
+                const inferredTitle = extractTitleFromFilename(file.name);
+                setTitle(inferredTitle || file.name.replace(/\.(md|markdown|txt)$/i, ""));
+            }
+
+            if (summary) {
+                setExcerpt(summary);
+            } else if (!excerpt.trim()) {
+                const plain = body.replace(/[#>*_`-]/g, "").replace(/\s+/g, " ").trim();
                 setExcerpt(plain.slice(0, 160));
             }
         } catch (error) {
@@ -6644,7 +6681,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.110';
+    const siteVersion = meta?.version || 'V1.3.111';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
