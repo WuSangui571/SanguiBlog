@@ -168,6 +168,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   自 V1.3.101 起，ArticleList 在页码、一级/二级分类或 “Reset Filters” 改变筛选时都会统一调用 `scrollToPostsTop()`，再次点击已激活的一级分类会退回到“全部”并折叠子分类；首页 Hero 文案与分页金句分别读取 `application.yaml` 中的 `site.hero.tagline` 与 `site.home.signature-quote`，默认仍为 “拒绝平庸…” 与 “阻挡你的不是别人…”，并移除了列表包裹层的 `flex:1` 占位以避免分页下沉。
 *   自 V1.3.102 起，首页作者头像新增“转速过快”彩蛋：400ms 内连续点击 ≥4 次会随机弹出提示；V1.3.103 起提示面板改为居中赛博弹窗（pointer-events: none，2s 自动淡出）；V1.3.104+ 若短时间内高频点击（默认阈值 10 次）会触发“眼冒金星”全屏动画并锁定旋转，V1.3.105 起冷却时间拉长至 60 秒，可通过 `SPIN_WARNINGS`、`MEGA_SPIN_THRESHOLD`、`SPIN_LOCK_DURATION` 调整。
 *   自 V1.3.106 起，主题切换按钮支持“超频模式”彩蛋：450ms 内连续点击 ≥6 次会触发 15 秒全屏矩阵光效与提示；V1.3.107 起冷却提示在超频展示期间自动抑制，避免消息互相覆盖，可通过 `THEME_SPREE_THRESHOLD`、`THEME_SPREE_DURATION`、`THEME_LOCK_DURATION` 调整。
+*   自 V1.3.108 起，顶部“首页 / 归档 / 关于”导航点击后会自动平滑回到页面顶部，防止切换视图时视口停留在中部。
 
 
 

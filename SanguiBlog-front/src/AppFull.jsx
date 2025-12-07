@@ -1335,9 +1335,19 @@ const Navigation = ({
     const [devUnlocked, setDevUnlocked] = useState(false);
     const logoResetTimer = useRef(null);
     const devMessageTimer = useRef(null);
+    const scrollNavToTop = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, []);
+    const handleNavItemSelect = useCallback((key) => {
+        setView(key);
+        scrollNavToTop();
+    }, [setView, scrollNavToTop]);
 
     const handleLogoClick = useCallback(() => {
         setView('home');
+        scrollNavToTop();
         setLogoClicks((prev) => {
             const next = prev + 1;
             if (logoResetTimer.current) clearTimeout(logoResetTimer.current);
@@ -1350,7 +1360,7 @@ const Navigation = ({
             logoResetTimer.current = setTimeout(() => setLogoClicks(0), 1500);
             return next;
         });
-    }, [setView]);
+    }, [setView, scrollNavToTop]);
 
     useEffect(() => {
         return () => {
@@ -1408,7 +1418,7 @@ const Navigation = ({
                                 <button
                                     key={item.key}
                                     type="button"
-                                    onClick={() => setView(item.key)}
+                                    onClick={() => handleNavItemSelect(item.key)}
                                     aria-current={isActive ? 'page' : undefined}
                                     className={`relative overflow-hidden px-4 py-1 text-lg font-black uppercase tracking-wide rounded-full transition-colors ${isActive ? 'text-black' : (isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
                                 >
@@ -1622,7 +1632,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.107'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.108'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6504,7 +6514,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.107';
+    const siteVersion = meta?.version || 'V1.3.108';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
