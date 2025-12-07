@@ -1622,7 +1622,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.106'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.107'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6413,7 +6413,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, [showThemeMessage]);
     const handleThemeToggle = useCallback((event) => {
         if (themeOverdriveLock) {
-            showThemeMessage('冷却中…请稍候', 2000);
+            if (!themeOverdriveNotice || themeOverdriveMessage !== '超频模式已开启') {
+                showThemeMessage('冷却中…请稍候', 2000);
+            }
             return;
         }
         const rect = event?.currentTarget?.getBoundingClientRect?.();
@@ -6502,7 +6504,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.106';
+    const siteVersion = meta?.version || 'V1.3.107';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
