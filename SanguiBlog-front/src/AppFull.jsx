@@ -26,6 +26,8 @@ import {
     adminFetchRoles,
     adminFetchAnalyticsSummary,
     adminFetchPageViewLogs,
+    adminDeletePageViewLog,
+    adminDeletePageViewLogs,
     adminDeleteMyAnalyticsLogs,
     adminFetchPermissionMatrix,
     adminUpdateRolePermissions,
@@ -1649,7 +1651,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.109'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.110'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -1951,7 +1953,9 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [clearing, setClearing] = useState(false);
-    const [clearMessage, setClearMessage] = useState('');
+    const [actionMessage, setActionMessage] = useState('');
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [deleting, setDeleting] = useState(false);
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
@@ -2049,7 +2053,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         try {
             const res = await adminFetchPageViewLogs({ page: targetPage, size: targetSize });
             const data = res.data || res;
-            setLogs(data.records || []);
+            const records = data.records || [];
+            setLogs(records);
+            setSelectedIds((prev) => {
+                const available = new Set(records.map((item) => item.id));
+                return prev.filter((id) => available.has(id));
+            });
             setTotal(Number(data.total || 0));
             setPage(Number(data.page || targetPage));
             setSize(Number(data.size || targetSize));
@@ -2065,6 +2074,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     }, [loadLogs]);
 
     const totalPages = Math.max(1, Math.ceil((total || 0) / size) || 1);
+    const allSelected = logs.length > 0 && selectedIds.length === logs.length;
+    const hasSelection = selectedIds.length > 0;
 
     const handlePageChange = (target) => {
         const safe = Math.min(Math.max(target, 1), totalPages);
@@ -2081,16 +2092,73 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         if (!isSuperAdmin) return;
         if (!window.confirm('确定要删除你在本站的所有访问日志吗？')) return;
         setClearing(true);
-        setClearMessage('');
+        setActionMessage('');
         try {
             await adminDeleteMyAnalyticsLogs();
-            setClearMessage('已清理当前账户的访问日志。');
+            setActionMessage('已清理当前账户的访问日志。');
             await loadLogs(1, size);
             if (reload) reload();
         } catch (err) {
-            setClearMessage(err.message || '清理失败，请稍后重试。');
+            setActionMessage(err.message || '清理失败，请稍后重试。');
         } finally {
             setClearing(false);
+        }
+    };
+
+    const toggleSelectAll = () => {
+        if (!isSuperAdmin || !logs.length) return;
+        const allIds = logs.map((item) => item.id).filter(Boolean);
+        if (selectedIds.length === allIds.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(allIds);
+        }
+    };
+
+    const toggleSelectOne = (id) => {
+        if (!isSuperAdmin || !id) return;
+        setSelectedIds((prev) => {
+            if (prev.includes(id)) {
+                return prev.filter((value) => value !== id);
+            }
+            return [...prev, id];
+        });
+    };
+
+    const handleDeleteOne = async (id) => {
+        if (!isSuperAdmin || !id) return;
+        if (!window.confirm('确认删除这条访问日志吗？')) return;
+        setDeleting(true);
+        setActionMessage('');
+        try {
+            await adminDeletePageViewLog(id);
+            setActionMessage('已删除 1 条访问日志。');
+            const nextPage = logs.length === 1 && page > 1 ? page - 1 : page;
+            await loadLogs(nextPage, size);
+            if (reload) reload();
+        } catch (err) {
+            setError(err.message || '删除失败，请稍后再试。');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleBatchDelete = async () => {
+        if (!isSuperAdmin || !selectedIds.length) return;
+        if (!window.confirm(`确认删除选中的 ${selectedIds.length} 条访问日志吗？`)) return;
+        setDeleting(true);
+        setActionMessage('');
+        try {
+            await adminDeletePageViewLogs(selectedIds);
+            setActionMessage(`已删除 ${selectedIds.length} 条访问日志。`);
+            const nextPage = selectedIds.length >= logs.length && page > 1 ? page - 1 : page;
+            setSelectedIds([]);
+            await loadLogs(nextPage, size);
+            if (reload) reload();
+        } catch (err) {
+            setError(err.message || '批量删除失败，请稍后再试。');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -2125,6 +2193,16 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     {isSuperAdmin && (
                         <button
                             type="button"
+                            onClick={handleBatchDelete}
+                            disabled={!hasSelection || deleting || loading}
+                            className="px-3 py-1 text-sm font-semibold border-2 border-red-500 text-red-600 rounded-full hover:bg-red-50 disabled:opacity-50"
+                        >
+                            {deleting ? '删除中...' : `批量删除${hasSelection ? `(${selectedIds.length})` : ''}`}
+                        </button>
+                    )}
+                    {isSuperAdmin && (
+                        <button
+                            type="button"
                             onClick={handleClearLogs}
                             disabled={clearing}
                             className="px-3 py-1 text-sm font-bold border-2 border-red-600 text-red-600 rounded-full hover:bg-red-50 disabled:opacity-50"
@@ -2135,7 +2213,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                 </div>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
-            {clearMessage && <p className="text-sm text-emerald-500">{clearMessage}</p>}
+            {actionMessage && <p className="text-sm text-emerald-500">{actionMessage}</p>}
 
             <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
                 {loading ? (
@@ -2147,17 +2225,39 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                         <table className="min-w-full text-sm">
                             <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
                                 <tr>
+                                    {isSuperAdmin && (
+                                        <th className="px-4 py-3 text-left w-10">
+                                            <input
+                                                type="checkbox"
+                                                className="h-4 w-4"
+                                                checked={allSelected}
+                                                onChange={toggleSelectAll}
+                                                disabled={!logs.length}
+                                            />
+                                        </th>
+                                    )}
                                     <th className="px-4 py-3 text-left">时间</th>
                                     <th className="px-4 py-3 text-left">文章</th>
                                     <th className="px-4 py-3 text-left">访客 IP</th>
                                     <th className="px-4 py-3 text-left min-w-[120px]">用户</th>
                                     <th className="px-4 py-3 text-left">来源</th>
                                     <th className="px-4 py-3 text-left">地理</th>
+                                    {isSuperAdmin && <th className="px-4 py-3 text-right">操作</th>}
                                 </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
                                 {logs.map((visit) => (
                                     <tr key={visit.id} className="align-top">
+                                        {isSuperAdmin && (
+                                            <td className="px-4 py-3">
+                                                <input
+                                                    type="checkbox"
+                                                    className="h-4 w-4"
+                                                    checked={selectedIds.includes(visit.id)}
+                                                    onChange={() => toggleSelectOne(visit.id)}
+                                                />
+                                            </td>
+                                        )}
                                         <td className="px-4 py-3 font-mono whitespace-nowrap">{visit.time || '-'}</td>
                                         <td className="px-4 py-3">
                                             <p className="font-semibold">{visit.title || '未命名文章'}</p>
@@ -2168,6 +2268,19 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                         </td>
                                         <td className="px-4 py-3">{renderReferrer(visit.referrer)}</td>
                                         <td className="px-4 py-3">{visit.geo || '未知'}</td>
+                                        {isSuperAdmin && (
+                                            <td className="px-4 py-3 text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteOne(visit.id)}
+                                                    disabled={deleting}
+                                                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold border border-red-500 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+                                                >
+                                                    <Trash2 size={14} />
+                                                    删除
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -6531,7 +6644,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.109';
+    const siteVersion = meta?.version || 'V1.3.110';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 

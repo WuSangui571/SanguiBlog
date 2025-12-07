@@ -10,9 +10,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/analytics")
@@ -43,5 +46,17 @@ public class AdminAnalyticsController {
     public ApiResponse<Long> deleteMyPageViews(@AuthenticationPrincipal UserPrincipal principal) {
         Long count = analyticsService.deletePageViewsByUser(principal.getId());
         return ApiResponse.ok(count);
+    }
+
+    @DeleteMapping("/page-views/{id}")
+    @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW') and hasRole('SUPER_ADMIN')")
+    public ApiResponse<Long> deletePageView(@PathVariable("id") Long id) {
+        return ApiResponse.ok(analyticsService.deletePageViewById(id));
+    }
+
+    @DeleteMapping("/page-views")
+    @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW') and hasRole('SUPER_ADMIN')")
+    public ApiResponse<Long> deletePageViews(@RequestParam("ids") List<Long> ids) {
+        return ApiResponse.ok(analyticsService.deletePageViews(ids));
     }
 }

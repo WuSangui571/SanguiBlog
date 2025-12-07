@@ -83,4 +83,6 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
     List<String> findDistinctViewerIpByUserId(@Param("userId") Long userId);
 
     long deleteByUserIsNullAndViewerIpIn(Collection<String> viewerIps);
+
+    long countByIdIn(Collection<Long> ids);
 }

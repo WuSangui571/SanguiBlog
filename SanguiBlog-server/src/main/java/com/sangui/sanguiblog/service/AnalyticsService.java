@@ -198,6 +198,40 @@ public class AnalyticsService {
         return deleted;
     }
 
+    @Transactional
+    public long deletePageViewById(Long id) {
+        if (id == null || id <= 0) {
+            return 0L;
+        }
+        boolean exists = analyticsPageViewRepository.existsById(id);
+        if (!exists) {
+            return 0L;
+        }
+        analyticsPageViewRepository.deleteById(id);
+        return 1L;
+    }
+
+    @Transactional
+    public long deletePageViews(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return 0L;
+        }
+        List<Long> normalizedIds = ids.stream()
+                .filter(Objects::nonNull)
+                .map(Math::abs)
+                .filter(value -> value > 0)
+                .distinct()
+                .toList();
+        if (normalizedIds.isEmpty()) {
+            return 0L;
+        }
+        long affected = analyticsPageViewRepository.countByIdIn(normalizedIds);
+        if (affected > 0) {
+            analyticsPageViewRepository.deleteAllByIdInBatch(normalizedIds);
+        }
+        return affected;
+    }
+
     @Transactional(readOnly = true)
     public PageResponse<AdminAnalyticsSummaryDto.RecentVisit> loadPageViews(int page, int size) {
         int p = Math.max(page, 1) - 1;

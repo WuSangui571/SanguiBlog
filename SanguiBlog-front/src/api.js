@@ -351,6 +351,24 @@ export const adminFetchPageViewLogs = (params = {}) => {
   return request(`/admin/analytics/page-views${query}`);
 };
 
+export const adminDeletePageViewLog = (id) =>
+  request(`/admin/analytics/page-views/${id}`, {
+    method: "DELETE",
+  });
+
+export const adminDeletePageViewLogs = (ids = []) => {
+  const search = new URLSearchParams();
+  (ids || []).forEach((id) => {
+    if (id !== undefined && id !== null) {
+      search.append("ids", id);
+    }
+  });
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/analytics/page-views${query}`, {
+    method: "DELETE",
+  });
+};
+
 export const adminDeleteMyAnalyticsLogs = () =>
   request("/admin/analytics/page-views/me", {
     method: "DELETE",
