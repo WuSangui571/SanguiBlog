@@ -1024,12 +1024,13 @@ const SPIN_LOCK_DURATION = 60000;
 const MEGA_SPIN_DURATION = 4200;
 const THEME_SPREE_THRESHOLD = 6;
 const THEME_SPREE_INTERVAL = 450;
-const THEME_SPREE_DURATION = 3000;
+const THEME_SPREE_DURATION = 15000;
 const THEME_SPREE_PALETTES = [
     ['#FF0080', '#FFD700', '#0EA5E9'],
     ['#22D3EE', '#7C3AED', '#F472B6'],
     ['#F97316', '#FACC15', '#16A34A']
 ];
+const THEME_LOCK_DURATION = 60000;
 const ARCHIVE_MONTH_LABELS = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
 const AnalyticsSummaryContext = React.createContext({
@@ -1324,7 +1325,8 @@ const Navigation = ({
     onToggleTheme,
     onProfileClick,
     backgroundEnabled = true,
-    onToggleBackground
+    onToggleBackground,
+    themeLockActive = false
 }) => {
     const roleInfo = user ? ROLES[user.role] : null;
     const activeView = currentView || 'home';
@@ -1454,11 +1456,28 @@ const Navigation = ({
                     <Settings size={20} />
                 </button>
                 <button
+                    type="button"
                     onClick={handleThemeButton}
-                    className={`p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-[#FFD700] text-black hover:bg-white' : 'bg-black text-white hover:bg-[#6366F1]'}`}
+                    aria-disabled={themeLockActive}
+                    className={`relative p-2 border-2 border-black rounded-full transition-colors ${themeLockActive
+                        ? 'bg-gray-400 text-black cursor-not-allowed opacity-70'
+                        : isDarkMode
+                            ? 'bg-[#FFD700] text-black hover:bg-white'
+                            : 'bg-black text-white hover:bg-[#6366F1]'}`}
                     title="Toggle Dark Mode"
                 >
-                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                    {themeLockActive ? (
+                        <motion.span
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: [0.9, 1.1, 0.9] }}
+                            transition={{ duration: 1.2, repeat: Infinity }}
+                            className="flex items-center justify-center"
+                        >
+                            <Lock size={18} />
+                        </motion.span>
+                    ) : (
+                        (isDarkMode ? <Sun size={20} /> : <Moon size={20} />)
+                    )}
                 </button>
             </div>
 
@@ -6361,24 +6380,42 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const lastThemeToggleRef = useRef(0);
     const themeOverdriveTimerRef = useRef(null);
     const themeNoticeTimerRef = useRef(null);
+    const themeLockTimerRef = useRef(null);
+    const [themeOverdriveLock, setThemeOverdriveLock] = useState(false);
+    const [themeOverdriveMessage, setThemeOverdriveMessage] = useState('');
     useEffect(() => () => {
         themeBlastTimers.current.forEach((timer) => clearTimeout(timer));
         themeBlastTimers.current = [];
         if (themeOverdriveTimerRef.current) clearTimeout(themeOverdriveTimerRef.current);
         if (themeNoticeTimerRef.current) clearTimeout(themeNoticeTimerRef.current);
+        if (themeLockTimerRef.current) clearTimeout(themeLockTimerRef.current);
+    }, []);
+    const showThemeMessage = useCallback((text, duration = 2000) => {
+        setThemeOverdriveMessage(text);
+        setThemeOverdriveNotice(true);
+        if (themeNoticeTimerRef.current) clearTimeout(themeNoticeTimerRef.current);
+        themeNoticeTimerRef.current = setTimeout(() => setThemeOverdriveNotice(false), duration);
     }, []);
     const triggerThemeOverdrive = useCallback(() => {
         const palette = THEME_SPREE_PALETTES[Math.floor(Math.random() * THEME_SPREE_PALETTES.length)];
         setThemeOverdrive({ active: true, palette });
-        setThemeOverdriveNotice(true);
+        showThemeMessage('超频模式已开启', THEME_SPREE_DURATION);
+        setThemeOverdriveLock(true);
+        themeComboRef.current = 0;
         if (themeOverdriveTimerRef.current) clearTimeout(themeOverdriveTimerRef.current);
-        if (themeNoticeTimerRef.current) clearTimeout(themeNoticeTimerRef.current);
+        if (themeLockTimerRef.current) clearTimeout(themeLockTimerRef.current);
         themeOverdriveTimerRef.current = setTimeout(() => {
             setThemeOverdrive((prev) => ({ ...prev, active: false }));
         }, THEME_SPREE_DURATION);
-        themeNoticeTimerRef.current = setTimeout(() => setThemeOverdriveNotice(false), THEME_SPREE_DURATION);
-    }, []);
+        themeLockTimerRef.current = setTimeout(() => {
+            setThemeOverdriveLock(false);
+        }, THEME_LOCK_DURATION);
+    }, [showThemeMessage]);
     const handleThemeToggle = useCallback((event) => {
+        if (themeOverdriveLock) {
+            showThemeMessage('冷却中…请稍候', 2000);
+            return;
+        }
         const rect = event?.currentTarget?.getBoundingClientRect?.();
         const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
         const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
@@ -6419,7 +6456,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             themeComboRef.current = 0;
             triggerThemeOverdrive();
         }
-    }, [isDarkMode, triggerThemeOverdrive]);
+    }, [isDarkMode, triggerThemeOverdrive, themeOverdriveLock, showThemeMessage]);
     const [permissionState, setPermissionState] = useState({ permissions: [], loading: false, error: '' });
     const lastRecordedArticleRef = useRef(null);
     const clientIpRef = useRef(
@@ -6897,14 +6934,19 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             <AnimatePresence>
                 {themeOverdriveNotice && (
                     <motion.div
-                        className="fixed top-6 right-6 z-[70]"
-                        initial={{ opacity: 0, x: 40, y: -10 }}
-                        animate={{ opacity: 1, x: 0, y: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
+                        className="fixed inset-0 z-[72] flex items-center justify-center pointer-events-none px-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                     >
-                        <div className="px-4 py-2 border-4 border-black bg-black text-[#FFD700] font-black text-xs md:text-sm tracking-[0.3em] shadow-[6px_6px_0px_0px_#FF0080]">
-                            超频模式已开启
-                        </div>
+                        <motion.div
+                            initial={{ scale: 0.8, rotate: -4 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            exit={{ scale: 0.8, rotate: 6 }}
+                            className="px-6 md:px-10 py-4 md:py-6 border-4 border-black bg-black text-[#FFD700] font-black text-lg md:text-2xl tracking-[0.3em] shadow-[8px_8px_0px_0px_#FF0080]"
+                        >
+                            {themeOverdriveMessage || '超频模式'}
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -6928,6 +6970,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 onProfileClick={handleProfileNav}
                                 backgroundEnabled={backgroundEnabled}
                                 onToggleBackground={handleBackgroundToggle}
+                                themeLockActive={themeOverdriveLock}
                             />
                             <motion.div
                                 initial={false}
