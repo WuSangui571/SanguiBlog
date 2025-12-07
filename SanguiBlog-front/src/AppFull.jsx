@@ -1651,7 +1651,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.115'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.116'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -2604,6 +2604,8 @@ const CreatePostView = ({ isDarkMode }) => {
 
     const handleResetForm = () => {
         if (!window.confirm("确定要清空当前所有输入吗？此操作不可撤销。")) return;
+        const firstParentId = normalizedCategories[0]?.id ?? null;
+        const firstChildId = normalizedCategories[0]?.children?.[0]?.id ?? null;
         setTitle("");
         setMdContent("");
         setExcerpt("");
@@ -2614,8 +2616,15 @@ const CreatePostView = ({ isDarkMode }) => {
         setSelectedTags([]);
         setThemeColor(DEFAULT_THEME_COLOR);
         setHasManualThemeColor(false);
-        setSelectedParentId(normalizedCategories[0]?.id ?? null);
-        setSelectedCategoryId(null);
+        setSelectedParentId(firstParentId);
+        setSelectedCategoryId(firstChildId ? Number(firstChildId) : null);
+        if (firstChildId !== null && typeof firstChildId !== "undefined") {
+            const idx = 0;
+            const presetColor = THEME_COLOR_PRESETS[idx];
+            if (presetColor) {
+                setThemeColor(presetColor);
+            }
+        }
         setSubmitError("");
         setSubmitNotice("");
     };
@@ -2822,7 +2831,7 @@ const CreatePostView = ({ isDarkMode }) => {
                                 onClick={handleFolderReserve}
                                 className="text-xs text-indigo-500 hover:text-indigo-400 flex items-center gap-1"
                             >
-                                <RefreshCw size={14} /> 重新生成
+                                <RefreshCw size={14} /> 重新生成（不改颜色）
                             </button>
                         </div>
                         <div className="text-xs text-gray-500 space-y-2">
@@ -6729,7 +6738,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.115';
+    const siteVersion = meta?.version || 'V1.3.116';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
