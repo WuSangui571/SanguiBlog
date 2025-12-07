@@ -4023,6 +4023,62 @@ const EditPostView = ({ isDarkMode }) => {
         setSubmitError('');
     };
 
+    const handleInlineImageUploadEdit = async (event) => {
+        const files = Array.from(event.target.files || []);
+        if (!files.length) return;
+        setUploadingImages(true);
+        setImageUploadMessage('图片上传中...');
+        try {
+            const slug = await ensureAssetsFolder();
+            const res = await uploadPostAssets(files, slug);
+            const data = res.data || res;
+            if (data?.folder && data.folder !== assetsFolder) setAssetsFolder(data.folder);
+            const urls = data?.urls || [];
+            const uploaded = urls.length;
+            if (!uploaded) {
+                setImageUploadMessage('上传成功');
+            } else {
+                const filenameToUrl = {};
+                files.forEach((file, idx) => {
+                    const url = urls[idx] || urls[urls.length - 1];
+                    filenameToUrl[file.name] = url;
+                });
+
+                const beforeCount = countImagesInContent(form.mdContent);
+                let replacedCount = 0;
+                let nextContent = (form.mdContent || '').replace(/!\[[^\]]*]\(([^)]+)\)/g, (full, path) => {
+                    const filename = path.split(/[/\\\\]/).pop();
+                    if (filename && filenameToUrl[filename]) {
+                        const url = filenameToUrl[filename];
+                        delete filenameToUrl[filename];
+                        replacedCount += 1;
+                        return full.replace(path, url);
+                    }
+                    return full;
+                });
+
+                const remainingUrls = Object.values(filenameToUrl);
+                if (remainingUrls.length) {
+                    const snippet = remainingUrls.map((url, index) => `![${files[index]?.name || `图片${index + 1}`}](${url})`).join("\n");
+                    const prefix = nextContent.endsWith("\n") || nextContent.length === 0 ? "" : "\n";
+                    nextContent = `${nextContent}${prefix}${snippet}\n`;
+                }
+
+                setForm((prev) => ({ ...prev, mdContent: nextContent }));
+
+                const message = `已上传 ${uploaded} 张，匹配替换 ${replacedCount} 张`;
+                const totalDetected = beforeCount;
+                const complete = totalDetected === 0 || replacedCount === totalDetected;
+                setImageUploadMessage(`${message}，${complete ? '导入成功！' : '自动导入不全，请手动导入！'}`);
+            }
+        } catch (error) {
+            setImageUploadMessage(error.message || '图片上传失败');
+        } finally {
+            setUploadingImages(false);
+            if (event?.target) event.target.value = null;
+        }
+    };
+
     if (permLoading) {
         return <div className="p-10 text-center text-sm text-gray-500">权限信息加载中...</div>;
     }
@@ -4206,7 +4262,7 @@ const EditPostView = ({ isDarkMode }) => {
                                     multiple
                                     ref={inlineImageInputRef}
                                     className="hidden"
-                                    onChange={handleInlineImageUpload}
+                                    onChange={handleInlineImageUploadEdit}
                                 />
                             </div>
                             {(markdownFileName || imageUploadMessage) && (
