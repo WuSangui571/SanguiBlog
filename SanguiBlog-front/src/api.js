@@ -1,7 +1,8 @@
 // 这是本机测试的 API_BASE
-//const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+// const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 // 勿该下面配置，这是专门用于测试部署的 API_BASE
 const API_BASE = "/api";
+// const API_BASE = "http://localhost:8080/api";
 
 const deriveApiOrigin = () => {
   if (API_BASE.startsWith("http")) {

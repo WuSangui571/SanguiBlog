@@ -1581,7 +1581,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.97'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.98'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6410,7 +6410,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.95';
+    const siteVersion = meta?.version || 'V1.3.98';
 
     const hasPermission = useCallback((code) => {
         if (!code) return true;
@@ -6934,6 +6934,7 @@ const ArticleList = ({
 }) => {
     const [showWechat, setShowWechat] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const paginationScrollReadyRef = useRef(false);
     const [konamiActive, setKonamiActive] = useState(false);
     const konamiSequence = useRef([]);
     const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -7000,6 +7001,14 @@ const ArticleList = ({
     useEffect(() => {
         setCurrentPage(1);
     }, [activeParent, activeSub, activeTag]);
+
+    useEffect(() => {
+        if (!paginationScrollReadyRef.current) {
+            paginationScrollReadyRef.current = true;
+            return;
+        }
+        scrollToPostsTop();
+    }, [currentPage, scrollToPostsTop]);
 
     const totalPages = Math.ceil(filteredPosts.length / PAGE_SIZE);
     const displayPosts = filteredPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);

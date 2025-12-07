@@ -41,14 +41,14 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:uploads}
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 site:
-  version: "V1.3.97"
-#  asset-base-url: http://localhost:8080/uploads
+  version: "V1.3.98"
+  asset-base-url: http://localhost:8080/uploads
 #  asset-base-url: https://nonmature-scraggily-fermin.ngrok-free.dev/uploads
-  asset-base-url: https://puristic-david-unsorely.ngrok-free.dev/uploads
+#  asset-base-url: https://puristic-david-unsorely.ngrok-free.dev/uploads
   footer:
     year: 2025
-    brand: 涓夋鍗氬
-    icp-number: 娴橧CP澶?025167176鍙?
+    brand: 三桂博客
+    icp-number: 浙ICP备2025167176号
     icp-link: https://beian.miit.gov.cn/
     powered-by: Powered by Spring Boot 3 & React 19
 
