@@ -1017,6 +1017,19 @@ const SPIN_WARNINGS = [
     '呀！眩晕警报，请手下留情。',
     '别急别急，灵感也需要休息。'
 ];
+const SPIN_INTERVAL_MS = 350;
+const SPIN_WARN_THRESHOLD = 4;
+const MEGA_SPIN_THRESHOLD = 10;
+const SPIN_LOCK_DURATION = 60000;
+const MEGA_SPIN_DURATION = 4200;
+const THEME_SPREE_THRESHOLD = 6;
+const THEME_SPREE_INTERVAL = 450;
+const THEME_SPREE_DURATION = 3000;
+const THEME_SPREE_PALETTES = [
+    ['#FF0080', '#FFD700', '#0EA5E9'],
+    ['#22D3EE', '#7C3AED', '#F472B6'],
+    ['#F97316', '#FACC15', '#16A34A']
+];
 const ARCHIVE_MONTH_LABELS = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
 const AnalyticsSummaryContext = React.createContext({
@@ -1590,7 +1603,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     className="inline-block mb-6 bg-black text-white px-6 py-2 text-xl font-mono font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_#111827]"
                 >
-                    {`SANGUI BLOG // ${version || 'V1.3.103'}`}
+                    {`SANGUI BLOG // ${version || 'V1.3.106'}`}
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
@@ -6339,9 +6352,31 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         tendrils: []
     });
     const themeBlastTimers = useRef([]);
+    const [themeOverdrive, setThemeOverdrive] = useState({
+        active: false,
+        palette: THEME_SPREE_PALETTES[0]
+    });
+    const [themeOverdriveNotice, setThemeOverdriveNotice] = useState(false);
+    const themeComboRef = useRef(0);
+    const lastThemeToggleRef = useRef(0);
+    const themeOverdriveTimerRef = useRef(null);
+    const themeNoticeTimerRef = useRef(null);
     useEffect(() => () => {
         themeBlastTimers.current.forEach((timer) => clearTimeout(timer));
         themeBlastTimers.current = [];
+        if (themeOverdriveTimerRef.current) clearTimeout(themeOverdriveTimerRef.current);
+        if (themeNoticeTimerRef.current) clearTimeout(themeNoticeTimerRef.current);
+    }, []);
+    const triggerThemeOverdrive = useCallback(() => {
+        const palette = THEME_SPREE_PALETTES[Math.floor(Math.random() * THEME_SPREE_PALETTES.length)];
+        setThemeOverdrive({ active: true, palette });
+        setThemeOverdriveNotice(true);
+        if (themeOverdriveTimerRef.current) clearTimeout(themeOverdriveTimerRef.current);
+        if (themeNoticeTimerRef.current) clearTimeout(themeNoticeTimerRef.current);
+        themeOverdriveTimerRef.current = setTimeout(() => {
+            setThemeOverdrive((prev) => ({ ...prev, active: false }));
+        }, THEME_SPREE_DURATION);
+        themeNoticeTimerRef.current = setTimeout(() => setThemeOverdriveNotice(false), THEME_SPREE_DURATION);
     }, []);
     const handleThemeToggle = useCallback((event) => {
         const rect = event?.currentTarget?.getBoundingClientRect?.();
@@ -6373,7 +6408,18 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         themeBlastTimers.current.push(setTimeout(() => {
             setThemeBlast((prev) => (prev.id === blastId ? { ...prev, active: false } : prev));
         }, 950));
-    }, [isDarkMode]);
+        const now = Date.now();
+        if (now - lastThemeToggleRef.current < THEME_SPREE_INTERVAL) {
+            themeComboRef.current += 1;
+        } else {
+            themeComboRef.current = 1;
+        }
+        lastThemeToggleRef.current = now;
+        if (themeComboRef.current >= THEME_SPREE_THRESHOLD) {
+            themeComboRef.current = 0;
+            triggerThemeOverdrive();
+        }
+    }, [isDarkMode, triggerThemeOverdrive]);
     const [permissionState, setPermissionState] = useState({ permissions: [], loading: false, error: '' });
     const lastRecordedArticleRef = useRef(null);
     const clientIpRef = useRef(
@@ -6419,7 +6465,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V1.3.103';
+    const siteVersion = meta?.version || 'V1.3.106';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -6812,11 +6858,58 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                             : 'radial-gradient(circle at center, rgba(255,255,255,0.85), transparent 55%)'
                                     }}
                                 />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                    <div className="fixed top-0 left-0 right-0 z-50">
-                        <div className="flex flex-col w-full">
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {themeOverdrive.active && (
+                    <motion.div
+                        className="fixed inset-0 pointer-events-none z-[58] overflow-hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.95 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <motion.div
+                            className="absolute inset-0"
+                            style={{
+                                background: `linear-gradient(120deg, ${themeOverdrive.palette[0]}, ${themeOverdrive.palette[1]}, ${themeOverdrive.palette[2]})`
+                            }}
+                            animate={{ opacity: [0.4, 0.8, 0.5], filter: ['hue-rotate(0deg)', 'hue-rotate(20deg)', 'hue-rotate(-15deg)'] }}
+                            transition={{ duration: 0.8, repeat: Infinity }}
+                        />
+                        {Array.from({ length: 22 }).map((_, idx) => (
+                            <motion.div
+                                key={`matrix-${idx}`}
+                                className="absolute w-[6vw] h-full opacity-30 mix-blend-screen"
+                                style={{
+                                    left: `${(idx / 22) * 100}%`,
+                                    background: `linear-gradient(180deg, transparent, rgba(255,255,255,0.6), transparent)`
+                                }}
+                                initial={{ y: '-120%' }}
+                                animate={{ y: '120%' }}
+                                transition={{ duration: 1.4 + (idx % 5) * 0.2, repeat: Infinity, ease: 'linear', delay: idx * 0.05 }}
+                            />
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {themeOverdriveNotice && (
+                    <motion.div
+                        className="fixed top-6 right-6 z-[70]"
+                        initial={{ opacity: 0, x: 40, y: -10 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                    >
+                        <div className="px-4 py-2 border-4 border-black bg-black text-[#FFD700] font-black text-xs md:text-sm tracking-[0.3em] shadow-[6px_6px_0px_0px_#FF0080]">
+                            超频模式已开启
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <div className="fixed top-0 left-0 right-0 z-50">
+                <div className="flex flex-col w-full">
                             <EmergencyBar
                                 isOpen={notification.isOpen}
                                 content={notification.content}
@@ -6954,12 +7047,25 @@ const ArticleList = ({
     const [avatarClicks, setAvatarClicks] = useState(0);
     const [spinWarning, setSpinWarning] = useState('');
     const [showSpinWarning, setShowSpinWarning] = useState(false);
+    const [spinLockActive, setSpinLockActive] = useState(false);
+    const [megaSpinActive, setMegaSpinActive] = useState(false);
     const [expandedTags, setExpandedTags] = useState(false);
     const [activeTag, setActiveTag] = useState('all');
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
     const warningTimerRef = useRef(null);
     const lastSpinAtRef = useRef(0);
-    const rapidSpinCountRef = useRef(0);
+    const spinComboRef = useRef(0);
+    const lastWarningComboRef = useRef(0);
+    const megaSpinTimerRef = useRef(null);
+    const spinLockTimerRef = useRef(null);
+    const starField = useMemo(() => ([
+        { top: '12%', left: '20%', scale: 0.8 },
+        { top: '25%', left: '70%', scale: 1 },
+        { top: '60%', left: '30%', scale: 0.9 },
+        { top: '75%', left: '65%', scale: 1.1 },
+        { top: '40%', left: '50%', scale: 1.2 },
+        { top: '15%', left: '85%', scale: 0.7 }
+    ]), []);
     const NEW_POST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     const isPostNew = (dateStr) => {
@@ -7017,31 +7123,73 @@ const ArticleList = ({
         scrollToPostsTop();
     }, [scrollToPostsTop]);
 
+    const showSpinHint = useCallback((message, duration = 2200) => {
+        setSpinWarning(message);
+        setShowSpinWarning(true);
+        if (warningTimerRef.current) {
+            clearTimeout(warningTimerRef.current);
+        }
+        warningTimerRef.current = setTimeout(() => setShowSpinWarning(false), duration);
+    }, []);
+
+    const triggerSpinLock = useCallback(() => {
+        setSpinLockActive(true);
+        setMegaSpinActive(true);
+        if (megaSpinTimerRef.current) {
+            clearTimeout(megaSpinTimerRef.current);
+        }
+        megaSpinTimerRef.current = setTimeout(() => {
+            setMegaSpinActive(false);
+        }, MEGA_SPIN_DURATION);
+        if (spinLockTimerRef.current) {
+            clearTimeout(spinLockTimerRef.current);
+        }
+        spinLockTimerRef.current = setTimeout(() => {
+            setSpinLockActive(false);
+            setMegaSpinActive(false);
+        }, SPIN_LOCK_DURATION);
+    }, []);
+
     const handleAvatarClick = useCallback(() => {
+        if (spinLockActive) {
+            showSpinHint('冷却中…别急！', 1800);
+            return;
+        }
         setAvatarClicks((prev) => prev + 1);
         const now = Date.now();
-        if (now - lastSpinAtRef.current < 350) {
-            rapidSpinCountRef.current += 1;
+        if (now - lastSpinAtRef.current < SPIN_INTERVAL_MS) {
+            spinComboRef.current += 1;
         } else {
-            rapidSpinCountRef.current = 1;
+            spinComboRef.current = 1;
+            lastWarningComboRef.current = 0;
         }
         lastSpinAtRef.current = now;
-        if (rapidSpinCountRef.current >= 4) {
-            rapidSpinCountRef.current = 0;
-            const message = SPIN_WARNINGS[Math.floor(Math.random() * SPIN_WARNINGS.length)];
-            setSpinWarning(message);
-            setShowSpinWarning(true);
-            if (warningTimerRef.current) {
-                clearTimeout(warningTimerRef.current);
-            }
-            warningTimerRef.current = setTimeout(() => setShowSpinWarning(false), 2200);
+
+        if (spinComboRef.current >= MEGA_SPIN_THRESHOLD) {
+            spinComboRef.current = 0;
+            lastWarningComboRef.current = 0;
+            showSpinHint('系统过载，强制降速！', 2000);
+            triggerSpinLock();
+            return;
         }
-    }, []);
+
+        if (spinComboRef.current >= SPIN_WARN_THRESHOLD && lastWarningComboRef.current !== spinComboRef.current) {
+            lastWarningComboRef.current = spinComboRef.current;
+            const message = SPIN_WARNINGS[Math.floor(Math.random() * SPIN_WARNINGS.length)];
+            showSpinHint(message);
+        }
+    }, [showSpinHint, spinLockActive, triggerSpinLock]);
 
     useEffect(() => {
         return () => {
             if (warningTimerRef.current) {
                 clearTimeout(warningTimerRef.current);
+            }
+            if (megaSpinTimerRef.current) {
+                clearTimeout(megaSpinTimerRef.current);
+            }
+            if (spinLockTimerRef.current) {
+                clearTimeout(spinLockTimerRef.current);
             }
         };
     }, []);
@@ -7168,6 +7316,53 @@ const ArticleList = ({
                     </motion.div>
                 )}
             </AnimatePresence>
+            <AnimatePresence>
+                {megaSpinActive && (
+                    <motion.div
+                        className="fixed inset-0 z-[145] pointer-events-none"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.8 }}
+                            exit={{ opacity: 0 }}
+                        />
+                        {starField.map((pos, idx) => (
+                            <motion.div
+                                key={`star-${idx}`}
+                                className="absolute text-[#FFD700]"
+                                style={{ top: pos.top, left: pos.left }}
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: [0, 1, 0.4, 1], scale: [0, pos.scale, pos.scale * 0.8, pos.scale] }}
+                                transition={{ duration: 2 + idx * 0.2, repeat: Infinity, ease: 'easeInOut' }}
+                            >
+                                <Sparkles size={48} strokeWidth={1.2} />
+                            </motion.div>
+                        ))}
+                        <div className="relative w-full h-full flex flex-col items-center justify-center gap-6 text-white">
+                            <motion.div
+                                initial={{ scale: 0.8, rotate: -6 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                exit={{ scale: 0.8, rotate: 4, opacity: 0 }}
+                                className="px-8 py-4 border-4 border-[#FFD700] bg-[#0f172a] text-[#FFD700] text-3xl font-black tracking-widest shadow-[12px_12px_0px_0px_#FF0080]"
+                            >
+                                眼冒金星模式
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="text-base font-mono tracking-[0.4em]"
+                            >
+                                SYSTEM COOLING DOWN...
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {konamiActive && (
                 <div
                     className="fixed inset-0 z-[100] bg-black mix-blend-difference pointer-events-none animate-pulse flex items-center justify-center">
@@ -7181,12 +7376,21 @@ const ArticleList = ({
                         <div
                             className={`${sidebarBg} border-2 border-black p-6 shadow-[8px_8px_0px_0px_#000] text-center relative ${text}`}>
                             <motion.div
-                                animate={{ rotate: avatarClicks * 360 }}
-                                transition={{ duration: 0.5 }}
+                                animate={spinLockActive ? { rotate: [0, -8, 8, -5, 5, 0] } : { rotate: avatarClicks * 360 }}
+                                transition={spinLockActive ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.5 }}
                                 onClick={handleAvatarClick}
                                 className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 bg-[#FFD700] rounded-full border-2 border-black flex items-center justify-center cursor-pointer"
                             >
                                 <img src={authorAvatar} className="w-full h-full object-cover rounded-full" />
+                                {spinLockActive && (
+                                    <motion.div
+                                        className="absolute inset-0 rounded-full border-2 border-black bg-black/40 flex items-center justify-center"
+                                        animate={{ scale: [1, 1.05, 1] }}
+                                        transition={{ duration: 1.2, repeat: Infinity }}
+                                    >
+                                        <span className="text-[10px] font-black tracking-[0.4em] text-white">LOCK</span>
+                                    </motion.div>
+                                )}
                             </motion.div>
                             <h3 className="mt-12 font-black text-2xl">{displayAuthor.displayName || displayAuthor.username}</h3>
                             <p className={`text-sm font-bold mb-4 ${subText}`}>{displayAuthor.bio || displayAuthor.title || '保持热爱，持续创作。'}</p>
