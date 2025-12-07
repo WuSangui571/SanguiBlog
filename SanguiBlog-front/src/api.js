@@ -27,6 +27,25 @@ const deriveApiOrigin = () => {
 export const API_ORIGIN = deriveApiOrigin();
 export const ASSET_ORIGIN = (import.meta.env.VITE_ASSET_ORIGIN || API_ORIGIN || "http://localhost:8080").replace(/\/$/, "");
 
+const decodeJwtExp = (token) => {
+  try {
+    const payload = token.split(".")[1];
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(normalized);
+    const data = JSON.parse(json);
+    return typeof data.exp === "number" ? data.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+};
+
+const isTokenExpired = (token) => {
+  if (!token) return false;
+  const expMs = decodeJwtExp(token);
+  if (!expMs) return false;
+  return Date.now() >= expMs;
+};
+
 const buildHeaders = () => {
   const token = localStorage.getItem("sg_token");
   const headers = { "Content-Type": "application/json" };
@@ -35,6 +54,13 @@ const buildHeaders = () => {
 };
 
 const request = async (path, options = {}) => {
+  const token = localStorage.getItem("sg_token");
+  if (isTokenExpired(token)) {
+    localStorage.removeItem("sg_token");
+    const expiredError = new Error("登录已过期，请重新登录");
+    expiredError.status = 401;
+    throw expiredError;
+  }
   const res = await fetch(`${API_BASE}${path}`, {
     headers: buildHeaders(),
     ...options,
