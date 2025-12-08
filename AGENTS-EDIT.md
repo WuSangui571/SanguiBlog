@@ -1032,3 +1032,15 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.128 (2025-12-08)
 - **模块/页面**：首页分页省略号胶囊样式透明度下调，悬停回满不透明度，视觉更柔和。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.128`
+
+## V1.3.129 (2025-12-08)
+- **模块/页面**：合并 `permissions_seed.sql` 入 `sanguiblog_db.sql`，权限列表与角色映射随建库脚本一次初始化，移除独立 seed 脚本。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.129`
+
+## V1.3.130 (2025-12-08)
+- **模块/页面**：新增后端 Dockerfile（`SanguiBlog-server/Dockerfile`），提供 Maven 构建 + Temurin JRE 多阶段镜像，含健康检查与上传目录挂载，便于服务器端 Docker 部署。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.130`
+
+## V1.3.131 (2025-12-08)
+- **模块/页面**：新增前端 Dockerfile（`SanguiBlog-front/Dockerfile`），Node20 + Nginx 多阶段构建，内置 SPA fallback 与 `/api` 反代示例，便于容器化前端静态资源。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.131`

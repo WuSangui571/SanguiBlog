@@ -429,29 +429,58 @@ VALUES
 ('2025-11-21', 'Referrals',     158, 10.00);
 
 -- 权限
-INSERT INTO permissions (id, code, name, description) VALUES
-(1, 'MANAGE_USERS',     '用户管理',          '创建、修改、禁用用户'),
-(2, 'MANAGE_POSTS',     '文章管理',          '创建、编辑、发布文章'),
-(3, 'MANAGE_COMMENTS',  '评论管理',          '审核与删除评论'),
-(4, 'VIEW_ANALYTICS',   '查看统计数据',      '查看 PV/UV 等分析报表'),
-(5, 'MANAGE_TAXONOMY',  '分类与标签管理',    '维护分类与标签'),
-(6, 'MANAGE_SETTINGS',  '系统设置管理',      '修改站点配置与紧急广播'),
-(7, 'VIEW_FRONTEND',    '访问前台',          '浏览文章列表与详情'),
-(8, 'COMMENT',          '发表评论',          '在文章下方发表或回复评论');
+-- ????? permissions_seed.sql ???
+INSERT INTO permissions (code, name, description) VALUES
+  ('POST_VIEW',       '????',         '???????????'),
+  ('POST_CREATE',     '????',         '????????'),
+  ('POST_EDIT',       '????',         '??????????'),
+  ('POST_DELETE',     '????',         '???????'),
+  ('POST_PUBLISH',    '??/????',   '????????????'),
+  ('COMMENT_VIEW',    '????',         '????????'),
+  ('COMMENT_CREATE',  '????',         '?????????????'),
+  ('COMMENT_REPLY',   '????',         '???????????'),
+  ('COMMENT_REVIEW',  '????',         '????????????'),
+  ('COMMENT_DELETE',  '????',         '????????'),
+  ('CATEGORY_MANAGE', '????',         '??/??/????'),
+  ('TAG_MANAGE',      '????',         '??/??/????'),
+  ('ANALYTICS_VIEW',  '?????',      '??????????'),
+  ('USER_MANAGE',     '????',         '??/??/??????'),
+  ('PERMISSION_MANAGE','????',        '????????????'),
+  ('PROFILE_UPDATE',  '??????',   '?????????')
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  description = VALUES(description);
 
--- SUPER_ADMIN 拥有全部权限
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),(1,8);
+DELETE rp FROM role_permissions rp
+JOIN roles r ON rp.role_id = r.id
+WHERE r.code IN ('SUPER_ADMIN','ADMIN','USER');
 
--- ADMIN 权限
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-(2,2),(2,3),(2,4),(2,5),(2,7),(2,8);
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON 1=1
+WHERE r.code = 'SUPER_ADMIN'
+ON DUPLICATE KEY UPDATE role_id = role_id;
 
--- USER 权限
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-(3,7),(3,8);
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON p.code IN (
+    'POST_VIEW','POST_CREATE','POST_EDIT','POST_DELETE','POST_PUBLISH',
+    'COMMENT_VIEW','COMMENT_CREATE','COMMENT_REPLY','COMMENT_REVIEW',
+    'CATEGORY_MANAGE','TAG_MANAGE','ANALYTICS_VIEW','PROFILE_UPDATE'
+)
+WHERE r.code = 'ADMIN'
+ON DUPLICATE KEY UPDATE role_id = role_id;
 
--- 紧急广播
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON p.code IN ('POST_VIEW','COMMENT_CREATE','PROFILE_UPDATE')
+WHERE r.code = 'USER'
+ON DUPLICATE KEY UPDATE role_id = role_id;
+
+-- ????
 INSERT INTO system_broadcasts
 (content, style, is_active, created_by, active_from)
 VALUES
