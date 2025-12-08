@@ -1044,3 +1044,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.131 (2025-12-08)
 - **模块/页面**：新增前端 Dockerfile（`SanguiBlog-front/Dockerfile`），Node20 + Nginx 多阶段构建，内置 SPA fallback 与 `/api` 反代示例，便于容器化前端静态资源。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.131`
+
+## V1.3.132 (2025-12-08)
+- **模块/页面**：新增根目录 `docker-compose.yml`，一键启动 MySQL、后端、前端（含上传卷与构建参数示例），便于本地或服务器端 Docker 编排。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.132`
