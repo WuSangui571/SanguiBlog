@@ -1034,7 +1034,9 @@ const GENERATE_POSTS = () => {
 };
 
 const MOCK_POSTS = GENERATE_POSTS();
-const PAGE_SIZE = 5;
+const DEFAULT_PAGE_SIZE = 5;
+const PAGE_SIZE_OPTIONS = [5, 10, 20];
+const PAGE_SIZE_STORAGE_KEY = 'sangui_home_page_size';
 const DEFAULT_HERO_TAGLINE = '拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。';
 const DEFAULT_HOME_QUOTE = '阻挡你的不是别人，而是你自己。';
 const TAG_PREVIEW_COUNT = 9;
@@ -1353,7 +1355,10 @@ const Navigation = ({
     onProfileClick,
     backgroundEnabled = true,
     onToggleBackground,
-    themeLockActive = false
+    themeLockActive = false,
+    pageSize,
+    onPageSizeChange,
+    pageSizeOptions = PAGE_SIZE_OPTIONS
 }) => {
     const roleInfo = user ? ROLES[user.role] : null;
     const activeView = currentView || 'home';
@@ -1410,6 +1415,14 @@ const Navigation = ({
             onToggleTheme(event);
         }
     }, [onToggleTheme]);
+
+    const handlePageSizeSelect = useCallback((value) => {
+        if (!Number.isFinite(value)) return;
+        if (!pageSizeOptions.includes(value)) return;
+        if (typeof onPageSizeChange === 'function') {
+            onPageSizeChange(value);
+        }
+    }, [onPageSizeChange, pageSizeOptions]);
 
     return (
         <>
@@ -1594,8 +1607,24 @@ const Navigation = ({
                                 </button>
                             </div>
 
+                            <div className={`flex items-center justify-between gap-4 p-4 border-2 border-black rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                                <div className="space-y-1">
+                                    <div className="font-bold text-sm">首页每页文章数</div>
+                                    <div className="text-xs text-gray-500">默认 5 条，可选 10 / 20，保存在本地浏览器。</div>
+                                </div>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
+                                    className={`w-28 p-2 border-2 border-black rounded-lg font-black text-sm shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                                >
+                                    {pageSizeOptions.map((opt) => (
+                                        <option key={opt} value={opt}>{opt} 条/页</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                更多开关可在此扩展，当前仅包含彩蛋背景；设定对所有用户可见并存储在本地浏览器。
+                                更多开关可在此扩展，当前包含彩蛋背景与分页容量；设定对所有用户可见并存储在本地浏览器。
                             </div>
                         </div>
                     </motion.div>
@@ -6833,6 +6862,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const [articleId, setArticleId] = useState(initialArticleId);
     const [activeParent, setActiveParent] = useState("all");
     const [activeSub, setActiveSub] = useState("all");
+    const [homePageSize, setHomePageSize] = useState(() => {
+        if (typeof window === 'undefined') return DEFAULT_PAGE_SIZE;
+        const saved = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
+        return PAGE_SIZE_OPTIONS.includes(saved) ? saved : DEFAULT_PAGE_SIZE;
+    });
     const [menuOpen, setMenuOpen] = useState(false);
     const [notification, setNotification] = useState({
         isOpen: false,
@@ -6857,6 +6891,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         if (typeof window === 'undefined') return;
         window.localStorage.setItem('sg_background_enabled', String(backgroundEnabled));
     }, [backgroundEnabled]);
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(homePageSize));
+    }, [homePageSize]);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sangui-theme') === 'dark';
@@ -7218,6 +7256,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         }
     };
 
+    const handleHomePageSizeChange = useCallback((size) => {
+        if (!PAGE_SIZE_OPTIONS.includes(size)) return;
+        setHomePageSize(size);
+    }, []);
+
     const archiveData = archivePosts && archivePosts.length ? archivePosts : posts;
     const handleArticleBack = useCallback(() => {
         const target = (articleBackTarget && articleBackTarget !== 'article') ? articleBackTarget : 'home';
@@ -7254,6 +7297,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                             activeSub={activeSub}
                             setActiveSub={setActiveSub}
                             homeQuote={homeQuote}
+                            pageSize={homePageSize}
                         />
                         <footer
                             className={`py-12 text-center mt-12 border-t-8 ${isDarkMode ? 'bg-gray-900 text-white border-[#FF0080]' : 'bg-black text-white border-[#FFD700]'}`}>
@@ -7481,6 +7525,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 backgroundEnabled={backgroundEnabled}
                                 onToggleBackground={handleBackgroundToggle}
                                 themeLockActive={themeOverdriveLock}
+                                pageSize={homePageSize}
+                                onPageSizeChange={handleHomePageSizeChange}
+                                pageSizeOptions={PAGE_SIZE_OPTIONS}
                             />
                             <motion.div
                                 initial={false}
@@ -7589,7 +7636,8 @@ const ArticleList = ({
     setActiveSub,
     recentComments,
     onScrollToPosts,
-    homeQuote
+    homeQuote,
+    pageSize = DEFAULT_PAGE_SIZE
 }) => {
     const [showWechat, setShowWechat] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -7764,7 +7812,8 @@ const ArticleList = ({
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [activeParent, activeSub, activeTag]);
+        paginationScrollReadyRef.current = false;
+    }, [activeParent, activeSub, activeTag, pageSize]);
 
     useEffect(() => {
         if (!paginationScrollReadyRef.current) {
@@ -7774,8 +7823,27 @@ const ArticleList = ({
         scrollToPostsTop();
     }, [currentPage, scrollToPostsTop]);
 
-    const totalPages = Math.ceil(filteredPosts.length / PAGE_SIZE);
-    const displayPosts = filteredPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const totalPages = Math.max(1, Math.ceil(filteredPosts.length / pageSize));
+    const displayPosts = filteredPosts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const paginationItems = useMemo(() => {
+        if (totalPages <= 7) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+        const pages = [1];
+        const windowStart = Math.max(2, currentPage - 1);
+        const windowEnd = Math.min(totalPages - 1, currentPage + 1);
+        if (windowStart > 2) {
+            pages.push('ellipsis-left');
+        }
+        for (let p = windowStart; p <= windowEnd; p += 1) {
+            pages.push(p);
+        }
+        if (windowEnd < totalPages - 1) {
+            pages.push('ellipsis-right');
+        }
+        pages.push(totalPages);
+        return pages;
+    }, [currentPage, totalPages]);
 
     const socialButtonClass = isDarkMode
         ? '!text-white hover:!text-black hover:!bg-white'
@@ -8173,7 +8241,7 @@ const ArticleList = ({
                                                             <Code size={120} />
                                                         </motion.div>
                                                         <span className="relative z-10 font-black text-5xl opacity-50">
-                                                            {(idx + 1 + (currentPage - 1) * PAGE_SIZE).toString().padStart(2, '0')}
+                                                            {(idx + 1 + (currentPage - 1) * pageSize).toString().padStart(2, '0')}
                                                         </span>
                                                         <div className="relative z-10">
                                                             <span
@@ -8233,65 +8301,34 @@ const ArticleList = ({
                         </div>
 
                         {totalPages > 1 && (
-                            <div className="mt-12 flex justify-center items-center gap-4">
-                                <button
-                                    disabled={currentPage === 1}
-                                    onClick={() => {
-                                        setCurrentPage(1);
-                                        scrollToPostsTop();
-                                    }}
-                                    className={`px-3 py-2 border-2 border-black font-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
-                                >
-                                    <ChevronsLeft size={18} strokeWidth={3} />
-                                </button>
-                                <button
-                                    disabled={currentPage === 1}
-                                    onClick={() => {
-                                        setCurrentPage(p => Math.max(1, p - 1));
-                                        scrollToPostsTop();
-                                    }}
-                                    className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
-                                >
-                                    <ChevronLeft size={20} strokeWidth={3} />
-                                </button>
-
-                                <div className="flex gap-2">
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                            <div className="mt-12 flex flex-wrap justify-center items-center gap-2">
+                                {paginationItems.map((item, idx) => {
+                                    if (typeof item === 'string') {
+                                        return (
+                                            <span
+                                                key={`${item}-${idx}`}
+                                                className={`w-10 h-10 inline-flex items-center justify-center border-2 border-dashed border-black text-sm font-black ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'} shadow-[2px_2px_0px_0px_#000]`}
+                                            >
+                                                ...
+                                            </span>
+                                        );
+                                    }
+                                    const isActive = currentPage === item;
+                                    return (
                                         <button
-                                            key={p}
+                                            key={item}
                                             onClick={() => {
-                                                setCurrentPage(p);
+                                                setCurrentPage(item);
                                                 scrollToPostsTop();
                                             }}
                                             className={`w-10 h-10 border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000]
-                          ${currentPage === p ? 'bg-black text-white -translate-y-1 shadow-[6px_6px_0px_0px_#FF0080]' : `${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#6366F1] hover:text-white`}
+                          ${isActive ? 'bg-black text-white -translate-y-1 shadow-[6px_6px_0px_0px_#FF0080]' : `${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#6366F1] hover:text-white`}
                         `}
                                         >
-                                            {p}
+                                            {item}
                                         </button>
-                                    ))}
-                                </div>
-
-                                <button
-                                    disabled={currentPage === totalPages}
-                                    onClick={() => {
-                                        setCurrentPage(p => Math.min(totalPages, p + 1));
-                                        scrollToPostsTop();
-                                    }}
-                                    className={`p-3 border-2 border-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
-                                >
-                                    <ChevronRight size={20} strokeWidth={3} />
-                                </button>
-                                <button
-                                    disabled={currentPage === totalPages}
-                                    onClick={() => {
-                                        setCurrentPage(totalPages);
-                                        scrollToPostsTop();
-                                    }}
-                                    className={`px-3 py-2 border-2 border-black font-black ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#FFD700] disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none`}
-                                >
-                                    <ChevronsRight size={18} strokeWidth={3} />
-                                </button>
+                                    );
+                                })}
                             </div>
                         )}
 
