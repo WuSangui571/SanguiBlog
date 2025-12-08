@@ -8307,9 +8307,11 @@ const ArticleList = ({
                                         return (
                                             <span
                                                 key={`${item}-${idx}`}
-                                                className={`w-10 h-10 inline-flex items-center justify-center border-2 border-dashed border-black text-sm font-black ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'} shadow-[2px_2px_0px_0px_#000]`}
+                                                className={`h-10 px-3 inline-flex items-center justify-center rounded-full text-sm font-black tracking-[0.35em] border-2 border-black opacity-90 hover:opacity-100 transition-opacity ${isDarkMode
+                                                    ? 'bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 text-gray-200 shadow-[4px_4px_0px_0px_#000]'
+                                                    : 'bg-gradient-to-r from-[#FFF3A3] via-white to-[#FFE066] text-gray-800 shadow-[4px_4px_0px_0px_#000]'}`}
                                             >
-                                                ...
+                                                ···
                                             </span>
                                         );
                                     }
