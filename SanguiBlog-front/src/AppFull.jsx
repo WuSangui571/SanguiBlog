@@ -1194,13 +1194,13 @@ const BROADCAST_STYLE_CONFIG = {
         pulse: true
     },
     ANNOUNCE: {
-        label: "系统公告 // COMMUNITY UPDATE",
-        containerClass: "bg-[#FFF7CC] text-[#1F2933]",
-        textClass: "text-[#1F2933]",
+        label: "庆典公告 // CELEBRATION",
+        containerClass: "bg-gradient-to-r from-[#FFF1D0] via-[#FFE1A8] to-[#FFD166] text-[#3A2C0F]",
+        textClass: "text-[#3A2C0F]",
         icon: Sparkles,
-        iconClass: "text-[#D97706]",
-        iconSize: 22,
-        pulse: false
+        iconClass: "text-[#C2410C]",
+        iconSize: 24,
+        pulse: true
     }
 };
 
@@ -6208,7 +6208,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification })
                 <div className="flex flex-wrap gap-3">
                     {[
                         { value: 'ALERT', title: '紧急广播', desc: '红色警示，闪烁提示', className: 'bg-[#FFEEF7] border-[#FF0080]' },
-                        { value: 'ANNOUNCE', title: '庆典广播', desc: '暖色公告，柔和提示', className: 'bg-[#FFF7CC] border-[#F59E0B]' }
+                        { value: 'ANNOUNCE', title: '庆典广播', desc: '柔和渐变，庆典氛围', className: 'bg-gradient-to-r from-[#FFF1D0] via-[#FFE1A8] to-[#FFD166] border-[#F59E0B]' }
                     ].map((opt) => (
                         <button
                             key={opt.value}
