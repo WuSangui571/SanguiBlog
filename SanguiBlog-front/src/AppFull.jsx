@@ -5999,7 +5999,7 @@ const PermissionsView = ({ isDarkMode }) => {
 };
 
 // 4.5 Sub-Component: System Settings - Unused Asset Cleanup (Super Admin Only)
-const SystemSettingsView = ({ isDarkMode, user }) => {
+const SystemSettingsView = ({ isDarkMode, user, notification, setNotification }) => {
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [assets, setAssets] = useState([]);
@@ -6011,8 +6011,14 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
     const [error, setError] = useState('');
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmChecked, setConfirmChecked] = useState(false);
+    const [broadcastContent, setBroadcastContent] = useState('');
+    const [broadcastStyle, setBroadcastStyle] = useState('ALERT');
+    const [broadcastActive, setBroadcastActive] = useState(false);
+    const [broadcastSaving, setBroadcastSaving] = useState(false);
+    const [broadcastError, setBroadcastError] = useState('');
     const { notice, showNotice, hideNotice } = useTimedNotice();
     const { hasPermission } = usePermissionContext();
+    const { meta } = useBlog();
 
     const formatSize = (bytes) => {
         if (!bytes || bytes <= 0) return '0 B';
@@ -6022,6 +6028,13 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
     };
 
     const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
+    useEffect(() => {
+        if (meta?.broadcast) {
+            setBroadcastContent(meta.broadcast.content || '');
+            setBroadcastStyle((meta.broadcast.style || 'ALERT').toUpperCase());
+            setBroadcastActive(Boolean(meta.broadcast.active));
+        }
+    }, [meta]);
 
     const loadAssets = useCallback(async () => {
         setLoading(true);
@@ -6053,6 +6066,42 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
             setEmptyLoading(false);
         }
     }, []);
+
+    const syncNotificationState = useCallback(() => {
+        if (typeof setNotification === 'function') {
+            setNotification((prev) => ({
+                ...prev,
+                isOpen: broadcastActive,
+                content: broadcastContent.trim(),
+                style: broadcastStyle
+            }));
+        }
+    }, [broadcastActive, broadcastContent, broadcastStyle, setNotification]);
+
+    const handleSaveBroadcast = async () => {
+        if (!broadcastContent.trim()) {
+            setBroadcastError('广播文案不能为空');
+            showNotice('广播文案不能为空', 'error');
+            return;
+        }
+        setBroadcastSaving(true);
+        setBroadcastError('');
+        try {
+            await updateBroadcast({
+                content: broadcastContent.trim(),
+                active: broadcastActive,
+                style: broadcastStyle
+            });
+            syncNotificationState();
+            showNotice(broadcastActive ? '广播已开启并同步' : '广播已关闭并同步');
+        } catch (err) {
+            const msg = err.message || '同步广播失败';
+            setBroadcastError(msg);
+            showNotice(msg, 'error');
+        } finally {
+            setBroadcastSaving(false);
+        }
+    };
 
     useEffect(() => {
         loadAssets();
@@ -6141,6 +6190,74 @@ const SystemSettingsView = ({ isDarkMode, user }) => {
     return (
         <div className="space-y-6">
             <AdminNoticeBar notice={notice} onClose={hideNotice} />
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+                <div className="flex flex-wrap gap-3 items-center justify-between">
+                    <div>
+                        <h3 className="text-xl font-bold">站点广播（system_broadcasts）</h3>
+                        <p className="text-sm text-gray-500 mt-1">紧急广播/庆典广播，两种风格，仅超级管理员可切换。</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border-2 border-black shadow ${broadcastActive ? 'bg-[#00E096]' : 'bg-gray-200'}`}>
+                            {broadcastActive ? '已开启' : '已关闭'}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border-2 border-black shadow ${broadcastStyle === 'ALERT' ? 'bg-[#FF0080] text-white' : 'bg-[#FFF7CC] text-[#1F2933]'}`}>
+                            {broadcastStyle === 'ALERT' ? '紧急广播' : '庆典广播'}
+                        </span>
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                    {[
+                        { value: 'ALERT', title: '紧急广播', desc: '红色警示，闪烁提示', className: 'bg-[#FFEEF7] border-[#FF0080]' },
+                        { value: 'ANNOUNCE', title: '庆典广播', desc: '暖色公告，柔和提示', className: 'bg-[#FFF7CC] border-[#F59E0B]' }
+                    ].map((opt) => (
+                        <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setBroadcastStyle(opt.value)}
+                            className={`flex-1 min-w-[220px] text-left px-4 py-3 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] transition hover:-translate-y-0.5 ${broadcastStyle === opt.value ? opt.className : 'bg-white'}`}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="text-sm font-bold">{opt.title}</div>
+                                    <div className="text-xs text-gray-500 mt-1">{opt.desc}</div>
+                                </div>
+                                <div className={`w-3 h-3 rounded-full border ${broadcastStyle === opt.value ? 'border-black bg-black' : 'border-gray-400'}`} />
+                            </div>
+                        </button>
+                    ))}
+                </div>
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-600">广播文案</label>
+                    <textarea
+                        value={broadcastContent}
+                        onChange={(e) => setBroadcastContent(e.target.value)}
+                        rows={3}
+                        className={`w-full rounded-xl border-2 border-black px-4 py-3 text-sm shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                        placeholder="例如：系统将于今晚 23:30 维护，请保存草稿。"
+                    />
+                </div>
+                {broadcastError && <div className="text-sm text-red-500">{broadcastError}</div>}
+                <div className="flex flex-wrap gap-3 items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setBroadcastActive((prev) => !prev)}
+                            className={`px-4 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[3px_3px_0px_0px_#000] ${broadcastActive ? 'bg-[#00E096] text-black' : 'bg-gray-200 text-gray-700'}`}
+                        >
+                            {broadcastActive ? '关闭广播' : '开启广播'}
+                        </button>
+                        <span className="text-xs text-gray-500">仅 SUPER_ADMIN 可操作</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleSaveBroadcast}
+                        disabled={broadcastSaving}
+                        className={`px-5 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[4px_4px_0px_0px_#000] ${broadcastStyle === 'ALERT' ? 'bg-[#FF0080] text-white' : 'bg-[#FFD700] text-black'} ${broadcastSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                        {broadcastSaving ? '同步中…' : '保存并同步广播'}
+                    </button>
+                </div>
+            </div>
             <div className={`${surface} rounded-2xl shadow-lg p-6 flex flex-wrap gap-4 items-center justify-between`}>
                 <div>
                     <h3 className="text-xl font-bold">未引用图片清理</h3>
@@ -6564,7 +6681,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
                             <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
                             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} />} />
-                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} />} />
+                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} />} />
                             <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
                             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
                         </Routes>

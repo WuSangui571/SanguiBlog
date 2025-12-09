@@ -501,13 +501,13 @@ ole_permissions in bulk.
 
 ### ⚠️ 5. 紧急广播 (System Broadcast)
 
-*   前端实现了“紧急广播”功能 (`EmergencyBar`)。
+*   前端通过 `EmergencyBar` 展示广播，按 `style` 渲染：`ALERT`（红色闪烁紧急）与 `ANNOUNCE`（暖色庆典公告）。
 
-*   广播记录包含 `content`、`active` 与 `style` 字段，其中 `style` 目前支持 `ALERT`（红色紧急告警，带闪烁提醒）与 `ANNOUNCE`（温和公告，暖色系展示），默认值为 `ALERT`；数据库对应 `system_broadcasts.style`，后端 `SiteService.updateBroadcast` 会自动兜底非法值。
+*   广播记录字段：`content`、`active`、`style`（默认 `ALERT`，对应 `system_broadcasts.style`），后端 `SiteService.updateBroadcast` 会兜底非法取值。
 
-*   `/api/site/meta.broadcast` 会把 `style` 同步到前端，后台“紧急广播设置”表单在保存时需携带该字段以保持风格一致；前端的 AdminPanel 已提供按钮/下拉同时设置内容、开关与展示样式。
+*   SUPER_ADMIN 可在 `/admin/settings` 配置广播：填写文案、选择紧急/庆典风格并开启或关闭，提交调用 `POST /api/site/broadcast`，前端会立即同步通知条状态。
 
-*   **状态**: 目前广播状态可能仅保存在前端内存或简单的后端接口，刷新页面后的一致性需重点测试 (依赖 `/site/broadcast` 接口)。
+*   `/api/site/meta.broadcast` 用于刷新前端初始广播，请确认数据库表 `system_broadcasts` 已持久化最新记录。
 
 
 
@@ -578,4 +578,3 @@ npm run dev
 - 扫描范围：所有文章（任意状态）与关于页的 Markdown/HTML 中引用的 `/uploads/posts/**` 资源；头像目录不在清理范围内。
 
 - 删除前需二次确认；删除后会尝试清理空目录，仅作用于 `uploads/posts/` 下的图片扩展名文件。
-
