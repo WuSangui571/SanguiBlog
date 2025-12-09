@@ -1,7 +1,7 @@
 // 这是本机测试的 API_BASE
-// const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 // 勿该下面配置，这是专门用于测试部署的 API_BASE
-const API_BASE = "/api";
+// const API_BASE = "/api";
 // const API_BASE = "http://localhost:8080/api";
 
 const deriveApiOrigin = () => {
@@ -16,16 +16,16 @@ const deriveApiOrigin = () => {
     return import.meta.env.VITE_API_ORIGIN.replace(/\/$/, "");
   }
   if (import.meta.env.DEV) {
-    return (import.meta.env.VITE_DEV_SERVER_ORIGIN || "http://localhost:8080").replace(/\/$/, "");
+    return (import.meta.env.VITE_DEV_SERVER_ORIGIN || "http://localhost:8082").replace(/\/$/, "");
   }
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin.replace(/\/$/, "");
   }
-  return "http://localhost:8080";
+  return "http://localhost:8082";
 };
 
 export const API_ORIGIN = deriveApiOrigin();
-export const ASSET_ORIGIN = (import.meta.env.VITE_ASSET_ORIGIN || API_ORIGIN || "http://localhost:8080").replace(/\/$/, "");
+export const ASSET_ORIGIN = (import.meta.env.VITE_ASSET_ORIGIN || API_ORIGIN || "http://localhost:8082").replace(/\/$/, "");
 
 const decodeJwtExp = (token) => {
   try {
