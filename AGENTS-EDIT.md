@@ -1064,3 +1064,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V1.3.136 (2025-12-09)
 - **模块/页面**：庆典广播样式焕新为暖色渐变与柔和闪烁，补足庆典氛围，紧急广播保持原有警示效果。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V1.3.136`
+
+## V2.0.0 (2025-12-09)
+- **模块/页面**：新增 `scripts/switch-env.ps1` 一键切换 dev/prod，同步更新后端 `application.yaml` 与前端 `.env.local`；上线版本默认切至生产配置。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.0.0`

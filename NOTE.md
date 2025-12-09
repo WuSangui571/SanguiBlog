@@ -517,7 +517,7 @@ ole_permissions in bulk.
 
 ## 6. 快速开始 (Quick Start)
 
-
+- 环境切换：在仓库根目录执行 `./scripts/switch-env.ps1 dev|prod`，会同时更新后端 `application.yaml` 与前端 `.env.local`。
 
 ### 后端启动
 
