@@ -5974,284 +5974,178 @@ const PermissionsView = ({ isDarkMode }) => {
     return (
         <div className="space-y-8">
             <AdminNoticeBar notice={notice} onClose={hideNotice} />
-            <div className="grid gap-4 md:grid-cols-3">
-                {roleCards.map((item) => (
-                    <div key={item.role} className={`${surface} rounded-2xl shadow-lg p-5`}>
-                        <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{item.role}</p>
-                        <h3 className="text-xl font-bold mt-1">{item.label}</h3>
-                        <p className="text-sm text-gray-500 mt-2 leading-6">{item.description}</p>
-                    </div>
-                ))}
-            </div>
-
-            {error && <div className="text-sm text-red-500">{error}</div>}
-            {loading ? (
-                <div className="p-10 text-center text-sm text-gray-500">权限矩阵加载中...</div>
-            ) : (
-                <div className="space-y-6">
-                    {matrix.map((module) => (
-                        <div key={module.module} className={`${surface} rounded-2xl shadow-lg`}>
-                            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-lg font-semibold">{module.label}</h3>
-                                    <p className="text-xs text-gray-500 mt-1">{module.description}</p>
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                    可配置：管理员 / 用户
-                                </div>
-                            </div>
-                            <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                                {module.actions.map((action) => (
-                                    <div key={action.code} className="grid grid-cols-[2fr_1fr_1fr] items-center gap-4 px-6 py-4 text-sm">
-                                        <div>
-                                            <p className="font-semibold">{action.label}</p>
-                                            <p className="text-xs text-gray-500 mt-1">{action.description}</p>
-                                        </div>
-                                        <label className="flex items-center justify-center gap-2 font-mono text-xs">
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 accent-indigo-500"
-                                                checked={roleSelections.ADMIN.has(action.code)}
-                                                onChange={() => togglePermission('ADMIN', action.code)}
-                                            />
-                                            管理员
-                                        </label>
-                                        <label className="flex items-center justify-center gap-2 font-mono text-xs">
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 accent-emerald-500"
-                                                checked={roleSelections.USER.has(action.code)}
-                                                onChange={() => togglePermission('USER', action.code)}
-                                            />
-                                            用户
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            <div className="flex flex-wrap gap-4">
-                <button
-                    type="button"
-                    onClick={() => handleSaveRole('ADMIN')}
-                    disabled={savingRole === 'ADMIN'}
-                    className="px-6 py-2 border-2 border-black font-bold bg-[#6366F1] text-white rounded-full hover:-translate-y-0.5 transition disabled:opacity-50"
-                >
-                    {savingRole === 'ADMIN' ? '保存中...' : '保存管理员权限'}
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleSaveRole('USER')}
-                    disabled={savingRole === 'USER'}
-                    className="px-6 py-2 border-2 border-black font-bold bg-[#00E096] text-black rounded-full hover:-translate-y-0.5 transition disabled:opacity-50"
-                >
-                    {savingRole === 'USER' ? '保存中...' : '保存用户权限'}
-                </button>
-            </div>
-        </div>
-    );
-};
-
-// 4.5 Sub-Component: System Settings - Unused Asset Cleanup (Super Admin Only)
-const SystemSettingsView = ({ isDarkMode, user, notification, setNotification }) => {
-    const [loading, setLoading] = useState(true);
-    const [deleting, setDeleting] = useState(false);
-    const [assets, setAssets] = useState([]);
-    const [totalSize, setTotalSize] = useState(0);
-    const [selected, setSelected] = useState(new Set());
-    const [emptyFolders, setEmptyFolders] = useState([]);
-    const [emptySelected, setEmptySelected] = useState(new Set());
-    const [emptyLoading, setEmptyLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [confirmChecked, setConfirmChecked] = useState(false);
-    const [broadcastContent, setBroadcastContent] = useState('');
-    const [broadcastStyle, setBroadcastStyle] = useState('ALERT');
-    const [broadcastActive, setBroadcastActive] = useState(false);
-    const [broadcastSaving, setBroadcastSaving] = useState(false);
-    const [broadcastError, setBroadcastError] = useState('');
-    const { notice, showNotice, hideNotice } = useTimedNotice();
-    const { hasPermission } = usePermissionContext();
-    const { meta } = useBlog();
-
-    const formatSize = (bytes) => {
-        if (!bytes || bytes <= 0) return '0 B';
-        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-        return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${units[i]}`;
-    };
-
-    const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
-    useEffect(() => {
-        if (meta?.broadcast) {
-            setBroadcastContent(meta.broadcast.content || '');
-            setBroadcastStyle((meta.broadcast.style || 'ALERT').toUpperCase());
-            setBroadcastActive(Boolean(meta.broadcast.active));
-        }
-    }, [meta]);
-
-    const loadAssets = useCallback(async () => {
-        setLoading(true);
-        setError('');
-        setSelected(new Set());
-        try {
-            const res = await adminScanUnusedAssets();
-            const data = res.data || res;
-            setAssets(data?.unused || []);
-            setTotalSize(data?.totalSize || 0);
-        } catch (err) {
-            setError(err.message || '扫描未引用图片失败');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    const loadEmptyFolders = useCallback(async () => {
-        setEmptyLoading(true);
-        setError('');
-        setEmptySelected(new Set());
-        try {
-            const res = await adminScanEmptyFolders();
-            const data = res.data || res;
-            setEmptyFolders(data?.emptyFolders || []);
-        } catch (err) {
-            setError(err.message || '扫描空文件夹失败');
-        } finally {
-            setEmptyLoading(false);
-        }
-    }, []);
-
-    const syncNotificationState = useCallback(() => {
-        if (typeof setNotification === 'function') {
-            setNotification((prev) => ({
-                ...prev,
-                isOpen: broadcastActive,
-                content: broadcastContent.trim(),
-                style: broadcastStyle
-            }));
-        }
-    }, [broadcastActive, broadcastContent, broadcastStyle, setNotification]);
-
-    const handleSaveBroadcast = async () => {
-        if (!broadcastContent.trim()) {
-            setBroadcastError('广播文案不能为空');
-            showNotice('广播文案不能为空', 'error');
-            return;
-        }
-        setBroadcastSaving(true);
-        setBroadcastError('');
-        try {
-            await updateBroadcast({
-                content: broadcastContent.trim(),
-                active: broadcastActive,
-                style: broadcastStyle
-            });
-            syncNotificationState();
-            showNotice(broadcastActive ? '广播已开启并同步' : '广播已关闭并同步');
-        } catch (err) {
-            const msg = err.message || '同步广播失败';
-            setBroadcastError(msg);
-            showNotice(msg, 'error');
-        } finally {
-            setBroadcastSaving(false);
-        }
-    };
-
-    useEffect(() => {
-        loadAssets();
-        loadEmptyFolders();
-    }, [loadAssets, loadEmptyFolders]);
-
-    const toggleSelect = (path) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-            if (next.has(path)) {
-                next.delete(path);
-            } else {
-                next.add(path);
-            }
-            return next;
-        });
-    };
-
-    const toggleSelectAll = () => {
-        if (selected.size === assets.length) {
-            setSelected(new Set());
-        } else {
-            setSelected(new Set(assets.map((a) => a.path)));
-        }
-    };
-
-    const toggleSelectEmpty = (path) => {
-        setEmptySelected((prev) => {
-            const next = new Set(prev);
-            if (next.has(path)) next.delete(path); else next.add(path);
-            return next;
-        });
-    };
-
-    const toggleSelectAllEmpty = () => {
-        if (emptySelected.size === emptyFolders.length) {
-            setEmptySelected(new Set());
-        } else {
-            setEmptySelected(new Set(emptyFolders));
-        }
-    };
-
-    const openConfirm = () => {
-        if (!selected.size) return;
-        setConfirmChecked(false);
-        setConfirmOpen(true);
-    };
-
-    const handleDelete = async () => {
-        setDeleting(true);
-        setError('');
-        try {
-            const res = await adminDeleteUnusedAssets(Array.from(selected));
-            const data = res.data || res;
-            showNotice(`已删除 ${data?.deletedCount || 0} 个文件，释放 ${formatSize(data?.freedSize || 0)}`);
-            setConfirmOpen(false);
-            await loadAssets();
-        } catch (err) {
-            setError(err.message || '删除失败');
-        } finally {
-            setDeleting(false);
-        }
-    };
-
-    const handleDeleteEmptyFolders = async () => {
-        if (!emptySelected.size) return;
-        setDeleting(true);
-        setError('');
-        try {
-            const res = await adminDeleteEmptyFolders(Array.from(emptySelected));
-            const data = res.data || res;
-            showNotice(`已删除 ${data?.deletedCount || 0} 个空目录`);
-            setEmptySelected(new Set());
-            await loadEmptyFolders();
-        } catch (err) {
-            setError(err.message || '删除空目录失败');
-        } finally {
-            setDeleting(false);
-        }
-    };
-
-    if (!hasPermission('SYSTEM_CLEAN_STORAGE') || user?.role !== 'SUPER_ADMIN') {
-        return <PermissionNotice title="仅超级管理员可用" description="清理未引用图片的操作仅限超级管理员。" />;
-    }
-
-    return (
-        <div className="space-y-6">
-            <AdminNoticeBar notice={notice} onClose={hideNotice} />
             <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
-                <div className="flex flex-wrap gap-3 items-center justify-between">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">游戏页面管理（game_pages）</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>上传、替换或下线独立 HTML 页面，前台 /games 仅展示 ACTIVE 项。</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={loadGames}
+                            disabled={gameLoading}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {gameLoading ? '刷新中...' : '刷新列表'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => resetGameForm({}, true)}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000]"
+                        >
+                            {gameEditingId ? '退出编辑' : '新建页面'}
+                        </button>
+                    </div>
+                </div>
+
+                {gameError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {gameError}
+                    </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold">标题</label>
+                        <input
+                            value={gameForm.title}
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, title: e.target.value }))}
+                            className="border-2 border-black px-3 py-2 rounded"
+                            placeholder="例如：像素跑酷 / H5 Demo"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold">状态</label>
+                        <select
+                            value={gameForm.status}
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, status: e.target.value }))}
+                            className="border-2 border-black px-3 py-2 rounded"
+                        >
+                                    <option value="ACTIVE">ACTIVE - 对所有人可见</option>
+                                    <option value="DISABLED">DISABLED - 仅管理端可见</option>
+                                    <option value="DRAFT">DRAFT - 草稿</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-2 md:col-span-2">
+                        <label className="text-sm font-semibold">描述（可选）</label>
+                        <textarea
+                            value={gameForm.description}
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, description: e.target.value }))}
+                            rows={3}
+                            className="border-2 border-black px-3 py-2 rounded"
+                            placeholder="一句话给运营或访客的提示"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold">排序权重（大在前）</label>
+                        <input
+                            type="number"
+                            value={gameForm.sortOrder ?? 0}
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))}
+                            className="border-2 border-black px-3 py-2 rounded"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold">HTML 文件 {gameEditingId ? '（不更换可留空）' : ''}</label>
+                        <input
+                            key={gameEditingId ? `edit-${gameEditingId}` : 'new-game'}
+                            type="file"
+                            accept=".html,.htm,text/html"
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
+                            className="border-2 border-black px-3 py-2 rounded bg-white"
+                        />
+                        {gameForm.file && <span className="text-xs text-gray-500">已选择：{gameForm.file.name}</span>}
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={handleGameSubmit}
+                        disabled={gameSaving}
+                        className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-black text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                    >
+                                {gameSaving ? '保存中...' : (gameEditingId ? '保存修改' : '上传页面')}
+                    </button>
+                    <button
+                        type="button"
+                    onClick={() => resetGameForm({}, true)}
+                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                    >
+                        重置表单
+                    </button>
+                    {gameEditingId && <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-xs`}>当前编辑 ID：{gameEditingId}</span>}
+                </div>
+
+                <div className="border-t border-dashed border-gray-300 dark:border-gray-700 pt-4 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                        <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>共 {gameList.length} 个页面</span>
+                    </div>
+                    {gameLoading ? (
+                        <div className="grid gap-3 md:grid-cols-2">
+                            {Array.from({ length: 2 }).map((_, idx) => (
+                                <div key={`game-skeleton-${idx}`} className="border-2 border-dashed border-gray-400/70 rounded-xl p-4 animate-pulse">
+                                    <div className="h-4 bg-gray-300/70 rounded w-2/3 mb-3"></div>
+                                    <div className="h-3 bg-gray-200/70 rounded w-5/6 mb-2"></div>
+                                    <div className="h-3 bg-gray-200/50 rounded w-1/2"></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : gameList.length === 0 ? (
+                        <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-sm`}>暂无数据，先上传一个吧。</div>
+                    ) : (
+                        <div className="grid gap-3 md:grid-cols-2">
+                            {gameList.map((game) => (
+                                <div
+                                    key={game.id}
+                                    className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 space-y-3 shadow-[4px_6px_0px_rgba(0,0,0,0.25)]`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="space-y-1">
+                                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>ID #{game.id}</div>
+                                            <h4 className="text-lg font-bold leading-tight">{game.title}</h4>
+                                            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm line-clamp-2`}>{game.description || '暂无描述'}</p>
+                                            <p className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>状态：{game.status || '--'} · 更新：{formatDateTime(game.updatedAt || game.createdAt)}</p>
+                                        </div>
+                                        <span className="text-[11px] px-2 py-0.5 rounded-full border border-black/40 bg-white/70 text-black font-bold">{game.status || '?'}</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGameOpen(game)}
+                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform"
+                                        >
+                                            ??
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGameEdit(game)}
+                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black hover:-translate-y-0.5 transition-transform"
+                                        >
+                                            ??
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGameDelete(game.id)}
+                                            disabled={gameDeletingId === game.id}
+                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-red-500 text-white hover:-translate-y-0.5 transition-transform disabled:opacity-60"
+                                        >
+                                            {gameDeletingId === game.id ? '删除中...' : '删除'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h3 className="text-xl font-bold">站点广播（system_broadcasts）</h3>
-                        <p className="text-sm text-gray-500 mt-1">紧急广播/庆典广播，两种风格，仅超级管理员可切换。</p>
+                        <p className="text-sm text-gray-500 mt-1">紧急广播 / 庆典广播，两种风格，仅超级管理员可切换。</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold border-2 border-black shadow ${broadcastActive ? 'bg-[#00E096]' : 'bg-gray-200'}`}>
@@ -6494,9 +6388,293 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification })
 };
 
 
+// 4.5 Sub-Component: System Settings (Super Admin) — 仅游戏管理精简版
+const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged }) => {
+    const [gameList, setGameList] = useState([]);
+    const [gameLoading, setGameLoading] = useState(false);
+    const [gameError, setGameError] = useState('');
+    const [gameForm, setGameForm] = useState({ title: '', description: '', status: 'ACTIVE', sortOrder: 0, file: null });
+    const [gameEditingId, setGameEditingId] = useState(null);
+    const [gameSaving, setGameSaving] = useState(false);
+    const [gameDeletingId, setGameDeletingId] = useState(null);
+    const { hasPermission } = usePermissionContext();
+    const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
+
+    const loadGames = useCallback(async () => {
+        setGameLoading(true);
+        setGameError('');
+        try {
+            const res = await adminFetchGames({ page: 1, size: 200 });
+            const data = res?.data || res;
+            setGameList((data && data.records) ? data.records : (data || []));
+        } catch (err) {
+            setGameError(err?.message || '加载页面列表失败');
+        } finally {
+            setGameLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadGames();
+    }, [loadGames]);
+
+    const resetGameForm = useCallback((defaults = {}, clearEditing = true) => {
+        setGameForm({
+            title: '',
+            description: '',
+            status: 'ACTIVE',
+            sortOrder: 0,
+            file: null,
+            ...defaults
+        });
+        if (clearEditing) setGameEditingId(null);
+    }, []);
+
+    const handleGameSubmit = useCallback(async () => {
+        if (!gameForm.title) {
+            setGameError('请填写标题');
+            return;
+        }
+        if (!gameEditingId && !gameForm.file) {
+            setGameError('请先选择要上传的 HTML 文件');
+            return;
+        }
+        setGameSaving(true);
+        setGameError('');
+        try {
+            if (gameEditingId) {
+                await adminUpdateGame(gameEditingId, gameForm);
+            } else {
+                await adminCreateGame(gameForm);
+            }
+            await loadGames();
+            resetGameForm({}, true);
+            onGameChanged && onGameChanged();
+        } catch (err) {
+            setGameError(err?.message || '保存失败');
+        } finally {
+            setGameSaving(false);
+        }
+    }, [gameForm, gameEditingId, adminUpdateGame, adminCreateGame, loadGames, resetGameForm, onGameChanged]);
+
+    const handleGameEdit = useCallback((game) => {
+        if (!game) return;
+        resetGameForm({
+            title: game.title || '',
+            description: game.description || '',
+            status: game.status || 'ACTIVE',
+            sortOrder: game.sortOrder ?? 0,
+        }, false);
+        setGameEditingId(game.id);
+    }, [resetGameForm]);
+
+    const handleGameDelete = useCallback(async (id) => {
+        if (!id) return;
+        const ok = typeof window !== 'undefined' ? window.confirm('确认删除该 HTML 页面吗？此操作不可恢复。') : true;
+        if (!ok) return;
+        setGameDeletingId(id);
+        setGameError('');
+        try {
+            await adminDeleteGame(id);
+            await loadGames();
+            if (gameEditingId === id) resetGameForm({}, true);
+            onGameChanged && onGameChanged();
+        } catch (err) {
+            setGameError(err?.message || '删除失败');
+        } finally {
+            setGameDeletingId(null);
+        }
+    }, [adminDeleteGame, loadGames, onGameChanged, gameEditingId, resetGameForm]);
+
+    const handleGameOpen = useCallback((game) => {
+        if (!game) return;
+        const targetUrl = game.url ? buildAssetUrl(game.url) : '';
+        if (targetUrl && typeof window !== 'undefined') {
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        }
+    }, []);
+
+    if (!hasPermission('SYSTEM_CLEAN_STORAGE') || user?.role !== 'SUPER_ADMIN') {
+        return <PermissionNotice title="仅超级管理员可用" description="系统设置仅限超级管理员访问。" />;
+    }
+
+    const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
+
+    return (
+        <div className="space-y-6">
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">游戏页面管理（game_pages）</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>上传、替换或下线独立 HTML 页面，前台 /games 仅展示 ACTIVE 项。</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={loadGames}
+                            disabled={gameLoading}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {gameLoading ? '刷新中...' : '刷新列表'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => resetGameForm()}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000]"
+                        >
+                            {gameEditingId ? '退出编辑' : '新建页面'}
+                        </button>
+                    </div>
+                </div>
+
+                {gameError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {gameError}
+                    </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold">标题</label>
+                        <input
+                            value={gameForm.title}
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, title: e.target.value }))}
+                            className="border-2 border-black px-3 py-2 rounded"
+                            placeholder="例如：像素跑酷 / H5 Demo"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold">状态</label>
+                        <select
+                            value={gameForm.status}
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, status: e.target.value }))}
+                            className="border-2 border-black px-3 py-2 rounded"
+                        >
+                            <option value="ACTIVE">ACTIVE - 对所有人可见</option>
+                            <option value="DISABLED">DISABLED - 仅管理端可见</option>
+                            <option value="DRAFT">DRAFT - 草稿</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-2 md:col-span-2">
+                        <label className="text-sm font-semibold">描述（可选）</label>
+                        <textarea
+                            value={gameForm.description}
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, description: e.target.value }))}
+                            rows={3}
+                            className="border-2 border-black px-3 py-2 rounded"
+                            placeholder="一句话给运营或访客的提示"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold">排序权重（大在前）</label>
+                        <input
+                            type="number"
+                            value={gameForm.sortOrder ?? 0}
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))}
+                            className="border-2 border-black px-3 py-2 rounded"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold">HTML 文件 {gameEditingId ? '（不更换可留空）' : ''}</label>
+                        <input
+                            key={gameEditingId ? `edit-${gameEditingId}` : 'new-game'}
+                            type="file"
+                            accept=".html,.htm,text/html"
+                            onChange={(e) => setGameForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
+                            className="border-2 border-black px-3 py-2 rounded bg-white"
+                        />
+                        {gameForm.file && <span className="text-xs text-gray-500">已选择：{gameForm.file.name}</span>}
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={handleGameSubmit}
+                        disabled={gameSaving}
+                        className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-black text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                    >
+                        {gameSaving ? '保存中...' : (gameEditingId ? '保存修改' : '上传页面')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => resetGameForm()}
+                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                    >
+                        重置表单
+                    </button>
+                    {gameEditingId && <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-xs`}>当前编辑 ID：{gameEditingId}</span>}
+                </div>
+
+                <div className="border-t border-dashed border-gray-300 dark:border-gray-700 pt-4 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                        <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>共 {gameList.length} 个页面</span>
+                    </div>
+                    {gameLoading ? (
+                        <div className="grid gap-3 md:grid-cols-2">
+                            {Array.from({ length: 2 }).map((_, idx) => (
+                                <div key={`game-skeleton-${idx}`} className="border-2 border-dashed border-gray-400/70 rounded-xl p-4 animate-pulse">
+                                    <div className="h-4 bg-gray-300/70 rounded w-2/3 mb-3"></div>
+                                    <div className="h-3 bg-gray-200/70 rounded w-5/6 mb-2"></div>
+                                    <div className="h-3 bg-gray-200/50 rounded w-1/2"></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : gameList.length === 0 ? (
+                        <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-sm`}>暂无数据，先上传一个吧。</div>
+                    ) : (
+                        <div className="grid gap-3 md:grid-cols-2">
+                            {gameList.map((game) => (
+                                <div
+                                    key={game.id}
+                                    className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 space-y-3 shadow-[4px_6px_0px_rgba(0,0,0,0.25)]`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="space-y-1">
+                                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>ID #{game.id}</div>
+                                            <h4 className="text-lg font-bold leading-tight">{game.title}</h4>
+                                            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm line-clamp-2`}>{game.description || '暂无描述'}</p>
+                                            <p className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>状态：{game.status || '--'} · 更新：{formatDateTime(game.updatedAt || game.createdAt)}</p>
+                                        </div>
+                                        <span className="text-[11px] px-2 py-0.5 rounded-full border border-black/40 bg-white/70 text-black font-bold">{game.status || '--'}</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGameOpen(game)}
+                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform"
+                                        >
+                                            预览
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGameEdit(game)}
+                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black hover:-translate-y-0.5 transition-transform"
+                                        >
+                                            编辑
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGameDelete(game.id)}
+                                            disabled={gameDeletingId === game.id}
+                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-red-500 text-white hover:-translate-y-0.5 transition-transform disabled:opacity-60"
+                                        >
+                                            {gameDeletingId === game.id ? '删除中...' : '删除'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // 4.5 The main Admin Panel structure
 // 4.5 The main Admin Panel structure
-const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved }) => {
+const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, loadGameList }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [broadcastSaving, setBroadcastSaving] = useState(false);
@@ -6738,7 +6916,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
                             <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
                             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} />} />
-                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} />} />
+                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} onGameChanged={loadGameList} />} />
                             <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
                             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
                         </Routes>
@@ -7041,9 +7219,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const [gameDetail, setGameDetail] = useState(null);
     const [gameDetailLoading, setGameDetailLoading] = useState(false);
     const [gameDetailError, setGameDetailError] = useState('');
-    const [gameForm, setGameForm] = useState({ title: '', description: '', status: 'ACTIVE', sortOrder: 0, file: null });
-    const [savingGame, setSavingGame] = useState(false);
-    const [editingGameId, setEditingGameId] = useState(null);
     const [activeParent, setActiveParent] = useState("all");
     const [activeSub, setActiveSub] = useState("all");
     const [homePageSize, setHomePageSize] = useState(() => {
@@ -7485,18 +7660,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         navigate('/admin/profile');
     };
 
-    const resetGameForm = useCallback((defaults = {}) => {
-        setGameForm({
-            title: '',
-            description: '',
-            status: 'ACTIVE',
-            sortOrder: 0,
-            file: null,
-            ...defaults
-        });
-        setEditingGameId(null);
-    }, []);
-
     const handleOpenGame = useCallback((game) => {
         const target = game || {};
         const targetUrl = target.url ? buildAssetUrl(target.url) : '';
@@ -7514,62 +7677,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         setView('games');
         setGameDetailError('');
     }, []);
-
-    const handleGameEdit = useCallback((game) => {
-        if (!game) return;
-        setEditingGameId(game.id);
-        resetGameForm({
-            title: game.title || '',
-            description: game.description || '',
-            status: game.status || 'ACTIVE',
-            sortOrder: game.sortOrder ?? 0,
-            file: null
-        });
-    }, [resetGameForm]);
-
-    const handleGameDelete = useCallback(async (id) => {
-        if (!id || user?.role !== 'SUPER_ADMIN') return;
-        const ok = typeof window !== 'undefined' ? window.confirm('确认删除该 HTML 页面吗？此操作不可恢复。') : true;
-        if (!ok) return;
-        try {
-            await adminDeleteGame(id);
-            await loadGameList();
-            if (gameId === id) {
-                setGameId(null);
-                setGameDetail(null);
-            }
-        } catch (err) {
-            setGameListError(err?.message || '删除失败');
-        }
-    }, [adminDeleteGame, loadGameList, user?.role, gameId]);
-
-    const handleGameSubmit = useCallback(async () => {
-        if (user?.role !== 'SUPER_ADMIN') return;
-        if (!gameForm.title) {
-            setGameListError('请填写标题');
-            return;
-        }
-        if (!editingGameId && !gameForm.file) {
-            setGameListError('请先选择要上传的 HTML 文件');
-            return;
-        }
-        setSavingGame(true);
-        setGameListError('');
-        try {
-            if (editingGameId) {
-                await adminUpdateGame(editingGameId, gameForm);
-            } else {
-                await adminCreateGame(gameForm);
-            }
-            await loadGameList();
-            resetGameForm();
-        } catch (err) {
-            console.warn('save game failed', err);
-            setGameListError(err?.message || '保存失败');
-        } finally {
-            setSavingGame(false);
-        }
-    }, [user?.role, gameForm, editingGameId, adminUpdateGame, adminCreateGame, loadGameList, resetGameForm]);
 
     const handleCategoryClick = (parentLabel, subLabel) => {
         const categoriesList = categories && categories.length ? categories : CATEGORY_TREE;
@@ -7606,166 +7713,94 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, []);
 
     const renderGamesView = () => {
-        const isAdmin = user?.role === 'SUPER_ADMIN';
-        const formatDate = (value) => (value ? new Date(value).toLocaleString() : '—');
+        const formatDate = (value) => (value ? new Date(value).toLocaleString() : '--');
+        const surface = isDarkMode ? 'bg-gray-900/75 border border-gray-700 shadow-[8px_12px_0px_rgba(0,0,0,0.45)]' : 'bg-white/85 backdrop-blur border border-black/70 shadow-[8px_12px_0px_rgba(0,0,0,0.2)]';
         return (
-            <div className={`pt-28 pb-16 px-4 md:px-10 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-                    <div>
-                        <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
-                            <span>游戏中心</span>
-                            <span className="text-xs px-2 py-1 rounded-full bg-[#FFD700] text-black font-bold">实验室</span>
-                        </h1>
-                        <p className="text-sm text-gray-500 mt-1">超级管理员上传的独立 HTML/JS/CSS 页面，点击即可游玩或体验。</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={loadGameList}
-                            className="px-4 py-2 border-2 border-black bg-white text-black font-bold hover:bg-[#FFD700]"
-                        >
-                            刷新列表
-                        </button>
-                    </div>
-                </div>
-
-                {gameListError && (
-                    <div className="mb-4 px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-lg">
-                        {gameListError}
-                    </div>
-                )}
-
-                {isAdmin && (
-                    <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 mb-6 shadow-sm`}>
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-xl font-black">{editingGameId ? '编辑页面' : '上传新页面'}</h3>
-                            {editingGameId && (
-                                <button
-                                    onClick={() => resetGameForm()}
-                                    className="text-sm underline decoration-dotted"
-                                >
-                                    取消编辑
-                                </button>
-                            )}
+            <div className="relative pt-28 pb-20 px-4">
+                <div className={`max-w-5xl mx-auto space-y-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <div className={`${surface} rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4`}>
+                        <div className="space-y-2">
+                            <p className="text-xs uppercase tracking-[0.2em] text-[#FFD700] font-semibold">Indie Lab</p>
+                            <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
+                                <span>游戏中心</span>
+                                <span className="text-[11px] px-2 py-1 rounded-full bg-[#FFD700] text-black font-bold shadow-sm">实验室</span>
+                            </h1>
+                            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>独立 HTML/JS/CSS 体验集合，点击卡片在新标签打开。</p>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold">标题</label>
-                                <input
-                                    value={gameForm.title}
-                                    onChange={(e) => setGameForm((prev) => ({ ...prev, title: e.target.value }))}
-                                    className="border-2 border-black px-3 py-2 rounded"
-                                    placeholder="例如：像素跑酷 / H5 Demo"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold">状态</label>
-                                <select
-                                    value={gameForm.status}
-                                    onChange={(e) => setGameForm((prev) => ({ ...prev, status: e.target.value }))}
-                                    className="border-2 border-black px-3 py-2 rounded"
-                                >
-                                    <option value="ACTIVE">ACTIVE - 对所有人可见</option>
-                                    <option value="DISABLED">DISABLED - 仅管理端可见</option>
-                                    <option value="DRAFT">DRAFT - 草稿</option>
-                                </select>
-                            </div>
-                            <div className="flex flex-col gap-2 md:col-span-2">
-                                <label className="text-sm font-semibold">描述（可选）</label>
-                                <textarea
-                                    value={gameForm.description}
-                                    onChange={(e) => setGameForm((prev) => ({ ...prev, description: e.target.value }))}
-                                    rows={3}
-                                    className="border-2 border-black px-3 py-2 rounded"
-                                    placeholder="给玩家一句话介绍或使用说明"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold">排序权重（大在前）</label>
-                                <input
-                                    type="number"
-                                    value={gameForm.sortOrder ?? 0}
-                                    onChange={(e) => setGameForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))}
-                                    className="border-2 border-black px-3 py-2 rounded"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold">HTML 文件 {editingGameId ? '（不更换可留空）' : ''}</label>
-                                <input
-                                    type="file"
-                                    accept=".html,.htm,text/html"
-                                    onChange={(e) => setGameForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
-                                    className="border-2 border-black px-3 py-2 rounded bg-white"
-                                />
-                                {gameForm.file && <span className="text-xs text-gray-500">已选择：{gameForm.file.name}</span>}
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 mt-4">
+                        <div className="flex items-center gap-3">
                             <button
-                                onClick={handleGameSubmit}
-                                disabled={savingGame}
-                                className="px-4 py-2 border-2 border-black bg-black text-white font-bold hover:bg-[#FF0080] disabled:opacity-60"
+                                onClick={loadGameList}
+                                className="px-4 py-2 border-2 border-black bg-white text-black font-bold hover:-translate-y-0.5 transition-transform"
                             >
-                                {savingGame ? '保存中…' : (editingGameId ? '保存修改' : '上传页面')}
-                            </button>
-                            <button
-                                onClick={() => resetGameForm()}
-                                className="px-4 py-2 border-2 border-black bg-white text-black font-bold"
-                            >
-                                重置
+                                刷新列表
                             </button>
                         </div>
                     </div>
-                )}
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {gameListLoading && Array.from({ length: 3 }).map((_, idx) => (
-                        <div key={`skeleton-${idx}`} className="border-2 border-dashed border-gray-300 rounded-xl p-4 animate-pulse">
-                            <div className="h-4 bg-gray-300 rounded w-1/2 mb-3"></div>
-                            <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                        </div>
-                    ))}
-                    {!gameListLoading && gameList.length === 0 && (
-                        <div className="md:col-span-2 lg:col-span-3 text-center py-10 border-2 border-dashed rounded-xl">
-                            还没有上传的 HTML 页面，{isAdmin ? '点击上方表单上传一个吧' : '敬请期待'}。
+                    {gameListError && (
+                        <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-2xl">
+                            {gameListError}
                         </div>
                     )}
-                    {gameList.map((game) => (
-                        <div key={game.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 flex flex-col justify-between`}>
-                            <div className="flex items-start justify-between gap-2">
-                                <div>
-                                    <h3 className="text-xl font-black">{game.title}</h3>
-                                    <p className="text-sm text-gray-500 mt-1 line-clamp-3">{game.description || '暂无描述'}</p>
-                                    <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-2 items-center">
-                                        <span>更新：{formatDate(game.updatedAt || game.createdAt)}</span>
-                                        {game.status && <span className="px-2 py-0.5 rounded-full border text-[11px]">{game.status}</span>}
-                                    </div>
+
+                    <div className={`${surface} rounded-3xl p-6 md:p-8`}>
+                        <div className="grid gap-5 md:grid-cols-2">
+                            {gameListLoading && Array.from({ length: 4 }).map((_, idx) => (
+                                <div key={`skeleton-${idx}`} className="border-2 border-dashed border-gray-400/70 rounded-2xl p-4 animate-pulse">
+                                    <div className="h-4 bg-gray-300/70 rounded w-1/2 mb-3"></div>
+                                    <div className="h-3 bg-gray-200/70 rounded w-2/3 mb-2"></div>
+                                    <div className="h-3 bg-gray-200/50 rounded w-1/3"></div>
                                 </div>
-                                <button
-                                    onClick={() => handleOpenGame(game)}
-                                    className="px-3 py-1 border-2 border-black bg-[#FFD700] text-black font-bold rounded hover:-translate-y-0.5 transition-transform"
-                                >
-                                    进入
-                                </button>
-                            </div>
-                            {isAdmin && (
-                                <div className="flex items-center gap-3 mt-4">
-                                    <button
-                                        onClick={() => handleGameEdit(game)}
-                                        className="text-sm underline decoration-dotted"
-                                    >
-                                        编辑
-                                    </button>
-                                    <button
-                                        onClick={() => handleGameDelete(game.id)}
-                                        className="text-sm text-red-600 underline decoration-dotted"
-                                    >
-                                        删除
-                                    </button>
+                            ))}
+
+                            {!gameListLoading && gameList.length === 0 && (
+                                <div className="md:col-span-2 text-center py-12 border-2 border-dashed rounded-2xl text-sm font-semibold">
+                                    还没有发布的独立页面，敬请期待。
                                 </div>
                             )}
+
+                            {gameList.map((game) => {
+                                const statusTone = {
+                                    ACTIVE: 'bg-emerald-500 text-white',
+                                    DISABLED: 'bg-gray-500 text-white',
+                                    DRAFT: 'bg-amber-400 text-black'
+                                }[game.status] || 'bg-black text-white';
+                                return (
+                                    <div
+                                        key={game.id}
+                                        className={`${isDarkMode ? 'bg-gray-800/70 border-gray-700' : 'bg-white/85 border-black/70'} border-2 rounded-2xl p-5 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-200 shadow-[6px_8px_0px_rgba(0,0,0,0.25)]`}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs px-2 py-0.5 rounded-full font-bold border border-black/60 bg-white/70 text-black">#{game.id}</span>
+                                                    {game.status && (
+                                                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold border border-black/50 ${statusTone}`}>
+                                                            {game.status}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-xl font-black leading-tight">{game.title}</h3>
+                                                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm line-clamp-3`}>{game.description || '暂无描述'}</p>
+                                                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-xs`}>更新：{formatDate(game.updatedAt || game.createdAt)}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleOpenGame(game)}
+                                                className="px-3 py-1.5 border-2 border-black bg-[#FFD700] text-black font-bold rounded hover:-translate-y-0.5 transition-transform"
+                                            >
+                                                进入
+                                            </button>
+                                        </div>
+                                        {game.url && (
+                                            <div className={`text-[11px] font-mono break-all ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                {game.url}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
-                    ))}
+                    </div>
                 </div>
             </div>
         );
@@ -7908,7 +7943,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     return <div className="p-20 text-center text-lg font-bold">请先登录后再访问管理后台</div>;
                 }
                 return <AdminPanel setView={setView} notification={notification} setNotification={setNotification}
-                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} />;
+                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} loadGameList={loadGameList} />;
             case 'about':
                 return (
                     <AboutView
