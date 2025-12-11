@@ -6,14 +6,15 @@ import lombok.Data;
 
 @Data
 public class GamePageRequest {
-    @NotBlank(message = "±êÌâ²»ÄÜÎª¿Õ")
-    @Size(max = 128, message = "±êÌâ³¤¶È²»ÄÜ³¬¹ý128¸ö×Ö·û")
+    @NotBlank(message = "ï¿½ï¿½ï¿½â²»ï¿½ï¿½Îªï¿½ï¿½")
+    @Size(max = 128, message = "ï¿½ï¿½ï¿½â³¤ï¿½È²ï¿½ï¿½Ü³ï¿½ï¿½ï¿½128ï¿½ï¿½ï¿½Ö·ï¿½")
     private String title;
 
-    @Size(max = 512, message = "ÃèÊö³¤¶È²»ÄÜ³¬¹ý512¸ö×Ö·û")
+    @Size(max = 512, message = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È²ï¿½ï¿½Ü³ï¿½ï¿½ï¿½512ï¿½ï¿½ï¿½Ö·ï¿½")
     private String description;
 
     private String status;
 
     private Integer sortOrder;
 }
+
