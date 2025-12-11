@@ -9262,7 +9262,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                     </div>
                     {captchaRequired && (
                         <div className="space-y-2">
-                            <label className="font-bold text-sm uppercase">Captcha</label>
+                            <label className="font-bold text-sm uppercase">验证码</label>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-3">
                                     {captchaImage && (
