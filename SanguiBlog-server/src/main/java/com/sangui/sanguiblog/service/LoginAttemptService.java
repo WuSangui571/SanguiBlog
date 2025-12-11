@@ -25,9 +25,15 @@ public class LoginAttemptService {
     private static final Duration CAPTCHA_TTL = Duration.ofMinutes(5);
     private static final Duration CAPTCHA_CACHE = Duration.ofSeconds(60);
     private static final Duration CAPTCHA_RATE_LIMIT = Duration.ofSeconds(5);
+    private static final int CAPTCHA_IP_LIMIT = 10;
+    private static final Duration CAPTCHA_IP_WINDOW = Duration.ofMinutes(1);
+    private static final int LOGIN_IP_LIMIT = 30;
+    private static final Duration LOGIN_IP_WINDOW = Duration.ofMinutes(10);
 
     private final Map<String, Attempt> attempts = new ConcurrentHashMap<>(); // key: ip
     private final Map<String, CaptchaHolder> captchaCache = new ConcurrentHashMap<>(); // key: ip|ua
+    private final Map<String, RateBucket> captchaRate = new ConcurrentHashMap<>(); // key: ip
+    private final Map<String, RateBucket> loginRate = new ConcurrentHashMap<>(); // key: ip
     private final SecureRandom random = new SecureRandom();
     private static final char[] CHAR_POOL = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
 
@@ -87,6 +93,7 @@ public class LoginAttemptService {
         Instant now = Instant.now();
 
         // 速率限制
+        ensureWithinRate(captchaRate, ip, CAPTCHA_IP_LIMIT, CAPTCHA_IP_WINDOW);
         CaptchaHolder holder = captchaCache.get(cacheKey);
         if (holder != null && holder.generatedAt != null
                 && Duration.between(holder.generatedAt, now).compareTo(CAPTCHA_RATE_LIMIT) < 0) {
@@ -108,6 +115,10 @@ public class LoginAttemptService {
         String base64 = buildImageBase64(code);
         captchaCache.put(cacheKey, new CaptchaHolder(code, base64, now));
         return new CaptchaResponse(base64, CAPTCHA_TTL.getSeconds(), true, remainingAttempts(ip));
+    }
+
+    public void ensureLoginRate(String ip) {
+        ensureWithinRate(loginRate, ip, LOGIN_IP_LIMIT, LOGIN_IP_WINDOW);
     }
 
     private String randomCode() {
@@ -162,4 +173,29 @@ public class LoginAttemptService {
     }
 
     private record CaptchaHolder(String code, String imageBase64, Instant generatedAt) {}
+
+    private void ensureWithinRate(Map<String, RateBucket> buckets, String key, int limit, Duration window) {
+        if (!StringUtils.hasText(key)) return;
+        buckets.compute(key, (k, bucket) -> {
+            Instant now = Instant.now();
+            if (bucket == null || Duration.between(bucket.windowStart, now).compareTo(window) > 0) {
+                return new RateBucket(1, now);
+            }
+            if (bucket.count >= limit) {
+                throw new IllegalArgumentException("请求过于频繁，请稍后再试");
+            }
+            bucket.count += 1;
+            return bucket;
+        });
+    }
+
+    private static class RateBucket {
+        int count;
+        Instant windowStart;
+
+        RateBucket(int count, Instant windowStart) {
+            this.count = count;
+            this.windowStart = windowStart;
+        }
+    }
 }

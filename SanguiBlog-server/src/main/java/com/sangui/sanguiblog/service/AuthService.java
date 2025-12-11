@@ -33,6 +33,7 @@ public class AuthService {
     private final LoginAttemptService loginAttemptService;
 
     public LoginResponse login(LoginRequest request, String ip) {
+        loginAttemptService.ensureLoginRate(ip);
         boolean captchaRequired = loginAttemptService.isCaptchaRequired(ip);
         if (captchaRequired) {
             if (!StringUtils.hasText(request.getCaptcha())) {

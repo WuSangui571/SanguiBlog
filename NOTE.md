@@ -353,6 +353,8 @@ ole_permissions in bulk.
 
 6.  验证码服务限流与缓存：`/api/auth/captcha` 以 IP+UA 为键，5s 内重复请求会被拒绝，生成后的验证码在 60s 内复用同一张图，TTL 5 分钟。
 
+7.  全局登录/验证码限流：`/api/auth/login` IP 级 10 分钟 30 次内控制；`/api/auth/captcha` IP 级 1 分钟 10 次（同时 5s 二级速率限制），超出将返回“请求过于频繁，请稍后再试”。
+
 
 
 ---
