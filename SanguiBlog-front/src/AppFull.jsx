@@ -9236,29 +9236,34 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                     {captchaRequired && (
                         <div className="space-y-2">
                             <label className="font-bold text-sm uppercase">Captcha</label>
-                            <div className="flex items-center gap-3">
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-3">
+                                    {captchaImage && (
+                                        <img
+                                            src={captchaImage}
+                                            alt="captcha"
+                                            className="h-14 w-32 border-2 border-black object-contain cursor-pointer select-none"
+                                            onClick={loadCaptcha}
+                                            title={captchaLoading ? '加载中…' : '点击刷新验证码'}
+                                        />
+                                    )}
+                                    {!captchaImage && (
+                                        <button
+                                            type="button"
+                                            onClick={loadCaptcha}
+                                            className="px-3 py-2 border-2 border-dashed border-black bg-white text-sm font-bold"
+                                            disabled={captchaLoading}
+                                        >
+                                            {captchaLoading ? '加载中' : '获取验证码'}
+                                        </button>
+                                    )}
+                                </div>
                                 <input
-                                    className={`flex-1 border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+                                    className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
                                     value={captchaInput}
                                     onChange={(e) => setCaptchaInput(sanitizeAscii(e.target.value).slice(0, 4))}
                                     placeholder="请输入验证码"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={loadCaptcha}
-                                    className="px-3 py-2 border-2 border-black bg-white hover:bg-gray-100 text-sm font-bold"
-                                    disabled={captchaLoading}
-                                >
-                                    {captchaLoading ? '加载中' : '刷新'}
-                                </button>
-                                {captchaImage && (
-                                    <img
-                                        src={captchaImage}
-                                        alt="captcha"
-                                        className="h-12 w-28 border-2 border-black object-contain"
-                                        onClick={loadCaptcha}
-                                    />
-                                )}
                             </div>
                         </div>
                     )}
