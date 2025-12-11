@@ -1991,6 +1991,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const [error, setError] = useState('');
     const [clearing, setClearing] = useState(false);
     const [actionMessage, setActionMessage] = useState('');
+    const [copyToast, setCopyToast] = useState('');
+    const copyToastTimer = useRef(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [deleting, setDeleting] = useState(false);
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
@@ -2005,6 +2007,14 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             ? 'border border-gray-700 bg-gray-900 text-gray-100 hover:bg-gray-800 focus-visible:ring-indigo-400 focus-visible:ring-offset-gray-900'
             : 'bg-black text-white hover:bg-gray-800 focus-visible:ring-gray-700 focus-visible:ring-offset-white'
     ].join(' ');
+
+    useEffect(() => {
+        return () => {
+            if (copyToastTimer.current) {
+                clearTimeout(copyToastTimer.current);
+            }
+        };
+    }, []);
 
     const renderReferrer = (referrer) => {
         if (!referrer) return '未知来源';
@@ -2199,6 +2209,22 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         }
     };
 
+    const handleCopyIp = async (ip) => {
+        if (!ip) return;
+        try {
+            await navigator.clipboard.writeText(ip);
+            setActionMessage('');
+            setCopyToast(`已复制 IP：${ip}`);
+        } catch (err) {
+            setCopyToast('复制失败，请手动复制该 IP。');
+        } finally {
+            if (copyToastTimer.current) {
+                clearTimeout(copyToastTimer.current);
+            }
+            copyToastTimer.current = setTimeout(() => setCopyToast(''), 2500);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -2251,6 +2277,13 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             {actionMessage && <p className="text-sm text-emerald-500">{actionMessage}</p>}
+            {copyToast && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+                    <div className="px-5 py-3 rounded-lg shadow-2xl bg-emerald-500 text-white text-sm pointer-events-auto">
+                        {copyToast}
+                    </div>
+                </div>
+            )}
 
             <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
                 {loading ? (
@@ -2304,7 +2337,18 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                                 {visit.title || '未命名文章'}
                                             </p>
                                         </td>
-                                        <td className="px-4 py-3 font-mono whitespace-nowrap min-w-[150px]">{visit.ip || '-'}</td>
+                                        <td className="px-4 py-3 font-mono whitespace-nowrap min-w-[150px]">
+                                            {visit.ip ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCopyIp(visit.ip)}
+                                                    className="text-current hover:text-current focus:outline-none"
+                                                    title="点击复制 IP"
+                                                >
+                                                    {visit.ip}
+                                                </button>
+                                            ) : '-'}
+                                        </td>
                                         <td className="px-4 py-3 min-w-[120px]">
                                             {renderUserBadge(visit)}
                                         </td>
