@@ -1497,7 +1497,7 @@ const Navigation = ({
                             size={20} /></button>
                     </div>
                 ) : (
-                    <PopButton onClick={() => setView('login')} icon={LogIn}>Login</PopButton>
+                    <PopButton onClick={() => setView('login')} icon={LogIn}>前往登录</PopButton>
                 )}
                 <button
                     onClick={() => setSettingsOpen(true)}
@@ -9217,10 +9217,10 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     return (
         <div className={`h-screen flex items-center justify-center ${bg} ${text}`}>
             <div className={`${surface} p-8 rounded-none border-4 border-black shadow-[8px_8px_0px_0px_#000] w-96`}>
-                <h2 className="text-3xl font-black mb-6 text-center uppercase italic">System Access</h2>
+                <h2 className="text-3xl font-black mb-6 text-center uppercase italic">系统登录</h2>
                 <form onSubmit={handleLogin} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="font-bold text-sm uppercase">Username</label>
+                        <label className="font-bold text-sm uppercase">用户名</label>
                         <input
                             className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
                             pattern="[ -~]*"
@@ -9230,11 +9230,11 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                 setUsername(safe);
                                 if (safe !== e.target.value) setError("用户名仅支持英文、数字与常见符号。");
                             }}
-                            placeholder="Enter username"
+                            placeholder="请输入用户名"
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="font-bold text-sm uppercase">Password</label>
+                        <label className="font-bold text-sm uppercase">密码</label>
                         <div className="relative">
                             <input
                                 className={`w-full border-2 border-black p-3 pr-16 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
@@ -9246,7 +9246,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                     setPassword(safe);
                                     if (safe !== e.target.value) setError("密码仅支持英文、数字与常见符号。");
                                 }}
-                                placeholder="Enter password"
+                                placeholder="请输入密码"
                             />
                             <button
                                 type="button"
@@ -9311,9 +9311,21 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                     {error && <div
                         className="bg-red-500 text-white p-2 font-bold text-sm border-2 border-black">{error}</div>}
                     <div className="flex gap-4">
-                        <PopButton variant="primary" className="w-full justify-center"
-                            disabled={loading}>{loading ? 'Accessing...' : 'Login'}</PopButton>
-                        <PopButton variant="ghost" type="button" onClick={() => setView('home')}>Cancel</PopButton>
+                        <PopButton
+                            variant="primary"
+                            className="flex-1 max-w-[160px] justify-center whitespace-nowrap px-4 py-2 text-sm"
+                            disabled={loading}
+                        >
+                            {loading ? '登录中...' : '登录'}
+                        </PopButton>
+                        <PopButton
+                            variant="ghost"
+                            type="button"
+                            onClick={() => setView('home')}
+                            className="min-w-[90px] justify-center whitespace-nowrap px-4 py-2 text-sm"
+                        >
+                            取消
+                        </PopButton>
                     </div>
                 </form>
             </div>
