@@ -1,4 +1,4 @@
-# SanguiBlog 技术手册 (Technical Manual)
+﻿# SanguiBlog 技术手册 (Technical Manual)
 
 
 
@@ -347,7 +347,7 @@ ole_permissions in bulk.
 
 3.  前端每次请求 API 时，在 Header 中携带 `Authorization: Bearer <token>`；`checkAuth` 仅在后端明确返回 `401` 时才会清除本地 Token，避免偶发网络错误导致登录状态被误清空。
 
-4.  登录防刷：同一 IP 10 分钟内连续 3 次登录失败后强制验证码，验证码为 4 位字母/数字扭曲图。前端在出现“验证码”提示后调用 `GET /api/auth/captcha` 获取 `imageBase64`，登录时需在 body 中额外提交 `captcha` 字段。
+4.  登录防刷：同一 IP 10 分钟内连续 3 次登录失败后强制验证码，验证码为 4 位字母/数字扭曲图。前端在出现“验证码”提示后调用 `GET /api/auth/captcha` 获取 `imageBase64`，登录时需在 body 中额外提交 `captcha` 字段。4.1 前端验证码刷新节流：登录页点击图片/按钮刷新验证码时会带 `force=true` 触发后端跳过 60s 复用缓存，并在前端本地施加 5 秒冷却（与后端二级速率限制一致）；冷却未结束继续刷新会提示“刷新过快，请X秒后再试”并直接返回。
 
 5.  登录校验与提示：用户名长度 3-32、密码 6-64，均限制为可打印 ASCII；后端在登录失败时会返回 `captchaRequired` 和 `remainingAttempts`（距离强制验证码前的剩余尝试次数，命中阈值后为 0），前端直接据此决定是否展示验证码与提示。
 
@@ -586,3 +586,4 @@ npm run dev
 - 扫描范围：所有文章（任意状态）与关于页的 Markdown/HTML 中引用的 `/uploads/posts/**` 资源；头像目录不在清理范围内。
 
 - 删除前需二次确认；删除后会尝试清理空目录，仅作用于 `uploads/posts/` 下的图片扩展名文件。
+

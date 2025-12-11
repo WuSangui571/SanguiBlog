@@ -9131,6 +9131,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const [captchaImage, setCaptchaImage] = useState("");
     const [captchaInput, setCaptchaInput] = useState("");
     const [captchaLoading, setCaptchaLoading] = useState(false);
+    const [captchaNextAllowedAt, setCaptchaNextAllowedAt] = useState(0);
     const [remainingAttempts, setRemainingAttempts] = useState(null);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -9143,10 +9144,18 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
         }).join("");
     };
 
-    const loadCaptcha = async () => {
+    const loadCaptcha = async (force = false) => {
+        const now = Date.now();
+        if (now < captchaNextAllowedAt) {
+            const waitSeconds = Math.ceil((captchaNextAllowedAt - now) / 1000);
+            setError(`刷新过快，请${waitSeconds}秒后再试`);
+            return;
+        }
+        // 前端也跟随后端 5s 防刷节奏，避免自动获取后立刻手动刷新导致被后端限流
+        setCaptchaNextAllowedAt(now + 5000);
         setCaptchaLoading(true);
         try {
-            const res = await fetchLoginCaptcha();
+            const res = await fetchLoginCaptcha(force);
             const data = res.data || res;
             setCaptchaImage(data?.imageBase64 || "");
             setCaptchaRequired(true);
@@ -9155,6 +9164,10 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
             }
         } catch (err) {
             setError(err.message || "获取验证码失败");
+            // 若非后端速率限制类错误，允许立刻重试
+            if (!/(过于频繁|too frequent)/.test(err.message || "")) {
+                setCaptchaNextAllowedAt(Date.now());
+            }
         } finally {
             setCaptchaLoading(false);
         }
