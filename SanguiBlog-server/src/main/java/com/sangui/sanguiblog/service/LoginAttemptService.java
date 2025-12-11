@@ -87,7 +87,7 @@ public class LoginAttemptService {
         return attempt.captchaCode.equalsIgnoreCase(input.trim());
     }
 
-    public CaptchaResponse generateCaptcha(String ip, String userAgent) {
+    public CaptchaResponse generateCaptcha(String ip, String userAgent, boolean forceRefresh) {
         String ua = userAgent != null ? userAgent : "";
         String cacheKey = ip + "|" + ua;
         Instant now = Instant.now();
@@ -101,7 +101,7 @@ public class LoginAttemptService {
         }
 
         // 缓存 60s 内复用
-        if (holder != null && holder.generatedAt != null
+        if (!forceRefresh && holder != null && holder.generatedAt != null
                 && Duration.between(holder.generatedAt, now).compareTo(CAPTCHA_CACHE) <= 0
                 && holder.imageBase64 != null && holder.code != null) {
             return new CaptchaResponse(holder.imageBase64, CAPTCHA_TTL.getSeconds(), true, remainingAttempts(ip));

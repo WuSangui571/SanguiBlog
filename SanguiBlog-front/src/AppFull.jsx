@@ -9270,7 +9270,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                             src={captchaImage}
                                             alt="captcha"
                                             className="h-14 w-32 border-2 border-black object-contain cursor-pointer select-none"
-                                            onClick={loadCaptcha}
+                                            onClick={() => loadCaptcha(true)}
                                             onError={() => {
                                                 setCaptchaImage("");
                                                 setError("验证码加载失败，请点击重新获取或稍后再试");
@@ -9281,7 +9281,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                     {!captchaImage && (
                                         <button
                                             type="button"
-                                            onClick={loadCaptcha}
+                                            onClick={() => loadCaptcha(true)}
                                             className={`px-3 py-2 border-2 border-dashed text-sm font-bold ${isDarkMode ? 'border-gray-200 bg-gray-800 text-gray-100' : 'border-black bg-white text-black'}`}
                                             disabled={captchaLoading}
                                         >

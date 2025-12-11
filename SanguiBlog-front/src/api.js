@@ -189,7 +189,10 @@ export const fetchRecentComments = (size = 5) => {
   return request(`/comments/recent${query}`);
 };
 
-export const fetchLoginCaptcha = () => request("/auth/captcha");
+export const fetchLoginCaptcha = (force = false) => {
+  const query = force ? "?force=true" : "";
+  return request(`/auth/captcha${query}`);
+};
 
 // About 单页
 export const fetchAbout = () => request("/about");
