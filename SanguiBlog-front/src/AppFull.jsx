@@ -2274,11 +2274,11 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                         </th>
                                     )}
                                     <th className="px-4 py-3 text-left">时间</th>
-                                    <th className="px-4 py-3 text-left">文章</th>
-                                    <th className="px-4 py-3 text-left">访客 IP</th>
+                                    <th className="px-4 py-3 text-left w-88">文章</th>
+                                    <th className="px-4 py-3 text-left min-w-[150px]">访客 IP</th>
                                     <th className="px-4 py-3 text-left min-w-[120px]">用户</th>
-                                    <th className="px-4 py-3 text-left">来源</th>
-                                    <th className="px-4 py-3 text-left">地理</th>
+                                    <th className="px-4 py-3 text-left min-w-[120px]">来源</th>
+                                    <th className="px-4 py-3 text-left min-w-[48px]">地理</th>
                                     {isSuperAdmin && <th className="px-4 py-3 text-right">操作</th>}
                                 </tr>
                             </thead>
@@ -2296,14 +2296,19 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                             </td>
                                         )}
                                         <td className="px-4 py-3 font-mono whitespace-nowrap">{visit.time || '-'}</td>
-                                        <td className="px-4 py-3">
-                                            <p className="font-semibold">{visit.title || '未命名文章'}</p>
+                                        <td className="px-4 py-3 w-88">
+                                            <p
+                                                className="font-semibold truncate max-w-[352px]"
+                                                title={visit.title || '未命名文章'}
+                                            >
+                                                {visit.title || '未命名文章'}
+                                            </p>
                                         </td>
-                                        <td className="px-4 py-3 font-mono break-all">{visit.ip || '-'}</td>
+                                        <td className="px-4 py-3 font-mono whitespace-nowrap min-w-[150px]">{visit.ip || '-'}</td>
                                         <td className="px-4 py-3 min-w-[120px]">
                                             {renderUserBadge(visit)}
                                         </td>
-                                        <td className="px-4 py-3">{renderReferrer(visit.referrer)}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">{renderReferrer(visit.referrer)}</td>
                                         <td className="px-4 py-3">{visit.geo || '未知'}</td>
                                         {isSuperAdmin && (
                                             <td className="px-4 py-3 text-right">

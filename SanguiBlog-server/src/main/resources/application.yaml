@@ -44,7 +44,7 @@ storage:
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 
 site:
-  version: "V2.0.0"
+  version: "V2.0.6"
   asset-base-url: http://localhost:8080/uploads
 #  asset-base-url: http://new.sangui.top/uploads
   hero:
@@ -57,4 +57,3 @@ site:
     icp-number: 浙ICP备2025167176号
     icp-link: https://beian.miit.gov.cn/
     powered-by: Powered by Spring Boot 3 & React 19
-
