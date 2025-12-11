@@ -9128,6 +9128,14 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const sanitizeAscii = (value) => {
+        if (!value) return "";
+        return [...value].filter((ch) => {
+            const code = ch.charCodeAt(0);
+            return code >= 32 && code <= 126; // 可打印 ASCII
+        }).join("");
+    };
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setError("");
@@ -9160,8 +9168,13 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                         <label className="font-bold text-sm uppercase">Username</label>
                         <input
                             className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+                            pattern="[ -~]*"
                             value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            onChange={(e) => {
+                                const safe = sanitizeAscii(e.target.value);
+                                setUsername(safe);
+                                if (safe !== e.target.value) setError("用户名仅支持英文、数字与常见符号。");
+                            }}
                             placeholder="Enter username"
                         />
                     </div>
@@ -9171,8 +9184,13 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                             <input
                                 className={`w-full border-2 border-black p-3 pr-16 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
                                 type={showPassword ? "text" : "password"}
+                                pattern="[ -~]*"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={(e) => {
+                                    const safe = sanitizeAscii(e.target.value);
+                                    setPassword(safe);
+                                    if (safe !== e.target.value) setError("密码仅支持英文、数字与常见符号。");
+                                }}
                                 placeholder="Enter password"
                             />
                             <button
