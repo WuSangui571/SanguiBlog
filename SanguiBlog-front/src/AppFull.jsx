@@ -9122,6 +9122,7 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
 }
 
 const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
+    const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -9147,7 +9148,11 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
             } else {
                 setUser(MOCK_USER);
             }
-            setView('home');
+            if (window.history.length > 1) {
+                navigate(-1);
+            } else {
+                setView('home');
+            }
         } catch (err) {
             setError(err.message || "\u767b\u5f55\u5931\u8d25");
         } finally {
