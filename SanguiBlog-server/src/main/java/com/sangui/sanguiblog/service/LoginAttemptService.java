@@ -54,6 +54,16 @@ public class LoginAttemptService {
         return hitThreshold || captchaValid;
     }
 
+    public int remainingAttempts(String ip) {
+        Attempt attempt = attempts.get(ip);
+        if (attempt == null || attempt.lastFailAt == null) return FAIL_THRESHOLD;
+        Instant now = Instant.now();
+        if (Duration.between(attempt.lastFailAt, now).compareTo(FAIL_WINDOW) > 0) {
+            return FAIL_THRESHOLD;
+        }
+        return Math.max(FAIL_THRESHOLD - attempt.failCount, 0);
+    }
+
     public boolean validateCaptcha(String ip, String input) {
         Attempt attempt = attempts.get(ip);
         if (attempt == null || attempt.captchaCode == null || attempt.captchaExpireAt == null) {
@@ -75,7 +85,7 @@ public class LoginAttemptService {
         attempt.captchaCode = code;
         attempt.captchaExpireAt = Instant.now().plus(CAPTCHA_TTL);
         String base64 = buildImageBase64(code);
-        return new CaptchaResponse(base64, CAPTCHA_TTL.getSeconds(), true);
+        return new CaptchaResponse(base64, CAPTCHA_TTL.getSeconds(), true, remainingAttempts(ip));
     }
 
     private String randomCode() {

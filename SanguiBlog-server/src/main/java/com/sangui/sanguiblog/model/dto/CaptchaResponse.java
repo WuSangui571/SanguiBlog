@@ -14,4 +14,5 @@ public class CaptchaResponse {
     private String imageBase64;
     private long expiresInSeconds;
     private boolean required;
+    private int remainingAttempts;
 }

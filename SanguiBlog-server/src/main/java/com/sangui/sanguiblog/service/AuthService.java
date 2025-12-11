@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.service;
 
 import com.sangui.sanguiblog.config.StoragePathResolver;
+import com.sangui.sanguiblog.exception.LoginChallengeException;
 import com.sangui.sanguiblog.model.dto.LoginRequest;
 import com.sangui.sanguiblog.model.dto.LoginResponse;
 import com.sangui.sanguiblog.model.dto.UserProfileDto;
@@ -35,11 +36,11 @@ public class AuthService {
         boolean captchaRequired = loginAttemptService.isCaptchaRequired(ip);
         if (captchaRequired) {
             if (!StringUtils.hasText(request.getCaptcha())) {
-                throw new IllegalArgumentException("需要验证码");
+                throw new LoginChallengeException("需要验证码", true, loginAttemptService.remainingAttempts(ip));
             }
             if (!loginAttemptService.validateCaptcha(ip, request.getCaptcha())) {
                 loginAttemptService.onFailure(ip);
-                throw new IllegalArgumentException("验证码错误");
+                throw new LoginChallengeException("验证码错误", true, loginAttemptService.remainingAttempts(ip));
             }
         }
 
@@ -51,7 +52,8 @@ public class AuthService {
             String msg = loginAttemptService.isCaptchaRequired(ip)
                     ? "用户名或密码错误，请完成验证码"
                     : "用户名或密码错误";
-            throw new IllegalArgumentException(msg);
+            throw new LoginChallengeException(msg, loginAttemptService.isCaptchaRequired(ip),
+                    loginAttemptService.remainingAttempts(ip));
         }
 
         User user = userRepository.findByUsername(request.getUsername())

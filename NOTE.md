@@ -349,6 +349,8 @@ ole_permissions in bulk.
 
 4.  登录防刷：同一 IP 10 分钟内连续 3 次登录失败后强制验证码，验证码为 4 位字母/数字扭曲图。前端在出现“验证码”提示后调用 `GET /api/auth/captcha` 获取 `imageBase64`，登录时需在 body 中额外提交 `captcha` 字段。
 
+5.  登录校验与提示：用户名长度 3-32、密码 6-64，均限制为可打印 ASCII；后端在登录失败时会返回 `captchaRequired` 和 `remainingAttempts`（距离强制验证码前的剩余尝试次数，命中阈值后为 0），前端直接据此决定是否展示验证码与提示。
+
 
 
 ---

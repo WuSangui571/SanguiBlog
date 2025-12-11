@@ -9131,6 +9131,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const [captchaImage, setCaptchaImage] = useState("");
     const [captchaInput, setCaptchaInput] = useState("");
     const [captchaLoading, setCaptchaLoading] = useState(false);
+    const [remainingAttempts, setRemainingAttempts] = useState(null);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -9149,6 +9150,9 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
             const data = res.data || res;
             setCaptchaImage(data?.imageBase64 || "");
             setCaptchaRequired(true);
+            if (typeof data?.remainingAttempts === 'number') {
+                setRemainingAttempts(data.remainingAttempts);
+            }
         } catch (err) {
             setError(err.message || "获取验证码失败");
         } finally {
@@ -9159,6 +9163,21 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setError("");
+        setRemainingAttempts(null);
+        const nameLen = username.length;
+        const passLen = password.length;
+        if (nameLen < 3 || nameLen > 32) {
+            setError("用户名长度需在 3-32 之间");
+            return;
+        }
+        if (passLen < 6 || passLen > 64) {
+            setError("密码长度需在 6-64 之间");
+            return;
+        }
+        if (captchaRequired && captchaInput.length === 0) {
+            setError("请输入验证码");
+            return;
+        }
         setLoading(true);
         try {
             if (doLogin) {
@@ -9175,9 +9194,15 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
             setCaptchaInput("");
             setCaptchaImage("");
             setCaptchaRequired(false);
+            setRemainingAttempts(null);
         } catch (err) {
             setError(err.message || "\u767b\u5f55\u5931\u8d25");
-            if (err.message && err.message.includes("验证码")) {
+            const needCaptcha = err.payload?.data?.captchaRequired;
+            const remain = err.payload?.data?.remainingAttempts;
+            if (typeof remain === 'number') {
+                setRemainingAttempts(remain);
+            }
+            if (needCaptcha) {
                 await loadCaptcha();
             }
         } finally {
@@ -9256,6 +9281,16 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                         >
                                             {captchaLoading ? '加载中' : '获取验证码'}
                                         </button>
+                                    )}
+                                    {typeof remainingAttempts === 'number' && remainingAttempts > 0 && (
+                                        <span className="text-xs font-bold text-red-600">
+                                            剩余尝试：{remainingAttempts}
+                                        </span>
+                                    )}
+                                    {typeof remainingAttempts === 'number' && remainingAttempts <= 0 && (
+                                        <span className="text-xs font-bold text-amber-600">
+                                            已触发验证码，请先完成图形验证
+                                        </span>
                                     )}
                                 </div>
                                 <input
