@@ -13,9 +13,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false
     properties:
-      hibernate.format_sql: true
+      hibernate.format_sql: false
   jackson:
     default-property-inclusion: non_null
 
@@ -36,15 +36,15 @@ springdoc:
 logging:
   level:
     com.sangui.sanguiblog: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
 
 storage:
 #    base-path: ${STORAGE_BASE_PATH:uploads}
     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
 
 site:
-  version: "V2.0.28"
+  version: "V2.0.29"
   asset-base-url: http://localhost:8080/uploads
 #  asset-base-url: http://new.sangui.top/uploads
   hero:
