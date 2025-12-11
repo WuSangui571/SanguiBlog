@@ -6116,14 +6116,14 @@ const PermissionsView = ({ isDarkMode }) => {
                                             onClick={() => handleGameOpen(game)}
                                             className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform"
                                         >
-                                            ??
+                                            预览
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleGameEdit(game)}
                                             className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black hover:-translate-y-0.5 transition-transform"
                                         >
-                                            ??
+                                            编辑
                                         </button>
                                         <button
                                             type="button"
@@ -9205,16 +9205,19 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
     const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
 
     const markdownComponents = useMemo(() => ({
-        img: ({ src, alt, className = '', ...props }) => (
-            <img
-                src={src}
-                alt={alt}
-                loading="lazy"
-                {...props}
-                className={`cursor-zoom-in max-w-full h-auto ${className}`.trim()}
-                onClick={() => setAboutPreview(src)}
-            />
-        ),
+        img: ({ src, alt, className = '', ...props }) => {
+            const resolvedSrc = buildAssetUrl(src || '', src || '');
+            return (
+                <img
+                    src={resolvedSrc}
+                    alt={alt}
+                    loading="lazy"
+                    {...props}
+                    className={`cursor-zoom-in max-w-full h-auto ${className}`.trim()}
+                    onClick={() => setAboutPreview(resolvedSrc)}
+                />
+            );
+        },
         code({ inline, className, children, ...props }) {
             const rawText = String(children);
             const textContent = rawText.replace(/\n$/, '');

@@ -379,7 +379,7 @@ ole_permissions in bulk.
 
 ### 4.4 静态资源与头像存储 (Static Resources & Avatars)
 
-*   **根路径配置**：`application.yaml` 暴露 `storage.base-path`（支持环境变量 `STORAGE_BASE_PATH`），用于指定所有本地静态资源的根目录，默认值为仓库根目录下的 `uploads`。应用启动时会自动创建根目录以及 `avatar/`、`posts/` 等必要子目录。
+*   **根路径配置**：`application.yaml` 暴露 `storage.base-path`（支持环境变量 `STORAGE_BASE_PATH`），默认值改为 `/home/sangui/uploads`，生产与开发一致；应用启动时会自动创建根目录以及 `avatar/`、`posts/` 等必要子目录。
 
 *   **站点版本**：`application.yaml` 提供 `site.version`，后端会在 `/api/site/meta` 中返回该值；前端首页 Banner 直接读取该字段显示 `SANGUI BLOG // <version>`，统一版本号来源。
 
@@ -393,7 +393,7 @@ ole_permissions in bulk.
 
 *   **前端处理**：`/admin/create-post` 的“插入图片”按钮会携带预留的 `slug` 调用 `/api/upload/post-assets`，后端在不清空目录的情况下追加文件并返回 `files`、`urls` 以及用分号拼接好的 `joined` 字符串；前端据此插入 Markdown，若需要把图片地址落库可直接使用 `joined`。`slug` 现改为按需懒生成：仅在首次上传图片或点击“立即发布”时才调用 `/api/upload/post-assets/reserve`，生成后在同一编辑会话内复用，发布成功会清空该值以避免产生空目录。
 
-*   **静态资源域名**：`application.yaml` 中新增 `site.asset-base-url`（可挂靠环境变量）用于声明图片 CDN/网关的完整域名，`/api/site/meta` 会把该值透传为 `assetBaseUrl`，前端的 `buildAssetUrl` 会优先使用它拼接 `/uploads/**`、`/avatar/**`、`/contact/**` 等路径；若未配置，则依次回落到 `VITE_ASSET_ORIGIN` → `VITE_API_BASE` 对应域名 → `window.location.origin` → `http://localhost:8080`，本地调试与线上部署都能拿到正确的资源地址。若 `asset-base-url` 本身带有路径（如 `https://cdn.example.com/uploads`），前端会自动去重重复的 `uploads/` 段，不会生成 `uploads/uploads/...`。
+*   **静态资源域名**：`site.asset-base-url` 支持占位 `${ASSET_BASE_URL:http://localhost:${server.port}/uploads}`，后端 `/api/site/meta` 会把该值透传给前端，`buildAssetUrl` 优先使用该值；若未配置，则依次回落到 `VITE_ASSET_ORIGIN` → `VITE_API_BASE` 对应域名 → `window.location.origin` → `http://localhost:8080`。若 `asset-base-url` 本身带有路径（如 `https://cdn.example.com/uploads`），前端会自动去重重复的 `uploads/` 段，不会生成 `uploads/uploads/...`。
 
 *   **文章图片预览**：文章详情页会为 Markdown/HTML 中的所有 `<img>` 元素注入 `cursor-zoom-in` 样式，并在点击时打开全屏遮罩预览，图片路径自动经过 `resolveAssetPath` 补全，关闭遮罩后恢复页面滚动。
 

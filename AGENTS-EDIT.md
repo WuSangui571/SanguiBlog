@@ -1201,3 +1201,13 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.3 (2025-12-11)
 - **模块/页面**：`/games` 内容收窄居中并露出两侧背景（日/月不再被遮挡）；游戏页面的上传、编辑、删除与排序迁移到后台 `/admin/settings` 的“游戏页面管理”块，前台仅保留浏览入口。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.3`
+
+## V2.1.4 (2025-12-11)
+- **系统设置/游戏管理**：修正后台游戏列表按钮文字乱码，预览/编辑按钮可读；前台默认背景保持可见。
+- **配置/静态资源**：后端 `storage.base-path` 默认改为可配置 `/home/sangui/uploads`，`site.asset-base-url` 支持 `${server.port}` 占位，避免写死本地路径；与 Nginx `/uploads/` 对齐。
+- **后端/校验文案**：`GamePageRequest` 校验提示改为中文防止乱码。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.4`
+
+## V2.1.5 (2025-12-11)
+- **关于页**：Markdown 图片统一经 `buildAssetUrl` 解析，避免开发环境显示为 `localhost:5173`，与文章页保持同源。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.5`
