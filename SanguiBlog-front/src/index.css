@@ -1,8 +1,18 @@
-@import "tailwindcss";
-/* Typography ��������� prose ��Щ�ࣩ */
+﻿@import "tailwindcss";
+/* Typography 插件（用于 prose 那些类） */
 @plugin "@tailwindcss/typography";
 
-/* ���Լ���ȫ����ʽ */
+/* 你自己的全局样式 */
 body {
   @apply bg-[#F0F0F0];
+}
+
+/* 隐藏浏览器自带的密码可见图标，避免与自定义图标重复（Edge 等会注入） */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none;
 }

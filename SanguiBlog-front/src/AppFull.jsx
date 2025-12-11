@@ -75,7 +75,7 @@ import {
 import AdminProfile from './pages/admin/Profile';
 import {
     Code, User, MessageSquare, Share2, X, Menu, ChevronRight,
-    Search, LogIn, LogOut, Settings, Eye, Github, Twitter,
+    Search, LogIn, LogOut, Settings, Eye, EyeOff, Github, Twitter,
     BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
     ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
@@ -9124,6 +9124,7 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
 const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -9166,13 +9167,23 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                     </div>
                     <div className="space-y-2">
                         <label className="font-bold text-sm uppercase">Password</label>
-                        <input
-                            className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter password"
-                        />
+                        <div className="relative">
+                            <input
+                                className={`w-full border-2 border-black p-3 pr-16 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Enter password"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((v) => !v)}
+                                className="absolute inset-y-0 right-3 my-auto h-9 w-10 inline-flex items-center justify-center border-2 border-black bg-white hover:bg-gray-100 active:translate-y-0.5 transition"
+                                aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
                     </div>
                     {error && <div
                         className="bg-red-500 text-white p-2 font-bold text-sm border-2 border-black">{error}</div>}
