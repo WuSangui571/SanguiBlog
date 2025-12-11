@@ -19,6 +19,7 @@ DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS post_tags;
 DROP TABLE IF EXISTS tags;
 DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS game_pages;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS system_broadcasts;
 DROP TABLE IF EXISTS site_settings;
@@ -131,6 +132,26 @@ CREATE TABLE posts (
     KEY idx_posts_status_published_at (status, published_at),
     CONSTRAINT fk_posts_author FOREIGN KEY (author_id) REFERENCES users(id),
     CONSTRAINT fk_posts_category FOREIGN KEY (category_id) REFERENCES categories(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- å°æ¸¸æˆ·/è‡ªå®šä¹‰ HTML é¡µé¢
+CREATE TABLE game_pages (
+    id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    title        VARCHAR(128) NOT NULL,
+    description  VARCHAR(512) NULL,
+    slug         VARCHAR(128) NOT NULL,
+    file_path    VARCHAR(512) NOT NULL,
+    status       ENUM('ACTIVE','DISABLED','DRAFT') NOT NULL DEFAULT 'ACTIVE',
+    sort_order   INT NOT NULL DEFAULT 0,
+    created_by   BIGINT UNSIGNED NULL,
+    updated_by   BIGINT UNSIGNED NULL,
+    created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_game_pages_slug (slug),
+    KEY idx_game_pages_status (status),
+    CONSTRAINT fk_game_pages_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_game_pages_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE tags (
@@ -444,6 +465,7 @@ INSERT INTO permissions (code, name, description) VALUES
   ('CATEGORY_MANAGE', '????',         '??/??/????'),
   ('TAG_MANAGE',      '????',         '??/??/????'),
   ('ANALYTICS_VIEW',  '?????',      '??????????'),
+  ('GAME_MANAGE',     '小游戏管理',    '上传/替换/删除自定义 HTML 页面'),
   ('USER_MANAGE',     '????',         '??/??/??????'),
   ('PERMISSION_MANAGE','????',        '????????????'),
   ('PROFILE_UPDATE',  '??????',   '?????????')
@@ -501,4 +523,3 @@ CREATE TABLE IF NOT EXISTS about_page (
 INSERT INTO about_page (id, content_md, content_html, updated_by, created_at, updated_at)
 SELECT 1, NULL, NULL, NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM about_page WHERE id = 1);
-

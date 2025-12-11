@@ -569,6 +569,24 @@ npm run dev
 
 * 前端：站点 `/about` 页面直接消费 `/api/about`；后台“关于页”编辑器提供 Markdown 输入与附件上传，保存成功后刷新前台内容。
 
+### 自定义 HTML / 游戏页面
+
+- 数据库：新增表 `game_pages`，字段包含 `title`、`description`、`slug`、`file_path`、`status`（ACTIVE/DISABLED/DRAFT）、`sort_order`、`created_by/updated_by`、时间戳。初始化 SQL 已创建空表，并为 SUPER_ADMIN 注入 `GAME_MANAGE` 权限。
+
+- 静态资源：HTML 文件落盘到 `uploads/games/{slug}/index.html`，对外访问路径 `/uploads/games/{slug}/index.html`；存储路径由 `StoragePathResolver` 统一管理。
+
+- 公共接口：
+  - `GET /api/games`：返回所有 `ACTIVE` 状态的页面列表（包含 title/description/url/slug/updatedAt）。
+  - `GET /api/games/{id}`：返回单页详情（ACTIVE 状态限制），前端通过 `iframe` 直接加载返回的 `url`。
+
+- 管理接口（需 `PERM_GAME_MANAGE`，默认仅 SUPER_ADMIN）：
+  - `GET /api/admin/games?page&size&keyword`：分页检索全部页面。
+  - `POST /api/admin/games`：`multipart/form-data`，字段 `title`(必填)、`description`、`status`、`sortOrder`、`file`(必填 HTML)。
+  - `PUT /api/admin/games/{id}`：同上，`file` 可选（为空则仅改元数据）。
+  - `DELETE /api/admin/games/{id}`：删除记录并尝试清理对应目录。
+
+- 前端：主导航新增「游戏」入口；`/games` 展示可用页面列表（普通用户仅浏览/跳转），`/games/:id` 通过 `iframe` 渲染上传的 HTML。超级管理员在列表页可上传/编辑/删除页面，并支持排序与上下线状态。
+
 ### Swagger 安全策略
 
 - 默认/生产环境：`springdoc.swagger-ui.enabled=false`、`api-docs.enabled=false`，杜绝接口模型暴露。
@@ -586,4 +604,3 @@ npm run dev
 - 扫描范围：所有文章（任意状态）与关于页的 Markdown/HTML 中引用的 `/uploads/posts/**` 资源；头像目录不在清理范围内。
 
 - 删除前需二次确认；删除后会尝试清理空目录，仅作用于 `uploads/posts/` 下的图片扩展名文件。
-

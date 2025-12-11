@@ -13,6 +13,10 @@ export default function HomePage() {
           navigate("/admin", { replace: true });
         } else if (view === "login") {
           navigate("/login", { replace: true });
+        } else if (view === "games") {
+          navigate("/games", { replace: true });
+        } else if (view === "game" && articleId) {
+          navigate(`/games/${articleId}`, { replace: true });
         }
       }}
     />

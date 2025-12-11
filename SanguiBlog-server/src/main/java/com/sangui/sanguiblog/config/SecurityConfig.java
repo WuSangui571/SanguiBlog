@@ -43,6 +43,7 @@ public class SecurityConfig {
                                 "/api/posts/**",
                                 "/api/about/**",
                                 "/api/analytics/page-view",
+                                "/api/games/**",
                                 "/avatar/**",
                                 "/contact/**",
                                 "/swagger-ui.html",

@@ -432,3 +432,55 @@ export const adminDeleteEmptyFolders = (paths = []) =>
     method: "POST",
     body: JSON.stringify({ paths }),
   });
+
+// 游戏 / 自定义 HTML 页面
+export const fetchGames = () => request("/games");
+export const fetchGameDetail = (id) => request(`/games/${id}`);
+
+export const adminFetchGames = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.keyword) search.append("keyword", params.keyword);
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/games${query}`);
+};
+
+const authFormRequest = async (path, method, formData) => {
+  const token = localStorage.getItem("sg_token");
+  const res = await fetch(`${API_ORIGIN}${path}`, {
+    method,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt || res.statusText);
+  }
+  return res.json();
+};
+
+export const adminCreateGame = async ({ title, description, status = "ACTIVE", sortOrder = 0, file }) => {
+  const formData = new FormData();
+  if (title) formData.append("title", title);
+  if (description) formData.append("description", description);
+  if (status) formData.append("status", status);
+  if (sortOrder !== undefined && sortOrder !== null) formData.append("sortOrder", sortOrder);
+  if (file) formData.append("file", file);
+  return authFormRequest("/api/admin/games", "POST", formData);
+};
+
+export const adminUpdateGame = async (id, { title, description, status, sortOrder, file }) => {
+  const formData = new FormData();
+  if (title) formData.append("title", title);
+  if (description !== undefined) formData.append("description", description ?? "");
+  if (status) formData.append("status", status);
+  if (sortOrder !== undefined && sortOrder !== null) formData.append("sortOrder", sortOrder);
+  if (file) formData.append("file", file);
+  return authFormRequest(`/api/admin/games/${id}`, "PUT", formData);
+};
+
+export const adminDeleteGame = (id) =>
+  request(`/admin/games/${id}`, {
+    method: "DELETE",
+  });

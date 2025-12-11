@@ -1,0 +1,256 @@
+package com.sangui.sanguiblog.service;
+
+import com.sangui.sanguiblog.config.StoragePathResolver;
+import com.sangui.sanguiblog.model.dto.GamePageAdminDto;
+import com.sangui.sanguiblog.model.dto.GamePageDetailDto;
+import com.sangui.sanguiblog.model.dto.GamePageDto;
+import com.sangui.sanguiblog.model.dto.GamePageRequest;
+import com.sangui.sanguiblog.model.dto.PageResponse;
+import com.sangui.sanguiblog.model.entity.GamePage;
+import com.sangui.sanguiblog.model.repository.GamePageRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class GamePageService {
+
+    private final GamePageRepository gamePageRepository;
+    private final StoragePathResolver storagePathResolver;
+
+    @Transactional(readOnly = true)
+    public List<GamePageDto> listActive() {
+        return gamePageRepository.findAllByStatusOrderBySortOrderDescUpdatedAtDesc(GamePage.Status.ACTIVE)
+                .stream()
+                .sorted(Comparator.comparing(GamePage::getSortOrder, Comparator.nullsLast(Integer::compareTo)).reversed()
+                        .thenComparing(GamePage::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<GamePageAdminDto> adminList(String keyword, int page, int size) {
+        PageRequest pageable = PageRequest.of(Math.max(page - 1, 0), Math.max(size, 1), Sort.by(Sort.Direction.DESC, "updatedAt"));
+        Page<GamePage> result;
+        if (StringUtils.hasText(keyword)) {
+            result = gamePageRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword, pageable);
+        } else {
+            result = gamePageRepository.findAll(pageable);
+        }
+        List<GamePageAdminDto> records = result.getContent().stream()
+                .map(this::toAdminDto)
+                .toList();
+        return PageResponse.<GamePageAdminDto>builder()
+                .records(records)
+                .total(result.getTotalElements())
+                .page(page)
+                .size(size)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public GamePageDetailDto getDetail(Long idOrNull) {
+        if (idOrNull == null) {
+            throw new IllegalArgumentException("游戏页面不存在");
+        }
+        GamePage page = gamePageRepository.findById(idOrNull)
+                .orElseThrow(() -> new IllegalArgumentException("游戏页面不存在"));
+        if (page.getStatus() != GamePage.Status.ACTIVE) {
+            throw new IllegalStateException("该页面未发布或已停用");
+        }
+        return toDetailDto(page);
+    }
+
+    @Transactional
+    public GamePageAdminDto create(GamePageRequest request, MultipartFile file, Long operatorId) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("请上传 HTML 文件");
+        }
+        GamePage entity = new GamePage();
+        entity.setTitle(request.getTitle());
+        entity.setDescription(request.getDescription());
+        entity.setStatus(parseStatus(request.getStatus(), GamePage.Status.ACTIVE));
+        entity.setSortOrder(Optional.ofNullable(request.getSortOrder()).orElse(0));
+        entity.setSlug(generateSlug(request.getTitle()));
+        entity.setCreatedBy(operatorId);
+        entity.setUpdatedBy(operatorId);
+        entity.setCreatedAt(Instant.now());
+        entity.setUpdatedAt(Instant.now());
+
+        String filePath = storeHtmlFile(entity.getSlug(), file);
+        entity.setFilePath(filePath);
+        GamePage saved = gamePageRepository.save(entity);
+        return toAdminDto(saved);
+    }
+
+    @Transactional
+    public GamePageAdminDto update(Long id, GamePageRequest request, MultipartFile file, Long operatorId) {
+        GamePage entity = gamePageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("游戏页面不存在"));
+        if (StringUtils.hasText(request.getTitle())) {
+            entity.setTitle(request.getTitle());
+        }
+        entity.setDescription(request.getDescription());
+        if (request.getStatus() != null) {
+            entity.setStatus(parseStatus(request.getStatus(), entity.getStatus()));
+        }
+        if (request.getSortOrder() != null) {
+            entity.setSortOrder(request.getSortOrder());
+        }
+        if (file != null && !file.isEmpty()) {
+            String filePath = storeHtmlFile(entity.getSlug(), file);
+            entity.setFilePath(filePath);
+        }
+        entity.setUpdatedBy(operatorId);
+        entity.setUpdatedAt(Instant.now());
+        return toAdminDto(gamePageRepository.save(entity));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        GamePage entity = gamePageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("游戏页面不存在"));
+        deleteFileQuietly(entity.getFilePath());
+        gamePageRepository.delete(entity);
+    }
+
+    private GamePage.Status parseStatus(String status, GamePage.Status defaultStatus) {
+        if (!StringUtils.hasText(status)) return defaultStatus;
+        try {
+            return GamePage.Status.valueOf(status.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return defaultStatus;
+        }
+    }
+
+    private String generateSlug(String title) {
+        String base = StringUtils.hasText(title) ? title : "game";
+        String normalized = base.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        if (!StringUtils.hasText(normalized)) {
+            normalized = "game";
+        }
+        String slug = normalized;
+        int guard = 0;
+        while (gamePageRepository.existsBySlug(slug) && guard < 5) {
+            slug = normalized + "-" + UUID.randomUUID().toString().substring(0, 6);
+            guard++;
+        }
+        if (gamePageRepository.existsBySlug(slug)) {
+            slug = "game-" + UUID.randomUUID().toString().substring(0, 8);
+        }
+        return slug;
+    }
+
+    private String storeHtmlFile(String slug, MultipartFile file) {
+        String original = file.getOriginalFilename();
+        String extension = "html";
+        if (original != null && original.contains(".")) {
+            extension = original.substring(original.lastIndexOf('.') + 1);
+        }
+        if (!extension.equalsIgnoreCase("html") && !extension.equalsIgnoreCase("htm")) {
+            throw new IllegalArgumentException("仅支持上传 HTML 文件");
+        }
+        String filename = "index.html";
+        Path dir = storagePathResolver.ensureSubDirectory("games", slug);
+        try {
+            Path target = dir.resolve(filename).normalize();
+            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            Path relative = storagePathResolver.getRootPath().relativize(target.toAbsolutePath().normalize());
+            String normalized = relative.toString().replace('\\', '/');
+            if (!normalized.startsWith("uploads/")) {
+                normalized = "uploads/" + normalized;
+            }
+            return normalized;
+        } catch (IOException e) {
+            throw new IllegalStateException("保存 HTML 文件失败: " + e.getMessage(), e);
+        }
+    }
+
+    private void deleteFileQuietly(String filePath) {
+        if (!StringUtils.hasText(filePath)) return;
+        try {
+            Path target = storagePathResolver.getRootPath().resolve(filePath).normalize();
+            if (Files.exists(target)) {
+                Files.delete(target);
+            }
+            // also try to delete parent directory if empty
+            Path parent = target.getParent();
+            if (parent != null && Files.isDirectory(parent)) {
+                try (var stream = Files.list(parent)) {
+                    if (!stream.findAny().isPresent()) {
+                        Files.delete(parent);
+                    }
+                }
+            }
+        } catch (IOException ignored) {
+        }
+    }
+
+    private String buildUrl(GamePage entity) {
+        if (entity == null || !StringUtils.hasText(entity.getFilePath())) return null;
+        String normalized = entity.getFilePath().replace('\\', '/');
+        if (!normalized.startsWith("uploads/") && !normalized.startsWith("/uploads/")) {
+            normalized = "uploads/" + normalized.replaceFirst("^/+", "");
+        }
+        return normalized.startsWith("/") ? normalized : "/" + normalized;
+    }
+
+    private GamePageDto toDto(GamePage entity) {
+        return GamePageDto.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .url(buildUrl(entity))
+                .slug(entity.getSlug())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
+    private GamePageAdminDto toAdminDto(GamePage entity) {
+        return GamePageAdminDto.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .slug(entity.getSlug())
+                .url(buildUrl(entity))
+                .status(entity.getStatus().name())
+                .sortOrder(entity.getSortOrder())
+                .createdBy(entity.getCreatedBy())
+                .updatedBy(entity.getUpdatedBy())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
+    private GamePageDetailDto toDetailDto(GamePage entity) {
+        return GamePageDetailDto.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .slug(entity.getSlug())
+                .url(buildUrl(entity))
+                .status(entity.getStatus().name())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+}

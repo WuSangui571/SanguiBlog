@@ -14,6 +14,8 @@ export default function ArticlePage() {
         if (view === "admin") navigate("/admin", { replace: true });
         if (view === "login") navigate("/login", { replace: true });
         if (view === "article" && articleId && articleId !== aid) navigate(`/article/${articleId}`, { replace: true });
+        if (view === "games") navigate("/games", { replace: true });
+        if (view === "game" && articleId) navigate(`/games/${articleId}`, { replace: true });
       }}
     />
   );

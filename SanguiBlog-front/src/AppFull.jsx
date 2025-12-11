@@ -36,6 +36,12 @@ import {
     adminDeleteUnusedAssets,
     adminScanEmptyFolders,
     adminDeleteEmptyFolders,
+    fetchGames,
+    fetchGameDetail,
+    adminFetchGames,
+    adminCreateGame,
+    adminUpdateGame,
+    adminDeleteGame,
     adminFetchAbout,
     adminSaveAbout,
     fetchMyPermissions,
@@ -1342,6 +1348,7 @@ const NAVIGATION_HEIGHT = 80;
 const PRIMARY_NAV_ITEMS = [
     { key: 'home', label: '首页' },
     { key: 'archive', label: '归档' },
+    { key: 'games', label: '游戏' },
     { key: 'about', label: '关于' }
 ];
 
@@ -1362,7 +1369,7 @@ const Navigation = ({
     pageSizeOptions = PAGE_SIZE_OPTIONS
 }) => {
     const roleInfo = user ? ROLES[user.role] : null;
-    const activeView = currentView || 'home';
+    const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [logoClicks, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
@@ -1591,7 +1598,7 @@ const Navigation = ({
                             <div className={`flex items-center justify-between gap-4 p-4 border-2 border-black rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                                 <div className="space-y-1">
                                     <div className="font-bold text-sm">彩蛋背景</div>
-                                    <div className="text-xs text-gray-500">显示/隐藏太阳与月亮动效（本地记忆）</div>
+                                    <div className="text-xs text-gray-500">显示/隐藏太阳与月亮动效</div>
                                 </div>
                                 <button
                                     onClick={() => onToggleBackground && onToggleBackground()}
@@ -1611,7 +1618,7 @@ const Navigation = ({
                             <div className={`flex items-center justify-between gap-4 p-4 border-2 border-black rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                                 <div className="space-y-1">
                                     <div className="font-bold text-sm">首页每页文章数</div>
-                                    <div className="text-xs text-gray-500">默认 5 条，可选 10 / 20，保存在本地浏览器。</div>
+                                    <div className="text-xs text-gray-500">默认 5 条，可选 10 / 20。</div>
                                 </div>
                                 <select
                                     value={pageSize}
@@ -1625,7 +1632,7 @@ const Navigation = ({
                             </div>
 
                             <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                更多开关可在此扩展，当前包含彩蛋背景与分页容量；设定对所有用户可见并存储在本地浏览器。
+                                系统设定存储在本地浏览器。
                             </div>
                         </div>
                     </motion.div>
@@ -7003,7 +7010,7 @@ const ScrollToTop = ({ isDarkMode }) => {
 
 // --- 5. Main App ---
 
-export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, onViewChange }) {
+export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, initialGameId = null, onViewChange }) {
     const {
         meta,
         categories,
@@ -7027,6 +7034,16 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const [view, setView] = useState(initialView);
     const [user, setUser] = useState(null);
     const [articleId, setArticleId] = useState(initialArticleId);
+    const [gameId, setGameId] = useState(initialGameId);
+    const [gameList, setGameList] = useState([]);
+    const [gameListLoading, setGameListLoading] = useState(false);
+    const [gameListError, setGameListError] = useState('');
+    const [gameDetail, setGameDetail] = useState(null);
+    const [gameDetailLoading, setGameDetailLoading] = useState(false);
+    const [gameDetailError, setGameDetailError] = useState('');
+    const [gameForm, setGameForm] = useState({ title: '', description: '', status: 'ACTIVE', sortOrder: 0, file: null });
+    const [savingGame, setSavingGame] = useState(false);
+    const [editingGameId, setEditingGameId] = useState(null);
     const [activeParent, setActiveParent] = useState("all");
     const [activeSub, setActiveSub] = useState("all");
     const [homePageSize, setHomePageSize] = useState(() => {
@@ -7205,6 +7222,45 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         setArticleId(postId);
         setView('article');
     }, [setArticleId, setView]);
+
+    const loadGameList = useCallback(async () => {
+        setGameListLoading(true);
+        setGameListError('');
+        try {
+            let res;
+            if (user?.role === 'SUPER_ADMIN') {
+                res = await adminFetchGames({ page: 1, size: 100 });
+                const data = res?.data || res;
+                setGameList((data && data.records) ? data.records : (data || []));
+            } else {
+                res = await fetchGames();
+                const data = res?.data || res;
+                setGameList(data || []);
+            }
+        } catch (err) {
+            console.warn('load games failed', err);
+            setGameListError(err?.message || '加载页面失败');
+        } finally {
+            setGameListLoading(false);
+        }
+    }, [user]);
+
+    const loadGameDetail = useCallback(async (id) => {
+        if (!id) return;
+        setGameDetail(null);
+        setGameDetailError('');
+        setGameDetailLoading(true);
+        try {
+            const res = await fetchGameDetail(id);
+            const data = res?.data || res;
+            setGameDetail(data);
+        } catch (err) {
+            console.warn('load game detail failed', err);
+            setGameDetailError(err?.message || '无法加载页面');
+        } finally {
+            setGameDetailLoading(false);
+        }
+    }, []);
     const footerInfo = meta?.footer || {};
     const footerYear = footerInfo.year || new Date().getFullYear();
     const footerBrand = footerInfo.brand || 'SANGUI BLOG';
@@ -7332,8 +7388,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, [posts]);
 
     useEffect(() => {
-        onViewChange && onViewChange(view, articleId);
-    }, [view, articleId]);
+        const targetId = view === 'article' ? articleId : (view === 'game' ? gameId : null);
+        onViewChange && onViewChange(view, targetId);
+    }, [view, articleId, gameId]);
 
     useEffect(() => {
         const previousView = lastViewRef.current;
@@ -7355,8 +7412,14 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             loadPosts && loadPosts();
         } else if (view === 'article' && articleId) {
             loadArticle && loadArticle(articleId);
+        } else if (view === 'games') {
+            if (!gameListLoading && gameList.length === 0) {
+                loadGameList();
+            }
+        } else if (view === 'game' && gameId) {
+            loadGameDetail(gameId);
         }
-    }, [view, articleId, loadPosts, loadArticle]);
+    }, [view, articleId, loadPosts, loadArticle, gameId, loadGameDetail, loadGameList, gameList.length, gameListLoading]);
 
     useEffect(() => {
         if (view === 'archive' && archivePosts.length === 0 && !archiveLoading) {
@@ -7376,6 +7439,20 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             if (claimAutoPageView('archive')) {
                 sendPageView({
                     pageTitle: 'Archive',
+                    geo: getGeoHint()
+                });
+            }
+        } else if (view === 'games') {
+            if (claimAutoPageView('games')) {
+                sendPageView({
+                    pageTitle: 'GameHub',
+                    geo: getGeoHint()
+                });
+            }
+        } else if (view === 'game') {
+            if (claimAutoPageView(`game-${gameId || 'detail'}`)) {
+                sendPageView({
+                    pageTitle: 'GameDetail',
                     geo: getGeoHint()
                 });
             }
@@ -7407,6 +7484,92 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         setView('admin');
         navigate('/admin/profile');
     };
+
+    const resetGameForm = useCallback((defaults = {}) => {
+        setGameForm({
+            title: '',
+            description: '',
+            status: 'ACTIVE',
+            sortOrder: 0,
+            file: null,
+            ...defaults
+        });
+        setEditingGameId(null);
+    }, []);
+
+    const handleOpenGame = useCallback((game) => {
+        const target = game || {};
+        const targetUrl = target.url ? buildAssetUrl(target.url) : '';
+        if (targetUrl) {
+            if (typeof window !== 'undefined') {
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            }
+        } else if (target.id) {
+            setGameId(target.id);
+            setView('game');
+        }
+    }, []);
+
+    const handleGameBack = useCallback(() => {
+        setView('games');
+        setGameDetailError('');
+    }, []);
+
+    const handleGameEdit = useCallback((game) => {
+        if (!game) return;
+        setEditingGameId(game.id);
+        resetGameForm({
+            title: game.title || '',
+            description: game.description || '',
+            status: game.status || 'ACTIVE',
+            sortOrder: game.sortOrder ?? 0,
+            file: null
+        });
+    }, [resetGameForm]);
+
+    const handleGameDelete = useCallback(async (id) => {
+        if (!id || user?.role !== 'SUPER_ADMIN') return;
+        const ok = typeof window !== 'undefined' ? window.confirm('确认删除该 HTML 页面吗？此操作不可恢复。') : true;
+        if (!ok) return;
+        try {
+            await adminDeleteGame(id);
+            await loadGameList();
+            if (gameId === id) {
+                setGameId(null);
+                setGameDetail(null);
+            }
+        } catch (err) {
+            setGameListError(err?.message || '删除失败');
+        }
+    }, [adminDeleteGame, loadGameList, user?.role, gameId]);
+
+    const handleGameSubmit = useCallback(async () => {
+        if (user?.role !== 'SUPER_ADMIN') return;
+        if (!gameForm.title) {
+            setGameListError('请填写标题');
+            return;
+        }
+        if (!editingGameId && !gameForm.file) {
+            setGameListError('请先选择要上传的 HTML 文件');
+            return;
+        }
+        setSavingGame(true);
+        setGameListError('');
+        try {
+            if (editingGameId) {
+                await adminUpdateGame(editingGameId, gameForm);
+            } else {
+                await adminCreateGame(gameForm);
+            }
+            await loadGameList();
+            resetGameForm();
+        } catch (err) {
+            console.warn('save game failed', err);
+            setGameListError(err?.message || '保存失败');
+        } finally {
+            setSavingGame(false);
+        }
+    }, [user?.role, gameForm, editingGameId, adminUpdateGame, adminCreateGame, loadGameList, resetGameForm]);
 
     const handleCategoryClick = (parentLabel, subLabel) => {
         const categoriesList = categories && categories.length ? categories : CATEGORY_TREE;
@@ -7441,6 +7604,224 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const handleBackgroundToggle = useCallback(() => {
         setBackgroundEnabled((prev) => !prev);
     }, []);
+
+    const renderGamesView = () => {
+        const isAdmin = user?.role === 'SUPER_ADMIN';
+        const formatDate = (value) => (value ? new Date(value).toLocaleString() : '—');
+        return (
+            <div className={`pt-28 pb-16 px-4 md:px-10 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
+                            <span>游戏中心</span>
+                            <span className="text-xs px-2 py-1 rounded-full bg-[#FFD700] text-black font-bold">实验室</span>
+                        </h1>
+                        <p className="text-sm text-gray-500 mt-1">超级管理员上传的独立 HTML/JS/CSS 页面，点击即可游玩或体验。</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={loadGameList}
+                            className="px-4 py-2 border-2 border-black bg-white text-black font-bold hover:bg-[#FFD700]"
+                        >
+                            刷新列表
+                        </button>
+                    </div>
+                </div>
+
+                {gameListError && (
+                    <div className="mb-4 px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-lg">
+                        {gameListError}
+                    </div>
+                )}
+
+                {isAdmin && (
+                    <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 mb-6 shadow-sm`}>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xl font-black">{editingGameId ? '编辑页面' : '上传新页面'}</h3>
+                            {editingGameId && (
+                                <button
+                                    onClick={() => resetGameForm()}
+                                    className="text-sm underline decoration-dotted"
+                                >
+                                    取消编辑
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-semibold">标题</label>
+                                <input
+                                    value={gameForm.title}
+                                    onChange={(e) => setGameForm((prev) => ({ ...prev, title: e.target.value }))}
+                                    className="border-2 border-black px-3 py-2 rounded"
+                                    placeholder="例如：像素跑酷 / H5 Demo"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-semibold">状态</label>
+                                <select
+                                    value={gameForm.status}
+                                    onChange={(e) => setGameForm((prev) => ({ ...prev, status: e.target.value }))}
+                                    className="border-2 border-black px-3 py-2 rounded"
+                                >
+                                    <option value="ACTIVE">ACTIVE - 对所有人可见</option>
+                                    <option value="DISABLED">DISABLED - 仅管理端可见</option>
+                                    <option value="DRAFT">DRAFT - 草稿</option>
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-2 md:col-span-2">
+                                <label className="text-sm font-semibold">描述（可选）</label>
+                                <textarea
+                                    value={gameForm.description}
+                                    onChange={(e) => setGameForm((prev) => ({ ...prev, description: e.target.value }))}
+                                    rows={3}
+                                    className="border-2 border-black px-3 py-2 rounded"
+                                    placeholder="给玩家一句话介绍或使用说明"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-semibold">排序权重（大在前）</label>
+                                <input
+                                    type="number"
+                                    value={gameForm.sortOrder ?? 0}
+                                    onChange={(e) => setGameForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))}
+                                    className="border-2 border-black px-3 py-2 rounded"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-semibold">HTML 文件 {editingGameId ? '（不更换可留空）' : ''}</label>
+                                <input
+                                    type="file"
+                                    accept=".html,.htm,text/html"
+                                    onChange={(e) => setGameForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
+                                    className="border-2 border-black px-3 py-2 rounded bg-white"
+                                />
+                                {gameForm.file && <span className="text-xs text-gray-500">已选择：{gameForm.file.name}</span>}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 mt-4">
+                            <button
+                                onClick={handleGameSubmit}
+                                disabled={savingGame}
+                                className="px-4 py-2 border-2 border-black bg-black text-white font-bold hover:bg-[#FF0080] disabled:opacity-60"
+                            >
+                                {savingGame ? '保存中…' : (editingGameId ? '保存修改' : '上传页面')}
+                            </button>
+                            <button
+                                onClick={() => resetGameForm()}
+                                className="px-4 py-2 border-2 border-black bg-white text-black font-bold"
+                            >
+                                重置
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {gameListLoading && Array.from({ length: 3 }).map((_, idx) => (
+                        <div key={`skeleton-${idx}`} className="border-2 border-dashed border-gray-300 rounded-xl p-4 animate-pulse">
+                            <div className="h-4 bg-gray-300 rounded w-1/2 mb-3"></div>
+                            <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                        </div>
+                    ))}
+                    {!gameListLoading && gameList.length === 0 && (
+                        <div className="md:col-span-2 lg:col-span-3 text-center py-10 border-2 border-dashed rounded-xl">
+                            还没有上传的 HTML 页面，{isAdmin ? '点击上方表单上传一个吧' : '敬请期待'}。
+                        </div>
+                    )}
+                    {gameList.map((game) => (
+                        <div key={game.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 flex flex-col justify-between`}>
+                            <div className="flex items-start justify-between gap-2">
+                                <div>
+                                    <h3 className="text-xl font-black">{game.title}</h3>
+                                    <p className="text-sm text-gray-500 mt-1 line-clamp-3">{game.description || '暂无描述'}</p>
+                                    <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-2 items-center">
+                                        <span>更新：{formatDate(game.updatedAt || game.createdAt)}</span>
+                                        {game.status && <span className="px-2 py-0.5 rounded-full border text-[11px]">{game.status}</span>}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleOpenGame(game)}
+                                    className="px-3 py-1 border-2 border-black bg-[#FFD700] text-black font-bold rounded hover:-translate-y-0.5 transition-transform"
+                                >
+                                    进入
+                                </button>
+                            </div>
+                            {isAdmin && (
+                                <div className="flex items-center gap-3 mt-4">
+                                    <button
+                                        onClick={() => handleGameEdit(game)}
+                                        className="text-sm underline decoration-dotted"
+                                    >
+                                        编辑
+                                    </button>
+                                    <button
+                                        onClick={() => handleGameDelete(game.id)}
+                                        className="text-sm text-red-600 underline decoration-dotted"
+                                    >
+                                        删除
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    const renderGamePlayer = () => {
+        const target = gameDetail || gameList.find((g) => g.id === gameId);
+        const src = target?.url ? buildAssetUrl(target.url) : '';
+        return (
+            <div className={`pt-24 pb-10 px-4 md:px-8 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen`}>
+                <div className="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleGameBack}
+                                className="px-3 py-1 border-2 border-black bg-white text-black font-bold hover:bg-[#FFD700]"
+                            >
+                                ← 返回列表
+                            </button>
+                            {target?.url && (
+                                <a
+                                    href={src}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-3 py-1 border-2 border-black bg-black text-white font-bold hover:bg-[#FF0080]"
+                                >
+                                    新标签打开
+                                </a>
+                            )}
+                        </div>
+                        <h2 className="text-2xl font-black mt-3">{target?.title || '游戏页面'}</h2>
+                        {target?.description && <p className="text-sm text-gray-500 mt-1">{target.description}</p>}
+                    </div>
+                    <button
+                        onClick={() => gameId && loadGameDetail(gameId)}
+                        className="px-3 py-1 border-2 border-black bg-white text-black font-bold"
+                    >
+                        重新加载
+                    </button>
+                </div>
+                {gameDetailError && (
+                    <div className="mb-4 px-4 py-3 border-2 border-red-500 bg-red-50 text-red-700 rounded-lg font-semibold">
+                        {gameDetailError}
+                    </div>
+                )}
+                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl overflow-hidden shadow-lg min-h-[70vh]`}>
+                    {gameDetailLoading && <div className="p-6 text-center text-sm">加载中…</div>}
+                    {!gameDetailLoading && src ? (
+                        <iframe title={target?.title || 'game'} src={src} className="w-full min-h-[70vh] border-0"></iframe>
+                    ) : (
+                        <div className="p-6 text-center text-sm">暂无可展示的页面</div>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     const renderView = () => {
         switch (view) {
@@ -7500,6 +7881,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         onOpenArticle={handleArchiveArticleOpen}
                     />
                 );
+            case 'games':
+                return renderGamesView();
+            case 'game':
+                return renderGamePlayer();
             case 'article':
                 return (
                     <ArticleDetail
