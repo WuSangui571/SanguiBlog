@@ -7723,9 +7723,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                             <p className="text-xs uppercase tracking-[0.2em] text-[#FFD700] font-semibold">Indie Lab</p>
                             <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
                                 <span>游戏中心</span>
-                                <span className="text-[11px] px-2 py-1 rounded-full bg-[#FFD700] text-black font-bold shadow-sm">实验室</span>
+                                <span className="text-[11px] px-2 py-1 rounded-full bg-[#FFD700] text-black font-bold shadow-sm">测试</span>
                             </h1>
-                            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>独立 HTML/JS/CSS 体验集合，点击卡片在新标签打开。</p>
+                            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>点击『进入」卡片在新标签打开。</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <button
