@@ -23,8 +23,11 @@ public class LoginAttemptService {
     private static final int FAIL_THRESHOLD = 3;
     private static final Duration FAIL_WINDOW = Duration.ofMinutes(10);
     private static final Duration CAPTCHA_TTL = Duration.ofMinutes(5);
+    private static final Duration CAPTCHA_CACHE = Duration.ofSeconds(60);
+    private static final Duration CAPTCHA_RATE_LIMIT = Duration.ofSeconds(5);
 
-    private final Map<String, Attempt> attempts = new ConcurrentHashMap<>();
+    private final Map<String, Attempt> attempts = new ConcurrentHashMap<>(); // key: ip
+    private final Map<String, CaptchaHolder> captchaCache = new ConcurrentHashMap<>(); // key: ip|ua
     private final SecureRandom random = new SecureRandom();
     private static final char[] CHAR_POOL = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
 
@@ -78,13 +81,32 @@ public class LoginAttemptService {
         return attempt.captchaCode.equalsIgnoreCase(input.trim());
     }
 
-    public CaptchaResponse generateCaptcha(String ip) {
+    public CaptchaResponse generateCaptcha(String ip, String userAgent) {
+        String ua = userAgent != null ? userAgent : "";
+        String cacheKey = ip + "|" + ua;
+        Instant now = Instant.now();
+
+        // 速率限制
+        CaptchaHolder holder = captchaCache.get(cacheKey);
+        if (holder != null && holder.generatedAt != null
+                && Duration.between(holder.generatedAt, now).compareTo(CAPTCHA_RATE_LIMIT) < 0) {
+            throw new IllegalArgumentException("请求验证码过于频繁，请稍后再试");
+        }
+
+        // 缓存 60s 内复用
+        if (holder != null && holder.generatedAt != null
+                && Duration.between(holder.generatedAt, now).compareTo(CAPTCHA_CACHE) <= 0
+                && holder.imageBase64 != null && holder.code != null) {
+            return new CaptchaResponse(holder.imageBase64, CAPTCHA_TTL.getSeconds(), true, remainingAttempts(ip));
+        }
+
         Attempt attempt = attempts.computeIfAbsent(ip, k -> new Attempt());
         attempt.failCount = Math.max(attempt.failCount, FAIL_THRESHOLD); // 一旦触发过失败，保持需要验证码
         String code = randomCode();
         attempt.captchaCode = code;
         attempt.captchaExpireAt = Instant.now().plus(CAPTCHA_TTL);
         String base64 = buildImageBase64(code);
+        captchaCache.put(cacheKey, new CaptchaHolder(code, base64, now));
         return new CaptchaResponse(base64, CAPTCHA_TTL.getSeconds(), true, remainingAttempts(ip));
     }
 
@@ -138,4 +160,6 @@ public class LoginAttemptService {
         String captchaCode;
         Instant captchaExpireAt;
     }
+
+    private record CaptchaHolder(String code, String imageBase64, Instant generatedAt) {}
 }

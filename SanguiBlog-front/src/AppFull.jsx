@@ -9251,7 +9251,9 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword((v) => !v)}
-                                className="absolute inset-y-0 right-3 my-auto h-9 w-10 inline-flex items-center justify-center border-2 border-black bg-white hover:bg-gray-100 active:translate-y-0.5 transition"
+                                className={`absolute inset-y-0 right-3 my-auto h-9 w-10 inline-flex items-center justify-center border-2 active:translate-y-0.5 transition ${isDarkMode
+                                    ? 'border-gray-300 bg-gray-800 text-gray-100 hover:bg-gray-700'
+                                    : 'border-black bg-white text-black hover:bg-gray-100'}`}
                                 aria-label={showPassword ? '隐藏密码' : '显示密码'}
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -9269,6 +9271,10 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                             alt="captcha"
                                             className="h-14 w-32 border-2 border-black object-contain cursor-pointer select-none"
                                             onClick={loadCaptcha}
+                                            onError={() => {
+                                                setCaptchaImage("");
+                                                setError("验证码加载失败，请点击重新获取或稍后再试");
+                                            }}
                                             title={captchaLoading ? '加载中…' : '点击刷新验证码'}
                                         />
                                     )}
@@ -9276,7 +9282,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                         <button
                                             type="button"
                                             onClick={loadCaptcha}
-                                            className="px-3 py-2 border-2 border-dashed border-black bg-white text-sm font-bold"
+                                            className={`px-3 py-2 border-2 border-dashed text-sm font-bold ${isDarkMode ? 'border-gray-200 bg-gray-800 text-gray-100' : 'border-black bg-white text-black'}`}
                                             disabled={captchaLoading}
                                         >
                                             {captchaLoading ? '加载中' : '获取验证码'}

@@ -351,6 +351,8 @@ ole_permissions in bulk.
 
 5.  登录校验与提示：用户名长度 3-32、密码 6-64，均限制为可打印 ASCII；后端在登录失败时会返回 `captchaRequired` 和 `remainingAttempts`（距离强制验证码前的剩余尝试次数，命中阈值后为 0），前端直接据此决定是否展示验证码与提示。
 
+6.  验证码服务限流与缓存：`/api/auth/captcha` 以 IP+UA 为键，5s 内重复请求会被拒绝，生成后的验证码在 60s 内复用同一张图，TTL 5 分钟。
+
 
 
 ---

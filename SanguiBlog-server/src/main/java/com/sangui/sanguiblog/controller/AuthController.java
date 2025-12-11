@@ -32,7 +32,8 @@ public class AuthController {
     @org.springframework.web.bind.annotation.GetMapping("/captcha")
     public ApiResponse<CaptchaResponse> captcha(HttpServletRequest servletRequest) {
         String ip = IpUtils.resolveIp(servletRequest);
-        return ApiResponse.ok(loginAttemptService.generateCaptcha(ip));
+        String ua = servletRequest.getHeader("User-Agent");
+        return ApiResponse.ok(loginAttemptService.generateCaptcha(ip, ua));
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/me")
