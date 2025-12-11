@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useBlog } from "./hooks/useBlogData";
+import { fetchLoginCaptcha } from "./api";
 import CommentsSection from "./components/comments/CommentsSection.jsx";
 import PopButton from "./components/common/PopButton.jsx";
 import { LayoutOffsetContext, useLayoutOffsets } from "./contexts/LayoutOffsetContext.jsx";
@@ -9126,6 +9127,10 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [captchaRequired, setCaptchaRequired] = useState(false);
+    const [captchaImage, setCaptchaImage] = useState("");
+    const [captchaInput, setCaptchaInput] = useState("");
+    const [captchaLoading, setCaptchaLoading] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -9137,13 +9142,27 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
         }).join("");
     };
 
+    const loadCaptcha = async () => {
+        setCaptchaLoading(true);
+        try {
+            const res = await fetchLoginCaptcha();
+            const data = res.data || res;
+            setCaptchaImage(data?.imageBase64 || "");
+            setCaptchaRequired(true);
+        } catch (err) {
+            setError(err.message || "获取验证码失败");
+        } finally {
+            setCaptchaLoading(false);
+        }
+    };
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setError("");
         setLoading(true);
         try {
             if (doLogin) {
-                const res = await doLogin(username, password);
+                const res = await doLogin(username, password, captchaRequired ? captchaInput : undefined);
                 if (res?.user) setUser(res.user);
             } else {
                 setUser(MOCK_USER);
@@ -9153,8 +9172,14 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
             } else {
                 setView('home');
             }
+            setCaptchaInput("");
+            setCaptchaImage("");
+            setCaptchaRequired(false);
         } catch (err) {
             setError(err.message || "\u767b\u5f55\u5931\u8d25");
+            if (err.message && err.message.includes("验证码")) {
+                await loadCaptcha();
+            }
         } finally {
             setLoading(false);
         }
@@ -9208,6 +9233,35 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                             </button>
                         </div>
                     </div>
+                    {captchaRequired && (
+                        <div className="space-y-2">
+                            <label className="font-bold text-sm uppercase">Captcha</label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    className={`flex-1 border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+                                    value={captchaInput}
+                                    onChange={(e) => setCaptchaInput(sanitizeAscii(e.target.value).slice(0, 4))}
+                                    placeholder="请输入验证码"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={loadCaptcha}
+                                    className="px-3 py-2 border-2 border-black bg-white hover:bg-gray-100 text-sm font-bold"
+                                    disabled={captchaLoading}
+                                >
+                                    {captchaLoading ? '加载中' : '刷新'}
+                                </button>
+                                {captchaImage && (
+                                    <img
+                                        src={captchaImage}
+                                        alt="captcha"
+                                        className="h-12 w-28 border-2 border-black object-contain"
+                                        onClick={loadCaptcha}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    )}
                     {error && <div
                         className="bg-red-500 text-white p-2 font-bold text-sm border-2 border-black">{error}</div>}
                     <div className="flex gap-4">

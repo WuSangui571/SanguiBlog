@@ -172,10 +172,10 @@ export const fetchPosts = (params = {}) => {
 
 export const fetchPostDetail = (id) => request(`/posts/${id}`);
 
-export const login = (username, password) =>
+export const login = (username, password, captcha) =>
   request("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, captcha }),
   });
 
 export const fetchCurrentUser = () => request("/auth/me");
@@ -188,6 +188,8 @@ export const fetchRecentComments = (size = 5) => {
   const query = search.toString() ? `?${search.toString()}` : "";
   return request(`/comments/recent${query}`);
 };
+
+export const fetchLoginCaptcha = () => request("/auth/captcha");
 
 // About 单页
 export const fetchAbout = () => request("/about");

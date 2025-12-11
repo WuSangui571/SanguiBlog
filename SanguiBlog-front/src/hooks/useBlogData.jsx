@@ -169,8 +169,8 @@ function useProvideBlog() {
     return res.data || res;
   }, [loadComments, loadRecentComments]);
 
-  const doLogin = useCallback(async (username, password) => {
-    const res = await apiLogin(username, password);
+  const doLogin = useCallback(async (username, password, captcha) => {
+    const res = await apiLogin(username, password, captcha);
     const data = res.data || res;
     if (data?.token) localStorage.setItem("sg_token", data.token);
     if (data?.user) setUser(data.user);

@@ -347,6 +347,8 @@ ole_permissions in bulk.
 
 3.  前端每次请求 API 时，在 Header 中携带 `Authorization: Bearer <token>`；`checkAuth` 仅在后端明确返回 `401` 时才会清除本地 Token，避免偶发网络错误导致登录状态被误清空。
 
+4.  登录防刷：同一 IP 10 分钟内连续 3 次登录失败后强制验证码，验证码为 4 位字母/数字扭曲图。前端在出现“验证码”提示后调用 `GET /api/auth/captcha` 获取 `imageBase64`，登录时需在 body 中额外提交 `captcha` 字段。
+
 
 
 ---

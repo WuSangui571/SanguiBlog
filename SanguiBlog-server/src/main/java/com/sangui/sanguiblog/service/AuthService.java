@@ -29,13 +29,29 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final StoragePathResolver storagePathResolver;
+    private final LoginAttemptService loginAttemptService;
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, String ip) {
+        boolean captchaRequired = loginAttemptService.isCaptchaRequired(ip);
+        if (captchaRequired) {
+            if (!StringUtils.hasText(request.getCaptcha())) {
+                throw new IllegalArgumentException("需要验证码");
+            }
+            if (!loginAttemptService.validateCaptcha(ip, request.getCaptcha())) {
+                loginAttemptService.onFailure(ip);
+                throw new IllegalArgumentException("验证码错误");
+            }
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         } catch (AuthenticationException e) {
-            throw new IllegalArgumentException("用户名或密码错误");
+            loginAttemptService.onFailure(ip);
+            String msg = loginAttemptService.isCaptchaRequired(ip)
+                    ? "用户名或密码错误，请完成验证码"
+                    : "用户名或密码错误";
+            throw new IllegalArgumentException(msg);
         }
 
         User user = userRepository.findByUsername(request.getUsername())
@@ -47,6 +63,8 @@ public class AuthService {
 
         user.setLastLoginAt(Instant.now());
         userRepository.save(user);
+
+        loginAttemptService.onSuccess(ip);
 
         return new LoginResponse(token, toProfile(user));
     }
