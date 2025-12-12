@@ -1211,3 +1211,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.5 (2025-12-11)
 - **关于页**：Markdown 图片统一经 `buildAssetUrl` 解析，避免开发环境显示为 `localhost:5173`，与文章页保持同源。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.5`
+
+## V2.1.6 (2025-12-12)
+- **权限管理页**：修复 `/admin/permissions` 误引用游戏/维护模块导致 `loadGames is not defined` 的运行时错误；权限页恢复为纯权限矩阵展示与保存。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.6`

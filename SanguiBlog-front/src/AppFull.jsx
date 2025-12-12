@@ -5971,6 +5971,143 @@ const PermissionsView = ({ isDarkMode }) => {
         );
     }
 
+    // 权限矩阵页面只负责权限配置，系统维护/游戏管理已迁移到 SystemSettingsView（/admin/settings）。
+    return (
+        <div className="space-y-8">
+            <AdminNoticeBar notice={notice} onClose={hideNotice} />
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-6`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-2xl font-bold">权限矩阵</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                            勾选后保存即可生效，超级管理员默认拥有全部权限。
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={fetchMatrix}
+                        disabled={loading}
+                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                    >
+                        {loading ? '刷新中...' : '刷新矩阵'}
+                    </button>
+                </div>
+
+                {error && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {error}
+                    </div>
+                )}
+
+                {loading ? (
+                    <div className="p-8 text-center text-sm text-gray-500">加载中，请稍候...</div>
+                ) : (
+                    <div className="space-y-6">
+                        <div className="grid md:grid-cols-3 gap-4">
+                            {roleCards.map((card) => (
+                                <div
+                                    key={card.role}
+                                    className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 shadow-[4px_6px_0px_rgba(0,0,0,0.25)] space-y-2`}
+                                >
+                                    <h4 className="text-lg font-bold">{card.label}</h4>
+                                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{card.description}</p>
+                                    {card.role === 'SUPER_ADMIN' ? (
+                                        <div className={`text-xs font-semibold ${isDarkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                                            默认全选，不可修改
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSaveRole(card.role)}
+                                            disabled={savingRole === card.role}
+                                            className="mt-2 px-4 py-1.5 border-2 border-black rounded-full text-xs font-bold bg-black text-white shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
+                                        >
+                                            {savingRole === card.role ? '保存中...' : '保存该角色'}
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {matrix.length === 0 ? (
+                            <div className="p-8 text-center text-sm text-gray-500">暂无可配置权限。</div>
+                        ) : (
+                            <div className="space-y-5">
+                                {matrix.map((module) => (
+                                    <div key={module.module} className={`${surface} rounded-xl p-4 space-y-3`}>
+                                        <div>
+                                            <h5 className="text-lg font-bold">{module.label || module.module}</h5>
+                                            {module.description && (
+                                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                                                    {module.description}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm border-collapse">
+                                                <thead>
+                                                    <tr className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                        <th className="text-left py-2 pr-3">动作</th>
+                                                        <th className="text-center py-2 px-3">管理员</th>
+                                                        <th className="text-center py-2 px-3">用户</th>
+                                                        <th className="text-left py-2 pl-3">说明</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(module.actions || []).map((action) => {
+                                                        const code = action.code;
+                                                        const isSuper = action.superAdmin;
+                                                        return (
+                                                            <tr
+                                                                key={code}
+                                                                className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
+                                                            >
+                                                                <td className="py-2 pr-3 font-semibold">{action.label || code}</td>
+                                                                <td className="py-2 px-3 text-center">
+                                                                    {isSuper ? (
+                                                                        <span className="text-xs font-bold text-emerald-500">默认</span>
+                                                                    ) : (
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="w-4 h-4 accent-black"
+                                                                            checked={roleSelections.ADMIN.has(code)}
+                                                                            onChange={() => togglePermission('ADMIN', code)}
+                                                                        />
+                                                                    )}
+                                                                </td>
+                                                                <td className="py-2 px-3 text-center">
+                                                                    {isSuper ? (
+                                                                        <span className="text-xs font-bold text-emerald-500">默认</span>
+                                                                    ) : (
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="w-4 h-4 accent-black"
+                                                                            checked={roleSelections.USER.has(code)}
+                                                                            onChange={() => togglePermission('USER', code)}
+                                                                        />
+                                                                    )}
+                                                                </td>
+                                                                <td className={`py-2 pl-3 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                    {action.description || '--'}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    // 旧版系统维护 UI（已迁移到 /admin/settings），保留但不再执行。
     return (
         <div className="space-y-8">
             <AdminNoticeBar notice={notice} onClose={hideNotice} />
