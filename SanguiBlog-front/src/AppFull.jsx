@@ -916,7 +916,7 @@ const ArticleDetail = ({
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.8, opacity: 0 }}
                             className="max-w-full max-h-full rounded-lg shadow-[8px_8px_0px_0px_#000] border-4 border-white cursor-zoom-out"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={closeImagePreview}
                         />
                         <button
                             className="absolute top-6 right-6 text-white text-xl font-black border-2 border-white px-3 py-1"
