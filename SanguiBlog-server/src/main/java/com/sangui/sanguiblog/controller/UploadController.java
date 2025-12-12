@@ -15,9 +15,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Map;
-import java.util.UUID;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,21 +26,26 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UploadController {
 
+    private static final List<String> ALLOWED_IMAGE_EXT = List.of(".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif");
+    private static final Set<String> ALLOWED_IMAGE_CONTENT_TYPES = Set.of(
+            "image/png", "image/jpeg", "image/webp", "image/gif", "image/avif");
+    private static final long AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2MB
+    private static final long ASSET_MAX_BYTES = 8 * 1024 * 1024;  // 8MB per file
+    private static final long ASSET_TOTAL_MAX_BYTES = 30 * 1024 * 1024; // 30MB per request
+    private static final int MAX_ASSET_FILES = 10;
+
     private final StoragePathResolver storagePathResolver;
     private final PostAssetService postAssetService;
 
     @PostMapping("/avatar")
     public ApiResponse<Map<String, String>> uploadAvatar(@RequestParam("avatar") MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("文件不能为空");
-        }
+        validateImageFile(file, AVATAR_MAX_BYTES, "头像");
 
         try {
             String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
+            String extension = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : "";
             String filename = UUID.randomUUID().toString() + extension;
 
             Path filePath = storagePathResolver.resolveAvatarFile(filename);
@@ -69,6 +75,15 @@ public class UploadController {
         if (files == null || files.isEmpty()) {
             throw new IllegalArgumentException("请至少选择一张图片");
         }
+        if (files.size() > MAX_ASSET_FILES) {
+            throw new IllegalArgumentException("单次最多上传 " + MAX_ASSET_FILES + " 个文件");
+        }
+        long totalSize = files.stream().mapToLong(MultipartFile::getSize).sum();
+        if (totalSize > ASSET_TOTAL_MAX_BYTES) {
+            throw new IllegalArgumentException("本次上传总大小超限，最多允许 " + (ASSET_TOTAL_MAX_BYTES / 1024 / 1024) + "MB");
+        }
+        files.forEach(file -> validateImageFile(file, ASSET_MAX_BYTES, "文章资源"));
+
         String slug = StringUtils.hasText(folder)
                 ? postAssetService.normalizeFolderSlug(folder)
                 : postAssetService.generateFolderSlug();
@@ -83,5 +98,36 @@ public class UploadController {
                 "files", storedFiles,
                 "urls", urls,
                 "joined", String.join(";", urls)));
+    }
+
+    private void validateImageFile(MultipartFile file, long maxBytes, String scene) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException(scene + "文件不能为空");
+        }
+
+        if (file.getSize() > maxBytes) {
+            throw new IllegalArgumentException(scene + "文件过大，限制 " + (maxBytes / 1024 / 1024) + "MB");
+        }
+
+        String ext = extractExtension(file.getOriginalFilename());
+        if (!ALLOWED_IMAGE_EXT.contains(ext)) {
+            throw new IllegalArgumentException(scene + "文件类型不支持，仅允许 " + String.join("/", ALLOWED_IMAGE_EXT));
+        }
+
+        String contentType = file.getContentType();
+        if (StringUtils.hasText(contentType) && !ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+            throw new IllegalArgumentException(scene + "Content-Type 不被允许: " + contentType);
+        }
+    }
+
+    private String extractExtension(String filename) {
+        if (filename == null) {
+            return "";
+        }
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0 || dot == filename.length() - 1) {
+            return "";
+        }
+        return filename.substring(dot).toLowerCase();
     }
 }

@@ -390,6 +390,7 @@ ole_permissions in bulk.
 *   **数据库字段**：`users.avatar_url` 保存头像文件名或 `avatar/` 相对路径；`posts.slug` 现改为记录文章图片文件夹的相对路径（如 `posts/20241124/abc123`），后端返回数据时会携带该路径以便前端按需拼接。
 
 *   **静态映射**：`WebConfig` 将 `/avatar/**` 与 `/uploads/**` 映射到实际文件系统目录，无需重新打包 `static/` 资源即可即时读取最新上传内容。文章图片可直接通过 `http://<server>/uploads/<slug>/xxx.png` 访问。
+*   **上传安全**：`/api/upload/avatar` 与 `/api/upload/post-assets` 仅接受常见图片扩展（png/jpg/jpeg/webp/gif/avif），校验文件头 `Content-Type`，头像单文件上限 2MB，文章资源单文件 8MB、单次最多 10 个且总量不超过 30MB，超限或类型不符直接返回 400；后端仍使用 `StoragePathResolver` 归一化路径并阻止目录穿越。
 
 *   **前端处理**：`/admin/create-post` 的“插入图片”按钮会携带预留的 `slug` 调用 `/api/upload/post-assets`，后端在不清空目录的情况下追加文件并返回 `files`、`urls` 以及用分号拼接好的 `joined` 字符串；前端据此插入 Markdown，若需要把图片地址落库可直接使用 `joined`。`slug` 现改为按需懒生成：仅在首次上传图片或点击“立即发布”时才调用 `/api/upload/post-assets/reserve`，生成后在同一编辑会话内复用，发布成功会清空该值以避免产生空目录。
 
