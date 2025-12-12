@@ -2018,9 +2018,10 @@ const TrendChart = ({ data, isDarkMode }) => {
     if (!data.length) {
         return <p className={`mt-6 text-sm ${textMuted}`}>暂无趋势数据</p>;
     }
-    const gridColor = isDarkMode ? "#374151" : "#E5E7EB";
+    const gridColor = isDarkMode ? "#2e3445" : "#E5E7EB";
     const accentPv = "#FF0080";
-    const accentUv = "#22C55E";
+    const accentUv = "#16A34A";
+    const surfaceBg = isDarkMode ? "#0b1220" : "#f8fafc";
     const safeData = Array.isArray(data) ? data.filter(Boolean) : [];
 
     const normalized = safeData.map((item, index) => ({
@@ -2030,24 +2031,36 @@ const TrendChart = ({ data, isDarkMode }) => {
     }));
 
     const maxValue = Math.max(...normalized.map((n) => Math.max(n.views, n.visitors)), 0);
-    const safeMax = Math.max(maxValue, 1);
+    const niceMax = (() => {
+        if (maxValue <= 5) return 5;
+        if (maxValue <= 10) return 10;
+        const pow = 10 ** Math.floor(Math.log10(maxValue || 1));
+        const ceilings = [1, 2, 5, 10];
+        for (const c of ceilings) {
+            if (maxValue <= c * pow) return c * pow;
+        }
+        return 10 * pow;
+    })();
     const hasNonZero = maxValue > 0;
-    const paddingY = 8;
+    const paddingY = 10;
+    const paddingX = 8;
     const chartHeight = 100 - paddingY * 2;
+    const chartWidth = 100 - paddingX * 2;
     const lastIndex = Math.max(normalized.length - 1, 1);
 
+    const projectX = (index) => paddingX + (index / lastIndex) * chartWidth;
     const projectY = (value) => {
         if (!hasNonZero) {
             // 避免全 0 时折线贴底不可见
             return 100 - paddingY - chartHeight * 0.12;
         }
-        return 100 - paddingY - (value / safeMax) * chartHeight;
+        return 100 - paddingY - (value / niceMax) * chartHeight;
     };
 
     const buildPoints = (key) =>
         normalized
             .map((item, index) => {
-                const x = (index / lastIndex) * 100;
+                const x = projectX(index);
                 const y = projectY(item[key]);
                 return `${x.toFixed(2)},${y.toFixed(2)}`;
             })
@@ -2059,7 +2072,7 @@ const TrendChart = ({ data, isDarkMode }) => {
 
     const renderDots = (key, color) =>
         normalized.map((item, index) => {
-            const x = (index / lastIndex) * 100;
+            const x = projectX(index);
             const y = projectY(item[key]);
             return (
                 <circle
@@ -2074,42 +2087,54 @@ const TrendChart = ({ data, isDarkMode }) => {
             );
         });
 
-    const gridLines = Array.from({ length: 5 }, (_, idx) => {
-        const y = paddingY + (chartHeight / 4) * idx;
-        return (
-            <line
-                key={`grid-${idx}`}
-                x1="0"
-                x2="100"
-                y1={y}
-                y2={y}
-                stroke={gridColor}
-                strokeWidth="0.4"
-                strokeDasharray="1.2 2"
-            />
-        );
+    const yTicks = 5;
+    const yLabels = Array.from({ length: yTicks + 1 }, (_, idx) => {
+        const v = Math.round((niceMax / yTicks) * idx);
+        const y = 100 - paddingY - (v / niceMax) * chartHeight;
+        return { v, y };
     });
 
     return (
         <div className="mt-6">
             <div className="relative">
-                <svg viewBox="0 0 100 100" className="w-full h-56" preserveAspectRatio="none">
-                    <rect x="0" y="0" width="100" height="100" fill={isDarkMode ? "#0b1220" : "#f8fafc"} />
-                    {gridLines}
+                <svg viewBox="0 0 100 100" className="w-full h-60" preserveAspectRatio="none">
+                    <rect x="0" y="0" width="100" height="100" fill={surfaceBg} />
+                    {yLabels.map((tick, idx) => (
+                        <g key={`grid-${idx}`}>
+                            <line
+                                x1={paddingX}
+                                x2={paddingX + chartWidth}
+                                y1={tick.y}
+                                y2={tick.y}
+                                stroke={gridColor}
+                                strokeWidth="0.35"
+                                strokeDasharray="1.5 2.5"
+                            />
+                            <text
+                                x={paddingX - 2}
+                                y={tick.y + 2.5}
+                                fontSize="4"
+                                textAnchor="end"
+                                fill={isDarkMode ? "#cbd5e1" : "#475569"}
+                            >
+                                {tick.v}
+                            </text>
+                        </g>
+                    ))}
                     <polygon
-                        points={`0,${baseline} ${pvPoints} 100,${baseline}`}
+                        points={`${paddingX},${baseline} ${pvPoints} ${paddingX + chartWidth},${baseline}`}
                         fill={`${accentPv}1a`}
                         stroke="none"
                     />
                     <polygon
-                        points={`0,${baseline} ${uvPoints} 100,${baseline}`}
+                        points={`${paddingX},${baseline} ${uvPoints} ${paddingX + chartWidth},${baseline}`}
                         fill={`${accentUv}1a`}
                         stroke="none"
                     />
                     <polyline
                         fill="none"
                         stroke={accentPv}
-                        strokeWidth="2.6"
+                        strokeWidth="2.4"
                         strokeLinejoin="round"
                         strokeLinecap="round"
                         points={pvPoints}
@@ -2117,7 +2142,7 @@ const TrendChart = ({ data, isDarkMode }) => {
                     <polyline
                         fill="none"
                         stroke={accentUv}
-                        strokeWidth="2.6"
+                        strokeWidth="2.4"
                         strokeLinejoin="round"
                         strokeLinecap="round"
                         points={uvPoints}
