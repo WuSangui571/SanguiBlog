@@ -221,6 +221,7 @@ public class GamePageService {
                 .description(entity.getDescription())
                 .url(buildUrl(entity))
                 .slug(entity.getSlug())
+                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }

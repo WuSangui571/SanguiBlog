@@ -13,5 +13,6 @@ public class GamePageDto {
     private String description;
     private String url;
     private String slug;
+    private String status;
     private Instant updatedAt;
 }
