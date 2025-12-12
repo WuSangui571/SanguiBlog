@@ -459,15 +459,11 @@ ole_permissions in bulk.
 
 ### ⚠️ 1. 数据来源混合 (Hybrid Data Source)
 
-**现状**: 前端代码中存在 **真实 API 数据** 与 **Mock 数据** 混用的情况。
+**现状**: 前端主流程已接入真实 API，少量 Mock 仅保留作兜底。
 
-*   **文章/评论**: 主要走真实 API (`useBlogData` -> `api.js`).
+*   **文章/评论**: 主要走真实 API (`useBlogData` -> `api.js`)。
 
-*   **后台仪表盘 (Dashboard)**: `AppFull.jsx` 中的 `DashboardView` 组件目前大量使用了 **`MOCK_ANALYTICS`** (硬编码数据)。
-
-    *   **风险**: 管理员看到的“流量统计”可能不是实时的数据库数据。
-
-    *   **建议**: 后续需将 Dashboard 对接 `/api/analytics` 接口。
+*   **后台仪表盘 (Dashboard)**：`DashboardView` 默认消费 `/api/admin/analytics/summary` 的 `overview/dailyTrends/trafficSources`。`TrendChart` 采用纯 SVG 折线+面积填充；当选择 7/14/30/全部(30 天) 时，若接口趋势数据不足或全 0，会自动拉取最近 1500 条 `/api/admin/analytics/page-views` 在前端聚合对应天数 PV/UV 并标注“访问日志聚合”，避免有数据却空图的误判。
 
 
 

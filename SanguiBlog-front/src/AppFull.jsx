@@ -1756,20 +1756,86 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
 const DashboardView = ({ isDarkMode }) => {
     const { summary, loading, error, reload, rangeDays } = useAdminAnalytics();
     const overview = summary?.overview;
-    const dailyTrends = (summary?.dailyTrends || []).slice(-14);
+    const rawDailyTrends = summary?.dailyTrends || [];
     const trafficSources = summary?.trafficSources || [];
     const normalizedRange = rangeDays === 0 ? -1 : (rangeDays || 7);
+    const trendRangeDays = normalizedRange === -1 ? 30 : Math.max(7, Math.min(normalizedRange, 60));
     const rangeLabel = overview?.rangeLabel || (normalizedRange === -1 ? "全部历史" : `最近${normalizedRange}天`);
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const border = isDarkMode ? "border border-gray-700" : "border border-gray-200";
     const textPrimary = isDarkMode ? "text-gray-100" : "text-gray-900";
     const textMuted = isDarkMode ? "text-gray-400" : "text-gray-500";
     const rangeOptions = [
-        { label: "1天", value: 1 },
         { label: "7天", value: 7 },
+        { label: "14天", value: 14 },
         { label: "30天", value: 30 },
         { label: "全部", value: -1 },
     ];
+
+    const [aggregatedTrends, setAggregatedTrends] = useState([]);
+    const [aggregatedLoading, setAggregatedLoading] = useState(false);
+    const [aggregatedError, setAggregatedError] = useState('');
+
+    useEffect(() => {
+        let cancelled = false;
+        const loadAggregated = async () => {
+            setAggregatedLoading(true);
+            setAggregatedError('');
+            try {
+                // 拉取足够覆盖 60 天的访问日志
+                const res = await adminFetchPageViewLogs({ page: 1, size: 1500 });
+                const data = res.data || res;
+                const records = data.records || [];
+                const today = new Date();
+                const start = new Date(today);
+                start.setDate(today.getDate() - (trendRangeDays - 1));
+
+                const byDate = new Map();
+                records.forEach((item) => {
+                    const dateStr = (item.time || item.viewedAt || item.viewed_at || '').slice(0, 10);
+                    if (!dateStr) return;
+                    const dateObj = new Date(dateStr);
+                    if (Number.isNaN(dateObj.getTime()) || dateObj < start) return;
+
+                    const key = dateStr;
+                    const ip = item.ip || item.viewerIp || item.viewer_ip || '';
+                    const userId = item.userId ?? item.user_id ?? null;
+                    const identity = userId ? `U#${userId}` : (ip ? `G#${ip}` : `G#${item.id || dateStr}`);
+
+                    const current = byDate.get(key) || { views: 0, visitors: new Set() };
+                    current.views += 1;
+                    current.visitors.add(identity);
+                    byDate.set(key, current);
+                });
+
+                const result = [];
+                for (let i = 0; i < trendRangeDays; i += 1) {
+                    const d = new Date(start);
+                    d.setDate(start.getDate() + i);
+                    const key = d.toISOString().slice(0, 10);
+                    const entry = byDate.get(key);
+                    result.push({
+                        date: key,
+                        views: entry ? entry.views : 0,
+                        visitors: entry ? entry.visitors.size : 0
+                    });
+                }
+                if (!cancelled) setAggregatedTrends(result);
+            } catch (e) {
+                if (!cancelled) setAggregatedError(e.message || '访问日志聚合失败');
+            } finally {
+                if (!cancelled) setAggregatedLoading(false);
+            }
+        };
+        loadAggregated();
+        return () => { cancelled = true; };
+    }, [trendRangeDays]);
+
+    const trendFromApi = rawDailyTrends.slice(-trendRangeDays);
+    const hasApiData = trendFromApi.some((d) => Number(d?.views || 0) > 0 || Number(d?.visitors || 0) > 0);
+    const hasAggData = aggregatedTrends.some((d) => Number(d?.views || 0) > 0 || Number(d?.visitors || 0) > 0);
+    const dailyTrends = hasAggData ? aggregatedTrends : trendFromApi;
+    const isUsingAggregated = hasAggData;
 
     const formatNumber = (value, fallback = "--") => {
         if (typeof value === "number") return value.toLocaleString();
@@ -1896,13 +1962,20 @@ const DashboardView = ({ isDarkMode }) => {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className={`xl:col-span-2 ${surface} ${border} rounded-2xl p-6 shadow-xl`}>
                     <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex items-center gap-3">
                             <h3 className={`text-xl font-bold ${textPrimary}`}>访客走势图</h3>
-                            <p className={`text-xs ${textMuted}`}>最近14天 PV & UV</p>
+                            <p className={`text-xs ${textMuted}`}>最近{trendRangeDays}天 PV & UV</p>
+                            {isUsingAggregated && (
+                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
+                                    访问日志聚合
+                                </span>
+                            )}
                         </div>
                         <span className="text-xs font-mono">{dailyTrends.length} 天</span>
                     </div>
                     <TrendChart data={dailyTrends} isDarkMode={isDarkMode} />
+                    {aggregatedLoading && <p className={`text-xs mt-2 ${textMuted}`}>正在从访问日志聚合趋势...</p>}
+                    {aggregatedError && <p className="text-xs mt-2 text-red-500">{aggregatedError}</p>}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs mt-4">
                         <div className={`p-3 rounded-xl ${surface}`}>最高日 PV：{formatNumber(peakViews, "0")}</div>
                         <div className={`p-3 rounded-xl ${surface}`}>最高日 UV：{formatNumber(peakVisitors, "0")}</div>
@@ -1945,40 +2018,118 @@ const TrendChart = ({ data, isDarkMode }) => {
     if (!data.length) {
         return <p className={`mt-6 text-sm ${textMuted}`}>暂无趋势数据</p>;
     }
-    const maxValue = Math.max(...data.map((item) => Math.max(item.views || 0, item.visitors || 0)), 1);
-    const buildPoints = (key) => {
-        const lastIndex = Math.max(data.length - 1, 1);
-        return data
+    const gridColor = isDarkMode ? "#374151" : "#E5E7EB";
+    const accentPv = "#FF0080";
+    const accentUv = "#22C55E";
+    const safeData = Array.isArray(data) ? data.filter(Boolean) : [];
+
+    const normalized = safeData.map((item, index) => ({
+        views: Number(item?.views || 0),
+        visitors: Number(item?.visitors || 0),
+        dateLabel: (item?.date || '').slice(5) || `D${index + 1}`
+    }));
+
+    const maxValue = Math.max(...normalized.map((n) => Math.max(n.views, n.visitors)), 0);
+    const safeMax = Math.max(maxValue, 1);
+    const hasNonZero = maxValue > 0;
+    const paddingY = 8;
+    const chartHeight = 100 - paddingY * 2;
+    const lastIndex = Math.max(normalized.length - 1, 1);
+
+    const projectY = (value) => {
+        if (!hasNonZero) {
+            // 避免全 0 时折线贴底不可见
+            return 100 - paddingY - chartHeight * 0.12;
+        }
+        return 100 - paddingY - (value / safeMax) * chartHeight;
+    };
+
+    const buildPoints = (key) =>
+        normalized
             .map((item, index) => {
                 const x = (index / lastIndex) * 100;
-                const value = item[key] || 0;
-                const y = 100 - (value / maxValue) * 100;
-                return `${x},${y}`;
+                const y = projectY(item[key]);
+                return `${x.toFixed(2)},${y.toFixed(2)}`;
             })
             .join(" ");
-    };
-    const axisLabels = data.map((item) => item.date?.slice(5));
+
+    const pvPoints = buildPoints("views");
+    const uvPoints = buildPoints("visitors");
+    const baseline = 100 - paddingY;
+
+    const renderDots = (key, color) =>
+        normalized.map((item, index) => {
+            const x = (index / lastIndex) * 100;
+            const y = projectY(item[key]);
+            return (
+                <circle
+                    key={`${key}-${index}`}
+                    cx={x}
+                    cy={y}
+                    r={1.4}
+                    fill={color}
+                    stroke={isDarkMode ? "#0f172a" : "#fff"}
+                    strokeWidth="0.6"
+                />
+            );
+        });
+
+    const gridLines = Array.from({ length: 5 }, (_, idx) => {
+        const y = paddingY + (chartHeight / 4) * idx;
+        return (
+            <line
+                key={`grid-${idx}`}
+                x1="0"
+                x2="100"
+                y1={y}
+                y2={y}
+                stroke={gridColor}
+                strokeWidth="0.4"
+                strokeDasharray="1.2 2"
+            />
+        );
+    });
+
     return (
         <div className="mt-6">
             <div className="relative">
-                <svg viewBox="0 0 100 100" className="w-full h-56">
-                    <polyline
-                        fill="none"
-                        stroke="#FF0080"
-                        strokeWidth="3"
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        points={buildPoints("views")}
+                <svg viewBox="0 0 100 100" className="w-full h-56" preserveAspectRatio="none">
+                    <rect x="0" y="0" width="100" height="100" fill={isDarkMode ? "#0b1220" : "#f8fafc"} />
+                    {gridLines}
+                    <polygon
+                        points={`0,${baseline} ${pvPoints} 100,${baseline}`}
+                        fill={`${accentPv}1a`}
+                        stroke="none"
+                    />
+                    <polygon
+                        points={`0,${baseline} ${uvPoints} 100,${baseline}`}
+                        fill={`${accentUv}1a`}
+                        stroke="none"
                     />
                     <polyline
                         fill="none"
-                        stroke="#4ADE80"
-                        strokeWidth="3"
+                        stroke={accentPv}
+                        strokeWidth="2.6"
                         strokeLinejoin="round"
                         strokeLinecap="round"
-                        points={buildPoints("visitors")}
+                        points={pvPoints}
                     />
+                    <polyline
+                        fill="none"
+                        stroke={accentUv}
+                        strokeWidth="2.6"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        points={uvPoints}
+                    />
+                    {renderDots("views", accentPv)}
+                    {renderDots("visitors", accentUv)}
                 </svg>
+                {!hasNonZero && (
+                    <p className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-amber-600/80">
+                        暂无有效访问，已展示占位折线
+                    </p>
+                )}
             </div>
             <div className="flex items-center gap-4 text-xs mt-4">
                 <span className="flex items-center gap-2 text-[#FF0080]">
@@ -1987,11 +2138,13 @@ const TrendChart = ({ data, isDarkMode }) => {
                 <span className="flex items-center gap-2 text-emerald-500">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> UV
                 </span>
-                <span className={`text-[11px] ${textMuted}`}>横轴：日期（MM-DD）</span>
+                <span className={`text-[11px] ${textMuted}`}>横轴：日期（MM-DD），自动拉伸</span>
             </div>
-            <div className="grid grid-cols-7 text-[10px] uppercase tracking-widest text-gray-400 mt-2">
-                {axisLabels.map((label, index) => (
-                    <span key={`${label}-${index}`} className="text-center">{label}</span>
+            <div className="flex flex-wrap justify-between text-[10px] uppercase tracking-widest text-gray-400 mt-2 gap-y-1">
+                {normalized.map((item, index) => (
+                    <span key={`${item.dateLabel}-${index}`} className="text-center min-w-[32px]">
+                        {item.dateLabel}
+                    </span>
                 ))}
             </div>
         </div>
