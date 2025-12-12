@@ -137,6 +137,15 @@ const countImagesInContent = (content = "") => {
     return matches ? matches.length : 0;
 };
 
+// 通用工具：格式化文件大小（bytes -> 人类可读）
+const formatSize = (bytes) => {
+    const value = Number(bytes || 0);
+    if (value <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const idx = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+    return `${(value / (1024 ** idx)).toFixed(idx === 0 ? 0 : 2)} ${units[idx]}`;
+};
+
 
 const BackgroundEasterEggs = ({ isDarkMode }) => {
     const stars = useMemo(() => Array.from({ length: 80 }, (_, idx) => ({
@@ -1735,6 +1744,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                     </PopButton>
                 </div>
             </div>
+
         </div>
     );
 };
@@ -6099,420 +6109,6 @@ const PermissionsView = ({ isDarkMode }) => {
     );
 
     // 旧版系统维护 UI（已迁移到 /admin/settings），保留但不再执行。
-    return (
-        <div className="space-y-8">
-            <AdminNoticeBar notice={notice} onClose={hideNotice} />
-            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <h3 className="text-xl font-bold">游戏页面管理（game_pages）</h3>
-                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>上传、替换或下线独立 HTML 页面，前台 /games 仅展示 ACTIVE 项。</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={loadGames}
-                            disabled={gameLoading}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
-                        >
-                            {gameLoading ? '刷新中...' : '刷新列表'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => resetGameForm({}, true)}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000]"
-                        >
-                            {gameEditingId ? '退出编辑' : '新建页面'}
-                        </button>
-                    </div>
-                </div>
-
-                {gameError && (
-                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
-                        {gameError}
-                    </div>
-                )}
-
-                <div className="grid md:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold">标题</label>
-                        <input
-                            value={gameForm.title}
-                            onChange={(e) => setGameForm((prev) => ({ ...prev, title: e.target.value }))}
-                            className="border-2 border-black px-3 py-2 rounded"
-                            placeholder="例如：像素跑酷 / H5 Demo"
-                        />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold">状态</label>
-                        <select
-                            value={gameForm.status}
-                            onChange={(e) => setGameForm((prev) => ({ ...prev, status: e.target.value }))}
-                            className="border-2 border-black px-3 py-2 rounded"
-                        >
-                                    <option value="ACTIVE">ACTIVE - 对所有人可见</option>
-                                    <option value="DISABLED">DISABLED - 仅管理端可见</option>
-                                    <option value="DRAFT">DRAFT - 草稿</option>
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-2 md:col-span-2">
-                        <label className="text-sm font-semibold">描述（可选）</label>
-                        <textarea
-                            value={gameForm.description}
-                            onChange={(e) => setGameForm((prev) => ({ ...prev, description: e.target.value }))}
-                            rows={3}
-                            className="border-2 border-black px-3 py-2 rounded"
-                            placeholder="一句话给运营或访客的提示"
-                        />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold">排序权重（大在前）</label>
-                        <input
-                            type="number"
-                            value={gameForm.sortOrder ?? 0}
-                            onChange={(e) => setGameForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))}
-                            className="border-2 border-black px-3 py-2 rounded"
-                        />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold">HTML 文件 {gameEditingId ? '（不更换可留空）' : ''}</label>
-                        <input
-                            key={gameEditingId ? `edit-${gameEditingId}` : 'new-game'}
-                            type="file"
-                            accept=".html,.htm,text/html"
-                            onChange={(e) => setGameForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
-                            className="border-2 border-black px-3 py-2 rounded bg-white"
-                        />
-                        {gameForm.file && <span className="text-xs text-gray-500">已选择：{gameForm.file.name}</span>}
-                    </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={handleGameSubmit}
-                        disabled={gameSaving}
-                        className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-black text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
-                    >
-                                {gameSaving ? '保存中...' : (gameEditingId ? '保存修改' : '上传页面')}
-                    </button>
-                    <button
-                        type="button"
-                    onClick={() => resetGameForm({}, true)}
-                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
-                    >
-                        重置表单
-                    </button>
-                    {gameEditingId && <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-xs`}>当前编辑 ID：{gameEditingId}</span>}
-                </div>
-
-                <div className="border-t border-dashed border-gray-300 dark:border-gray-700 pt-4 space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                        <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>共 {gameList.length} 个页面</span>
-                    </div>
-                    {gameLoading ? (
-                        <div className="grid gap-3 md:grid-cols-2">
-                            {Array.from({ length: 2 }).map((_, idx) => (
-                                <div key={`game-skeleton-${idx}`} className="border-2 border-dashed border-gray-400/70 rounded-xl p-4 animate-pulse">
-                                    <div className="h-4 bg-gray-300/70 rounded w-2/3 mb-3"></div>
-                                    <div className="h-3 bg-gray-200/70 rounded w-5/6 mb-2"></div>
-                                    <div className="h-3 bg-gray-200/50 rounded w-1/2"></div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : gameList.length === 0 ? (
-                        <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-sm`}>暂无数据，先上传一个吧。</div>
-                    ) : (
-                        <div className="grid gap-3 md:grid-cols-2">
-                            {gameList.map((game) => (
-                                <div
-                                    key={game.id}
-                                    className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 space-y-3 shadow-[4px_6px_0px_rgba(0,0,0,0.25)]`}
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="space-y-1">
-                                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>ID #{game.id}</div>
-                                            <h4 className="text-lg font-bold leading-tight">{game.title}</h4>
-                                            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm line-clamp-2`}>{game.description || '暂无描述'}</p>
-                                            <p className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>状态：{game.status || '--'} · 更新：{formatDateTime(game.updatedAt || game.createdAt)}</p>
-                                        </div>
-                                        <span className="text-[11px] px-2 py-0.5 rounded-full border border-black/40 bg-white/70 text-black font-bold">{game.status || '?'}</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleGameOpen(game)}
-                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform"
-                                        >
-                                            预览
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleGameEdit(game)}
-                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black hover:-translate-y-0.5 transition-transform"
-                                        >
-                                            编辑
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleGameDelete(game.id)}
-                                            disabled={gameDeletingId === game.id}
-                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-red-500 text-white hover:-translate-y-0.5 transition-transform disabled:opacity-60"
-                                        >
-                                            {gameDeletingId === game.id ? '删除中...' : '删除'}
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <h3 className="text-xl font-bold">站点广播（system_broadcasts）</h3>
-                        <p className="text-sm text-gray-500 mt-1">紧急广播 / 庆典广播，两种风格，仅超级管理员可切换。</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold border-2 border-black shadow ${broadcastActive ? 'bg-[#00E096]' : 'bg-gray-200'}`}>
-                            {broadcastActive ? '已开启' : '已关闭'}
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold border-2 border-black shadow ${broadcastStyle === 'ALERT' ? 'bg-[#FF0080] text-white' : 'bg-[#FFF7CC] text-[#1F2933]'}`}>
-                            {broadcastStyle === 'ALERT' ? '紧急广播' : '庆典广播'}
-                        </span>
-                    </div>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                    {[
-                        { value: 'ALERT', title: '紧急广播', desc: '红色警示，闪烁提示', className: 'bg-[#FFEEF7] border-[#FF0080]' },
-                        { value: 'ANNOUNCE', title: '庆典广播', desc: '柔和渐变，庆典氛围', className: 'bg-gradient-to-r from-[#FFF1D0] via-[#FFE1A8] to-[#FFD166] border-[#F59E0B]' }
-                    ].map((opt) => (
-                        <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setBroadcastStyle(opt.value)}
-                            className={`flex-1 min-w-[220px] text-left px-4 py-3 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] transition hover:-translate-y-0.5 ${broadcastStyle === opt.value ? opt.className : 'bg-white'}`}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <div className="text-sm font-bold">{opt.title}</div>
-                                    <div className="text-xs text-gray-500 mt-1">{opt.desc}</div>
-                                </div>
-                                <div className={`w-3 h-3 rounded-full border ${broadcastStyle === opt.value ? 'border-black bg-black' : 'border-gray-400'}`} />
-                            </div>
-                        </button>
-                    ))}
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600">广播文案</label>
-                    <textarea
-                        value={broadcastContent}
-                        onChange={(e) => setBroadcastContent(e.target.value)}
-                        rows={3}
-                        className={`w-full rounded-xl border-2 border-black px-4 py-3 text-sm shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
-                        placeholder="例如：系统将于今晚 23:30 维护，请保存草稿。"
-                    />
-                </div>
-                {broadcastError && <div className="text-sm text-red-500">{broadcastError}</div>}
-                <div className="flex flex-wrap gap-3 items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setBroadcastActive((prev) => !prev)}
-                            className={`px-4 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[3px_3px_0px_0px_#000] ${broadcastActive ? 'bg-[#00E096] text-black' : 'bg-gray-200 text-gray-700'}`}
-                        >
-                            {broadcastActive ? '关闭广播' : '开启广播'}
-                        </button>
-                        <span className="text-xs text-gray-500">仅 SUPER_ADMIN 可操作</span>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={handleSaveBroadcast}
-                        disabled={broadcastSaving}
-                        className={`px-5 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[4px_4px_0px_0px_#000] ${broadcastStyle === 'ALERT' ? 'bg-[#FF0080] text-white' : 'bg-[#FFD700] text-black'} ${broadcastSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {broadcastSaving ? '同步中…' : '保存并同步广播'}
-                    </button>
-                </div>
-            </div>
-            <div className={`${surface} rounded-2xl shadow-lg p-6 flex flex-wrap gap-4 items-center justify-between`}>
-                <div>
-                    <h3 className="text-xl font-bold">未引用图片清理</h3>
-                    <p className="text-sm text-gray-500 mt-1">扫描文章（含任何状态）与“关于本站”引用，未引用的上传图片可被删除以释放磁盘。</p>
-                </div>
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={loadAssets}
-                        disabled={loading}
-                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
-                    >
-                        {loading ? '扫描中...' : '重新扫描'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={openConfirm}
-                        disabled={!selected.size || deleting || loading}
-                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
-                    >
-                        {deleting ? '删除中...' : `删除选中 (${selected.size})`}
-                    </button>
-                </div>
-            </div>
-
-            <div className={`${surface} rounded-2xl shadow-lg p-6`}>
-                <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
-                    <span className="font-bold">未引用文件：{assets.length} 个</span>
-                    <span className="text-gray-500">预计可释放：{formatSize(totalSize)}</span>
-                    <button
-                        type="button"
-                        onClick={toggleSelectAll}
-                        disabled={!assets.length}
-                        className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
-                    >
-                        {selected.size === assets.length ? '取消全选' : '全选'}
-                    </button>
-                </div>
-
-                {error && <div className="text-sm text-red-500 mb-4">{error}</div>}
-                {loading ? (
-                    <div className="p-8 text-center text-sm text-gray-500">扫描中，请稍候...</div>
-                ) : assets.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-emerald-600 font-bold">没有发现未引用的图片，保持现状即可。</div>
-                ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {assets.map((item) => (
-                            <div key={item.path} className="border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0px_0px_#000]">
-                                <div className="relative">
-                                    <img src={item.url} alt={item.path} className="w-full h-44 object-cover bg-gray-100" />
-                                    <label className="absolute top-2 left-2 flex items-center gap-2 bg-white/90 px-2 py-1 rounded border border-black shadow">
-                                        <input
-                                            type="checkbox"
-                                            checked={selected.has(item.path)}
-                                            onChange={() => toggleSelect(item.path)}
-                                            className="w-4 h-4 accent-red-500"
-                                        />
-                                        <span className="text-xs font-bold">选择</span>
-                                    </label>
-                                </div>
-                                <div className="p-3 space-y-1 text-sm">
-                                    <div className="font-mono break-all text-xs">{item.path}</div>
-                                    <div className="text-gray-500">大小：{formatSize(item.size)}</div>
-                                    <div className="text-gray-500">预览：<a className="underline" href={item.url} target="_blank" rel="noreferrer">新窗口打开</a></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {confirmOpen && (
-                <div className="fixed inset-0 z-[120] bg-black/70 flex items-center justify-center px-4">
-                    <div className={`${surface} max-w-4xl w-full rounded-2xl shadow-2xl p-6 space-y-4`}>
-                        <h4 className="text-lg font-bold">确认删除 {selected.size} 个未引用图片？</h4>
-                        <p className="text-sm text-red-500">操作不可恢复，请确认这些图片未被引用。</p>
-                        <div className="grid gap-3 md:grid-cols-3 max-h-[50vh] overflow-auto pr-1">
-                            {Array.from(selected).map((path) => {
-                                const item = assets.find((a) => a.path === path);
-                                return (
-                                    <div key={path} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                                        {item && <img src={item.url} alt={path} className="w-full h-32 object-cover bg-gray-100" />}
-                                        <div className="p-2 text-xs font-mono break-all">{path}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <label className="flex items-center gap-2 text-sm font-semibold">
-                            <input
-                                type="checkbox"
-                                className="w-4 h-4 accent-red-500"
-                                checked={confirmChecked}
-                                onChange={(e) => setConfirmChecked(e.target.checked)}
-                            />
-                            我已检查列表，确认删除
-                        </label>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setConfirmOpen(false)}
-                                disabled={deleting}
-                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
-                            >
-                                取消
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                disabled={!confirmChecked || deleting}
-                                className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
-                            >
-                                {deleting ? '正在删除...' : '确认删除'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className={`${surface} rounded-2xl shadow-lg p-6 flex flex-wrap gap-4 items-center justify-between`}>
-                <div>
-                    <h3 className="text-xl font-bold">空目录清理</h3>
-                    <p className="text-sm text-gray-500 mt-1">扫描上传目录下的空文件夹（posts/*），可选择删除无内容的目录。</p>
-                </div>
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={loadEmptyFolders}
-                        disabled={emptyLoading}
-                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
-                    >
-                        {emptyLoading ? '扫描中...' : '重新扫描'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleDeleteEmptyFolders}
-                        disabled={!emptySelected.size || deleting || emptyLoading}
-                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
-                    >
-                        {deleting ? '删除中...' : `删除选中 (${emptySelected.size})`}
-                    </button>
-                </div>
-            </div>
-
-            <div className={`${surface} rounded-2xl shadow-lg p-6`}>
-                <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
-                    <span className="font-bold">空目录：{emptyFolders.length} 个</span>
-                    <button
-                        type="button"
-                        onClick={toggleSelectAllEmpty}
-                        disabled={!emptyFolders.length}
-                        className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
-                    >
-                        {emptySelected.size === emptyFolders.length ? '取消全选' : '全选'}
-                    </button>
-                </div>
-
-                {emptyLoading ? (
-                    <div className="p-8 text-center text-sm text-gray-500">扫描中，请稍候...</div>
-                ) : emptyFolders.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-emerald-600 font-bold">没有空目录。</div>
-                ) : (
-                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                        {emptyFolders.map((path) => (
-                            <div key={path} className="border-2 border-black rounded-xl p-3 shadow-[4px_4px_0px_0px_#000] flex items-center justify-between">
-                                <div className="font-mono text-xs break-all">{path}</div>
-                                <input
-                                    type="checkbox"
-                                    className="w-4 h-4 accent-red-500"
-                                    checked={emptySelected.has(path)}
-                                    onChange={() => toggleSelectEmpty(path)}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
 };
 
 
@@ -6622,11 +6218,153 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         }
     }, []);
 
+    // --- 维护模块：未引用图片清理（SUPER_ADMIN） ---
+    const [assets, setAssets] = useState([]);
+    const [assetLoading, setAssetLoading] = useState(false);
+    const [assetError, setAssetError] = useState('');
+    const [assetTotalSize, setAssetTotalSize] = useState(0);
+    const [selectedAssets, setSelectedAssets] = useState(new Set());
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmChecked, setConfirmChecked] = useState(false);
+    const [assetDeleting, setAssetDeleting] = useState(false);
+
+    const scanUnusedAssets = useCallback(async () => {
+        setAssetLoading(true);
+        setAssetError('');
+        setSelectedAssets(new Set());
+        try {
+            const res = await adminScanUnusedAssets();
+            const data = res?.data || res;
+            const list = data?.unused || [];
+            setAssets(list);
+            setAssetTotalSize(data?.totalSize || 0);
+        } catch (err) {
+            setAssetError(err?.message || '扫描未引用图片失败');
+        } finally {
+            setAssetLoading(false);
+        }
+    }, []);
+
+    const toggleSelectAsset = useCallback((path) => {
+        if (!path) return;
+        setSelectedAssets((prev) => {
+            const next = new Set(prev);
+            if (next.has(path)) next.delete(path);
+            else next.add(path);
+            return next;
+        });
+    }, []);
+
+    const toggleSelectAllAssets = useCallback(() => {
+        setSelectedAssets((prev) => {
+            if (assets.length === 0) return prev;
+            if (prev.size === assets.length) return new Set();
+            return new Set(assets.map((a) => a.path));
+        });
+    }, [assets]);
+
+    const handleDeleteSelectedAssets = useCallback(() => {
+        if (!selectedAssets.size) return;
+        setConfirmChecked(false);
+        setConfirmOpen(true);
+    }, [selectedAssets]);
+
+    const handleConfirmDeleteAssets = useCallback(async () => {
+        if (!selectedAssets.size) return;
+        setAssetDeleting(true);
+        setAssetError('');
+        try {
+            await adminDeleteUnusedAssets(Array.from(selectedAssets));
+            setConfirmOpen(false);
+            setConfirmChecked(false);
+            await scanUnusedAssets();
+        } catch (err) {
+            setAssetError(err?.message || '删除未引用图片失败');
+        } finally {
+            setAssetDeleting(false);
+        }
+    }, [selectedAssets, scanUnusedAssets]);
+
+    // --- 维护模块：空目录清理（SUPER_ADMIN） ---
+    const [emptyFolders, setEmptyFolders] = useState([]);
+    const [emptyLoading, setEmptyLoading] = useState(false);
+    const [emptyError, setEmptyError] = useState('');
+    const [emptySelected, setEmptySelected] = useState(new Set());
+    const [emptyDeleting, setEmptyDeleting] = useState(false);
+
+    const loadEmptyFolders = useCallback(async () => {
+        setEmptyLoading(true);
+        setEmptyError('');
+        setEmptySelected(new Set());
+        try {
+            const res = await adminScanEmptyFolders();
+            const data = res?.data || res;
+            setEmptyFolders(data?.emptyFolders || []);
+        } catch (err) {
+            setEmptyError(err?.message || '扫描空目录失败');
+        } finally {
+            setEmptyLoading(false);
+        }
+    }, []);
+
+    const toggleSelectEmpty = useCallback((path) => {
+        if (!path) return;
+        setEmptySelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(path)) next.delete(path);
+            else next.add(path);
+            return next;
+        });
+    }, []);
+
+    const toggleSelectAllEmpty = useCallback(() => {
+        setEmptySelected((prev) => {
+            if (emptyFolders.length === 0) return prev;
+            if (prev.size === emptyFolders.length) return new Set();
+            return new Set(emptyFolders);
+        });
+    }, [emptyFolders]);
+
+    const handleDeleteEmptyFolders = useCallback(async () => {
+        if (!emptySelected.size) return;
+        const ok = typeof window !== 'undefined'
+            ? window.confirm(`确认删除选中的 ${emptySelected.size} 个空目录吗？此操作不可恢复。`)
+            : true;
+        if (!ok) return;
+        setEmptyDeleting(true);
+        setEmptyError('');
+        try {
+            await adminDeleteEmptyFolders(Array.from(emptySelected));
+            await loadEmptyFolders();
+        } catch (err) {
+            setEmptyError(err?.message || '删除空目录失败');
+        } finally {
+            setEmptyDeleting(false);
+        }
+    }, [emptySelected, loadEmptyFolders]);
+
+    useEffect(() => {
+        scanUnusedAssets();
+        loadEmptyFolders();
+    }, [scanUnusedAssets, loadEmptyFolders]);
+
     if (!hasPermission('SYSTEM_CLEAN_STORAGE') || user?.role !== 'SUPER_ADMIN') {
         return <PermissionNotice title="仅超级管理员可用" description="系统设置仅限超级管理员访问。" />;
     }
 
     const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
+
+    const formatBytes = useCallback((bytes) => {
+        if (!bytes || Number.isNaN(bytes)) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let value = bytes;
+        let idx = 0;
+        while (value >= 1024 && idx < units.length - 1) {
+            value /= 1024;
+            idx += 1;
+        }
+        return `${value % 1 === 0 ? value : value.toFixed(1)} ${units[idx]}`;
+    }, []);
 
     return (
         <div className="space-y-6">
@@ -6694,7 +6432,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         />
                     </div>
                     <div className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold">排序权重（大在前）</label>
+                        <label className="text-sm font-semibold">排序权重（小在前）</label>
                         <input
                             type="number"
                             value={gameForm.sortOrder ?? 0}
@@ -6796,6 +6534,212 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     )}
                 </div>
             </div>
+
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">存储清理 · 未引用图片</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                            扫描文章与关于页引用的图片，找出上传目录中未被引用的文件，仅超级管理员可删除。
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={scanUnusedAssets}
+                            disabled={assetLoading}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {assetLoading ? '扫描中...' : '重新扫描'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={toggleSelectAllAssets}
+                            disabled={!assets.length}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {selectedAssets.size === assets.length && assets.length ? '取消全选' : '全选'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDeleteSelectedAssets}
+                            disabled={!selectedAssets.size}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {selectedAssets.size ? `删除选中（${selectedAssets.size}）` : '删除选中'}
+                        </button>
+                    </div>
+                </div>
+
+                {assetError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {assetError}
+                    </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>找到 {assets.length} 张未引用图片</span>
+                    <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>预计可释放 {formatBytes(assetTotalSize)}</span>
+                </div>
+
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden">
+                    {assetLoading ? (
+                        <div className="p-6 text-sm text-gray-500">扫描中，请稍候...</div>
+                    ) : assets.length === 0 ? (
+                        <div className="p-6 text-sm text-gray-500">暂无未引用图片，保持良好。</div>
+                    ) : (
+                        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {assets.map((asset) => (
+                                <div key={asset.path} className="flex items-center justify-between gap-4 p-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <input
+                                            type="checkbox"
+                                            className="h-4 w-4 border-2 border-black rounded"
+                                            checked={selectedAssets.has(asset.path)}
+                                            onChange={() => toggleSelectAsset(asset.path)}
+                                        />
+                                        <div className="min-w-0">
+                                            <div className="font-mono text-sm break-all">{asset.path}</div>
+                                            <div className="flex items-center gap-3 text-xs text-indigo-600 dark:text-indigo-300">
+                                                <a
+                                                    href={buildAssetUrl(asset.url || asset.path)}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="underline"
+                                                >
+                                                    在新标签中查看
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-100">{formatBytes(asset.size)}</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">存储清理 · 空目录</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                            扫描上传目录下的空文件夹，可批量删除以保持目录整洁。
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={loadEmptyFolders}
+                            disabled={emptyLoading}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {emptyLoading ? '扫描中...' : '重新扫描'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={toggleSelectAllEmpty}
+                            disabled={!emptyFolders.length}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {emptySelected.size === emptyFolders.length && emptyFolders.length ? '取消全选' : '全选'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDeleteEmptyFolders}
+                            disabled={!emptySelected.size}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {emptySelected.size ? `删除选中（${emptySelected.size}）` : '删除选中'}
+                        </button>
+                    </div>
+                </div>
+
+                {emptyError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {emptyError}
+                    </div>
+                )}
+
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden">
+                    {emptyLoading ? (
+                        <div className="p-6 text-sm text-gray-500">扫描中，请稍候...</div>
+                    ) : emptyFolders.length === 0 ? (
+                        <div className="p-6 text-sm text-gray-500">暂无空目录，状态良好。</div>
+                    ) : (
+                        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {emptyFolders.map((path) => (
+                                <label key={path} className="flex items-center justify-between gap-4 p-4 cursor-pointer">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <input
+                                            type="checkbox"
+                                            className="h-4 w-4 border-2 border-black rounded"
+                                            checked={emptySelected.has(path)}
+                                            onChange={() => toggleSelectEmpty(path)}
+                                        />
+                                        <div className="font-mono text-sm break-all">{path}</div>
+                                    </div>
+                                    <span className="text-xs px-2 py-1 rounded-full border border-black/30 bg-white text-gray-700 dark:text-gray-100">
+                                        空目录
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {confirmOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+                    <div className={`${surface} max-w-lg w-full rounded-2xl shadow-2xl p-6 space-y-4`}>
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h4 className="text-lg font-bold">确认删除未引用图片</h4>
+                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                                    共 {selectedAssets.size} 项，将从存储中彻底移除，操作不可恢复。
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setConfirmOpen(false)}
+                                className="text-gray-500 hover:text-black"
+                                aria-label="关闭"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <label className="flex items-center gap-3 text-sm font-medium">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 border-2 border-black rounded"
+                                checked={confirmChecked}
+                                onChange={(e) => setConfirmChecked(e.target.checked)}
+                            />
+                            <span>我已确认备份必要图片，删除后无需恢复。</span>
+                        </label>
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmOpen(false)}
+                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                            >
+                                取消
+                            </button>
+                            <button
+                                type="button"
+                                disabled={!confirmChecked || assetDeleting}
+                                onClick={handleConfirmDeleteAssets}
+                                className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            >
+                                {assetDeleting ? '删除中...' : '确认删除'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
