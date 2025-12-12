@@ -6227,6 +6227,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmChecked, setConfirmChecked] = useState(false);
     const [assetDeleting, setAssetDeleting] = useState(false);
+    const [previewSrc, setPreviewSrc] = useState('');
 
     const scanUnusedAssets = useCallback(async () => {
         setAssetLoading(true);
@@ -6600,7 +6601,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                                 loading="lazy"
                                                 onClick={() => {
                                                     const target = buildAssetUrl(asset.url || asset.path);
-                                                    if (target) window.open(target, '_blank', 'noopener,noreferrer');
+                                                    if (target) setPreviewSrc(target);
                                                 }}
                                             />
                                         ) : (
@@ -6739,13 +6740,15 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         <div className="grid gap-3 md:grid-cols-3 max-h-[50vh] overflow-auto pr-1">
                             {Array.from(selectedAssets).map((path) => {
                                 const item = assets.find((a) => a.path === path);
+                                const target = item ? buildAssetUrl(item.url || item.path) : '';
                                 return (
                                     <div key={path} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white">
-                                        {item?.url && (
+                                        {target && (
                                             <img
-                                                src={buildAssetUrl(item.url || item.path)}
+                                                src={target}
                                                 alt={path}
-                                                className="w-full h-32 object-cover bg-gray-100"
+                                                className="w-full h-32 object-cover bg-gray-100 cursor-zoom-in"
+                                                onClick={() => setPreviewSrc(target)}
                                             />
                                         )}
                                         <div className="p-2 text-xs font-mono break-all">{path}</div>
@@ -6772,6 +6775,18 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+            {previewSrc && (
+                <div
+                    className="fixed inset-0 z-[150] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out"
+                    onClick={() => setPreviewSrc('')}
+                >
+                    <img
+                        src={previewSrc}
+                        alt="preview"
+                        className="max-h-[80vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+                    />
                 </div>
             )}
         </div>
