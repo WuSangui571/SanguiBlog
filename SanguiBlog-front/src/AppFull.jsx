@@ -6057,7 +6057,6 @@ const PermissionsView = ({ isDarkMode }) => {
                                                 <tbody>
                                                     {(module.actions || []).map((action) => {
                                                         const code = action.code;
-                                                        const isSuper = action.superAdmin;
                                                         return (
                                                             <tr
                                                                 key={code}
@@ -6065,28 +6064,20 @@ const PermissionsView = ({ isDarkMode }) => {
                                                             >
                                                                 <td className="py-2 pr-3 font-semibold">{action.label || code}</td>
                                                                 <td className="py-2 px-3 text-center">
-                                                                    {isSuper ? (
-                                                                        <span className="text-xs font-bold text-emerald-500">默认</span>
-                                                                    ) : (
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            className="w-4 h-4 accent-black"
-                                                                            checked={roleSelections.ADMIN.has(code)}
-                                                                            onChange={() => togglePermission('ADMIN', code)}
-                                                                        />
-                                                                    )}
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="w-4 h-4 accent-black"
+                                                                        checked={roleSelections.ADMIN.has(code)}
+                                                                        onChange={() => togglePermission('ADMIN', code)}
+                                                                    />
                                                                 </td>
                                                                 <td className="py-2 px-3 text-center">
-                                                                    {isSuper ? (
-                                                                        <span className="text-xs font-bold text-emerald-500">默认</span>
-                                                                    ) : (
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            className="w-4 h-4 accent-black"
-                                                                            checked={roleSelections.USER.has(code)}
-                                                                            onChange={() => togglePermission('USER', code)}
-                                                                        />
-                                                                    )}
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="w-4 h-4 accent-black"
+                                                                        checked={roleSelections.USER.has(code)}
+                                                                        onChange={() => togglePermission('USER', code)}
+                                                                    />
                                                                 </td>
                                                                 <td className={`py-2 pl-3 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                                     {action.description || '--'}

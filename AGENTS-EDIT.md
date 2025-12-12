@@ -1215,3 +1215,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.6 (2025-12-12)
 - **权限管理页**：修复 `/admin/permissions` 误引用游戏/维护模块导致 `loadGames is not defined` 的运行时错误；权限页恢复为纯权限矩阵展示与保存。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.6`
+
+## V2.1.7 (2025-12-12)
+- **权限管理页**：修复权限矩阵中 `superAdmin` 标记恒为 true 导致管理员/用户列被误判只读的问题；超级管理员现在可正常勾选并保存 ADMIN/USER 角色的具体权限。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.7`
