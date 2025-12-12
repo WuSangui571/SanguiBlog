@@ -9473,7 +9473,7 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
                             className="max-w-full max-h-full rounded-lg shadow-[10px_10px_0px_0px_#000] border-4 border-white cursor-zoom-out"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={() => setAboutPreview(null)}
                         />
                     </motion.div>
                 )}
