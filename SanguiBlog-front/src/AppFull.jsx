@@ -6592,6 +6592,22 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             {assets.map((asset) => (
                                 <div key={asset.path} className="flex items-center justify-between gap-4 p-4">
                                     <div className="flex items-center gap-3 min-w-0">
+                                        {asset.url || asset.path ? (
+                                            <img
+                                                src={buildAssetUrl(asset.url || asset.path)}
+                                                alt={asset.path}
+                                                className="w-14 h-14 rounded-lg object-cover border border-gray-200 dark:border-gray-700 bg-gray-50 cursor-zoom-in"
+                                                loading="lazy"
+                                                onClick={() => {
+                                                    const target = buildAssetUrl(asset.url || asset.path);
+                                                    if (target) window.open(target, '_blank', 'noopener,noreferrer');
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-14 h-14 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center text-xs text-gray-400">
+                                                无预览
+                                            </div>
+                                        )}
                                         <input
                                             type="checkbox"
                                             className="h-4 w-4 border-2 border-black rounded"
@@ -6599,17 +6615,17 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                             onChange={() => toggleSelectAsset(asset.path)}
                                         />
                                         <div className="min-w-0">
-                                            <div className="font-mono text-sm break-all">{asset.path}</div>
-                                            <div className="flex items-center gap-3 text-xs text-indigo-600 dark:text-indigo-300">
-                                                <a
-                                                    href={buildAssetUrl(asset.url || asset.path)}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="underline"
-                                                >
-                                                    在新标签中查看
-                                                </a>
-                                            </div>
+                                    <div className="font-mono text-sm break-all">{asset.path}</div>
+                                    <div className="flex items-center gap-3 text-xs text-indigo-600 dark:text-indigo-300">
+                                        <a
+                                            href={buildAssetUrl(asset.url || asset.path)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="underline"
+                                        >
+                                            在新标签中查看
+                                        </a>
+                                    </div>
                                         </div>
                                     </div>
                                     <div className="text-sm font-semibold text-gray-700 dark:text-gray-100">{formatBytes(asset.size)}</div>
@@ -6719,6 +6735,24 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             />
                             <span>我已确认备份必要图片，删除后无需恢复。</span>
                         </label>
+
+                        <div className="grid gap-3 md:grid-cols-3 max-h-[50vh] overflow-auto pr-1">
+                            {Array.from(selectedAssets).map((path) => {
+                                const item = assets.find((a) => a.path === path);
+                                return (
+                                    <div key={path} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white">
+                                        {item?.url && (
+                                            <img
+                                                src={buildAssetUrl(item.url || item.path)}
+                                                alt={path}
+                                                className="w-full h-32 object-cover bg-gray-100"
+                                            />
+                                        )}
+                                        <div className="p-2 text-xs font-mono break-all">{path}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
 
                         <div className="flex justify-end gap-3 pt-2">
                             <button
