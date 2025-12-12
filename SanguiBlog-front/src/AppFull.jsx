@@ -7929,9 +7929,12 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 });
             }
         } else if (view === 'game') {
+            const target = gameDetail || gameList.find((g) => g.id === gameId) || {};
+            const title = target.title || target.name || `Game#${gameId || ''}`;
             if (claimAutoPageView(`game-${gameId || 'detail'}`)) {
                 sendPageView({
-                    pageTitle: 'GameDetail',
+                    pageTitle: `Game: ${title}`,
+                    sourceLabel: `游戏详情-${title}`,
                     geo: getGeoHint()
                 });
             }
@@ -7967,6 +7970,15 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const handleOpenGame = useCallback((game) => {
         const target = game || {};
         const targetUrl = target.url ? buildAssetUrl(target.url) : '';
+        const title = target.title || target.name || `Game#${target.id || ''}`;
+
+        // 无论是否新开标签，先记录访问日志
+        sendPageView({
+            pageTitle: `Game: ${title}`,
+            sourceLabel: `游戏详情-${title}`,
+            geo: getGeoHint()
+        });
+
         if (targetUrl) {
             if (typeof window !== 'undefined') {
                 window.open(targetUrl, '_blank', 'noopener,noreferrer');
@@ -7975,7 +7987,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             setGameId(target.id);
             setView('game');
         }
-    }, []);
+    }, [sendPageView]);
 
     const handleGameBack = useCallback(() => {
         setView('games');
