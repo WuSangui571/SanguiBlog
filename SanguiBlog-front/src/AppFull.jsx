@@ -9400,7 +9400,7 @@ const ArticleList = ({
 
                     <div className="flex-1 flex flex-col">
                         <div
-                            className={`mb-8 border-2 border-black rounded-xl shadow-[6px_6px_0px_0px_#000] overflow-hidden ${isDarkMode ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white' : 'bg-gradient-to-r from-[#FFF3A3] via-white to-[#FFE4E6] text-black'}`}>
+                            className={`mb-8 border-2 border-black rounded-none shadow-[6px_6px_0px_0px_#000] overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
                             <div className="flex flex-col md:flex-row md:items-center gap-3 px-5 py-4">
                                 <div className="flex items-center gap-2 font-black text-lg tracking-tight">
                                     <Search size={18} />
@@ -9408,7 +9408,7 @@ const ArticleList = ({
                                 </div>
                                 <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
                                     <div
-                                        className={`flex items-center gap-2 flex-1 px-3 py-2 border-2 border-black rounded-lg shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+                                        className={`flex items-center gap-2 flex-1 px-3 py-2 border-2 border-black rounded-none shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
                                         <Search size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
                                         <input
                                             type="text"
@@ -9431,7 +9431,7 @@ const ArticleList = ({
                                                     setCurrentPage(1);
                                                     scrollToPostsTop();
                                                 }}
-                                                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-white text-black hover:-translate-y-0.5' : 'bg-black text-white hover:bg-[#FF0080]'}`}
+                                                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-none border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-white text-black hover:-translate-y-0.5' : 'bg-black text-white hover:bg-[#FF0080]'}`}
                                             >
                                                 <X size={14} /> 清空
                                             </button>
