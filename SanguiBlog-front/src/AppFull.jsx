@@ -88,7 +88,7 @@ import {
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
     ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
-    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight
+    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy
 } from 'lucide-react';
 
 const THEME_COLOR_PRESETS = [
@@ -470,6 +470,54 @@ const ArticleDetail = ({
     const proseClass = `prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none prose-code:before:content-none prose-code:after:content-none ${isDarkMode ? 'prose-invert' : ''}`;
     const shouldRenderMarkdown = Boolean(contentMd && contentMd.trim());
 
+    const CodeBlockWithCopy = ({ textContent, className }) => {
+        const [copied, setCopied] = useState(false);
+        const langMatch = typeof className === 'string' ? className.match(/language-([a-zA-Z0-9]+)/) : null;
+        const langLabel = langMatch && langMatch[1] ? langMatch[1].toUpperCase() : 'CODE';
+
+        const handleCopy = useCallback(() => {
+            if (!textContent) return;
+            navigator.clipboard?.writeText(textContent).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1600);
+            }).catch(() => setCopied(false));
+        }, [textContent]);
+
+        return (
+            <div
+                className={`not-prose my-6 rounded-2xl border-2 border-black overflow-hidden shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'border-gray-600' : ''}`}>
+                <div
+                    className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-[#FF5F56] border border-black/10"></div>
+                        <div className="w-4 h-4 rounded-full bg-[#FFBD2E] border border-black/10"></div>
+                        <div className="w-4 h-4 rounded-full bg-[#27C93F] border border-black/10"></div>
+                        <span className="ml-2 text-[10px] font-black tracking-[0.2em]">{langLabel}</span>
+                    </div>
+                    <div className="ml-auto flex items-center gap-2">
+                        {copied && (
+                            <span className="text-[10px] font-black text-emerald-400">已复制</span>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleCopy}
+                            className={`px-2 py-1 text-[11px] font-black border-2 border-black rounded-full inline-flex items-center gap-1 transition-transform hover:-translate-y-0.5 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                            aria-label="复制代码"
+                        >
+                            <Copy size={14} /> 复制
+                        </button>
+                    </div>
+                </div>
+                <pre
+                    className={`p-5 overflow-auto m-0 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
+                    <code className={`${className || ''} !bg-transparent !p-0 !border-none font-mono text-sm`}>
+                        {textContent}
+                    </code>
+                </pre>
+            </div>
+        );
+    };
+
     const headingSluggerRef = useRef({});
     headingSluggerRef.current = {};
 
@@ -643,24 +691,7 @@ const ArticleDetail = ({
                     </code>
                 );
             }
-            return (
-                <div
-                    className={`not-prose my-6 rounded-2xl border-2 border-black overflow-hidden shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'border-gray-600' : ''}`}>
-                        <div
-                            className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
-                        <div className="w-4 h-4 rounded-full bg-[#FF5F56] border border-black/10"></div>
-                        <div className="w-4 h-4 rounded-full bg-[#FFBD2E] border border-black/10"></div>
-                        <div className="w-4 h-4 rounded-full bg-[#27C93F] border border-black/10"></div>
-                        <span className="ml-2 text-[10px] font-black tracking-[0.2em]">CODE</span>
-                        </div>
-                    <pre
-                        className={`p-5 overflow-auto m-0 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
-                        <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
-                            {textContent}
-                        </code>
-                    </pre>
-                </div>
-            );
+            return <CodeBlockWithCopy textContent={textContent} className={className} {...props} />;
         },
         h1: createHeading('h1'),
         h2: createHeading('h2'),
@@ -9432,8 +9463,8 @@ const ArticleList = ({
                                                 setArticleId(post.id);
                                                 setView('article');
                                             }}>
-                                                <div className="flex flex-col md:flex-row">
-                                                    <div className="md:w-1/3 h-52 md:h-auto border-b-2 md:border-b-0 md:border-r-2 border-black relative overflow-hidden group">
+                                                <div className="flex flex-col md:flex-row min-h-[360px]">
+                                                    <div className="md:w-1/3 w-full h-60 md:h-auto md:min-h-[360px] md:max-h-[360px] border-b-2 md:border-b-0 md:border-r-2 border-black relative overflow-hidden group">
                                                         {coverUrl ? (
                                                             <motion.img
                                                                 src={coverUrl}
@@ -9474,15 +9505,15 @@ const ArticleList = ({
                                                         </div>
                                                     </div>
 
-                                                    <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg}`}>
+                                                    <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg} flex flex-col`} style={{ minHeight: '360px' }}>
                                                         <div className="flex flex-wrap gap-2 mb-4">
                                                             {tags.map(t => (
                                                                 <span key={t}
                                                                     className={`px-2 py-1 border border-black text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
                                                             ))}
                                                         </div>
-                                                        <div className="flex flex-wrap items-center gap-3 mb-4">
-                                                            <h2 className={`text-3xl font-black flex-1 group-hover:text-[#6366F1] transition-colors ${text}`}>{post.title}</h2>
+                                                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                                                            <h2 className={`text-3xl font-black flex-1 group-hover:text-[#6366F1] transition-colors ${text}`} style={{ maxHeight: '72px', overflow: 'hidden' }}>{post.title}</h2>
                                                             {isPostNew(post.date) && (
                                                                 <span
                                                                     className="inline-flex items-center gap-1 px-3 py-1 text-xs font-black uppercase tracking-widest border-2 border-black bg-[#FF0080] text-white shadow-[2px_2px_0px_0px_#000] animate-pulse">
@@ -9491,19 +9522,26 @@ const ArticleList = ({
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <p className={`text-lg font-medium mb-6 border-l-4 border-gray-300 pl-4 ${subText}`}>{post.excerpt}</p>
+                                                        <p
+                                                            className={`text-lg font-medium border-l-4 border-gray-300 pl-4 ${subText}`}
+                                                            style={{ maxHeight: '96px', overflow: 'hidden' }}
+                                                        >
+                                                            {post.excerpt}
+                                                        </p>
 
-                                                        <div
-                                                            className={`flex justify-between items-center border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-black'} pt-4 border-dashed`}>
-                                                            <span
-                                                                className="font-mono font-bold text-xs bg-black text-white px-2 py-1">{post.date}</span>
-                                                            <div className={`flex gap-4 font-bold text-sm ${text}`}>
+                                                        <div className="mt-auto pt-4">
+                                                            <div
+                                                                className={`flex justify-between items-center border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-black'} pt-4 border-dashed`}>
                                                                 <span
-                                                                    className="flex items-center gap-1 hover:text-[#FF0080]"><Eye
-                                                                        size={18} /> {viewCount}</span>
-                                                                <span
-                                                                    className="flex items-center gap-1 hover:text-[#6366F1]"><MessageSquare
-                                                                        size={18} /> {commentCount}</span>
+                                                                    className="font-mono font-bold text-xs bg-black text-white px-2 py-1">{post.date}</span>
+                                                                <div className={`flex gap-4 font-bold text-sm ${text}`}>
+                                                                    <span
+                                                                        className="flex items-center gap-1 hover:text-[#FF0080]"><Eye
+                                                                            size={18} /> {viewCount}</span>
+                                                                    <span
+                                                                        className="flex items-center gap-1 hover:text-[#6366F1]"><MessageSquare
+                                                                            size={18} /> {commentCount}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -9849,6 +9887,54 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
     const [aboutPreview, setAboutPreview] = useState(null);
     const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
 
+    const CodeBlockWithCopy = ({ textContent, className }) => {
+        const [copied, setCopied] = useState(false);
+        const langMatch = typeof className === 'string' ? className.match(/language-([a-zA-Z0-9]+)/) : null;
+        const langLabel = langMatch && langMatch[1] ? langMatch[1].toUpperCase() : 'CODE';
+
+        const handleCopy = useCallback(() => {
+            if (!textContent) return;
+            navigator.clipboard?.writeText(textContent).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1600);
+            }).catch(() => setCopied(false));
+        }, [textContent]);
+
+        return (
+            <div
+                className={`not-prose my-6 rounded-2xl border-2 border-black overflow-hidden shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'border-gray-600' : ''}`}>
+                <div
+                    className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-[#FF5F56] border border-black/10"></div>
+                        <div className="w-4 h-4 rounded-full bg-[#FFBD2E] border border-black/10"></div>
+                        <div className="w-4 h-4 rounded-full bg-[#27C93F] border border-black/10"></div>
+                        <span className="ml-2 text-[10px] font-black tracking-[0.2em]">{langLabel}</span>
+                    </div>
+                    <div className="ml-auto flex items-center gap-2">
+                        {copied && (
+                            <span className="text-[10px] font-black text-emerald-400">已复制</span>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleCopy}
+                            className={`px-2 py-1 text-[11px] font-black border-2 border-black rounded-full inline-flex items-center gap-1 transition-transform hover:-translate-y-0.5 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                            aria-label="复制代码"
+                        >
+                            <Copy size={14} /> 复制
+                        </button>
+                    </div>
+                </div>
+                <pre
+                    className={`p-5 overflow-auto m-0 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
+                    <code className={`${className || ''} !bg-transparent !p-0 !border-none font-mono text-sm`}>
+                        {textContent}
+                    </code>
+                </pre>
+            </div>
+        );
+    };
+
     const markdownComponents = useMemo(() => ({
         img: ({ src, alt, className = '', ...props }) => {
             const resolvedSrc = buildAssetUrl(src || '', src || '');
@@ -9901,24 +9987,7 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
                     </code>
                 );
             }
-            return (
-                <div
-                    className={`not-prose my-6 rounded-2xl border-2 border-black overflow-hidden shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'border-gray-600' : ''}`}>
-                    <div
-                        className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
-                        <div className="w-4 h-4 rounded-full bg-[#FF5F56] border border-black/10"></div>
-                        <div className="w-4 h-4 rounded-full bg-[#FFBD2E] border border-black/10"></div>
-                        <div className="w-4 h-4 rounded-full bg-[#27C93F] border border-black/10"></div>
-                        <span className="ml-2 text-[10px] font-black tracking-[0.2em]">CODE</span>
-                    </div>
-                    <pre
-                        className={`p-5 overflow-auto m-0 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
-                        <code className={`${className} !bg-transparent !p-0 !border-none font-mono text-sm`} {...props}>
-                            {textContent}
-                        </code>
-                    </pre>
-                </div>
-            );
+            return <CodeBlockWithCopy textContent={textContent} className={className} {...props} />;
         }
     }), [inlineCodeBg, isDarkMode]);
 
