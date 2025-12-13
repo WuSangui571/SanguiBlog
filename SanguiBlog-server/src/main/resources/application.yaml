@@ -1,4 +1,4 @@
-server:
+﻿server:
   port: 8080
 #  port: 8082
 
@@ -44,13 +44,13 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
 
 site:
-  version: "V2.1.54"
+  version: "V2.1.55"
   asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
 #  asset-base-url: http://new.sangui.top/uploads
   hero:
-    tagline: 拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。
+    tagline: 我是三桂，正在打造一座敢于试验的技术花园。
   home:
-    signature-quote: 阻挡你的不是别人，而是你自己。
+    signature-quote: 每周小步快跑，聚焦架构、动画与可用性，记录代码与生活的温度。
   footer:
     year: 2025
     brand: 三桂博客
