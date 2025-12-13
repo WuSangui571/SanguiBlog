@@ -9535,13 +9535,15 @@ const ArticleList = ({
                                                         </div>
                                                         <div className="flex items-start gap-2 mb-3">
                                                             <h2
-                                                                className={`text-3xl font-black flex-1 leading-tight transition-colors group-hover:text-[var(--title-color)] ${text}`}
+                                                                className={`text-3xl font-black flex-1 transition-colors group-hover:text-[var(--title-color)] ${text}`}
                                                                 style={{
                                                                     '--title-color': extractHexFromBgClass(post.color, '#6366F1'),
-                                                                    display: '-webkit-box',
                                                                     WebkitLineClamp: 2,
+                                                                    display: '-webkit-box',
                                                                     WebkitBoxOrient: 'vertical',
-                                                                    overflow: 'hidden'
+                                                                    overflow: 'hidden',
+                                                                    minHeight: '4.6rem',
+                                                                    maxHeight: '4.6rem'
                                                                 }}
                                                             >
                                                                 {post.title}
@@ -9561,6 +9563,7 @@ const ArticleList = ({
                                                         <p
                                                             className={`text-base md:text-lg font-medium border-l-4 border-gray-300 pl-4 pr-2 ${subText}`}
                                                             style={{
+                                                                minHeight: '4.5em',
                                                                 display: '-webkit-box',
                                                                 WebkitLineClamp: 3,
                                                                 WebkitBoxOrient: 'vertical',
