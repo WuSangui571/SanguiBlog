@@ -86,7 +86,7 @@ import {
     Search, LogIn, LogOut, Settings, Eye, EyeOff, Github, Twitter,
     BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
-    ArrowUpRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
+    ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
     RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy
 } from 'lucide-react';
@@ -9576,12 +9576,18 @@ const ArticleList = ({
                                                                 <span className="font-mono font-bold text-xs bg-black text-white px-2 py-1 flex items-center gap-1">
                                                                     <Clock size={14} /> {post.date}
                                                                 </span>
-                                                                <div className={`flex gap-4 font-bold text-sm ${text}`}>
+                                                                <div className={`flex gap-4 font-bold text-sm items-center ${text}`}>
                                                                     <span className="flex items-center gap-1 hover:text-[#FF0080]">
                                                                         <Eye size={18} /> {viewCount}
                                                                     </span>
                                                                     <span className="flex items-center gap-1 hover:text-[#6366F1]">
                                                                         <MessageSquare size={18} /> {commentCount}
+                                                                    </span>
+                                                                    <span
+                                                                        className="hidden md:inline-flex items-center gap-1 text-sm font-semibold opacity-0 translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-hover:flex"
+                                                                        style={{ color: extractHexFromBgClass(post.color, '#1f2937') }}
+                                                                    >
+                                                                        阅读 <ArrowRight size={16} />
                                                                     </span>
                                                                 </div>
                                                             </div>
