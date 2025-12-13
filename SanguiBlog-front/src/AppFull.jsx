@@ -754,7 +754,7 @@ const ArticleDetail = ({
 
             {/* Floating Back Button - Aligned with article content */}
             <div
-                className="fixed left-0 right-0 z-50 pointer-events-none"
+                className="fixed left-0 right-0 z-30 pointer-events-none"
                 style={{ top: fixedTopOffset }}
             >
                 <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
@@ -1592,7 +1592,7 @@ const Navigation = ({
         <AnimatePresence>
             {settingsOpen && (
                 <motion.div
-                    className="fixed inset-0 z-[70] flex items-start justify-end p-4 md:p-8 bg-black/40 backdrop-blur-[2px]"
+                    className="fixed inset-0 z-[120] flex items-start justify-end p-4 md:p-8 bg-black/40 backdrop-blur-[2px]"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
