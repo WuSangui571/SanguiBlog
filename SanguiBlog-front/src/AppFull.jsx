@@ -9485,6 +9485,15 @@ const ArticleList = ({
                                                                     : 'linear-gradient(160deg, rgba(0,0,0,0.55), rgba(0,0,0,0.25))'
                                                             }}
                                                         />
+                                                        {coverUrl && (
+                                                            <div
+                                                                className="absolute inset-0 opacity-0 group-hover:opacity-80 transition-opacity duration-300 mix-blend-multiply pointer-events-none"
+                                                                style={{
+                                                                    backgroundImage: `radial-gradient(${extractHexFromBgClass(post.color, '#FFD700')}22 1px, transparent 1px)`,
+                                                                    backgroundSize: '12px 12px'
+                                                                }}
+                                                            />
+                                                        )}
                                                         {!coverUrl && (
                                                             <div
                                                                 className="absolute inset-0 mix-blend-multiply"
