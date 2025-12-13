@@ -1759,15 +1759,47 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                 </motion.div>
 
                 <h1 className={`text-6xl md:text-9xl font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-sm ${textClass}`}>
-                    <motion.span initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
-                        className="block">
-                        用代码记录<span
-                            className="text-[#6366F1] underline decoration-8 decoration-black underline-offset-8 ml-4">探索</span>
+                    <motion.span
+                        initial={{ y: 80, scale: 0.85, opacity: 0 }}
+                        animate={{ y: [80, -12, 0], scale: [0.85, 1.08, 1], opacity: [0, 1, 1] }}
+                        transition={{ delay: 0.08, duration: 0.9, ease: 'easeOut', times: [0, 0.6, 1] }}
+                        className="block space-x-3"
+                    >
+                        <motion.span
+                            whileHover={{ y: -4, scale: 1.02, rotate: -2 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 14 }}
+                            className="inline-block"
+                        >
+                            用代码记录
+                        </motion.span>
+                        <motion.span
+                            whileHover={{ y: -6, scale: 1.04, rotate: 2, color: '#4F46E5' }}
+                            transition={{ type: 'spring', stiffness: 280, damping: 14 }}
+                            className="inline-block text-[#6366F1] underline decoration-8 decoration-black underline-offset-8 px-2"
+                        >
+                            探索
+                        </motion.span>
                     </motion.span>
-                    <motion.span initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-                        className="block">
-                        以分享照亮<span
-                            className="text-[#0EA5E9] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
+                    <motion.span
+                        initial={{ y: 80, scale: 0.85, opacity: 0 }}
+                        animate={{ y: [80, -12, 0], scale: [0.85, 1.08, 1], opacity: [0, 1, 1] }}
+                        transition={{ delay: 0.18, duration: 0.9, ease: 'easeOut', times: [0, 0.6, 1] }}
+                        className="block space-x-3 mt-2"
+                    >
+                        <motion.span
+                            whileHover={{ y: -4, scale: 1.02, rotate: -1.5 }}
+                            transition={{ type: 'spring', stiffness: 240, damping: 13 }}
+                            className="inline-block"
+                        >
+                            以分享照亮
+                        </motion.span>
+                        <motion.span
+                            whileHover={{ y: -6, scale: 1.05, rotate: 2.5, backgroundColor: '#FFD700', color: '#0EA5E9' }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                            className="inline-block text-[#0EA5E9] bg-[#FFD700] px-2 ml-1 border-4 border-black skew-x-[-10deg] shadow-[6px_6px_0px_0px_#000]"
+                        >
+                            成长
+                        </motion.span>
                     </motion.span>
                 </h1>
                 <p className={`text-xl md:text-2xl font-bold mb-12 max-w-2xl mx-auto border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-600'}`}>
