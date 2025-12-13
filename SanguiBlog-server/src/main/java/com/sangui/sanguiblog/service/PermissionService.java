@@ -53,11 +53,15 @@ public class PermissionService {
         assignPermissionsToRole("SUPER_ADMIN",
                 new LinkedHashSet<>(permissionMap.keySet()), permissionMap);
 
-        assignPermissionsToRole("ADMIN",
-                defaultCodesForRole("ADMIN"), permissionMap);
+        if (rolePermissionRepository.findByRole_Code("ADMIN").isEmpty()) {
+            assignPermissionsToRole("ADMIN",
+                    defaultCodesForRole("ADMIN"), permissionMap);
+        }
 
-        assignPermissionsToRole("USER",
-                defaultCodesForRole("USER"), permissionMap);
+        if (rolePermissionRepository.findByRole_Code("USER").isEmpty()) {
+            assignPermissionsToRole("USER",
+                    defaultCodesForRole("USER"), permissionMap);
+        }
     }
 
     @Transactional(readOnly = true)

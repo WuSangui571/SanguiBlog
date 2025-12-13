@@ -311,6 +311,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 ole_permissions in bulk.
 
 *   权限初始化已合并进 `sanguiblog_db.sql`（含权限列表与角色映射）；只允许 ADMIN/SUPER_ADMIN 访问 `/admin/permissions`。
+*   自 V2.1.30 起，`DataInitializer.ensureDefaultPermissions` 仅在角色尚无权限映射时才写入默认矩阵，避免重启时覆盖后台已保存的自定义权限；SUPER_ADMIN 仍会自动补齐新增加的权限代码。
 
 *   所有后台控制器及 `/api/posts` 写操作均使用 `PERM_*` 权限码进行 `@PreAuthorize` 校验，与 `PermissionDefinition` 中的 code 一一对应；`SUPER_ADMIN` 默认拥有全部权限，其余角色必须在矩阵中勾选后才能调用相应 API。
 
