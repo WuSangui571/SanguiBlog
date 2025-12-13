@@ -416,6 +416,7 @@ const ArticleDetail = ({
 }) => {
     const { meta: siteMeta } = useBlog();
     const summary = articleData?.summary;
+    const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role?.code === 'SUPER_ADMIN';
 
     // The backend returns a PostDetailDto which contains a 'summary' field (PostSummaryDto).
     // We should prioritize using 'summary' as the source of post metadata.
@@ -498,6 +499,12 @@ const ArticleDetail = ({
         const finalSlug = count === 0 ? baseSlug : `${baseSlug}-${nextCount}`;
         return <Tag id={finalSlug} {...props}>{children}</Tag>;
     };
+
+    const handleAdminEdit = useCallback(() => {
+        if (!post.id) return;
+        const url = `/admin/posts/edit?postId=${post.id}`;
+        window.open(url, '_blank', 'noopener');
+    }, [post.id]);
 
     const handleAnchorClick = (event, href) => {
         if (!href || !href.startsWith('#')) return;
@@ -856,13 +863,24 @@ const ArticleDetail = ({
                             </div>
                         </div>
 
-                        <button
-                            onClick={handleShare}
-                            className={`p-2 border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
-                            title="复制链接"
-                        >
-                            <Share2 size={20} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {isSuperAdmin && (
+                                <button
+                                    onClick={handleAdminEdit}
+                                    className={`px-3 py-2 text-xs font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] inline-flex items-center gap-2 ${isDarkMode ? 'bg-pink-600 text-white hover:bg-pink-500' : 'bg-[#FFD700] text-black hover:-translate-y-0.5'} transition-all`}
+                                    title="跳转后台编辑此文章"
+                                >
+                                    <Edit size={16} /> 后台编辑
+                                </button>
+                            )}
+                            <button
+                                onClick={handleShare}
+                                className={`p-2 border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
+                                title="复制链接"
+                            >
+                                <Share2 size={20} />
+                            </button>
+                        </div>
                     </div>
 
                     <article className={proseClass} ref={articleContentRef}>
@@ -9421,8 +9439,8 @@ const ArticleList = ({
                                                                 src={coverUrl}
                                                                 alt={post.title}
                                                                 className="absolute inset-0 w-full h-full object-cover"
-                                                                initial={{ scale: 1.02 }}
-                                                                whileHover={{ scale: 1.05 }}
+                                                                initial={{ scale: 1.01 }}
+                                                                whileHover={{ scale: 1.03 }}
                                                                 transition={{ duration: 0.4 }}
                                                             />
                                                         ) : (
@@ -9431,13 +9449,17 @@ const ArticleList = ({
                                                         <div
                                                             className="absolute inset-0"
                                                             style={{
-                                                                background: `linear-gradient(160deg, rgba(0,0,0,0.65), rgba(0,0,0,0.35))`
+                                                                background: coverUrl
+                                                                    ? 'linear-gradient(160deg, rgba(0,0,0,0.22), rgba(0,0,0,0.08))'
+                                                                    : 'linear-gradient(160deg, rgba(0,0,0,0.55), rgba(0,0,0,0.25))'
                                                             }}
                                                         />
-                                                        <div
-                                                            className="absolute inset-0 mix-blend-multiply"
-                                                            style={{ backgroundColor: extractHexFromBgClass(post.color, '#6366F1'), opacity: coverUrl ? 0.45 : 0.2 }}
-                                                        />
+                                                        {!coverUrl && (
+                                                            <div
+                                                                className="absolute inset-0 mix-blend-multiply"
+                                                                style={{ backgroundColor: extractHexFromBgClass(post.color, '#6366F1'), opacity: 0.2 }}
+                                                            />
+                                                        )}
                                                         <div className="relative z-10 p-6 h-full flex flex-col justify-between text-white">
                                                             <span className="font-black text-5xl opacity-60 drop-shadow">
                                                                 {(idx + 1 + (currentPage - 1) * pageSize).toString().padStart(2, '0')}
