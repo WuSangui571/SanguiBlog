@@ -9698,11 +9698,15 @@ const ArticleList = ({
                                         return (
                                             <span
                                                 key={`${item}-${idx}`}
-                                                className={`h-10 px-3 inline-flex items-center justify-center rounded-full text-sm font-black tracking-[0.35em] border-2 border-black opacity-90 hover:opacity-100 transition-opacity ${isDarkMode
-                                                    ? 'bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 text-gray-200 shadow-[4px_4px_0px_0px_#000]'
-                                                    : 'bg-gradient-to-r from-[#FFF3A3] via-white to-[#FFE066] text-gray-800 shadow-[4px_4px_0px_0px_#000]'}`}
+                                                className={`h-9 px-3 inline-flex items-center justify-center rounded-full text-xs font-black border-2 border-black shadow-[3px_3px_0px_0px_#000] opacity-80 hover:opacity-90 transition-opacity ${isDarkMode
+                                                    ? 'bg-gray-900 text-gray-200'
+                                                    : 'bg-white text-gray-700'}`}
                                             >
-                                                ···
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-1.25 h-1.25 rounded-full bg-current opacity-80 shadow-[0.8px_0.8px_0px_0px_#000]" />
+                                                    <span className="w-1.25 h-1.25 rounded-full bg-current opacity-80 shadow-[0.8px_0.8px_0px_0px_#000]" />
+                                                    <span className="w-1.25 h-1.25 rounded-full bg-current opacity-80 shadow-[0.8px_0.8px_0px_0px_#000]" />
+                                                </span>
                                             </span>
                                         );
                                     }
