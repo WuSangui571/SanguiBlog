@@ -7858,6 +7858,22 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         return stored !== 'false';
     });
 
+    // 浏览器刷新时强制回到顶部，关闭自动滚动恢复
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        let prev = null;
+        if ('scrollRestoration' in window.history) {
+            prev = window.history.scrollRestoration;
+            window.history.scrollRestoration = 'manual';
+        }
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        return () => {
+            if (prev !== null) {
+                window.history.scrollRestoration = prev;
+            }
+        };
+    }, []);
+
     useEffect(() => {
         if (typeof window === 'undefined') return;
         window.localStorage.setItem('sg_background_enabled', String(backgroundEnabled));
