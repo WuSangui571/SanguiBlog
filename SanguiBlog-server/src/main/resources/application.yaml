@@ -44,16 +44,16 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
 
 site:
-  version: "V2.1.28"
+  version: "V2.1.29"
   asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
 #  asset-base-url: http://new.sangui.top/uploads
   hero:
-    tagline: ¾Ü¾øÆ½Ó¹£¬ÔÚ SpringBoot Óë React µÄ±ßÔµ¿ñÊÔÌ½¡£
+    tagline: æ‹’ç»å¹³åº¸ï¼Œåœ¨ SpringBoot ä¸ React çš„è¾¹ç¼˜ç‹‚è¯•æ¢ã€‚
   home:
-    signature-quote: ×èµ²ÄãµÄ²»ÊÇ±ğÈË£¬¶øÊÇÄã×Ô¼º¡£
+    signature-quote: é˜»æŒ¡ä½ çš„ä¸æ˜¯åˆ«äººï¼Œè€Œæ˜¯ä½ è‡ªå·±ã€‚
   footer:
     year: 2025
-    brand: Èı¹ğ²©¿Í
-    icp-number: ÕãICP±¸2025167176ºÅ
+    brand: ä¸‰æ¡‚åšå®¢
+    icp-number: æµ™ICPå¤‡2025167176å·
     icp-link: https://beian.miit.gov.cn/
     powered-by: Powered by Spring Boot 3 & React 19

@@ -8555,6 +8555,7 @@ const ArticleList = ({
     const [megaSpinActive, setMegaSpinActive] = useState(false);
     const [expandedTags, setExpandedTags] = useState(false);
     const [activeTag, setActiveTag] = useState('all');
+    const [keyword, setKeyword] = useState('');
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
     const warningTimerRef = useRef(null);
     const lastSpinAtRef = useRef(0);
@@ -8572,6 +8573,7 @@ const ArticleList = ({
     ]), []);
     const NEW_POST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
+    const keywordText = keyword.trim().toLowerCase();
     const isPostNew = (dateStr) => {
         if (!dateStr) return false;
         const parsed = Date.parse(`${dateStr}T00:00:00`);
@@ -8710,13 +8712,18 @@ const ArticleList = ({
             });
             if (!normalized.includes(activeTag)) return false;
         }
+        if (keywordText) {
+            const titleText = `${post.title || ''}`.toLowerCase();
+            const abstractText = `${post.excerpt || post.summary || post.description || ''}`.toLowerCase();
+            if (!titleText.includes(keywordText) && !abstractText.includes(keywordText)) return false;
+        }
         return true;
     });
 
     useEffect(() => {
         setCurrentPage(1);
         paginationScrollReadyRef.current = false;
-    }, [activeParent, activeSub, activeTag, pageSize]);
+    }, [activeParent, activeSub, activeTag, pageSize, keyword]);
 
     useEffect(() => {
         if (!paginationScrollReadyRef.current) {
@@ -9111,6 +9118,51 @@ const ArticleList = ({
                     </div>
 
                     <div className="flex-1 flex flex-col">
+                        <div
+                            className={`mb-8 border-2 border-black rounded-xl shadow-[6px_6px_0px_0px_#000] overflow-hidden ${isDarkMode ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white' : 'bg-gradient-to-r from-[#FFF3A3] via-white to-[#FFE4E6] text-black'}`}>
+                            <div className="flex flex-col md:flex-row md:items-center gap-3 px-5 py-4">
+                                <div className="flex items-center gap-2 font-black text-lg tracking-tight">
+                                    <Search size={18} />
+                                    <span>文章搜索</span>
+                                </div>
+                                <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                                    <div
+                                        className={`flex items-center gap-2 flex-1 px-3 py-2 border-2 border-black rounded-lg shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+                                        <Search size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
+                                        <input
+                                            type="text"
+                                            value={keyword}
+                                            onChange={(e) => setKeyword(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    setCurrentPage(1);
+                                                    scrollToPostsTop();
+                                                }
+                                            }}
+                                            placeholder="搜索标题或摘要，实时模糊匹配"
+                                            className={`w-full bg-transparent outline-none text-sm font-semibold placeholder:font-normal placeholder:text-gray-400 ${isDarkMode ? 'text-white' : 'text-black'}`}
+                                        />
+                                        {keyword && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setKeyword('');
+                                                    setCurrentPage(1);
+                                                    scrollToPostsTop();
+                                                }}
+                                                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-white text-black hover:-translate-y-0.5' : 'bg-black text-white hover:bg-[#FF0080]'}`}
+                                            >
+                                                <X size={14} /> 清空
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div
+                                        className={`text-[11px] font-mono font-bold px-3 py-2 border-2 border-dashed border-black rounded-lg ${isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-black/5 text-gray-800'}`}>
+                                        {keywordText ? `已筛选 ${filteredPosts.length} 篇` : `共 ${sourcePosts.length} 篇`}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div className="space-y-8">
                             {displayPosts.length > 0 ? (
                                 displayPosts.map((post, idx) => {
@@ -9193,10 +9245,18 @@ const ArticleList = ({
                                 })
                             ) : (
                                 <div className={`p-12 border-4 border-black border-dashed text-center ${cardBg}`}>
-                                    <p className={`text-2xl font-black ${subText}`}>NO DATA FOUND</p>
+                                    <p className={`text-2xl font-black ${subText}`}>
+                                        {keywordText ? '未找到匹配的文章，换个关键词试试？' : 'NO DATA FOUND'}
+                                    </p>
+                                    {keywordText && (
+                                        <p className={`mt-3 text-sm font-bold ${subText}`}>
+                                            当前关键词：{keyword}
+                                        </p>
+                                    )}
                                     <PopButton variant="primary" className="mt-4" onClick={() => {
                                         setActiveParent('all');
                                         setActiveSub('all');
+                                        setKeyword('');
                                         scrollToPostsTop();
                                     }}>RESET FILTERS</PopButton>
                                 </div>
