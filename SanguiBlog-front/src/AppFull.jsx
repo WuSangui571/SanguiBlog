@@ -9506,25 +9506,53 @@ const ArticleList = ({
                                                     </div>
 
                                                     <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg} flex flex-col`} style={{ minHeight: '360px' }}>
-                                                        <div className="flex flex-wrap gap-2 mb-4">
-                                                            {tags.map(t => (
-                                                                <span key={t}
-                                                                    className={`px-2 py-1 border border-black text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
-                                                            ))}
+                                                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                                                            <span className={`px-2 py-1 text-[11px] font-black border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-700'}`}>
+                                                                {post.parentCategory}
+                                                            </span>
+                                                            <ChevronRight size={12} className={isDarkMode ? 'text-gray-400' : 'text-gray-600'} />
+                                                            <span className={`px-2 py-1 text-[11px] font-black border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                                                                {post.category}
+                                                            </span>
+                                                            <div className="flex flex-wrap gap-1 ml-auto">
+                                                                {tags.slice(0, 3).map(t => (
+                                                                    <span key={t}
+                                                                        className={`px-2 py-0.5 border border-black text-[11px] font-black rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
+                                                                ))}
+                                                                {tags.length > 3 && (
+                                                                    <span className="text-[11px] font-black px-2 py-0.5 border border-black rounded-full bg-black text-white shadow-[2px_2px_0px_0px_#000]">+{tags.length - 3}</span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <div className="flex flex-wrap items-center gap-3 mb-2">
-                                                            <h2 className={`text-3xl font-black flex-1 group-hover:text-[#6366F1] transition-colors ${text}`} style={{ maxHeight: '72px', overflow: 'hidden' }}>{post.title}</h2>
+                                                        <div className="flex items-start gap-2 mb-3">
+                                                            <h2
+                                                                className={`text-3xl font-black flex-1 leading-tight transition-colors group-hover:text-[var(--title-color)] ${text}`}
+                                                                style={{
+                                                                    '--title-color': extractHexFromBgClass(post.color, '#6366F1'),
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 2,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                    overflow: 'hidden'
+                                                                }}
+                                                            >
+                                                                {post.title}
+                                                            </h2>
                                                             {isPostNew(post.date) && (
                                                                 <span
-                                                                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-black uppercase tracking-widest border-2 border-black bg-[#FF0080] text-white shadow-[2px_2px_0px_0px_#000] animate-pulse">
-                                                                    <Sparkles size={14} strokeWidth={3} />
+                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest border-2 border-black bg-[#FF0080] text-white shadow-[2px_2px_0px_0px_#000] animate-pulse">
+                                                                    <Sparkles size={12} strokeWidth={3} />
                                                                     NEW
                                                                 </span>
                                                             )}
                                                         </div>
                                                         <p
-                                                            className={`text-lg font-medium border-l-4 border-gray-300 pl-4 ${subText}`}
-                                                            style={{ maxHeight: '96px', overflow: 'hidden' }}
+                                                            className={`text-base md:text-lg font-medium border-l-4 border-gray-300 pl-4 pr-2 ${subText}`}
+                                                            style={{
+                                                                display: '-webkit-box',
+                                                                WebkitLineClamp: 3,
+                                                                WebkitBoxOrient: 'vertical',
+                                                                overflow: 'hidden'
+                                                            }}
                                                         >
                                                             {post.excerpt}
                                                         </p>
@@ -9532,15 +9560,16 @@ const ArticleList = ({
                                                         <div className="mt-auto pt-4">
                                                             <div
                                                                 className={`flex justify-between items-center border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-black'} pt-4 border-dashed`}>
-                                                                <span
-                                                                    className="font-mono font-bold text-xs bg-black text-white px-2 py-1">{post.date}</span>
+                                                                <span className="font-mono font-bold text-xs bg-black text-white px-2 py-1 flex items-center gap-1">
+                                                                    <Clock size={14} /> {post.date}
+                                                                </span>
                                                                 <div className={`flex gap-4 font-bold text-sm ${text}`}>
-                                                                    <span
-                                                                        className="flex items-center gap-1 hover:text-[#FF0080]"><Eye
-                                                                            size={18} /> {viewCount}</span>
-                                                                    <span
-                                                                        className="flex items-center gap-1 hover:text-[#6366F1]"><MessageSquare
-                                                                            size={18} /> {commentCount}</span>
+                                                                    <span className="flex items-center gap-1 hover:text-[#FF0080]">
+                                                                        <Eye size={18} /> {viewCount}
+                                                                    </span>
+                                                                    <span className="flex items-center gap-1 hover:text-[#6366F1]">
+                                                                        <MessageSquare size={18} /> {commentCount}
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         </div>
