@@ -322,6 +322,23 @@ export const uploadPostAssets = async (files, folder) => {
   return res.json();
 };
 
+export const uploadPostCover = async (file, postSlug) => {
+  const token = localStorage.getItem("sg_token");
+  const formData = new FormData();
+  if (postSlug) formData.append("postSlug", postSlug);
+  formData.append("file", file);
+  const res = await fetch(`${API_ORIGIN}/api/upload/post-cover`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt || res.statusText);
+  }
+  return res.json();
+};
+
 export const createPost = (payload) =>
   request("/posts", {
     method: "POST",

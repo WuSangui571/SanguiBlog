@@ -1315,3 +1315,8 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.30 (2025-12-13)
 - **权限初始化**：启动时仅在角色无权限映射时才写入默认矩阵，避免重启覆盖后台已保存的角色权限；SUPER_ADMIN 依旧会自动补齐新增权限代码。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.30`
+
+## V2.1.31 (2025-12-13)
+- **文章封面**：后端 posts 表新增 `cover_image` 字段与 `/api/upload/post-cover` 上传接口，封面文件存储于 `/uploads/covers/<slug>/`，接口返回路径可直接写入 `coverImage`；列表/详情/Admin DTO 均返回封面路径。
+- **前台展示/编辑**：首页文章卡片支持封面图叠加渐变显示；发布/编辑页新增封面上传与预览模块，可一键替换或移除并随表单提交 `coverImage`。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.31`

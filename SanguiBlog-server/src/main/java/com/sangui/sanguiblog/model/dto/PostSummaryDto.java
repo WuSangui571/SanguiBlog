@@ -11,6 +11,7 @@ public class PostSummaryDto {
     private Long id;
     private String title;
     private String excerpt;
+    private String coverImage;
     private String category;
     private String parentCategory;
     private List<String> tags;

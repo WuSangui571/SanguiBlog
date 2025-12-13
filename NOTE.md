@@ -238,6 +238,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   `/admin/create-post` 页面采用“自动预留 slug + 光标插图”的流程：进入页面即调用 `/api/upload/post-assets/reserve` 申请唯一资源目录，Markdown 编辑区右上方的“插入图片”按钮会在当前光标处上传所选图片，直接写入 `/uploads/<slug>/` 后马上把对应 Markdown 片段插入正文。
 
+*   封面图：新增 `posts.cover_image (VARCHAR(512))`，上传接口为 `POST /api/upload/post-cover`（单文件、≤5MB，需登录），目录固定在 `/uploads/covers/<postSlug>/`。`coverImage` 字段随 `POST/PUT /api/posts/{id}` 一起保存，`PostSummaryDto` 与 `AdminPostDetailDto/PostAdminDto` 已返回封面路径，前端首页卡片、发布/编辑页直接读取。
+
 *   资源标识卡片内置主题色选择器，可直接输入 `bg-[#xxxxxx]` 类名、使用色盘或点选 6 个预设颜色，提交时会作为 `theme_color` 存入数据库，CreatePost 与 EditPost 均复用同一组件，确保展示色与后台数据一致。
 
 *   Markdown 文件通过本地读取填充正文：标题若为空，会取文件名去除扩展名后再去掉首个 “-” 及之前的部分作为文章名（如 `073-ngrok 本地外网测试.md` → `ngrok 本地外网测试`）；摘要优先解析首个以 `>` 开头的行（去掉 `>` 后的内容），若未匹配到会提示“未识别摘要格式，请手动填写摘要”，并回退到正文前 160 字。被识别的摘要行会从正文中移除后再填充编辑器，避免重复出现；正文会扫描 `![alt](url)` 形式的图片语法并在上传提示区醒目标示“本文检测到 X 张图片”，便于确认资源齐全。发布步骤顺序为“Step1 选择二级分类 → Step2 选择标签 → Step3 资源标识”，二级分类自动配色仅在用户未手动改色时生效（最多 6 个预设色），可随时手动改色；发布页“重新生成”仅生成 slug 不改颜色，“重置为默认色”可恢复默认主题色，“清空表单”会重置到首个父类 + 首个子类并按预设色上色。

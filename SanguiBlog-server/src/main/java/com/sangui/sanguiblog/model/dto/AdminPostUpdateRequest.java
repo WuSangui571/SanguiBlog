@@ -12,6 +12,7 @@ public class AdminPostUpdateRequest {
     private String title;
     private String slug;
     private String excerpt;
+    private String coverImage;
     private String status;
     private String themeColor;
     @NotNull

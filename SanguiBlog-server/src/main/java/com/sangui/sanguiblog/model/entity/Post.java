@@ -49,6 +49,9 @@ public class Post {
     @Column(name = "theme_color", length = 64)
     private String themeColor;
 
+    @Column(name = "cover_image", length = 512)
+    private String coverImage;
+
     @Column(length = 32)
     private String status;
 

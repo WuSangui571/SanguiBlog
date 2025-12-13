@@ -57,6 +57,7 @@ import {
     adminDeleteComment,
     uploadAvatar,
     uploadPostAssets,
+    uploadPostCover,
     reservePostAssetsFolder,
     createPost,
     updatePost
@@ -2604,6 +2605,9 @@ const CreatePostView = ({ isDarkMode }) => {
     const [assetsFolder, setAssetsFolder] = useState("");
     const [title, setTitle] = useState("");
     const [excerpt, setExcerpt] = useState("");
+    const [coverImage, setCoverImage] = useState("");
+    const [coverPreview, setCoverPreview] = useState("");
+    const [coverUploading, setCoverUploading] = useState(false);
     const [mdContent, setMdContent] = useState("");
     const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
     const [hasManualThemeColor, setHasManualThemeColor] = useState(false);
@@ -2623,6 +2627,7 @@ const CreatePostView = ({ isDarkMode }) => {
     const markdownFileInputRef = useRef(null);
     const markdownEditorRef = useRef(null);
     const inlineImageInputRef = useRef(null);
+    const coverInputRef = useRef(null);
     const {
         notice: publishNotice,
         showNotice: showPublishNotice,
@@ -2632,6 +2637,18 @@ const CreatePostView = ({ isDarkMode }) => {
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
+    const normalizeCoverValue = useCallback((raw) => {
+        if (!raw) return "";
+        if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+        const cleaned = raw.replace(/^\/+/, "");
+        const prefixed = cleaned.startsWith("uploads/") ? cleaned : `uploads/${cleaned}`;
+        return `/${prefixed}`;
+    }, []);
+    const updateCoverState = useCallback((raw) => {
+        const normalized = normalizeCoverValue(raw);
+        setCoverImage(normalized);
+        setCoverPreview(normalized ? buildAssetUrl(normalized) : "");
+    }, [normalizeCoverValue]);
 
     const ensureAssetsSlug = useCallback(async () => {
         if (assetsFolder) return assetsFolder;
@@ -2643,6 +2660,34 @@ const CreatePostView = ({ isDarkMode }) => {
         setAssetsFolder(data.folder);
         return data.folder;
     }, [assetsFolder]);
+
+    const handleCoverUpload = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setCoverUploading(true);
+        setSubmitError("");
+        try {
+            const slug = await ensureAssetsSlug();
+            const res = await uploadPostCover(file, slug);
+            const data = res.data || res;
+            const rawPath = data.path || data.url || data.filename || "";
+            updateCoverState(rawPath);
+            setSubmitNotice("封面已上传");
+        } catch (error) {
+            setSubmitError(error.message || "封面上传失败");
+            setSubmitNotice("");
+        } finally {
+            setCoverUploading(false);
+            if (event?.target) {
+                event.target.value = null;
+            }
+        }
+    };
+
+    const handleRemoveCover = useCallback(() => {
+        setCoverImage("");
+        setCoverPreview("");
+    }, []);
 
     const pushMdHistory = useCallback((value) => {
         mdHistoryRef.current.push(value);
@@ -2903,6 +2948,7 @@ const CreatePostView = ({ isDarkMode }) => {
                 slug,
                 contentMd: mdContent,
                 excerpt: excerpt.trim() || mdContent.replace(/\s+/g, " ").slice(0, 160),
+                coverImage: coverImage || undefined,
                 categoryId: selectedCategoryId,
                 tagIds: selectedTags,
                 status: "PUBLISHED",
@@ -2923,6 +2969,8 @@ const CreatePostView = ({ isDarkMode }) => {
             setAssetsFolder("");
             setMarkdownMessage("");
             setImageUploadMessage("");
+            setCoverImage("");
+            setCoverPreview("");
             setThemeColor(DEFAULT_THEME_COLOR);
             setHasManualThemeColor(false);
         } catch (error) {
@@ -2943,6 +2991,8 @@ const CreatePostView = ({ isDarkMode }) => {
         setMarkdownFileName("");
         setMarkdownMessage("");
         setImageUploadMessage("");
+        setCoverImage("");
+        setCoverPreview("");
         setAssetsFolder("");
         setSelectedTags([]);
         setThemeColor(DEFAULT_THEME_COLOR);
@@ -3101,6 +3151,73 @@ const CreatePostView = ({ isDarkMode }) => {
                             onChange={(e) => setExcerpt(e.target.value)}
                             placeholder="用于首页卡片展示，若留空则自动截取正文前 160 字"
                         />
+                    </div>
+
+                    <div
+                        className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章封面（推荐）</label>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">用于首页列表卡片展示，建议 16:9 或 4:3，JPG/PNG/WebP 均可。</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => coverInputRef.current?.click()}
+                                    disabled={coverUploading}
+                                    className={`px-3 py-1.5 text-xs font-bold border-2 rounded-full flex items-center gap-1 ${coverUploading ? 'border-gray-400 text-gray-400 cursor-not-allowed' : 'border-black bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform'}`}
+                                >
+                                    <ImagePlus size={14} /> {coverUploading ? '上传中...' : '上传封面'}
+                                </button>
+                                {coverImage && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveCover}
+                                        className="px-3 py-1.5 text-xs font-bold border-2 border-black rounded-full bg-white text-black hover:bg-black hover:text-white transition-colors"
+                                    >
+                                        移除
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={coverInputRef}
+                            className="hidden"
+                            onChange={handleCoverUpload}
+                        />
+                        <div className={`relative w-full h-56 rounded-xl overflow-hidden border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-black bg-gray-50'}`}>
+                            {coverPreview ? (
+                                <>
+                                    <img src={coverPreview} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{
+                                            background: `linear-gradient(120deg, ${extractHexFromBgClass(themeColor, '#6366F1')}88, rgba(0,0,0,0.45))`
+                                        }}
+                                    />
+                                </>
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-xs text-gray-500 gap-2">
+                                    <span className="font-bold text-sm">暂无封面</span>
+                                    <span>支持 png / jpg / webp，最大 5MB</span>
+                                </div>
+                            )}
+                            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                                <span className="text-[11px] font-mono px-2 py-1 rounded-full bg-black text-white shadow-lg">
+                                    {coverImage ? '已绑定封面' : '未设置封面'}
+                                </span>
+                                <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-white/80 backdrop-blur text-gray-700 border border-black/10">
+                                    {themeColor || '默认色'}
+                                </span>
+                            </div>
+                        </div>
+                        {coverImage && (
+                            <p className="text-xs text-gray-500 break-all">
+                                路径：{coverImage}
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -4009,6 +4126,7 @@ const EditPostView = ({ isDarkMode }) => {
         title: '',
         slug: '',
         excerpt: '',
+        coverImage: '',
         mdContent: '',
         themeColor: '',
         status: 'DRAFT'
@@ -4020,6 +4138,8 @@ const EditPostView = ({ isDarkMode }) => {
     const [markdownMessage, setMarkdownMessage] = useState('');
     const [imageUploadMessage, setImageUploadMessage] = useState('');
     const [uploadingImages, setUploadingImages] = useState(false);
+    const [coverPreview, setCoverPreview] = useState('');
+    const [coverUploading, setCoverUploading] = useState(false);
     const [assetsFolder, setAssetsFolder] = useState('');
     const [hasManualThemeColorEdit, setHasManualThemeColorEdit] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -4028,6 +4148,7 @@ const EditPostView = ({ isDarkMode }) => {
     const markdownEditorRef = useRef(null);
     const markdownFileInputRef = useRef(null);
     const inlineImageInputRef = useRef(null);
+    const coverInputRef = useRef(null);
     const [postMeta, setPostMeta] = useState({ publishedAt: null });
     const selectorPageSize = 8;
     const {
@@ -4039,6 +4160,18 @@ const EditPostView = ({ isDarkMode }) => {
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
+    const normalizeCoverValue = useCallback((raw) => {
+        if (!raw) return "";
+        if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+        const cleaned = raw.replace(/^\/+/, "");
+        const prefixed = cleaned.startsWith("uploads/") ? cleaned : `uploads/${cleaned}`;
+        return `/${prefixed}`;
+    }, []);
+    const updateCoverState = useCallback((raw) => {
+        const normalized = normalizeCoverValue(raw);
+        setForm((prev) => ({ ...prev, coverImage: normalized }));
+        setCoverPreview(normalized ? buildAssetUrl(normalized) : '');
+    }, [normalizeCoverValue]);
     const statusOptions = [
         { value: 'DRAFT', label: '草稿' },
         { value: 'PUBLISHED', label: '已发布' },
@@ -4115,10 +4248,12 @@ const EditPostView = ({ isDarkMode }) => {
         try {
             const res = await adminFetchPostDetail(id);
             const data = res.data || res;
+            const normalizedCover = normalizeCoverValue(data.coverImage || '');
             setForm({
                 title: data.title || '',
                 slug: data.slug || '',
                 excerpt: data.excerpt || '',
+                coverImage: normalizedCover,
                 mdContent: data.contentMd || '',
                 themeColor: data.themeColor || '',
                 status: data.status || 'DRAFT'
@@ -4127,6 +4262,7 @@ const EditPostView = ({ isDarkMode }) => {
             setSelectedParentId(data.parentCategoryId ? Number(data.parentCategoryId) : null);
             setSelectedTags((data.tagIds || []).map((tid) => Number(tid)));
             setAssetsFolder(data.slug || '');
+            setCoverPreview(normalizedCover ? buildAssetUrl(normalizedCover) : '');
             setHasManualThemeColorEdit(false);
             setPostMeta({ publishedAt: data.publishedAt || null });
             setSubmitNotice('');
@@ -4166,6 +4302,33 @@ const EditPostView = ({ isDarkMode }) => {
         setAssetsFolder(folder);
         return folder;
     }, [assetsFolder, form.slug]);
+
+    const handleCoverUploadEdit = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setCoverUploading(true);
+        setSubmitError('');
+        try {
+            const folder = await ensureAssetsFolder();
+            const res = await uploadPostCover(file, folder);
+            const data = res.data || res;
+            const raw = data.path || data.url || data.filename || '';
+            updateCoverState(raw);
+            setSubmitNotice('封面已更新');
+        } catch (error) {
+            setSubmitError(error.message || '封面上传失败');
+        } finally {
+            setCoverUploading(false);
+            if (event?.target) {
+                event.target.value = null;
+            }
+        }
+    };
+
+    const handleRemoveCoverEdit = useCallback(() => {
+        updateCoverState('');
+        setCoverPreview('');
+    }, [updateCoverState]);
 
     const insertImagesAtCursor = useCallback((urls = []) => {
         if (!urls.length) return;
@@ -4272,6 +4435,7 @@ const EditPostView = ({ isDarkMode }) => {
                 title: form.title.trim(),
                 slug: form.slug.trim(),
                 excerpt: form.excerpt?.trim() || form.mdContent.replace(/\s+/g, ' ').slice(0, 160),
+                coverImage: form.coverImage || undefined,
                 contentMd: form.mdContent,
                 themeColor: form.themeColor?.trim() || undefined,
                 categoryId: selectedCategoryId,
@@ -4292,11 +4456,12 @@ const EditPostView = ({ isDarkMode }) => {
     const resetSelection = () => {
         setSelectedPostId(null);
         setSearchParams({});
-        setForm({ title: '', slug: '', excerpt: '', mdContent: '', themeColor: '', status: 'DRAFT' });
+        setForm({ title: '', slug: '', excerpt: '', coverImage: '', mdContent: '', themeColor: '', status: 'DRAFT' });
         setSelectedCategoryId(null);
         setSelectedParentId(null);
         setSelectedTags([]);
         setAssetsFolder('');
+        setCoverPreview('');
         setSubmitNotice('');
         setSubmitError('');
     };
@@ -4571,15 +4736,82 @@ const EditPostView = ({ isDarkMode }) => {
                             <label
                                 className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章摘要（可选）</label>
                             <textarea
-                                className={`${inputClass} min-h-[120px]`}
-                                value={form.excerpt}
-                                onChange={(e) => setForm((prev) => ({ ...prev, excerpt: e.target.value }))}
-                                placeholder="用于首页卡片展示，若留空则自动截取正文"
-                            />
-                        </div>
+                            className={`${inputClass} min-h-[120px]`}
+                            value={form.excerpt}
+                            onChange={(e) => setForm((prev) => ({ ...prev, excerpt: e.target.value }))}
+                            placeholder="用于首页卡片展示，若留空则自动截取正文"
+                        />
                     </div>
 
-                    <div className="space-y-6">
+                    <div
+                        className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章封面</label>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">用于首页列表卡片展示，上传后可随时替换或移除。</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => coverInputRef.current?.click()}
+                                    disabled={coverUploading}
+                                    className={`px-3 py-1.5 text-xs font-bold border-2 rounded-full flex items-center gap-1 ${coverUploading ? 'border-gray-400 text-gray-400 cursor-not-allowed' : 'border-black bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform'}`}
+                                >
+                                    <ImagePlus size={14} /> {coverUploading ? '上传中...' : '上传封面'}
+                                </button>
+                                {form.coverImage && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveCoverEdit}
+                                        className="px-3 py-1.5 text-xs font-bold border-2 border-black rounded-full bg-white text-black hover:bg-black hover:text-white transition-colors"
+                                    >
+                                        移除
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={coverInputRef}
+                            className="hidden"
+                            onChange={handleCoverUploadEdit}
+                        />
+                        <div className={`relative w-full h-56 rounded-xl overflow-hidden border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-black bg-gray-50'}`}>
+                            {coverPreview ? (
+                                <>
+                                    <img src={coverPreview} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{
+                                            background: `linear-gradient(150deg, rgba(0,0,0,0.6), rgba(0,0,0,0.35))`
+                                        }}
+                                    />
+                                </>
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-xs text-gray-500 gap-2">
+                                    <span className="font-bold text-sm">暂无封面</span>
+                                    <span>支持 png / jpg / webp，最大 5MB</span>
+                                </div>
+                            )}
+                            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                                <span className="text-[11px] font-mono px-2 py-1 rounded-full bg-black text-white shadow-lg">
+                                    {form.coverImage ? '已绑定封面' : '未设置封面'}
+                                </span>
+                                <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-white/80 backdrop-blur text-gray-700 border border-black/10">
+                                    {form.themeColor || '默认色'}
+                                </span>
+                            </div>
+                        </div>
+                        {form.coverImage && (
+                            <p className="text-xs text-gray-500 break-all">
+                                路径：{form.coverImage}
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="space-y-6">
                         <div
                             className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
                             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Step 1</p>
@@ -9168,6 +9400,8 @@ const ArticleList = ({
                                 displayPosts.map((post, idx) => {
                                     const viewCount = post.views ?? post.viewsCount ?? 0;
                                     const commentCount = post.comments ?? post.commentsCount ?? 0;
+                                    const coverUrl = buildMediaUrl(post.coverImage);
+                                    const tags = Array.isArray(post.tags) ? post.tags : [];
                                     return (
                                         <motion.div
                                             key={post.id}
@@ -9181,33 +9415,46 @@ const ArticleList = ({
                                                 setView('article');
                                             }}>
                                                 <div className="flex flex-col md:flex-row">
-                                                    <div
-                                                        className={`md:w-1/3 h-48 md:h-auto ${post.color} border-b-2 md:border-b-0 md:border-r-2 border-black p-6 flex flex-col justify-between text-white relative overflow-hidden group`}>
-                                                        <motion.div
-                                                            className="absolute top-0 right-0 p-4"
-                                                            initial="rest"
-                                                            animate="rest"
-                                                            variants={{
-                                                                rest: { opacity: 0.2, scale: 1 },
-                                                                hover: { opacity: 0.4, scale: 1.08 }
+                                                    <div className="md:w-1/3 h-52 md:h-auto border-b-2 md:border-b-0 md:border-r-2 border-black relative overflow-hidden group">
+                                                        {coverUrl ? (
+                                                            <motion.img
+                                                                src={coverUrl}
+                                                                alt={post.title}
+                                                                className="absolute inset-0 w-full h-full object-cover"
+                                                                initial={{ scale: 1.02 }}
+                                                                whileHover={{ scale: 1.05 }}
+                                                                transition={{ duration: 0.4 }}
+                                                            />
+                                                        ) : (
+                                                            <div className={`absolute inset-0 ${post.color}`} />
+                                                        )}
+                                                        <div
+                                                            className="absolute inset-0"
+                                                            style={{
+                                                                background: `linear-gradient(160deg, rgba(0,0,0,0.65), rgba(0,0,0,0.35))`
                                                             }}
-                                                            transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-                                                        >
-                                                            <Code size={120} />
-                                                        </motion.div>
-                                                        <span className="relative z-10 font-black text-5xl opacity-50">
-                                                            {(idx + 1 + (currentPage - 1) * pageSize).toString().padStart(2, '0')}
-                                                        </span>
-                                                        <div className="relative z-10">
-                                                            <span
-                                                                className="bg-black text-white px-2 py-1 text-xs font-bold uppercase mb-2 inline-block">{post.parentCategory}</span>
-                                                            <h4 className="font-black text-2xl leading-none">{post.category}</h4>
+                                                        />
+                                                        <div
+                                                            className="absolute inset-0 mix-blend-multiply"
+                                                            style={{ backgroundColor: extractHexFromBgClass(post.color, '#6366F1'), opacity: coverUrl ? 0.45 : 0.2 }}
+                                                        />
+                                                        <div className="relative z-10 p-6 h-full flex flex-col justify-between text-white">
+                                                            <span className="font-black text-5xl opacity-60 drop-shadow">
+                                                                {(idx + 1 + (currentPage - 1) * pageSize).toString().padStart(2, '0')}
+                                                            </span>
+                                                            <div>
+                                                                <span
+                                                                    className="bg-black/80 text-white px-2 py-1 text-xs font-bold uppercase mb-2 inline-block rounded">
+                                                                    {post.parentCategory}
+                                                                </span>
+                                                                <h4 className="font-black text-2xl leading-none drop-shadow-lg">{post.category}</h4>
+                                                            </div>
                                                         </div>
                                                     </div>
 
                                                     <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg}`}>
                                                         <div className="flex flex-wrap gap-2 mb-4">
-                                                            {post.tags.map(t => (
+                                                            {tags.map(t => (
                                                                 <span key={t}
                                                                     className={`px-2 py-1 border border-black text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
                                                             ))}

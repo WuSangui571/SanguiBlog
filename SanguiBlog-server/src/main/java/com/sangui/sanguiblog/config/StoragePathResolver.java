@@ -25,6 +25,7 @@ public class StoragePathResolver {
         ensureDirectoryExists(this.rootPath);
         ensureDirectoryExists(getAvatarDir());
         ensureDirectoryExists(getPostsDir());
+        ensureDirectoryExists(getCoversDir());
     }
 
     public Path getRootPath() {
@@ -37,6 +38,10 @@ public class StoragePathResolver {
 
     public Path getPostsDir() {
         return resolve("posts");
+    }
+
+    public Path getCoversDir() {
+        return resolve("covers");
     }
 
     public Path resolve(String first, String... more) {

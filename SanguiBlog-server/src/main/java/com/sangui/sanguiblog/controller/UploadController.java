@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +35,8 @@ public class UploadController {
     private static final long ASSET_MAX_BYTES = 8 * 1024 * 1024;  // 8MB per file
     private static final long ASSET_TOTAL_MAX_BYTES = 30 * 1024 * 1024; // 30MB per request
     private static final int MAX_ASSET_FILES = 10;
+    private static final long COVER_MAX_BYTES = 5 * 1024 * 1024; // 5MB per cover
+    private static final DateTimeFormatter COVER_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final StoragePathResolver storagePathResolver;
     private final PostAssetService postAssetService;
@@ -57,6 +61,33 @@ public class UploadController {
         } catch (IOException e) {
             throw new RuntimeException("文件上传失败: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/post-cover")
+    public ApiResponse<Map<String, String>> uploadPostCover(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "postSlug", required = false) String postSlug) {
+        validateImageFile(file, COVER_MAX_BYTES, "封面");
+        String folder = sanitizeCoverFolder(postSlug);
+        Path dir = storagePathResolver.ensureRelativePath(folder);
+        String extension = extractExtension(file.getOriginalFilename());
+        if (extension.isEmpty()) {
+            extension = ".png";
+        }
+        String filename = UUID.randomUUID().toString() + extension;
+        try {
+            Files.createDirectories(dir);
+            Files.copy(file.getInputStream(), dir.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException("封面上传失败: " + e.getMessage());
+        }
+        String relativePath = folder + "/" + filename;
+        String url = "/uploads/" + relativePath;
+        return ApiResponse.ok(Map.of(
+                "url", url,
+                "path", relativePath,
+                "filename", filename
+        ));
     }
 
     @PostMapping("/post-assets/reserve")
@@ -98,6 +129,23 @@ public class UploadController {
                 "files", storedFiles,
                 "urls", urls,
                 "joined", String.join(";", urls)));
+    }
+
+    private String sanitizeCoverFolder(String postSlug) {
+        String candidate = StringUtils.hasText(postSlug) ? postSlug.trim() : "";
+        candidate = candidate.replace("\\", "/");
+        candidate = candidate.replace("..", "");
+        candidate = candidate.replaceAll("/{2,}", "/");
+        candidate = candidate.replaceAll("^/+", "").replaceAll("/+$", "");
+        if (candidate.startsWith("posts/")) {
+            candidate = candidate.substring("posts/".length());
+        }
+        if (!StringUtils.hasText(candidate)) {
+            candidate = "covers/" + COVER_DATE_FMT.format(LocalDate.now());
+        } else if (!candidate.startsWith("covers/")) {
+            candidate = "covers/" + candidate;
+        }
+        return candidate;
     }
 
     private void validateImageFile(MultipartFile file, long maxBytes, String scene) {

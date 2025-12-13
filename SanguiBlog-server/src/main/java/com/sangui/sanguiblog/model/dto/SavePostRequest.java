@@ -17,6 +17,7 @@ public class SavePostRequest {
     private String slug;
 
     private String excerpt;
+    private String coverImage;
     private String contentMd;
     private String contentHtml;
     private String themeColor;

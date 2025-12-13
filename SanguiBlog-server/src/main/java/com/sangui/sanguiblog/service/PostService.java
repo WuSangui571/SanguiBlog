@@ -128,6 +128,9 @@ public class PostService {
         post.setSlug(slug);
         postAssetService.ensureFolder(slug);
         post.setExcerpt(request.getExcerpt());
+        if (request.getCoverImage() != null) {
+            post.setCoverImage(normalizeCoverPath(request.getCoverImage()));
+        }
         post.setContentMd(request.getContentMd());
 
         // Convert Markdown to HTML
@@ -229,6 +232,9 @@ public class PostService {
         post.setSlug(slug);
         postAssetService.ensureFolder(slug);
         post.setExcerpt(request.getExcerpt());
+        if (request.getCoverImage() != null) {
+            post.setCoverImage(normalizeCoverPath(request.getCoverImage()));
+        }
         post.setStatus(request.getStatus());
         Instant now = Instant.now();
         post.setUpdatedAt(now);
@@ -271,6 +277,7 @@ public class PostService {
                 .excerpt(post.getExcerpt())
                 .contentMd(post.getContentMd())
                 .contentHtml(post.getContentHtml())
+                .coverImage(normalizeCoverPath(post.getCoverImage()))
                 .themeColor(post.getThemeColor())
                 .status(post.getStatus())
                 .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
@@ -383,6 +390,7 @@ public class PostService {
                 .id(post.getId())
                 .title(post.getTitle())
                 .excerpt(post.getExcerpt())
+                .coverImage(normalizeCoverPath(post.getCoverImage()))
                 .category(categoryName)
                 .parentCategory(parentName)
                 .tags(post.getTags().stream().map(Tag::getName).toList())
@@ -439,6 +447,7 @@ public class PostService {
                 .title(post.getTitle())
                 .slug(post.getSlug())
                 .excerpt(post.getExcerpt())
+                .coverImage(normalizeCoverPath(post.getCoverImage()))
                 .status(post.getStatus())
                 .themeColor(post.getThemeColor())
                 .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
@@ -456,6 +465,28 @@ public class PostService {
                                 .build())
                         .toList())
                 .build();
+    }
+
+    private String normalizeCoverPath(String coverImage) {
+        if (!StringUtils.hasText(coverImage)) {
+            return null;
+        }
+        String normalized = coverImage.trim().replace("\\", "/");
+        normalized = normalized.replace("..", "");
+        normalized = normalized.replaceAll("/{2,}", "/");
+        normalized = normalized.replaceAll("^\\./+", "");
+        if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+            return normalized;
+        }
+        if (normalized.startsWith("/uploads/")) {
+            normalized = normalized.substring(1);
+        } else if (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        if (!normalized.startsWith("uploads/")) {
+            normalized = "uploads/" + normalized.replaceAll("^/+", "");
+        }
+        return "/" + normalized;
     }
 
     private String resolveAssetSlug(String providedSlug, Long currentPostId) {

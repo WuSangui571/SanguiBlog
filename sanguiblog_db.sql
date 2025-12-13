@@ -118,6 +118,7 @@ CREATE TABLE posts (
     content_md       MEDIUMTEXT NULL COMMENT 'Markdown 原文',
     content_html     MEDIUMTEXT NULL COMMENT '预渲染 HTML，可选',
     theme_color      VARCHAR(64) NULL COMMENT '前端使用的颜色 class，如 bg-[#6366F1]',
+    cover_image      VARCHAR(512) NULL COMMENT '文章封面图片路径（/uploads/...）',
     status           ENUM('DRAFT','PUBLISHED','SCHEDULED','HIDDEN') NOT NULL DEFAULT 'DRAFT',
     likes_count      INT UNSIGNED NOT NULL DEFAULT 0,
     comments_count   INT UNSIGNED NOT NULL DEFAULT 0,

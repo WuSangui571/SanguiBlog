@@ -15,6 +15,7 @@ public class AdminPostDetailDto {
     private String excerpt;
     private String contentMd;
     private String contentHtml;
+    private String coverImage;
     private String themeColor;
     private String status;
     private Long categoryId;
