@@ -9475,7 +9475,14 @@ const ArticleList = ({
                                                                 transition={{ duration: 0.4 }}
                                                             />
                                                         ) : (
-                                                            <div className={`absolute inset-0 ${post.color}`} />
+                                                            <div
+                                                                className="absolute inset-0"
+                                                                style={{
+                                                                    backgroundColor: extractHexFromBgClass(post.color, '#6366F1'),
+                                                                    backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)`,
+                                                                    backgroundSize: '24px 24px'
+                                                                }}
+                                                            />
                                                         )}
                                                         <div
                                                             className="absolute inset-0"
@@ -9495,10 +9502,25 @@ const ArticleList = ({
                                                             />
                                                         )}
                                                         {!coverUrl && (
-                                                            <div
-                                                                className="absolute inset-0 mix-blend-multiply"
-                                                                style={{ backgroundColor: extractHexFromBgClass(post.color, '#6366F1'), opacity: 0.2 }}
-                                                            />
+                                                            <>
+                                                                <div
+                                                                    className="absolute inset-0 mix-blend-multiply"
+                                                                    style={{ backgroundColor: extractHexFromBgClass(post.color, '#6366F1'), opacity: 0.12 }}
+                                                                />
+                                                                <div
+                                                                    className="absolute inset-0 opacity-0 group-hover:opacity-90 transition-all duration-300 mix-blend-multiply pointer-events-none origin-center transform group-hover:rotate-[2deg]"
+                                                                    style={{
+                                                                        backgroundImage: `radial-gradient(${extractHexFromBgClass(post.color, '#6366F1')}30 1px, transparent 1px)`,
+                                                                        backgroundSize: '12px 12px',
+                                                                        backgroundColor: `${extractHexFromBgClass(post.color, '#6366F1')}12`
+                                                                    }}
+                                                                />
+                                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                                    <div className="w-20 h-20 rounded-full border-2 border-black/30 bg-white/15 backdrop-blur-[1px] shadow-[4px_4px_0px_0px_rgba(0,0,0,0.18)] flex items-center justify-center">
+                                                                        <Code size={32} className="text-white/80 drop-shadow" />
+                                                                    </div>
+                                                                </div>
+                                                            </>
                                                         )}
                                                         <div className="relative z-10 p-6 h-full flex flex-col justify-between text-white">
                                                             <span className="font-black text-5xl opacity-60 drop-shadow">
