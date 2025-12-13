@@ -9538,11 +9538,15 @@ const ArticleList = ({
                                                                 {post.title}
                                                             </h2>
                                                             {isPostNew(post.date) && (
-                                                                <span
-                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest border-2 border-black bg-[#FF0080] text-white shadow-[2px_2px_0px_0px_#000] animate-pulse">
+                                                                <motion.span
+                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest border-2 border-black bg-[#FF0080] text-white shadow-[2px_2px_0px_0px_#000]"
+                                                                    initial={{ scale: 0.95, opacity: 0.9 }}
+                                                                    animate={{ scale: [0.95, 1.08, 1], opacity: [0.9, 1, 0.95] }}
+                                                                    transition={{ duration: 2, repeat: 1, ease: 'easeInOut' }}
+                                                                >
                                                                     <Sparkles size={12} strokeWidth={3} />
                                                                     NEW
-                                                                </span>
+                                                                </motion.span>
                                                             )}
                                                         </div>
                                                         <p
