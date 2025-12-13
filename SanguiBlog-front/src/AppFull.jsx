@@ -9438,7 +9438,7 @@ const ArticleList = ({
                                         )}
                                     </div>
                                     <div
-                                        className={`text-[11px] font-mono font-bold px-3 py-2 border-2 border-dashed border-black rounded-lg ${isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-black/5 text-gray-800'}`}>
+                                        className={`text-[11px] font-mono font-black px-3 py-2 border-2 border-black shadow-[3px_3px_0px_0px_#000] rounded-none ${isDarkMode ? 'bg-[#111827] text-gray-100' : 'bg-[#FFD700] text-black'}`}>
                                         {keywordText ? `已筛选 ${filteredPosts.length} 篇` : `共 ${sourcePosts.length} 篇`}
                                     </div>
                                 </div>
