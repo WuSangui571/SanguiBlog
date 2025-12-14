@@ -9922,7 +9922,9 @@ const ArchiveView = ({
                                                     const tags = Array.isArray(post.tags)
                                                         ? post.tags.map((tag) => (typeof tag === 'string' ? tag : tag?.name || tag?.label)).filter(Boolean)
                                                         : [];
-                                                    const category = post.category || post.parentCategory || post?.summary?.category || '未分类';
+                                                    const parentCategory = post.parentCategory || post?.summary?.parentCategory || '';
+                                                    const subCategory = post.category || post?.summary?.category || '';
+                                                    const category = subCategory || parentCategory || '未分类';
                                                     const views = post.views ?? post.viewsCount ?? 0;
                                                     const comments = post.comments ?? post.commentsCount ?? 0;
                                                     return (
@@ -9938,13 +9940,36 @@ const ArchiveView = ({
                                                                     <span>{displayDate}</span>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex flex-wrap gap-3 text-xs font-bold">
-                                                                <span className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">{category}</span>
-                                                                {tags.slice(0, 4).map((tag) => (
-                                                                    <span key={`${post.id}-${tag}`} className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">
-                                                                        {tag}
+                                                            <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                                                                {parentCategory && (
+                                                                    <span className="px-2 py-1 border-2 border-black rounded-full bg-white text-black inline-flex items-center gap-1 shadow-[2px_2px_0px_0px_#000]">
+                                                                        <FolderPlus size={12} />
+                                                                        <span>{parentCategory}</span>
                                                                     </span>
-                                                                ))}
+                                                                )}
+                                                                {parentCategory && subCategory && (
+                                                                    <ChevronRight size={12} className="text-gray-500" />
+                                                                )}
+                                                                {subCategory && (
+                                                                    <span className="px-2 py-1 border-2 border-black rounded-full bg-[#F3F4F6] text-black inline-flex items-center gap-1 shadow-[2px_2px_0px_0px_#000]">
+                                                                        <span>{subCategory}</span>
+                                                                    </span>
+                                                                )}
+                                                                {!parentCategory && !subCategory && (
+                                                                    <span className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">
+                                                                        {category}
+                                                                    </span>
+                                                                )}
+                                                                <div className="flex flex-wrap gap-2 ml-auto">
+                                                                    {tags.slice(0, 4).map((tag) => (
+                                                                        <span key={`${post.id}-${tag}`} className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">
+                                                                            {tag}
+                                                                        </span>
+                                                                    ))}
+                                                                    {tags.length > 4 && (
+                                                                        <span className="px-2 py-1 border-2 border-black rounded-full bg-[#FFF5C0] text-black">+{tags.length - 4}</span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             <div className="flex items-center justify-between text-xs font-mono text-gray-500">
                                                                 <span>阅读 {views}</span>
