@@ -8,6 +8,7 @@ import com.sangui.sanguiblog.model.dto.PostAdminDto;
 import com.sangui.sanguiblog.model.dto.PostDetailDto;
 import com.sangui.sanguiblog.model.dto.PostSummaryDto;
 import com.sangui.sanguiblog.model.dto.SavePostRequest;
+import com.sangui.sanguiblog.model.dto.PostSiblingDto;
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
 import com.sangui.sanguiblog.model.entity.Category;
 import com.sangui.sanguiblog.model.entity.Post;
@@ -32,6 +33,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,6 +50,9 @@ public class PostService {
     private static final Logger log = LoggerFactory.getLogger(PostService.class);
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    @PersistenceContext
+    private EntityManager entityManager;
     private final PostRepository postRepository;
     private final TagRepository tagRepository;
     private final CategoryRepository categoryRepository;
@@ -219,6 +225,20 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("文章不存在"));
         return toAdminDetail(post);
+    }
+
+    @Transactional(readOnly = true)
+    public PostSiblingDto findPublishedSiblings(Long postId) {
+        Post current = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("文章不存在"));
+        LocalDateTime pub = current.getPublishedAt();
+        Instant created = current.getCreatedAt() != null ? current.getCreatedAt() : Instant.EPOCH;
+        Long prev = findNeighborId(pub, created, true);
+        Long next = findNeighborId(pub, created, false);
+        return PostSiblingDto.builder()
+                .prevId(prev)
+                .nextId(next)
+                .build();
     }
 
     @Transactional
@@ -465,6 +485,33 @@ public class PostService {
                                 .build())
                         .toList())
                 .build();
+    }
+
+    private Long findNeighborId(LocalDateTime pub, Instant created, boolean previous) {
+        StringBuilder jpql = new StringBuilder("select p.id from Post p where p.status = 'PUBLISHED' and ");
+        if (previous) {
+            if (pub != null) {
+                jpql.append("(p.publishedAt > :pub or (p.publishedAt = :pub and p.createdAt > :created))");
+            } else {
+                jpql.append("(p.publishedAt is not null or (p.publishedAt is null and p.createdAt > :created))");
+            }
+            jpql.append(" order by p.publishedAt desc nulls last, p.createdAt desc");
+        } else {
+            if (pub != null) {
+                jpql.append("((p.publishedAt < :pub) or (p.publishedAt = :pub and p.createdAt < :created) or p.publishedAt is null)");
+            } else {
+                jpql.append("(p.publishedAt is null and p.createdAt < :created)");
+            }
+            jpql.append(" order by p.publishedAt desc nulls last, p.createdAt desc");
+        }
+        var query = entityManager.createQuery(jpql.toString(), Long.class);
+        if (pub != null) {
+            query.setParameter("pub", pub);
+        }
+        query.setParameter("created", created);
+        query.setMaxResults(1);
+        List<Long> result = query.getResultList();
+        return result.isEmpty() ? null : result.get(0);
     }
 
     private String normalizeCoverPath(String coverImage) {

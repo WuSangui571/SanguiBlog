@@ -5,6 +5,7 @@ import com.sangui.sanguiblog.model.dto.AdminPostUpdateRequest;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.PostAdminDto;
+import com.sangui.sanguiblog.model.dto.PostSiblingDto;
 import com.sangui.sanguiblog.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,12 @@ public class AdminPostController {
     @PreAuthorize("hasAuthority('PERM_POST_VIEW')")
     public ApiResponse<AdminPostDetailDto> detail(@PathVariable Long id) {
         return ApiResponse.ok(postService.getAdminDetail(id));
+    }
+
+    @GetMapping("/{id}/siblings")
+    @PreAuthorize("hasAuthority('PERM_POST_VIEW')")
+    public ApiResponse<PostSiblingDto> siblings(@PathVariable Long id) {
+        return ApiResponse.ok(postService.findPublishedSiblings(id));
     }
 
     @PutMapping("/{id}")

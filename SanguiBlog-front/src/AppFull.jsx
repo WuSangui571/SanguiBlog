@@ -19,6 +19,7 @@ import {
     adminDeleteCategory,
     adminFetchPosts,
     adminFetchPostDetail,
+    adminFetchPostSiblings,
     adminFetchUsers,
     adminFetchUserDetail,
     adminCreateUser,
@@ -4204,6 +4205,10 @@ const EditPostView = ({ isDarkMode }) => {
     const inlineImageInputRef = useRef(null);
     const coverInputRef = useRef(null);
     const [postMeta, setPostMeta] = useState({ publishedAt: null });
+    const [prevPostId, setPrevPostId] = useState(null);
+    const [nextPostId, setNextPostId] = useState(null);
+    const [siblingsLoading, setSiblingsLoading] = useState(false);
+    const [siblingError, setSiblingError] = useState('');
     const selectorPageSize = 8;
     const {
         notice: editNotice,
@@ -4331,12 +4336,31 @@ const EditPostView = ({ isDarkMode }) => {
         }
     }, []);
 
+    const loadPostSiblings = useCallback(async (id) => {
+        if (!id) return;
+        setSiblingsLoading(true);
+        setSiblingError('');
+        try {
+            const res = await adminFetchPostSiblings(id);
+            const data = res?.data || res;
+            setPrevPostId(data?.prevId || null);
+            setNextPostId(data?.nextId || null);
+        } catch (err) {
+            setSiblingError(err?.message || '获取上一篇/下一篇失败');
+            setPrevPostId(null);
+            setNextPostId(null);
+        } finally {
+            setSiblingsLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         if (selectedPostId) {
             loadPostDetail(selectedPostId);
+            loadPostSiblings(selectedPostId);
             setSearchParams({ postId: selectedPostId });
         }
-    }, [selectedPostId, loadPostDetail, setSearchParams]);
+    }, [selectedPostId, loadPostDetail, loadPostSiblings, setSearchParams]);
 
     useEffect(() => {
         if (!submitNotice) return;
@@ -4518,6 +4542,10 @@ const EditPostView = ({ isDarkMode }) => {
         setCoverPreview('');
         setSubmitNotice('');
         setSubmitError('');
+        setPrevPostId(null);
+        setNextPostId(null);
+        setSiblingError('');
+        setSiblingsLoading(false);
     };
 
     const handleInlineImageUploadEdit = async (event) => {
@@ -4685,7 +4713,23 @@ const EditPostView = ({ isDarkMode }) => {
                     <h2 className="text-3xl font-black italic text-pink-500">编辑文章</h2>
                     <p className="text-sm text-gray-500 mt-1">ID：{selectedPostId}，上次发布时间：{postMeta.publishedAt ? new Date(postMeta.publishedAt).toLocaleString() : '未发布'}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap items-center justify-end">
+                    <button
+                        className="text-sm px-3 py-2 border-2 border-black rounded-full font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-50 flex items-center gap-1"
+                        onClick={() => prevPostId && setSelectedPostId(prevPostId)}
+                        disabled={!prevPostId || detailLoading || siblingsLoading}
+                        title="按首页顺序跳转到上一篇"
+                    >
+                        <ChevronLeft size={14} /> 编辑上一篇
+                    </button>
+                    <button
+                        className="text-sm px-3 py-2 border-2 border-black rounded-full font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-50 flex items-center gap-1"
+                        onClick={() => nextPostId && setSelectedPostId(nextPostId)}
+                        disabled={!nextPostId || detailLoading || siblingsLoading}
+                        title="按首页顺序跳转到下一篇"
+                    >
+                        编辑下一篇 <ChevronRight size={14} />
+                    </button>
                     <button
                         className="text-sm text-indigo-500 hover:text-indigo-400"
                         onClick={() => navigate('/admin/posts')}
@@ -4702,6 +4746,7 @@ const EditPostView = ({ isDarkMode }) => {
             </div>
 
             {detailError && <div className="text-sm text-red-500">{detailError}</div>}
+            {siblingError && selectedPostId && <div className="text-sm text-amber-600">{siblingError}</div>}
             {detailLoading ? (
                 <div
                     className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} text-gray-500`}>

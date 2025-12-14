@@ -156,6 +156,8 @@ export const adminFetchPosts = (params = {}) => {
 
 export const adminFetchPostDetail = (id) => request(`/admin/posts/${id}`);
 
+export const adminFetchPostSiblings = (id) => request(`/admin/posts/${id}/siblings`);
+
 export const adminUpdatePost = (id, payload) =>
   request(`/admin/posts/${id}`, {
     method: "PUT",
