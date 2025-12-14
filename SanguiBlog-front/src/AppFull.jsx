@@ -101,7 +101,7 @@ const THEME_COLOR_PRESETS = [
 ];
 const DEFAULT_THEME_COLOR = 'bg-[#6366F1]';
 const HERO_NOISE_TEXTURE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyB2aWV3Qm94PScwIDAgMTIwIDEyMCc+PGZpbHRlciBpZD0nbicgeD0nMCcgeT0nMCc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuNCcvPjwvc3ZnPg==";
-const DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/identicon/svg?seed=sanguiblog';
+const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none"><rect width="160" height="160" rx="28" fill="%23f8fafc"/><circle cx="80" cy="74" r="34" stroke="%2394a3b8" stroke-width="8" stroke-linecap="round" stroke-dasharray="60 32"><animateTransform attributeName="transform" type="rotate" from="0 80 80" to="360 80 80" dur="1s" repeatCount="indefinite"/></circle><rect x="40" y="116" width="80" height="18" rx="9" fill="%2394a3b8" opacity="0.28"/><text x="80" y="129" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="12" fill="%236b7280">加载中...</text></svg>';
 const randomBlobShape = () => {
     const rand = () => `${30 + Math.round(Math.random() * 40)}%`;
     return `${rand()} ${rand()} ${rand()} ${rand()} / ${rand()} ${rand()} ${rand()} ${rand()}`;
@@ -1036,7 +1036,7 @@ const MOCK_USER = {
     username: "三桂 SanGui",
     title: "Fullstack Developer",
     bio: "用代码构建现实，用逻辑解构虚无。",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=SanGui&backgroundColor=FFD700",
+    avatar: DEFAULT_AVATAR,
     role: "SUPER_ADMIN",
     social: {
         github: "https://github.com/Wusangui571",
@@ -1044,61 +1044,34 @@ const MOCK_USER = {
     }
 };
 
-const GENERATE_POSTS = () => {
-    const base = [
-        {
-            id: 101,
-            title: "SpringBoot 3.0: 原生编译的终极奥义",
-            excerpt: "GraalVM AOT.",
-            category: "Java Core",
-            parentCategory: "硬核编程",
-            tags: ["Java", "AOT"],
-            color: "bg-[#6366F1]",
-            likes: 128,
-            comments: 45,
-            date: "2023-11-24",
-            views: 532
-        },
-        {
-            id: 102,
-            title: "Vue3 Composition API: 逻辑复用的艺术",
-            excerpt: "告别 Options API 的面条代码。",
-            category: "Modern Web",
-            parentCategory: "硬核编程",
-            tags: ["Vue3", "Refactor"],
-            color: "bg-[#FF0080]",
-            likes: 89,
-            comments: 12,
-            date: "2023-11-20",
-            views: 321
-        },
-        {
-            id: 103,
-            title: "微服务的一致性困局：Saga 还是 TCC？",
-            excerpt: "分布式事务没有银弹。",
-            category: "Distributed Sys",
-            parentCategory: "架构视角",
-            tags: ["Microservices", "System Design"],
-            color: "bg-[#00E096]",
-            likes: 256,
-            comments: 67,
-            date: "2023-11-15",
-            views: 890
-        }
-    ];
-
-    let posts = [...base];
-    for (let i = 0; i < 15; i++) {
-        posts.push({
-            ...base[i % 3],
-            id: 200 + i,
-            title: `${base[i % 3].title} (Part ${i + 1})`,
-            date: `2023-10-${10 + i}`
-        });
+const GENERATE_POSTS = () => ([
+    {
+        id: 101,
+        title: "文章列表加载中…",
+        excerpt: "正在从后端拉取最新文章，请稍候片刻。",
+        category: "Java Core",
+        parentCategory: "硬核编程",
+        tags: ["loading"],
+        color: "bg-[#E5E7EB]",
+        likes: 0,
+        comments: 0,
+        date: "加载中",
+        views: 0
+    },
+    {
+        id: 102,
+        title: "请稍等，内容即将刷新",
+        excerpt: "这是占位卡片，接口返回后会自动替换为真实文章。",
+        category: "Modern Web",
+        parentCategory: "硬核编程",
+        tags: ["loading"],
+        color: "bg-[#D1D5DB]",
+        likes: 0,
+        comments: 0,
+        date: "加载中",
+        views: 0
     }
-    return posts;
-};
-
+]);
 const MOCK_POSTS = GENERATE_POSTS();
 const DEFAULT_PAGE_SIZE = 5;
 const PAGE_SIZE_OPTIONS = [5, 10, 20];
