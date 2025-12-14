@@ -9730,6 +9730,11 @@ const ArchiveView = ({
 }) => {
     const { headerHeight } = useLayoutOffsets();
     const archiveScrollMargin = useMemo(() => Math.max(headerHeight + 16, 0), [headerHeight]);
+    const quickJumpTop = useMemo(() => headerHeight + 48, [headerHeight]);
+    const timelineWrapRef = useRef(null);
+    const [quickDockId, setQuickDockId] = useState('');
+    const [quickDockTop, setQuickDockTop] = useState(0);
+    const scrollTickingRef = useRef(false);
     const postsSource = useMemo(() => (Array.isArray(postsData) && postsData.length ? postsData : MOCK_POSTS), [postsData]);
 
     const normalizedList = useMemo(() => {
@@ -9803,14 +9808,6 @@ const ArchiveView = ({
     const totalCount = normalizedList.length;
     const totalYears = timelineData.length;
     const lastUpdated = normalizedList[0]?.displayDate || '-';
-    const handleMonthJump = useCallback((anchorId) => {
-        if (typeof document === 'undefined' || typeof window === 'undefined' || !anchorId) return;
-        const el = document.getElementById(anchorId);
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const targetTop = window.scrollY + rect.top - archiveScrollMargin;
-        window.scrollTo({ top: Math.max(targetTop, 0), behavior: 'smooth' });
-    }, [archiveScrollMargin]);
     const monthShortcuts = useMemo(() => (
         timelineData.flatMap((yearBlock) => (
             yearBlock.months
@@ -9821,6 +9818,76 @@ const ArchiveView = ({
                 }))
         ))
     ), [timelineData]);
+
+    const recalcQuickDockTop = useCallback((anchorId) => {
+        if (typeof document === 'undefined') return;
+        const targetId = anchorId || quickDockId;
+        const anchorEl = targetId ? document.getElementById(targetId) : null;
+        const wrapEl = timelineWrapRef.current;
+        if (!anchorEl || !wrapEl) return;
+        const anchorTop = anchorEl.getBoundingClientRect().top + window.scrollY;
+        const wrapTop = wrapEl.getBoundingClientRect().top + window.scrollY;
+        const nextTop = Math.max(anchorTop - wrapTop, 0);
+        setQuickDockTop(nextTop);
+    }, [quickDockId]);
+
+    const syncActiveMonthByScroll = useCallback(() => {
+        if (typeof document === 'undefined' || scrollTickingRef.current) return;
+        scrollTickingRef.current = true;
+        requestAnimationFrame(() => {
+            const scrollPos = window.scrollY + quickJumpTop + 8;
+            let candidateId = monthShortcuts[0]?.id || '';
+            for (const shortcut of monthShortcuts) {
+                const el = document.getElementById(shortcut.id);
+                if (!el) continue;
+                const top = el.getBoundingClientRect().top + window.scrollY;
+                if (top <= scrollPos) {
+                    candidateId = shortcut.id;
+                } else {
+                    break;
+                }
+            }
+            if (candidateId && candidateId !== quickDockId) {
+                setQuickDockId(candidateId);
+                recalcQuickDockTop(candidateId);
+            } else if (candidateId) {
+                recalcQuickDockTop(candidateId);
+            }
+            scrollTickingRef.current = false;
+        });
+    }, [monthShortcuts, quickDockId, quickJumpTop, recalcQuickDockTop]);
+
+    useEffect(() => {
+        if (!monthShortcuts.length) return;
+        setQuickDockId((prev) => prev || monthShortcuts[0].id);
+        recalcQuickDockTop(monthShortcuts[0].id);
+    }, [monthShortcuts, recalcQuickDockTop]);
+
+    const handleMonthJump = useCallback((anchorId) => {
+        if (typeof document === 'undefined' || typeof window === 'undefined' || !anchorId) return;
+        setQuickDockId(anchorId);
+        const el = document.getElementById(anchorId);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const targetTop = window.scrollY + rect.top - archiveScrollMargin;
+        window.scrollTo({ top: Math.max(targetTop, 0), behavior: 'smooth' });
+        requestAnimationFrame(() => recalcQuickDockTop(anchorId));
+    }, [archiveScrollMargin, recalcQuickDockTop]);
+
+    useEffect(() => {
+        recalcQuickDockTop();
+        const handleResize = () => {
+            recalcQuickDockTop();
+            syncActiveMonthByScroll();
+        };
+        window.addEventListener('resize', handleResize, { passive: true });
+        window.addEventListener('scroll', syncActiveMonthByScroll, { passive: true });
+        syncActiveMonthByScroll();
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('scroll', syncActiveMonthByScroll);
+        };
+    }, [recalcQuickDockTop, syncActiveMonthByScroll, timelineData]);
 
     const sectionText = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const secondaryText = isDarkMode ? 'text-gray-300' : 'text-gray-600';
@@ -9893,7 +9960,7 @@ const ArchiveView = ({
                     </div>
                 )}
 
-                <div className="mt-12 flex flex-col lg:flex-row gap-8">
+                <div className="mt-12 flex flex-col lg:flex-row gap-8" ref={timelineWrapRef}>
                     <div className="flex-1 space-y-12">
                         {timelineData.map((yearBlock) => (
                             <div key={yearBlock.year}>
@@ -9987,18 +10054,21 @@ const ArchiveView = ({
                     </div>
                     {monthShortcuts.length > 0 && (
                         <aside className="w-full lg:w-64">
-                            <div className={`${cardBg} border-2 ${borderColor} rounded-2xl p-5 sticky top-32 shadow-[6px_6px_0px_0px_#000]`}>
+                            <div
+                                className={`${cardBg} border-2 ${borderColor} rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] sticky`}
+                                style={{ top: quickJumpTop, marginTop: quickDockTop }}
+                            >
                                 <p className="text-sm font-black mb-4">快速跳转</p>
                                 <div className="space-y-2 max-h-[70vh] overflow-auto pr-1">
                                     {monthShortcuts.map((shortcut) => (
                                         <button
                                             key={shortcut.id}
                                             onClick={() => handleMonthJump(shortcut.id)}
-                                        className={`w-full text-left text-xs font-black tracking-wide border-2 border-black rounded-xl px-3 py-2 transition-all duration-200 hover:shadow-[4px_4px_0px_0px_#000] ${quickJumpBtn}`}
-                                    >
-                                        {shortcut.label}
-                                    </button>
-                                ))}
+                                            className={`w-full text-left text-xs font-black tracking-wide border-2 border-black rounded-xl px-3 py-2 transition-all duration-200 hover:shadow-[4px_4px_0px_0px_#000] ${quickJumpBtn}`}
+                                        >
+                                            {shortcut.label}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         </aside>

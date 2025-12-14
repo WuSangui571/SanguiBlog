@@ -158,6 +158,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
     *   右侧“月份速选”平滑跳转时会按 `headerHeight + 16px` 预留滚动余量（`scroll-margin-top`），避免固定导航占位导致落点越过月份标题或首篇文章。
 
+    *   “快速跳转”面板：采用 sticky，顶距 = 导航高度 + 48px，`margin-top` 动态对齐当前选中月份锚点（初始为最新月份）；滚动或点击月份都会实时重算锚点位置并平滑移位后吸顶，避免停留在旧月份。
+
     *   每个条目展示标题、日期、分类、标签、阅读/评论统计，点击后通过 `setArticleId + setView('article')` 跳转文章详情。
 
     *   若 `site.asset-base-url` 带路径前缀，`buildAssetUrl` 会自动去除重复段，保障归档页图片展示一致。
@@ -246,7 +248,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   `/admin/create-post` 页面采用“自动预留 slug + 光标插图”的流程：进入页面即调用 `/api/upload/post-assets/reserve` 申请唯一资源目录，Markdown 编辑区右上方的“插入图片”按钮会在当前光标处上传所选图片，直接写入 `/uploads/<slug>/` 后马上把对应 Markdown 片段插入正文。
 
-*   封面图：新增 `posts.cover_image (VARCHAR(512))`，上传接口为 `POST /api/upload/post-cover`（单文件、≤5MB，需登录），目录固定在 `/uploads/covers/<postSlug>/`。`coverImage` 字段随 `POST/PUT /api/posts/{id}` 一起保存，`PostSummaryDto` 与 `AdminPostDetailDto/PostAdminDto` 已返回封面路径，前端首页卡片、发布/编辑页直接读取。
+*   封面图：新增 `posts.cover_image (VARCHAR(512))`，上传接口为 `POST /api/upload/post-cover`（单文件、≤10MB，需登录），目录固定在 `/uploads/covers/<postSlug>/`。`coverImage` 字段随 `POST/PUT /api/posts/{id}` 一起保存，`PostSummaryDto` 与 `AdminPostDetailDto/PostAdminDto` 已返回封面路径，前端首页卡片、发布/编辑页直接读取。
 
 *   资源标识卡片内置主题色选择器，可直接输入 `bg-[#xxxxxx]` 类名、使用色盘或点选 6 个预设颜色，提交时会作为 `theme_color` 存入数据库，CreatePost 与 EditPost 均复用同一组件，确保展示色与后台数据一致。
 

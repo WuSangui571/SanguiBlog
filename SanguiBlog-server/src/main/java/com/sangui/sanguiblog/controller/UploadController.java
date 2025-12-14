@@ -35,7 +35,7 @@ public class UploadController {
     private static final long ASSET_MAX_BYTES = 20 * 1024 * 1024;          // 20MB per file
     private static final long ASSET_TOTAL_MAX_BYTES = 50 * 1024 * 1024;    // 50MB per request
     private static final int MAX_ASSET_FILES = 10;
-    private static final long COVER_MAX_BYTES = 5 * 1024 * 1024;           // 5MB per cover
+    private static final long COVER_MAX_BYTES = 10 * 1024 * 1024;          // 10MB per cover
     private static final DateTimeFormatter COVER_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final StoragePathResolver storagePathResolver;
