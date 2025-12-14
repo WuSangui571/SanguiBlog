@@ -34,6 +34,7 @@ public class MaintenanceService {
     private static final Pattern MARKDOWN_IMG = Pattern.compile("!\\[[^\\]]*]\\(([^)]+)\\)");
     private static final Pattern HTML_SRC = Pattern.compile("src\\s*=\\s*[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
     private static final Set<String> IMAGE_EXT = Set.of("png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif");
+    private static final Set<String> ALLOWED_UPLOAD_PREFIXES = Set.of("posts/", "covers/");
 
     private final StoragePathResolver storagePathResolver;
     private final PostRepository postRepository;
@@ -43,28 +44,12 @@ public class MaintenanceService {
     public UnusedAssetScanResponse scanUnusedAssets() {
         Set<String> referenced = collectReferencedAssetPaths();
         Path postsDir = storagePathResolver.getPostsDir();
+        Path coversDir = storagePathResolver.getCoversDir();
         List<UnusedAssetDto> unused = new ArrayList<>();
         long total = 0L;
 
-        if (Files.exists(postsDir)) {
-            try (var walk = Files.walk(postsDir)) {
-                for (Path path : walk.filter(Files::isRegularFile).toList()) {
-                    String relative = postsDir.relativize(path).toString().replace("\\", "/");
-                    String normalized = "posts/" + relative;
-                    if (isImageFile(path) && !referenced.contains(normalized)) {
-                        long size = Files.size(path);
-                        total += size;
-                        unused.add(UnusedAssetDto.builder()
-                                .path(normalized)
-                                .url("/uploads/" + normalized)
-                                .size(size)
-                                .build());
-                    }
-                }
-            } catch (IOException e) {
-                throw new IllegalStateException("扫描上传目录失败: " + e.getMessage(), e);
-            }
-        }
+        total += collectUnusedAssets(postsDir, "posts/", referenced, unused);
+        total += collectUnusedAssets(coversDir, "covers/", referenced, unused);
 
         unused.sort(Comparator.comparing(UnusedAssetDto::getPath));
 
@@ -72,6 +57,31 @@ public class MaintenanceService {
                 .unused(unused)
                 .totalSize(total)
                 .build();
+    }
+
+    private long collectUnusedAssets(Path dir, String prefix, Set<String> referenced, List<UnusedAssetDto> unused) {
+        if (!Files.exists(dir)) {
+            return 0L;
+        }
+        long total = 0L;
+        try (var walk = Files.walk(dir)) {
+            for (Path path : walk.filter(Files::isRegularFile).toList()) {
+                String relative = dir.relativize(path).toString().replace("\\", "/");
+                String normalized = prefix + relative;
+                if (isImageFile(path) && !referenced.contains(normalized)) {
+                    long size = Files.size(path);
+                    total += size;
+                    unused.add(UnusedAssetDto.builder()
+                            .path(normalized)
+                            .url("/uploads/" + normalized)
+                            .size(size)
+                            .build());
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("扫描上传目录失败: " + e.getMessage(), e);
+        }
+        return total;
     }
 
     @Transactional(readOnly = true)
@@ -116,6 +126,8 @@ public class MaintenanceService {
         Set<String> referenced = collectReferencedAssetPaths();
         Path root = storagePathResolver.getRootPath();
         Path postsDir = storagePathResolver.getPostsDir();
+        Path coversDir = storagePathResolver.getCoversDir();
+        List<Path> allowedRoots = List.of(postsDir, coversDir);
 
         List<String> deleted = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
@@ -127,7 +139,8 @@ public class MaintenanceService {
                 continue;
             }
             Path target = root.resolve(rel).normalize();
-            if (!target.startsWith(postsDir)) {
+            Path matchedRoot = allowedRoots.stream().filter(target::startsWith).findFirst().orElse(null);
+            if (matchedRoot == null) {
                 skipped.add(rel);
                 continue;
             }
@@ -137,7 +150,7 @@ public class MaintenanceService {
                     Files.delete(target);
                     freed += size;
                     deleted.add(rel);
-                    removeEmptyParents(target.getParent(), postsDir);
+                    removeEmptyParents(target.getParent(), matchedRoot);
                 } else {
                     skipped.add(rel);
                 }
@@ -249,6 +262,10 @@ public class MaintenanceService {
         posts.forEach(post -> {
             referenced.addAll(extractAssetPaths(post.getContentMd()));
             referenced.addAll(extractAssetPaths(post.getContentHtml()));
+            String cover = normalizeAssetPath(post.getCoverImage());
+            if (StringUtils.hasText(cover)) {
+                referenced.add(cover);
+            }
         });
 
         aboutPageRepository.findTopByOrderByUpdatedAtDesc().ifPresent(about -> {
@@ -300,7 +317,7 @@ public class MaintenanceService {
         }
 
         cleaned = cleaned.replace("\\", "/").replaceAll("^/+", "");
-        if (!cleaned.startsWith("posts/")) {
+        if (ALLOWED_UPLOAD_PREFIXES.stream().noneMatch(cleaned::startsWith)) {
             return null;
         }
         return cleaned;
