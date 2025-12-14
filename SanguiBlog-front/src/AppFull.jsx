@@ -4245,7 +4245,9 @@ const EditPostView = ({ isDarkMode }) => {
                 setSelectedPostId(numeric);
             }
         }
-    }, [searchParams, selectedPostId]);
+        // 仅响应 URL 变化，不因 selectedPostId 变化而回写，避免“闪回”
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
 
     useEffect(() => {
         const loadTags = async () => {
@@ -4358,9 +4360,14 @@ const EditPostView = ({ isDarkMode }) => {
         if (selectedPostId) {
             loadPostDetail(selectedPostId);
             loadPostSiblings(selectedPostId);
-            setSearchParams({ postId: selectedPostId });
         }
-    }, [selectedPostId, loadPostDetail, loadPostSiblings, setSearchParams]);
+    }, [selectedPostId, loadPostDetail, loadPostSiblings]);
+
+    useEffect(() => {
+        if (!selectedPostId) return;
+        const search = `?postId=${selectedPostId}`;
+        navigate({ pathname: '/admin/posts/edit', search }, { replace: false });
+    }, [selectedPostId, navigate]);
 
     useEffect(() => {
         if (!submitNotice) return;
@@ -4529,6 +4536,13 @@ const EditPostView = ({ isDarkMode }) => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const switchToPost = (id) => {
+        if (!id) return;
+        const numericId = Number(id);
+        if (Number.isNaN(numericId)) return;
+        setSelectedPostId(numericId);
     };
 
     const resetSelection = () => {
@@ -4715,16 +4729,18 @@ const EditPostView = ({ isDarkMode }) => {
                 </div>
                 <div className="flex gap-3 flex-wrap items-center justify-end">
                     <button
+                        type="button"
                         className="text-sm px-3 py-2 border-2 border-black rounded-full font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-50 flex items-center gap-1"
-                        onClick={() => prevPostId && setSelectedPostId(prevPostId)}
+                        onClick={() => switchToPost(prevPostId)}
                         disabled={!prevPostId || detailLoading || siblingsLoading}
                         title="按首页顺序跳转到上一篇"
                     >
                         <ChevronLeft size={14} /> 编辑上一篇
                     </button>
                     <button
+                        type="button"
                         className="text-sm px-3 py-2 border-2 border-black rounded-full font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-50 flex items-center gap-1"
-                        onClick={() => nextPostId && setSelectedPostId(nextPostId)}
+                        onClick={() => switchToPost(nextPostId)}
                         disabled={!nextPostId || detailLoading || siblingsLoading}
                         title="按首页顺序跳转到下一篇"
                     >
