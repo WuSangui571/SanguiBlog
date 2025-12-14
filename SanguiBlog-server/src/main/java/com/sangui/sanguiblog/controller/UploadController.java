@@ -31,11 +31,11 @@ public class UploadController {
     private static final List<String> ALLOWED_IMAGE_EXT = List.of(".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif");
     private static final Set<String> ALLOWED_IMAGE_CONTENT_TYPES = Set.of(
             "image/png", "image/jpeg", "image/webp", "image/gif", "image/avif");
-    private static final long AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2MB
-    private static final long ASSET_MAX_BYTES = 8 * 1024 * 1024;  // 8MB per file
-    private static final long ASSET_TOTAL_MAX_BYTES = 30 * 1024 * 1024; // 30MB per request
+    private static final long AVATAR_MAX_BYTES = 2 * 1024 * 1024;          // 2MB
+    private static final long ASSET_MAX_BYTES = 20 * 1024 * 1024;          // 20MB per file
+    private static final long ASSET_TOTAL_MAX_BYTES = 50 * 1024 * 1024;    // 50MB per request
     private static final int MAX_ASSET_FILES = 10;
-    private static final long COVER_MAX_BYTES = 5 * 1024 * 1024; // 5MB per cover
+    private static final long COVER_MAX_BYTES = 5 * 1024 * 1024;           // 5MB per cover
     private static final DateTimeFormatter COVER_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final StoragePathResolver storagePathResolver;
