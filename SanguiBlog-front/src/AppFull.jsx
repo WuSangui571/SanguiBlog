@@ -9728,6 +9728,8 @@ const ArchiveView = ({
     error,
     onReload
 }) => {
+    const { headerHeight } = useLayoutOffsets();
+    const archiveScrollMargin = useMemo(() => Math.max(headerHeight + 16, 0), [headerHeight]);
     const postsSource = useMemo(() => (Array.isArray(postsData) && postsData.length ? postsData : MOCK_POSTS), [postsData]);
 
     const normalizedList = useMemo(() => {
@@ -9802,10 +9804,13 @@ const ArchiveView = ({
     const totalYears = timelineData.length;
     const lastUpdated = normalizedList[0]?.displayDate || '-';
     const handleMonthJump = useCallback((anchorId) => {
-        if (typeof document === 'undefined' || !anchorId) return;
+        if (typeof document === 'undefined' || typeof window === 'undefined' || !anchorId) return;
         const el = document.getElementById(anchorId);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, []);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const targetTop = window.scrollY + rect.top - archiveScrollMargin;
+        window.scrollTo({ top: Math.max(targetTop, 0), behavior: 'smooth' });
+    }, [archiveScrollMargin]);
     const monthShortcuts = useMemo(() => (
         timelineData.flatMap((yearBlock) => (
             yearBlock.months
@@ -9902,6 +9907,7 @@ const ArchiveView = ({
                                         <div
                                             key={`${yearBlock.year}-${monthIdx}`}
                                             id={monthBlock.anchorId || undefined}
+                                            style={{ scrollMarginTop: archiveScrollMargin }}
                                             className="relative pl-6 border-l-4 border-black/40"
                                         >
                                             <span className="absolute -left-3 top-2 w-5 h-5 rounded-full border-2 border-black bg-[#FFD700]"></span>

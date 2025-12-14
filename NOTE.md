@@ -154,6 +154,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
     *   导航“归档”会懒加载 `/api/posts?page=1&size=200&status=PUBLISHED`，按年/月对文章进行分组，默认展示最近 200 篇，并在右侧提供“月份速选”面板（`sticky` + 平滑滚动）快速定位到指定月份。
 
+    *   右侧“月份速选”平滑跳转时会按 `headerHeight + 16px` 预留滚动余量（`scroll-margin-top`），避免固定导航占位导致落点越过月份标题或首篇文章。
+
     *   每个条目展示标题、日期、分类、标签、阅读/评论统计，点击后通过 `setArticleId + setView('article')` 跳转文章详情。
 
     *   若 `site.asset-base-url` 带路径前缀，`buildAssetUrl` 会自动去除重复段，保障归档页图片展示一致。
