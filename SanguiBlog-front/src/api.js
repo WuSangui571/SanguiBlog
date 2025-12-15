@@ -191,6 +191,23 @@ export const fetchRecentComments = (size = 5) => {
   return request(`/comments/recent${query}`);
 };
 
+export const fetchUnreadNotifications = (limit = 20) => {
+  const search = new URLSearchParams();
+  if (limit) search.append("limit", limit);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/notifications/unread${query}`);
+};
+
+export const markNotificationRead = (id) =>
+  request(`/notifications/${id}/read`, {
+    method: "POST",
+  });
+
+export const markAllNotificationsRead = () =>
+  request("/notifications/read-all", {
+    method: "POST",
+  });
+
 export const fetchLoginCaptcha = (force = false) => {
   const query = force ? "?force=true" : "";
   return request(`/auth/captcha${query}`);

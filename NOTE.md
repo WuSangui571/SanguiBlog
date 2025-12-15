@@ -441,7 +441,15 @@ ole_permissions in bulk.
 
 
 
-### 4.6 Data Collection
+### 4.6 评论通知（信封红点）
+
+*   数据表：新增 `comment_notifications`，字段含 `recipient_id`（接收人）、`comment_id`、`post_id`、`comment_author_name`、`comment_excerpt`、`is_read`、时间戳，外键均启用 `ON DELETE CASCADE`，避免评论/文章删除后残留脏数据。
+*   生成规则：`CommentService#create` 保存成功后调用 `NotificationService#createForComment`。接收人包含：① 文章作者；② 被回复的评论作者（仅当其是登录用户），并会避开“自己回复自己”。内容截断 150 字并保留当时的昵称快照。
+*   接口：`GET /api/notifications/unread?limit=20`（返回 `{items,total}`，按时间倒序）、`POST /api/notifications/{id}/read`（单条已读）、`POST /api/notifications/read-all`（全部已读）；均需登录。
+*   前端：导航栏新增信封按钮（桌面与移动均可见），每 60 秒轮询未读并显示红点数量；点击弹窗可查看来源昵称、片段、时间与文章标题，点击任意条目跳转文章并标记已读，支持“一键全部已读”。
+
+
+### 4.7 Data Collection
 * PV 采集
   * POST `/api/analytics/page-view`：前端在首页/Archive/Admin/文章详情等视图中调用 `recordPageView`，提交 `PageViewRequest(postId,pageTitle,referrer,geo,userAgent,clientIp)`；后台 `AnalyticsController` 通过 `IpUtils` 解析真实 IP、记录 UA 并结合 JWT 判定 `userId`，`referrer` 为空时统一写成 `Direct / None`。
   * 自 V2.1.27 起，游戏中心：`/games` 列表仍按原样打点，进入具体游戏（内置详情或外链打开）时会写入 `pageTitle = Game: <游戏名>`，`sourceLabel = 游戏详情-<游戏名>`，与其它页面日志格式一致，便于在后台访问日志中定位具体游戏。

@@ -38,6 +38,7 @@ public class CommentService {
     private final PostRepository postRepository;
 
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<CommentDto> listByPost(Long postId) {
@@ -149,6 +150,7 @@ public class CommentService {
         Comment saved = commentRepository.save(comment);
         post.setCommentsCount((post.getCommentsCount() == null ? 0 : post.getCommentsCount()) + 1);
         postRepository.save(post);
+        notificationService.createForComment(saved);
         return toDto(saved);
     }
 

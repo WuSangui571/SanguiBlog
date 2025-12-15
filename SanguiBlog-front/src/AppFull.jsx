@@ -53,6 +53,9 @@ import {
     createComment,
     deleteComment,
     updateComment,
+    fetchUnreadNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
     adminFetchComments,
     adminUpdateComment,
     adminDeleteComment,
@@ -88,7 +91,7 @@ import {
     Search, LogIn, LogOut, Settings, Eye, EyeOff, Github, Twitter,
     BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
-    ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users,
+    ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
     RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy
 } from 'lucide-react';
@@ -1404,7 +1407,15 @@ const Navigation = ({
     themeLockActive = false,
     pageSize,
     onPageSizeChange,
-    pageSizeOptions = PAGE_SIZE_OPTIONS
+    pageSizeOptions = PAGE_SIZE_OPTIONS,
+    notifications = [],
+    notificationTotal = 0,
+    notificationOpen = false,
+    notificationLoading = false,
+    onNotificationToggle,
+    onNotificationClick,
+    onNotificationMarkAll,
+    onCloseNotifications = () => {}
 }) => {
     const roleInfo = user ? ROLES[user.role] : null;
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
@@ -1464,6 +1475,12 @@ const Navigation = ({
             onCloseMenu();
         }
     }, [currentView, menuOpen, onCloseMenu]);
+
+    useEffect(() => {
+        if (menuOpen && typeof onCloseNotifications === 'function') {
+            onCloseNotifications();
+        }
+    }, [menuOpen, onCloseNotifications]);
 
     const handleThemeButton = useCallback((event) => {
         if (typeof onToggleTheme === 'function') {
@@ -1551,59 +1568,81 @@ const Navigation = ({
                     </div>
                 </AnimateSharedLayout>
 
-                {user ? (
-                    <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
-                        <div className="flex items-center gap-2 cursor-pointer"
-                            onClick={onProfileClick || (() => setView('admin'))}>
-                            <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
-                                <img
-                                    src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)}
-                                    className="w-full h-full object-cover" />
+                <div className="flex items-center gap-3">
+                    {user ? (
+                        <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
+                            <div className="flex items-center gap-2 cursor-pointer"
+                                onClick={onProfileClick || (() => setView('admin'))}>
+                                <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
+                                    <img
+                                        src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)}
+                                        className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                    <span className="font-black text-sm leading-none">{user.username}</span>
+                                    <span className={`text-[10px] ${roleInfo?.color} text-white px-1 w-max mt-1 font-bold`}>
+                                        {roleInfo?.label || "USER"}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex flex-col items-start">
-                                <span className="font-black text-sm leading-none">{user.username}</span>
-                                <span className={`text-[10px] ${roleInfo?.color} text-white px-1 w-max mt-1 font-bold`}>
-                                    {roleInfo?.label || "USER"}
-                                </span>
-                            </div>
+                            <button onClick={handleLogout} className="p-2 hover:text-[#F97316] transition-colors">
+                                <LogOut size={20} />
+                            </button>
                         </div>
-                        <button onClick={handleLogout} className="p-2 hover:text-[#F97316] transition-colors"><LogOut
-                            size={20} /></button>
-                    </div>
-                ) : (
-                    <PopButton onClick={() => setView('login')} icon={LogIn}>前往登录</PopButton>
-                )}
-                <button
-                    onClick={() => setSettingsOpen(true)}
-                    className={`p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-                    title="系统设定"
-                >
-                    <Settings size={20} />
-                </button>
-                <button
-                    type="button"
-                    onClick={handleThemeButton}
-                    aria-disabled={themeLockActive}
-                    className={`relative p-2 border-2 border-black rounded-full transition-colors ${themeLockActive
-                        ? 'bg-gray-400 text-black cursor-not-allowed opacity-70'
-                        : isDarkMode
-                            ? 'bg-[#FFD700] text-black hover:bg-white'
-                            : 'bg-black text-white hover:bg-[#6366F1]'}`}
-                    title="Toggle Dark Mode"
-                >
-                    {themeLockActive ? (
-                        <motion.span
-                            initial={{ scale: 0.9 }}
-                            animate={{ scale: [0.9, 1.1, 0.9] }}
-                            transition={{ duration: 1.2, repeat: Infinity }}
-                            className="flex items-center justify-center"
-                        >
-                            <Lock size={18} />
-                        </motion.span>
                     ) : (
-                        (isDarkMode ? <Sun size={20} /> : <Moon size={20} />)
+                        <PopButton onClick={() => setView('login')} icon={LogIn}>前往登录</PopButton>
                     )}
-                </button>
+
+                    {user && (
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={onNotificationToggle}
+                                className={`relative p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+                                title="未读提醒"
+                            >
+                                <Mail size={20} />
+                                {notificationTotal > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-[2px_2px_0px_0px_#000]">
+                                        {notificationTotal > 99 ? '99+' : notificationTotal}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => setSettingsOpen(true)}
+                        className={`p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+                        title="系统设定"
+                    >
+                        <Settings size={20} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleThemeButton}
+                        aria-disabled={themeLockActive}
+                        className={`relative p-2 border-2 border-black rounded-full transition-colors ${themeLockActive
+                            ? 'bg-gray-400 text-black cursor-not-allowed opacity-70'
+                            : isDarkMode
+                                ? 'bg-[#FFD700] text-black hover:bg-white'
+                                : 'bg-black text-white hover:bg-[#6366F1]'}`}
+                        title="Toggle Dark Mode"
+                    >
+                        {themeLockActive ? (
+                            <motion.span
+                                initial={{ scale: 0.9 }}
+                                animate={{ scale: [0.9, 1.1, 0.9] }}
+                                transition={{ duration: 1.2, repeat: Infinity }}
+                                className="flex items-center justify-center"
+                            >
+                                <Lock size={18} />
+                            </motion.span>
+                        ) : (
+                            (isDarkMode ? <Sun size={20} /> : <Moon size={20} />)
+                        )}
+                    </button>
+                </div>
             </div>
 
             <AnimatePresence>
@@ -1621,13 +1660,102 @@ const Navigation = ({
                 )}
             </AnimatePresence>
 
-            <button
-                className="md:hidden p-2 border-2 border-black bg-[#FFD700] shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none"
-                onClick={toggleMenu}
-                aria-label="打开导航菜单"
-                aria-pressed={menuOpen}>
-                <Menu size={24} />
-            </button>
+            <div className="md:hidden flex items-center gap-3">
+                {user && (
+                    <button
+                        type="button"
+                        onClick={onNotificationToggle}
+                        className="relative p-2 border-2 border-black bg-white shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none rounded-full"
+                        aria-label="未读提醒"
+                    >
+                        <Mail size={22} />
+                        {notificationTotal > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-[2px_2px_0px_0px_#000]">
+                                {notificationTotal > 99 ? '99+' : notificationTotal}
+                            </span>
+                        )}
+                    </button>
+                )}
+                <button
+                    className="p-2 border-2 border-black bg-[#FFD700] shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none rounded-md"
+                    onClick={toggleMenu}
+                    aria-label="打开导航菜单"
+                    aria-pressed={menuOpen}>
+                    <Menu size={24} />
+                </button>
+            </div>
+
+            <AnimatePresence>
+                {notificationOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.18 }}
+                        className={`absolute right-3 top-20 w-[min(360px,calc(100vw-24px))] border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                    >
+                        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black">
+                            <div>
+                                <p className="font-black text-sm">消息通知</p>
+                                <p className="text-xs opacity-70">{notificationTotal > 0 ? `未读 ${notificationTotal} 条` : '暂无未读'}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={onNotificationMarkAll}
+                                    disabled={!notificationTotal}
+                                    className={`px-2 py-1 text-[11px] font-black border-2 border-black rounded ${notificationTotal ? 'bg-[#FFD700] text-black hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+                                >
+                                    全部已读
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onCloseNotifications}
+                                    className={`p-1 border-2 border-black rounded-full ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`}
+                                    aria-label="关闭通知"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="max-h-80 overflow-y-auto divide-y-2 divide-black/10">
+                            {notificationLoading ? (
+                                <div className="p-4 text-sm font-semibold">加载中...</div>
+                            ) : (notifications && notifications.length ? (
+                                notifications.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => onNotificationClick && onNotificationClick(item)}
+                                        className={`w-full text-left px-4 py-3 flex gap-3 ${isDarkMode ? 'hover:bg-[#111827]' : 'hover:bg-gray-100'}`}
+                                    >
+                                        <div className="w-10 h-10 rounded-full border-2 border-black bg-[#FFD700] text-black font-black flex items-center justify-center shrink-0 overflow-hidden">
+                                            <img
+                                                src={buildAssetUrl((item.avatar || '').trim() || DEFAULT_AVATAR, DEFAULT_AVATAR)}
+                                                alt={item.from || '访客'}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-black text-sm truncate">{item.from || '访客'}</p>
+                                                <span className="text-[11px] text-gray-500 truncate">{item.createdAt || ''}</span>
+                                            </div>
+                                            <p className="mt-1 text-sm font-semibold leading-5 break-words">
+                                                {item.commentContent || '收到一条新的评论通知'}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-1 truncate">{item.postTitle || '文章'}</p>
+                                        </div>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="p-4 text-sm font-semibold">暂无未读评论通知</div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.nav>
 
         <AnimatePresence>
@@ -8073,10 +8201,26 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         return PAGE_SIZE_OPTIONS.includes(saved) ? saved : DEFAULT_PAGE_SIZE;
     });
     const [menuOpen, setMenuOpen] = useState(false);
+    const [commentNotifications, setCommentNotifications] = useState([]);
+    const [commentNotificationTotal, setCommentNotificationTotal] = useState(0);
+    const [commentNotificationOpen, setCommentNotificationOpen] = useState(false);
+    const [commentNotificationLoading, setCommentNotificationLoading] = useState(false);
+    const commentNotificationTimerRef = useRef(null);
+    const handleToggleMenu = useCallback(() => {
+        setMenuOpen((prev) => {
+            const next = !prev;
+            if (!prev) {
+                setCommentNotificationOpen(false);
+            }
+            return next;
+        });
+    }, []);
+    const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
     useEffect(() => {
         if (menuOpen) {
             setMenuOpen(false);
         }
+        setCommentNotificationOpen(false);
     }, [view]);
     const [notification, setNotification] = useState({
         isOpen: false,
@@ -8315,7 +8459,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.95';
+    const siteVersion = meta?.version || 'V2.1.101';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -8432,6 +8576,88 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             active = false;
         };
     }, [user]);
+
+    const loadUnreadNotifications = useCallback(async () => {
+        if (!user) return;
+        setCommentNotificationLoading(true);
+        try {
+            const res = await fetchUnreadNotifications();
+            const payload = res.data || res || {};
+            const items = Array.isArray(payload.items) ? payload.items : (Array.isArray(payload) ? payload : []);
+            const total = typeof payload.total === 'number' ? payload.total : items.length;
+            setCommentNotifications(items);
+            setCommentNotificationTotal(total);
+        } catch (e) {
+            console.warn('load notifications failed', e);
+        } finally {
+            setCommentNotificationLoading(false);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (commentNotificationTimerRef.current) {
+            clearInterval(commentNotificationTimerRef.current);
+            commentNotificationTimerRef.current = null;
+        }
+        if (!user) {
+            setCommentNotifications([]);
+            setCommentNotificationTotal(0);
+            setCommentNotificationOpen(false);
+            setCommentNotificationLoading(false);
+            return;
+        }
+        loadUnreadNotifications();
+        commentNotificationTimerRef.current = setInterval(() => {
+            loadUnreadNotifications();
+        }, 60000);
+        return () => {
+            if (commentNotificationTimerRef.current) {
+                clearInterval(commentNotificationTimerRef.current);
+                commentNotificationTimerRef.current = null;
+            }
+        };
+    }, [user, loadUnreadNotifications]);
+
+    const handleNotificationToggle = useCallback(() => {
+        if (!user) {
+            setView('login');
+            return;
+        }
+        setCommentNotificationOpen((prev) => {
+            const next = !prev;
+            if (next && commentNotifications.length === 0) {
+                loadUnreadNotifications();
+            }
+            return next;
+        });
+    }, [user, setView, commentNotifications, loadUnreadNotifications]);
+
+    const handleNotificationClick = useCallback(async (notificationItem) => {
+        if (!notificationItem) return;
+        setCommentNotificationOpen(false);
+        setCommentNotifications((prev) => prev.filter((n) => n.id !== notificationItem.id));
+        setCommentNotificationTotal((prev) => Math.max(0, prev - 1));
+        try {
+            await markNotificationRead(notificationItem.id);
+        } catch (err) {
+            console.warn('mark notification read failed', err);
+        }
+        if (notificationItem.postId) {
+            setArticleId(notificationItem.postId);
+            setView('article');
+        }
+    }, [setArticleId, setView]);
+
+    const handleNotificationMarkAll = useCallback(async () => {
+        setCommentNotificationOpen(false);
+        setCommentNotifications([]);
+        setCommentNotificationTotal(0);
+        try {
+            await markAllNotificationsRead();
+        } catch (err) {
+            console.warn('mark all notifications failed', err);
+        }
+    }, []);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -9028,9 +9254,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 setView={setView}
                                 currentView={view}
                                 handleLogout={handleLogout}
-                                toggleMenu={() => setMenuOpen(!menuOpen)}
+                                toggleMenu={handleToggleMenu}
                                 menuOpen={menuOpen}
-                                onCloseMenu={() => setMenuOpen(false)}
+                                onCloseMenu={handleCloseMenu}
                                 isDarkMode={isDarkMode}
                                 onToggleTheme={handleThemeToggle}
                                 onProfileClick={handleProfileNav}
@@ -9040,6 +9266,14 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 pageSize={homePageSize}
                                 onPageSizeChange={handleHomePageSizeChange}
                                 pageSizeOptions={PAGE_SIZE_OPTIONS}
+                                notifications={commentNotifications}
+                                notificationTotal={commentNotificationTotal}
+                                notificationOpen={commentNotificationOpen}
+                                notificationLoading={commentNotificationLoading}
+                                onNotificationToggle={handleNotificationToggle}
+                                onNotificationClick={handleNotificationClick}
+                                onNotificationMarkAll={handleNotificationMarkAll}
+                                onCloseNotifications={() => setCommentNotificationOpen(false)}
                             />
                             <motion.div
                                 initial={false}
@@ -10842,11 +11076,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
             } else {
                 setUser(MOCK_USER);
             }
-            if (window.history.length > 1) {
-                navigate(-1);
-            } else {
-                setView('home');
-            }
+            setView('home');
             setCaptchaInput("");
             setCaptchaImage("");
             setCaptchaRequired(false);
@@ -10880,6 +11110,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                         <input
                             className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
                             pattern="[ -~]*"
+                            autoComplete="username"
                             value={username}
                             onChange={(e) => {
                                 const safe = sanitizeAscii(e.target.value);
@@ -10896,6 +11127,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                 className={`w-full border-2 border-black p-3 pr-16 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
                                 type={showPassword ? "text" : "password"}
                                 pattern="[ -~]*"
+                                autoComplete="current-password"
                                 value={password}
                                 onChange={(e) => {
                                     const safe = sanitizeAscii(e.target.value);
@@ -10957,6 +11189,7 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
                                 </div>
                                 <input
                                     className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+                                    autoComplete="one-time-code"
                                     value={captchaInput}
                                     onChange={(e) => setCaptchaInput(sanitizeAscii(e.target.value).slice(0, 4))}
                                     placeholder="请输入验证码"

@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS role_permissions;
 DROP TABLE IF EXISTS permissions;
 DROP TABLE IF EXISTS analytics_page_views;
 DROP TABLE IF EXISTS analytics_traffic_sources;
+DROP TABLE IF EXISTS comment_notifications;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS post_tags;
 DROP TABLE IF EXISTS tags;
@@ -200,6 +201,29 @@ CREATE TABLE comments (
     CONSTRAINT fk_comments_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
     CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_comments_parent FOREIGN KEY (parent_comment_id) REFERENCES comments(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- =============================
+-- 4.1 评论通知（用于给作者/被回复者发送未读提醒）
+-- =============================
+
+CREATE TABLE comment_notifications (
+    id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    recipient_id         BIGINT UNSIGNED NOT NULL COMMENT '接收通知的用户',
+    comment_id           BIGINT UNSIGNED NOT NULL COMMENT '触发通知的评论',
+    post_id              BIGINT UNSIGNED NOT NULL COMMENT '所属文章，便于快速跳转',
+    comment_author_name  VARCHAR(128) NOT NULL COMMENT '评论人昵称快照',
+    comment_excerpt      VARCHAR(255) NOT NULL COMMENT '评论内容截断',
+    comment_author_avatar VARCHAR(512) NULL COMMENT '评论人头像快照',
+    is_read              TINYINT(1) NOT NULL DEFAULT 0,
+    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at              TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (id),
+    KEY idx_cn_recipient (recipient_id, is_read, created_at),
+    KEY idx_cn_post (post_id),
+    CONSTRAINT fk_cn_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cn_comment FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cn_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- =============================
