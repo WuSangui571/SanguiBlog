@@ -1391,6 +1391,8 @@ const Navigation = ({
     currentView,
     handleLogout,
     toggleMenu,
+    menuOpen = false,
+    onCloseMenu,
     isDarkMode,
     onToggleTheme,
     onProfileClick,
@@ -1416,7 +1418,10 @@ const Navigation = ({
     const handleNavItemSelect = useCallback((key) => {
         setView(key);
         scrollNavToTop();
-    }, [setView, scrollNavToTop]);
+        if (typeof onCloseMenu === 'function') {
+            onCloseMenu();
+        }
+    }, [setView, scrollNavToTop, onCloseMenu]);
 
     const handleLogoClick = useCallback(() => {
         setView('home');
@@ -1443,13 +1448,19 @@ const Navigation = ({
     }, []);
 
     useEffect(() => {
-        if (!settingsOpen || typeof document === 'undefined') return undefined;
+        if (!(settingsOpen || menuOpen) || typeof document === 'undefined') return undefined;
         const original = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
         return () => {
             document.body.style.overflow = original;
         };
-    }, [settingsOpen]);
+    }, [settingsOpen, menuOpen]);
+
+    useEffect(() => {
+        if (menuOpen && typeof onCloseMenu === 'function') {
+            onCloseMenu();
+        }
+    }, [currentView, menuOpen, onCloseMenu]);
 
     const handleThemeButton = useCallback((event) => {
         if (typeof onToggleTheme === 'function') {
@@ -1464,6 +1475,26 @@ const Navigation = ({
             onPageSizeChange(value);
         }
     }, [onPageSizeChange, pageSizeOptions]);
+
+    const handleLoginClick = useCallback(() => {
+        setView('login');
+        scrollNavToTop();
+        if (typeof onCloseMenu === 'function') {
+            onCloseMenu();
+        }
+    }, [setView, scrollNavToTop, onCloseMenu]);
+
+    const handleProfileEntry = useCallback(() => {
+        if (typeof onProfileClick === 'function') {
+            onProfileClick();
+        } else {
+            setView('admin');
+        }
+        scrollNavToTop();
+        if (typeof onCloseMenu === 'function') {
+            onCloseMenu();
+        }
+    }, [onProfileClick, setView, scrollNavToTop, onCloseMenu]);
 
     return (
         <>
@@ -1589,10 +1620,165 @@ const Navigation = ({
 
             <button
                 className="md:hidden p-2 border-2 border-black bg-[#FFD700] shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none"
-                onClick={toggleMenu}>
+                onClick={toggleMenu}
+                aria-label="打开导航菜单"
+                aria-pressed={menuOpen}>
                 <Menu size={24} />
             </button>
         </motion.nav>
+
+        <AnimatePresence>
+            {menuOpen && (
+                <motion.div
+                    className="fixed inset-0 z-[125] md:hidden"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                >
+                    <motion.div
+                        className="absolute inset-0 bg-black/50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        aria-label="关闭导航遮罩"
+                        onClick={onCloseMenu}
+                    />
+                    <motion.div
+                        initial={{ x: '100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '100%' }}
+                        transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+                        className={`absolute right-0 top-0 h-full w-[88vw] max-w-sm flex flex-col border-l-4 border-black shadow-[8px_0_0_0_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-11 h-11 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'} flex items-center justify-center border-2 border-black`}>
+                                    <Code size={22} strokeWidth={3} />
+                                </div>
+                                <div className="flex flex-col leading-tight">
+                                    <span className="text-lg font-black">SANGUI</span>
+                                    <span className="text-[11px] font-bold tracking-[0.28em]">BLOG.OS</span>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={onCloseMenu}
+                                className={`p-2 border-2 border-black rounded-full ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`}
+                                aria-label="关闭导航菜单"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+                            <div className="grid grid-cols-1 gap-2">
+                                {PRIMARY_NAV_ITEMS.map((item) => {
+                                    const isActive = activeView === item.key;
+                                    return (
+                                        <button
+                                            key={item.key}
+                                            type="button"
+                                            onClick={() => handleNavItemSelect(item.key)}
+                                            className={`flex items-center justify-between px-4 py-3 border-2 border-black rounded-xl text-base font-black shadow-[4px_4px_0px_0px_#000] transition-transform active:translate-y-0.5 ${isActive
+                                                ? 'bg-[#FFD700] text-black'
+                                                : isDarkMode
+                                                    ? 'bg-gray-800 text-white hover:bg-gray-700'
+                                                    : 'bg-gray-100 text-black hover:bg-white'}`}
+                                        >
+                                            <span>{item.label}</span>
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="h-px bg-gradient-to-r from-transparent via-black to-transparent opacity-30" />
+
+                            {user ? (
+                                <div className={`flex items-center gap-3 p-3 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-black bg-[#FFD700]">
+                                        <img src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-black truncate">{user.username}</span>
+                                            <span className={`text-[10px] px-1 rounded-sm ${ROLES[user.role]?.color || 'bg-gray-500'} text-white font-bold`}>
+                                                {ROLES[user.role]?.label || 'USER'}
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleProfileEntry}
+                                                className="flex-1 px-3 py-2 text-xs font-black border-2 border-black rounded-lg bg-[#FFD700] text-black shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 transition-transform"
+                                            >
+                                                后台/个人中心
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    handleLogout?.();
+                                                    onCloseMenu?.();
+                                                }}
+                                                className={`px-3 py-2 text-xs font-black border-2 border-black rounded-lg shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                                            >
+                                                退出
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleLoginClick}
+                                    className="w-full px-4 py-3 border-2 border-black rounded-xl text-base font-black bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000] hover:-translate-y-0.5 transition-transform"
+                                >
+                                    前往登录
+                                </button>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleThemeButton}
+                                    disabled={themeLockActive}
+                                    aria-disabled={themeLockActive}
+                                    className={`px-3 py-3 border-2 border-black rounded-xl font-black shadow-[3px_3px_0px_0px_#000] transition ${themeLockActive
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-80'
+                                        : (isDarkMode ? 'bg-white text-black' : 'bg-black text-white')}`}
+                                >
+                                    {themeLockActive ? '冷却中' : (isDarkMode ? '切到亮色' : '切到暗色')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onToggleBackground && onToggleBackground()}
+                                    className={`px-3 py-3 border-2 border-black rounded-xl font-black shadow-[3px_3px_0px_0px_#000] ${backgroundEnabled ? 'bg-[#00E096] text-black' : (isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-black')}`}
+                                >
+                                    {backgroundEnabled ? '关闭彩蛋背景' : '开启彩蛋背景'}
+                                </button>
+                            </div>
+
+                            <div className={`p-3 border-2 border-dashed border-black rounded-xl ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                                <div className="text-xs font-semibold uppercase tracking-[0.2em] mb-2">首页每页</div>
+                                <div className="flex items-center gap-2">
+                                    <select
+                                        value={pageSize}
+                                        onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
+                                        className={`flex-1 p-2 border-2 border-black rounded-lg text-sm font-black shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                                    >
+                                        {pageSizeOptions.map((opt) => (
+                                            <option key={opt} value={opt}>{opt} 条</option>
+                                        ))}
+                                    </select>
+                                    <span className={`text-[11px] font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>文章</span>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
 
         <AnimatePresence>
             {settingsOpen && (
@@ -7873,6 +8059,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         return PAGE_SIZE_OPTIONS.includes(saved) ? saved : DEFAULT_PAGE_SIZE;
     });
     const [menuOpen, setMenuOpen] = useState(false);
+    useEffect(() => {
+        if (menuOpen) {
+            setMenuOpen(false);
+        }
+    }, [view]);
     const [notification, setNotification] = useState({
         isOpen: false,
         content: "系统将于今晚 00:00 停机维护",
@@ -8110,7 +8301,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || '';
+    const siteVersion = meta?.version || 'V2.1.88';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -8785,6 +8976,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 currentView={view}
                                 handleLogout={handleLogout}
                                 toggleMenu={() => setMenuOpen(!menuOpen)}
+                                menuOpen={menuOpen}
+                                onCloseMenu={() => setMenuOpen(false)}
                                 isDarkMode={isDarkMode}
                                 onToggleTheme={handleThemeToggle}
                                 onProfileClick={handleProfileNav}
@@ -8850,15 +9043,15 @@ const StatsStrip = ({ isDarkMode, stats }) => {
             className={`sticky z-40 ${bg} ${text_cls} border-b-4 border-black`}
             style={{ top: headerHeight }}
         >
-            <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
-                <div className="flex items-center gap-2 mr-8 flex-shrink-0">
+            <div className="max-w-7xl mx-auto px-4 py-2 sm:py-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:h-14">
+                <div className="flex items-center gap-2 sm:mr-8 flex-shrink-0">
                     <Activity className="text-[#00E096] animate-pulse" />
                     <span className="font-black tracking-widest uppercase">System Status</span>
                 </div>
 
-                <div className="flex items-center gap-8 md:gap-12 overflow-visible">
+                <div className="flex items-center gap-6 md:gap-12 overflow-x-auto sm:overflow-visible w-full sm:w-auto pb-1 sm:pb-0 pr-1 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
                     {items.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 flex-shrink-0 group cursor-default relative">
+                        <div key={idx} className="flex items-center gap-2 flex-shrink-0 group cursor-default relative snap-start">
                             <item.icon size={16}
                                 className={`${item.color} group-hover:scale-125 transition-transform`} />
 
