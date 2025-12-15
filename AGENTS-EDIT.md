@@ -1573,3 +1573,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.94 (2025-12-15)
 - **模块/页面**：调整返回顶部组件生命周期顺序，将自定义 `touchstart` 监听挂载移动到 `startDrag` 初始化之后，修复 “Cannot access 'startDrag' before initialization” 白屏报错，保持拖拽与回顶交互不变。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.94`
+
+## V2.1.95 (2025-12-15)
+- **资源链接安全**：`buildAssetUrl` 在 HTTPS 页面下会自动把 `http://` 资源链接提升为 `https://`，统一头像等静态资源的协议，彻底消除生产环境的 Mixed Content 报错，本地 HTTP 调试行为保持不变。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.95`
