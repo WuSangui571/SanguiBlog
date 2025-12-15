@@ -17,6 +17,7 @@ import {
 
 const BlogContext = createContext(null);
 const HOME_POSTS_PAGE_SIZE = 500;
+const ENABLE_POSTS_DEBUG = import.meta.env.VITE_ENABLE_POSTS_DEBUG === "true";
 
 export const BlogProvider = ({ children }) => {
   const value = useProvideBlog();
@@ -102,7 +103,7 @@ function useProvideBlog() {
       setPosts(data?.records || []);
       postsErrorLoggedRef.current = false;
     } catch (e) {
-      if (!postsErrorLoggedRef.current) {
+      if (ENABLE_POSTS_DEBUG && !postsErrorLoggedRef.current) {
         console.debug("load posts failed (已忽略，使用本地占位数据)", e);
         postsErrorLoggedRef.current = true;
       }
