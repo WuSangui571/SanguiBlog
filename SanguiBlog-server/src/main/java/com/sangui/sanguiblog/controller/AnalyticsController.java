@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/analytics")
@@ -36,5 +37,11 @@ public class AnalyticsController {
         Long userId = principal != null ? principal.getId() : null;
         analyticsService.recordPageView(request, ip, userAgent, userId);
         return ApiResponse.ok();
+    }
+
+    @GetMapping("/client-ip")
+    public ApiResponse<Map<String, String>> clientIp(HttpServletRequest httpServletRequest) {
+        String ip = IpUtils.normalizeIp(IpUtils.resolveIp(httpServletRequest));
+        return ApiResponse.ok(Map.of("ip", ip));
     }
 }

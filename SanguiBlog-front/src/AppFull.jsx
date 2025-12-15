@@ -61,7 +61,8 @@ import {
     uploadPostCover,
     reservePostAssetsFolder,
     createPost,
-    updatePost
+    updatePost,
+    fetchClientIp
 } from "./api";
 import { buildAssetUrl } from "./utils/asset.js";
 import ReactMarkdown from 'react-markdown';
@@ -103,6 +104,8 @@ const THEME_COLOR_PRESETS = [
 const DEFAULT_THEME_COLOR = 'bg-[#6366F1]';
 const HERO_NOISE_TEXTURE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyB2aWV3Qm94PScwIDAgMTIwIDEyMCc+PGZpbHRlciBpZD0nbicgeD0nMCcgeT0nMCc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuNCcvPjwvc3ZnPg==";
 const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none"><rect width="160" height="160" rx="28" fill="%23f8fafc"/><circle cx="80" cy="74" r="34" stroke="%2394a3b8" stroke-width="8" stroke-linecap="round" stroke-dasharray="60 32"><animateTransform attributeName="transform" type="rotate" from="0 80 80" to="360 80 80" dur="1s" repeatCount="indefinite"/></circle><rect x="40" y="116" width="80" height="18" rx="9" fill="%2394a3b8" opacity="0.28"/><text x="80" y="129" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="12" fill="%236b7280">加载中...</text></svg>';
+const PUBLIC_IP_ENDPOINT = import.meta.env.VITE_PUBLIC_IP_ENDPOINT || 'https://api.ipify.org?format=json';
+const ENABLE_PUBLIC_IP_FALLBACK = import.meta.env.VITE_ENABLE_PUBLIC_IP_FETCH === 'true';
 const randomBlobShape = () => {
     const rand = () => `${30 + Math.round(Math.random() * 40)}%`;
     return `${rand()} ${rand()} ${rand()} ${rand()} / ${rand()} ${rand()} ${rand()} ${rand()}`;
@@ -8301,7 +8304,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.88';
+    const siteVersion = meta?.version || 'V2.1.89';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -8327,18 +8330,57 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     useEffect(() => {
         if (typeof window === 'undefined' || clientIpRef.current) return;
         let cancelled = false;
-        fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                if (cancelled || !data || !data.ip) return;
-                clientIpRef.current = data.ip;
-                if (typeof window !== 'undefined') {
-                    window.__SG_CLIENT_IP__ = data.ip;
-                }
-            })
-            .catch(() => {
-                /* 忽略 IP 查询失败 */
-            });
+
+        const isLoopbackIp = (ip = '') => {
+            const normalized = ip.trim().toLowerCase();
+            return normalized === '127.0.0.1'
+                || normalized === '::1'
+                || normalized === '0:0:0:0:0:0:0:1'
+                || normalized.startsWith('::ffff:127.');
+        };
+
+        const assignClientIp = (ip) => {
+            if (cancelled || !ip || isLoopbackIp(ip)) return false;
+            clientIpRef.current = ip;
+            if (typeof window !== 'undefined') {
+                window.__SG_CLIENT_IP__ = ip;
+            }
+            return true;
+        };
+
+        const fetchWithTimeout = async (url, timeoutMs = 1500) => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+                if (!res.ok) return null;
+                const data = await res.json().catch(() => null);
+                return data;
+            } catch {
+                return null;
+            } finally {
+                clearTimeout(timer);
+            }
+        };
+
+        const loadClientIp = async () => {
+            try {
+                // 1) 优先尝试后端同源接口，避免外网被拦截
+                const backendResp = await fetchClientIp();
+                const backendIp = backendResp?.data?.ip || backendResp?.ip || null;
+                if (assignClientIp(backendIp)) return;
+            } catch {
+                // 忽略后端 IP 获取失败，继续尝试兜底逻辑
+            }
+
+            if (!ENABLE_PUBLIC_IP_FALLBACK) return;
+            const publicResp = await fetchWithTimeout(PUBLIC_IP_ENDPOINT);
+            const publicIp = publicResp?.ip;
+            assignClientIp(publicIp);
+        };
+
+        loadClientIp();
+
         return () => {
             cancelled = true;
         };

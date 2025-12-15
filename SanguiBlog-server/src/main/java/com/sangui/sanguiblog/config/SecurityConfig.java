@@ -43,6 +43,7 @@ public class SecurityConfig {
                                 "/api/posts/**",
                                 "/api/about/**",
                                 "/api/analytics/page-view",
+                                "/api/analytics/client-ip",
                                 "/api/games/**",
                                 "/avatar/**",
                                 "/contact/**",

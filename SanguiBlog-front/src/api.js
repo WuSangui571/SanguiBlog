@@ -258,6 +258,8 @@ export const recordPageView = (payload) =>
     // swallow tracking errors
   });
 
+export const fetchClientIp = () => request("/analytics/client-ip");
+
 export const updateProfile = (payload) =>
   request("/users/me", {
     method: "PUT",

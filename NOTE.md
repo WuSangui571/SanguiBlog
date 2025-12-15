@@ -448,7 +448,7 @@ ole_permissions in bulk.
   * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV。
   * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，仅首次进入这些视图时才会调用 `recordPageView`，一旦切换到其它视图即重置标记，彻底杜绝 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录。
 * 数据落库
-  * `viewer_ip`：优先读取 `X-Forwarded-For`/`X-Real-IP`，若最终仍是回环 `127.0.0.1`/`::1`，自 V1.3.86 起会启用前端上传的 `clientIp`（由 `https://api.ipify.org?format=json` 获取）并经 `IpUtils.normalizeIp` 去除 IPv6 映射后落库，方便本地调试也能看到公网地址。
+* `viewer_ip`：优先读取 `X-Forwarded-For`/`X-Real-IP`。前端默认通过同源接口 `GET /api/analytics/client-ip` 获取归一化 IP，若拿到的不是回环地址则随 PV 请求附带 `clientIp`；若返回仍是 `127.0.0.1`/`::1` 且需要公网地址，可在前端 `.env` 设置 `VITE_ENABLE_PUBLIC_IP_FETCH=true`（可选用 `VITE_PUBLIC_IP_ENDPOINT` 覆盖默认 `https://api.ipify.org?format=json`）启用公网兜底。默认不再直接访问外网 IP 服务，避免公司/校园网络拦截导致控制台报错。
   * `referrer_url`：自 V1.3.87 起记录中文来源描述。前端在埋点时会根据 `document.referrer` 自动生成 `sourceLabel`，例如“来自首页”“来自归档页”“来自站内文章”“外部链接：example.com”或“直接访问”，由后端直接落库；若前端埋点失败，兜底记录为“系统兜底（前端埋点失败）”。
   * `analytics_traffic_sources`：自 V1.3.88 起表结构默认 `CURRENT_TIMESTAMP`，实体也通过 `@CreationTimestamp/@UpdateTimestamp` 自动填充，避免 `created_at/updated_at` 为 NULL；V1.3.90 起 `updateTrafficSourceStat` 直接调用 `INSERT ... ON DUPLICATE KEY UPDATE`，数据库负责自增 visits，再无 Hibernate Session 冲突；V1.3.92 之后在服务层重新查询当天来源并以 `BigDecimal` 精确计算占比（四舍五入 2 位），写回 `percentage` 供仪表盘直接消费；V1.3.93 起 `source_label` 优先使用前端上报的中文描述（如“来自首页”“外部链接：example.com”）。
   * `user_id`：根据 JWT 中的主体 ID 关联 `users` 表，未登录访客则写入 `NULL`。

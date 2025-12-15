@@ -1548,3 +1548,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.88 (2025-12-15)
 - **移动端适配**：新增移动端抽屉导航（包含登录/后台、主题切换、背景开关与分页设置），打开时锁定页面滚动；系统状态条在小屏改为横向滑动吸顶，避免指标溢出，同时保持桌面排版与交互不变。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.88`
+
+## V2.1.89 (2025-12-15)
+- **访客 IP 采集**：新增同源接口 `/api/analytics/client-ip`，前端默认优先调用该接口并仅在获取到非回环地址时上报 `clientIp`，可选通过 `VITE_ENABLE_PUBLIC_IP_FETCH=true`（或自定义 `VITE_PUBLIC_IP_ENDPOINT`）开启公网 IP 兜底。移除对外网 `api.ipify.org` 的强依赖，启动时不再出现 `net::ERR_CONNECTION_RESET` 报警。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.89`
