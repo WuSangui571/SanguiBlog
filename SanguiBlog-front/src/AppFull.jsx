@@ -1725,7 +1725,7 @@ const Navigation = ({
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -6 }}
                             transition={{ duration: 0.18 }}
-                            className={`absolute right-3 top-20 z-[50] w-[min(360px,calc(100vw-24px))] border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                            className={`absolute right-3 top-20 z-[50] w-[min(500px,calc(100vw-32px))] max-h-[100vh] border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
                         >
                         <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black">
                             <div>
@@ -1753,7 +1753,7 @@ const Navigation = ({
                                 </button>
                             </div>
                         </div>
-                        <div className="max-h-80 overflow-y-auto divide-y-2 divide-black/10">
+                        <div className="max-h-[calc(100vh-180px)] overflow-y-auto divide-y-2 divide-black/10">
                             {notificationLoading ? (
                                 <div className="p-4 text-sm font-semibold">加载中...</div>
                             ) : (notifications && notifications.length ? (
@@ -1803,7 +1803,15 @@ const Navigation = ({
                                     </button>
                                 )}
                             </div>
-                            <div className="flex flex-1 items-center justify-center gap-2">
+                            <div className="flex flex-1 items-center justify-center gap-2 flex-wrap">
+                                <button
+                                    type="button"
+                                    disabled={notificationPage <= 1}
+                                    onClick={() => onNotificationPageChange && onNotificationPageChange(1)}
+                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage <= 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
+                                >
+                                    首页
+                                </button>
                                 <button
                                     type="button"
                                     disabled={notificationPage <= 1}
@@ -1815,6 +1823,25 @@ const Navigation = ({
                                 <span className="text-[11px] text-gray-600 font-bold">
                                     第 {notificationPage} 页 / 共 {Math.max(1, Math.ceil(notificationTotal / notificationPageSize))} 页
                                 </span>
+                                <select
+                                    value={notificationPage}
+                                    onChange={(e) => {
+                                        const v = Number(e.target.value);
+                                        if (Number.isFinite(v) && v >= 1) {
+                                            onNotificationPageChange && onNotificationPageChange(v);
+                                        }
+                                    }}
+                                    className="text-xs font-black border-2 border-black rounded px-2 py-1 bg-white shadow-[2px_2px_0px_0px_#000]"
+                                >
+                                    {Array.from({ length: Math.max(1, Math.ceil(notificationTotal / notificationPageSize)) }).map((_, idx) => {
+                                        const num = idx + 1;
+                                        return (
+                                            <option key={`p-${num}`} value={num}>
+                                                跳转到第 {num} 页
+                                            </option>
+                                        );
+                                    })}
+                                </select>
                                 <button
                                     type="button"
                                     disabled={notificationPage * notificationPageSize >= notificationTotal}
@@ -1822,6 +1849,17 @@ const Navigation = ({
                                     className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage * notificationPageSize >= notificationTotal ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
                                 >
                                     下一页
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={notificationPage * notificationPageSize >= notificationTotal}
+                                    onClick={() => {
+                                        const lastPage = Math.max(1, Math.ceil(notificationTotal / notificationPageSize));
+                                        onNotificationPageChange && onNotificationPageChange(lastPage);
+                                    }}
+                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage * notificationPageSize >= notificationTotal ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
+                                >
+                                    尾页
                                 </button>
                             </div>
                         </div>
@@ -8282,7 +8320,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const commentNotificationTimerRef = useRef(null);
     const [commentAnchorId, setCommentAnchorId] = useState(null);
     const [notificationPage, setNotificationPage] = useState(1);
-    const NOTIFICATION_PAGE_SIZE = 3;
+    const NOTIFICATION_PAGE_SIZE = 4;
     const [notificationCanBackfill, setNotificationCanBackfill] = useState(true);
     const handleToggleMenu = useCallback(() => {
         setMenuOpen((prev) => {
@@ -8537,7 +8575,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.119';
+    const siteVersion = meta?.version || 'V2.1.127';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
