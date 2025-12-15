@@ -208,6 +208,19 @@ export const markAllNotificationsRead = () =>
     method: "POST",
   });
 
+export const fetchNotificationHistory = (page = 1, size = 10) => {
+  const search = new URLSearchParams();
+  if (page) search.append("page", page);
+  if (size) search.append("size", size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/notifications/history${query}`);
+};
+
+export const backfillNotifications = () =>
+  request("/notifications/backfill", {
+    method: "POST",
+  });
+
 export const fetchLoginCaptcha = (force = false) => {
   const query = force ? "?force=true" : "";
   return request(`/auth/captcha${query}`);

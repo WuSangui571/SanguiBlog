@@ -54,6 +54,8 @@ import {
     deleteComment,
     updateComment,
     fetchUnreadNotifications,
+    fetchNotificationHistory,
+    backfillNotifications,
     markNotificationRead,
     markAllNotificationsRead,
     adminFetchComments,
@@ -1410,18 +1412,38 @@ const Navigation = ({
     pageSizeOptions = PAGE_SIZE_OPTIONS,
     notifications = [],
     notificationTotal = 0,
+    notificationUnread = 0,
+    notificationPage = 1,
+    notificationPageSize = 10,
     notificationOpen = false,
     notificationLoading = false,
     onNotificationToggle,
     onNotificationClick,
     onNotificationMarkAll,
-    onCloseNotifications = () => {}
+    onCloseNotifications = () => {},
+    onNotificationPageChange,
+    onBackfill = null,
+    notificationCanBackfill = true
 }) => {
     const roleInfo = user ? ROLES[user.role] : null;
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [logoClicks, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
+    const normalizeAvatarPathLocal = (path) => {
+        if (!path) return null;
+        const trimmed = path.trim();
+        if (!trimmed) return null;
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        if (trimmed.startsWith("/uploads/avatar/") || trimmed.startsWith("uploads/avatar/")) {
+            return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+        }
+        if (trimmed.startsWith("/avatar/") || trimmed.startsWith("avatar/")) {
+            const name = trimmed.replace(/^\/?avatar\//, "");
+            return `/uploads/avatar/${name}`;
+        }
+        return `/uploads/avatar/${trimmed.replace(/^\/+/, "")}`;
+    };
     const logoResetTimer = useRef(null);
     const devMessageTimer = useRef(null);
     const scrollNavToTop = useCallback(() => {
@@ -1602,9 +1624,9 @@ const Navigation = ({
                                 title="未读提醒"
                             >
                                 <Mail size={20} />
-                                {notificationTotal > 0 && (
+                                {notificationUnread > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-[2px_2px_0px_0px_#000]">
-                                        {notificationTotal > 99 ? '99+' : notificationTotal}
+                                        {notificationUnread > 99 ? '99+' : notificationUnread}
                                     </span>
                                 )}
                             </button>
@@ -1669,9 +1691,9 @@ const Navigation = ({
                         aria-label="未读提醒"
                     >
                         <Mail size={22} />
-                        {notificationTotal > 0 && (
+                        {notificationUnread > 0 && (
                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-[2px_2px_0px_0px_#000]">
-                                {notificationTotal > 99 ? '99+' : notificationTotal}
+                                {notificationUnread > 99 ? '99+' : notificationUnread}
                             </span>
                         )}
                     </button>
@@ -1687,17 +1709,30 @@ const Navigation = ({
 
             <AnimatePresence>
                 {notificationOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.18 }}
-                        className={`absolute right-3 top-20 w-[min(360px,calc(100vw-24px))] border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
-                    >
+                    <>
+                        <motion.div
+                            key="notice-backdrop"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.2 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="fixed inset-0 z-[48] bg-black"
+                            onClick={onCloseNotifications}
+                        />
+                        <motion.div
+                            key="notice-panel"
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.18 }}
+                            className={`absolute right-3 top-20 z-[50] w-[min(360px,calc(100vw-24px))] border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                        >
                         <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black">
                             <div>
                                 <p className="font-black text-sm">消息通知</p>
-                                <p className="text-xs opacity-70">{notificationTotal > 0 ? `未读 ${notificationTotal} 条` : '暂无未读'}</p>
+                                <p className="text-xs opacity-70">
+                                    {notificationUnread > 0 ? `未读 ${notificationUnread} 条 · 共 ${notificationTotal || 0} 条` : `共 ${notificationTotal || 0} 条`}
+                                </p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
@@ -1731,7 +1766,7 @@ const Navigation = ({
                                     >
                                         <div className="w-10 h-10 rounded-full border-2 border-black bg-[#FFD700] text-black font-black flex items-center justify-center shrink-0 overflow-hidden">
                                             <img
-                                                src={buildAssetUrl((item.avatar || '').trim() || DEFAULT_AVATAR, DEFAULT_AVATAR)}
+                                                src={buildAssetUrl(normalizeAvatarPathLocal(item.avatar) || DEFAULT_AVATAR, DEFAULT_AVATAR)}
                                                 alt={item.from || '访客'}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
@@ -1747,13 +1782,51 @@ const Navigation = ({
                                             </p>
                                             <p className="text-xs text-gray-500 mt-1 truncate">{item.postTitle || '文章'}</p>
                                         </div>
+                                        {item.read ? null : (
+                                            <span className="self-start text-[10px] font-black text-red-500 border border-red-500 px-1 rounded">未读</span>
+                                        )}
                                     </button>
                                 ))
                             ) : (
-                                <div className="p-4 text-sm font-semibold">暂无未读评论通知</div>
+                                <div className="p-4 text-sm font-semibold">暂无通知</div>
                             ))}
                         </div>
-                    </motion.div>
+                        <div className="px-4 py-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                {notificationCanBackfill && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onBackfill && onBackfill()}
+                                        className="text-xs font-black px-3 py-1 border-2 border-black rounded bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]"
+                                    >
+                                        补全历史
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex flex-1 items-center justify-center gap-2">
+                                <button
+                                    type="button"
+                                    disabled={notificationPage <= 1}
+                                    onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage - 1)}
+                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage <= 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
+                                >
+                                    上一页
+                                </button>
+                                <span className="text-[11px] text-gray-600 font-bold">
+                                    第 {notificationPage} 页 / 共 {Math.max(1, Math.ceil(notificationTotal / notificationPageSize))} 页
+                                </span>
+                                <button
+                                    type="button"
+                                    disabled={notificationPage * notificationPageSize >= notificationTotal}
+                                    onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage + 1)}
+                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage * notificationPageSize >= notificationTotal ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
+                                >
+                                    下一页
+                                </button>
+                            </div>
+                        </div>
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
         </motion.nav>
@@ -8202,11 +8275,15 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     });
     const [menuOpen, setMenuOpen] = useState(false);
     const [commentNotifications, setCommentNotifications] = useState([]);
-    const [commentNotificationTotal, setCommentNotificationTotal] = useState(0);
+    const [commentNotificationTotal, setCommentNotificationTotal] = useState(0); // total history
+    const [commentNotificationUnread, setCommentNotificationUnread] = useState(0);
     const [commentNotificationOpen, setCommentNotificationOpen] = useState(false);
     const [commentNotificationLoading, setCommentNotificationLoading] = useState(false);
     const commentNotificationTimerRef = useRef(null);
     const [commentAnchorId, setCommentAnchorId] = useState(null);
+    const [notificationPage, setNotificationPage] = useState(1);
+    const NOTIFICATION_PAGE_SIZE = 3;
+    const [notificationCanBackfill, setNotificationCanBackfill] = useState(true);
     const handleToggleMenu = useCallback(() => {
         setMenuOpen((prev) => {
             const next = !prev;
@@ -8460,7 +8537,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.102';
+    const siteVersion = meta?.version || 'V2.1.119';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -8580,20 +8657,53 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     const loadUnreadNotifications = useCallback(async () => {
         if (!user) return;
+        try {
+            const res = await fetchUnreadNotifications(1); // 仅用于计数
+            const payload = res.data || res || {};
+            const total = typeof payload.total === 'number' ? payload.total : 0;
+            setCommentNotificationUnread(total);
+        } catch (e) {
+            console.warn('load unread notifications failed', e);
+        }
+    }, [user]);
+
+    const normalizeAvatarPath = useCallback((path) => {
+        if (!path) return null;
+        const trimmed = path.trim();
+        if (!trimmed) return null;
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        if (trimmed.startsWith("/uploads/avatar/") || trimmed.startsWith("uploads/avatar/")) {
+            return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+        }
+        if (trimmed.startsWith("/avatar/") || trimmed.startsWith("avatar/")) {
+            const name = trimmed.replace(/^\/?avatar\//, "");
+            return `/uploads/avatar/${name}`;
+        }
+        return `/uploads/avatar/${trimmed.replace(/^\/+/, "")}`;
+    }, []);
+
+    const loadNotificationHistory = useCallback(async (page = 1, append = false) => {
+        if (!user) return;
         setCommentNotificationLoading(true);
         try {
-            const res = await fetchUnreadNotifications();
+            const res = await fetchNotificationHistory(page, NOTIFICATION_PAGE_SIZE);
             const payload = res.data || res || {};
-            const items = Array.isArray(payload.items) ? payload.items : (Array.isArray(payload) ? payload : []);
+            const items = Array.isArray(payload.items) ? payload.items : [];
             const total = typeof payload.total === 'number' ? payload.total : items.length;
-            setCommentNotifications(items);
+            const normalizedItems = items.map((item) => ({
+                ...item,
+                avatar: normalizeAvatarPath(item.avatar),
+            }));
             setCommentNotificationTotal(total);
+            setNotificationPage(page);
+            setNotificationCanBackfill(total === 0); // 如果总数为0，允许补全；补全后会刷新
+            setCommentNotifications((prev) => append ? [...prev, ...normalizedItems] : normalizedItems);
         } catch (e) {
-            console.warn('load notifications failed', e);
+            console.warn('load notification history failed', e);
         } finally {
             setCommentNotificationLoading(false);
         }
-    }, [user]);
+    }, [user, normalizeAvatarPath]);
 
     useEffect(() => {
         if (commentNotificationTimerRef.current) {
@@ -8603,11 +8713,13 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         if (!user) {
             setCommentNotifications([]);
             setCommentNotificationTotal(0);
+            setCommentNotificationUnread(0);
             setCommentNotificationOpen(false);
             setCommentNotificationLoading(false);
             return;
         }
         loadUnreadNotifications();
+        loadNotificationHistory(1, false);
         commentNotificationTimerRef.current = setInterval(() => {
             loadUnreadNotifications();
         }, 60000);
@@ -8627,17 +8739,21 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         setCommentNotificationOpen((prev) => {
             const next = !prev;
             if (next && commentNotifications.length === 0) {
-                loadUnreadNotifications();
+                loadNotificationHistory(1, false);
             }
             return next;
         });
-    }, [user, setView, commentNotifications, loadUnreadNotifications]);
+    }, [user, setView, commentNotifications.length, loadNotificationHistory]);
 
     const handleNotificationClick = useCallback(async (notificationItem) => {
         if (!notificationItem) return;
         setCommentNotificationOpen(false);
-        setCommentNotifications((prev) => prev.filter((n) => n.id !== notificationItem.id));
-        setCommentNotificationTotal((prev) => Math.max(0, prev - 1));
+        setCommentNotifications((prev) =>
+            prev.map((n) => n.id === notificationItem.id ? { ...n, read: true } : n)
+        );
+        if (!notificationItem.read) {
+            setCommentNotificationUnread((prev) => Math.max(0, prev - 1));
+        }
         if (notificationItem.commentId) {
             setCommentAnchorId(notificationItem.commentId);
         }
@@ -8654,8 +8770,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     const handleNotificationMarkAll = useCallback(async () => {
         setCommentNotificationOpen(false);
-        setCommentNotifications([]);
-        setCommentNotificationTotal(0);
+        setCommentNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setCommentNotificationUnread(0);
         try {
             await markAllNotificationsRead();
         } catch (err) {
@@ -9285,12 +9401,27 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 pageSizeOptions={PAGE_SIZE_OPTIONS}
                                 notifications={commentNotifications}
                                 notificationTotal={commentNotificationTotal}
+                                notificationUnread={commentNotificationUnread}
                                 notificationOpen={commentNotificationOpen}
                                 notificationLoading={commentNotificationLoading}
                                 onNotificationToggle={handleNotificationToggle}
                                 onNotificationClick={handleNotificationClick}
                                 onNotificationMarkAll={handleNotificationMarkAll}
                                 onCloseNotifications={() => setCommentNotificationOpen(false)}
+                                notificationPage={notificationPage}
+                                notificationPageSize={NOTIFICATION_PAGE_SIZE}
+                                notificationCanBackfill={notificationCanBackfill}
+                                onNotificationPageChange={(page) => loadNotificationHistory(page, false)}
+                                onBackfill={async () => {
+                                    try {
+                                        await backfillNotifications();
+                                        await loadNotificationHistory(1, false);
+                                        await loadUnreadNotifications();
+                                        setNotificationCanBackfill(false);
+                                    } catch (e) {
+                                        console.warn('backfill notifications failed', e);
+                                    }
+                                }}
                             />
                             <motion.div
                                 initial={false}

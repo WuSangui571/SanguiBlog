@@ -23,6 +23,14 @@ public class NotificationController {
         return ApiResponse.ok(notificationService.listUnread(userPrincipal.getId(), limit));
     }
 
+    @GetMapping("/history")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<NotificationListDto> history(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                    @RequestParam(value = "page", defaultValue = "1") int page,
+                                                    @RequestParam(value = "size", defaultValue = "10") int size) {
+        return ApiResponse.ok(notificationService.listAll(userPrincipal.getId(), page, size));
+    }
+
     @PostMapping("/{id}/read")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Void> markRead(@PathVariable("id") Long id,
@@ -36,5 +44,12 @@ public class NotificationController {
     public ApiResponse<Void> markAllRead(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         notificationService.markAllAsRead(userPrincipal.getId());
         return ApiResponse.ok();
+    }
+
+    @PostMapping("/backfill")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<Integer> backfill(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        int created = notificationService.backfillForUser(userPrincipal.getId());
+        return ApiResponse.ok(created);
     }
 }

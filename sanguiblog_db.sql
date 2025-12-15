@@ -219,6 +219,7 @@ CREATE TABLE comment_notifications (
     created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     read_at              TIMESTAMP NULL DEFAULT NULL,
     PRIMARY KEY (id),
+    UNIQUE KEY uk_cn_recipient_comment (recipient_id, comment_id),
     KEY idx_cn_recipient (recipient_id, is_read, created_at),
     KEY idx_cn_post (post_id),
     CONSTRAINT fk_cn_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,

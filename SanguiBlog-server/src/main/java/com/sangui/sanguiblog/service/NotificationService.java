@@ -7,8 +7,10 @@ import com.sangui.sanguiblog.model.entity.CommentNotification;
 import com.sangui.sanguiblog.model.entity.Post;
 import com.sangui.sanguiblog.model.entity.User;
 import com.sangui.sanguiblog.model.repository.CommentNotificationRepository;
+import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -30,6 +32,7 @@ public class NotificationService {
 
     private final CommentNotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public void createForComment(Comment comment) {
@@ -50,6 +53,10 @@ public class NotificationService {
                 targetIds.add(parentAuthorId);
             }
         }
+        Long mentionedUserId = resolveMentionedUserId(comment.getContent());
+        if (mentionedUserId != null && !mentionedUserId.equals(actorId)) {
+            targetIds.add(mentionedUserId);
+        }
 
         if (targetIds.isEmpty()) {
             return;
@@ -63,6 +70,9 @@ public class NotificationService {
         Instant now = Instant.now();
         List<User> recipients = userRepository.findAllById(targetIds);
         for (User recipient : recipients) {
+            if (comment.getUser() != null && recipient.getId().equals(comment.getUser().getId())) {
+                continue; // 不提醒自己
+            }
             CommentNotification notification = new CommentNotification();
             notification.setRecipient(recipient);
             notification.setComment(comment);
@@ -80,9 +90,23 @@ public class NotificationService {
     public NotificationListDto listUnread(Long userId, int limit) {
         int safeLimit = Math.min(Math.max(limit, 1), 50);
         PageRequest page = PageRequest.of(0, safeLimit, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<CommentNotification> result = notificationRepository.findByRecipientIdAndIsReadOrderByCreatedAtDesc(userId, false, page);
+        Page<CommentNotification> result = notificationRepository.findVisibleUnread(userId, false, page);
         List<NotificationDto> items = result.stream().map(this::toDto).toList();
-        long total = notificationRepository.countByRecipientIdAndIsRead(userId, false);
+        long total = notificationRepository.countVisibleUnread(userId, false);
+        return NotificationListDto.builder()
+                .items(items)
+                .total(total)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationListDto listAll(Long userId, int page, int size) {
+        int safePage = Math.max(page, 1) - 1;
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        PageRequest pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<CommentNotification> result = notificationRepository.findVisibleAll(userId, pageable);
+        List<NotificationDto> items = result.stream().map(this::toDto).toList();
+        long total = notificationRepository.countVisibleAll(userId);
         return NotificationListDto.builder()
                 .items(items)
                 .total(total)
@@ -95,9 +119,7 @@ public class NotificationService {
             return;
         }
         int updated = notificationRepository.markAsRead(notificationId, userId, Instant.now());
-        if (updated == 0) {
-            throw new IllegalArgumentException("通知不存在或已处理");
-        }
+        // 如果已读或不存在，直接忽略，避免前端重复点击时抛错
     }
 
     @Transactional
@@ -106,6 +128,67 @@ public class NotificationService {
             return;
         }
         notificationRepository.markAllAsRead(userId, Instant.now());
+    }
+
+    @Transactional
+    public int backfillForUser(Long userId) {
+        if (userId == null) return 0;
+        deduplicateForUser(userId);
+        Set<Long> commentIds = new HashSet<>();
+        commentRepository.findByPostAuthorId(userId).forEach(c -> commentIds.add(c.getId()));
+        commentRepository.findByParentUserId(userId).forEach(c -> commentIds.add(c.getId()));
+        // comments that @mention the user
+        userRepository.findById(userId).ifPresent(user -> {
+            String display = user.getDisplayName();
+            String username = user.getUsername();
+            commentRepository.findAll().forEach(c -> {
+                if (isMentioned(c, display, username)) {
+                    commentIds.add(c.getId());
+                }
+            });
+        });
+        if (commentIds.isEmpty()) return 0;
+
+        List<Comment> comments = commentRepository.findAllById(commentIds);
+        int created = 0;
+        Instant now = Instant.now();
+        for (Comment c : comments) {
+            if (c.getUser() != null && userId.equals(c.getUser().getId())) {
+                continue; // 自己的评论不补全
+            }
+            if (notificationRepository.existsByRecipientIdAndCommentId(userId, c.getId())) continue;
+            CommentNotification n = new CommentNotification();
+            n.setRecipient(userRepository.findById(userId).orElse(null));
+            if (n.getRecipient() == null) continue;
+            n.setComment(c);
+            n.setPost(c.getPost());
+            n.setCommentAuthorName(c.getAuthorName() == null || c.getAuthorName().isBlank() ? "访客" : c.getAuthorName());
+            n.setCommentExcerpt(buildExcerpt(c.getContent()));
+            n.setCommentAuthorAvatar(normalizeAvatar(c.getAuthorAvatarUrl()));
+            n.setIsRead(true);
+            n.setCreatedAt(c.getCreatedAt() != null ? c.getCreatedAt() : now);
+            n.setReadAt(now);
+            notificationRepository.save(n);
+            created++;
+        }
+        return created;
+    }
+
+    private void deduplicateForUser(Long userId) {
+        List<CommentNotification> list = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId);
+        if (list == null || list.size() < 2) return;
+        Set<Long> seenComment = new HashSet<>();
+        List<CommentNotification> duplicates = new java.util.ArrayList<>();
+        for (CommentNotification n : list) {
+            Long cid = n.getComment() != null ? n.getComment().getId() : null;
+            if (cid == null) continue;
+            if (!seenComment.add(cid)) {
+                duplicates.add(n);
+            }
+        }
+        if (!duplicates.isEmpty()) {
+            notificationRepository.deleteAllInBatch(duplicates);
+        }
     }
 
     private NotificationDto toDto(CommentNotification notification) {
@@ -150,13 +233,60 @@ public class NotificationService {
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             return trimmed;
         }
-        if (trimmed.startsWith("/avatar/") || trimmed.startsWith("avatar/")) {
-            return trimmed.startsWith("/") ? trimmed : ("/" + trimmed);
-        }
         if (trimmed.startsWith("/uploads/avatar/") || trimmed.startsWith("uploads/avatar/")) {
             return trimmed.startsWith("/") ? trimmed : ("/" + trimmed);
         }
-        // treat bare filename as avatar stored under /avatar/
-        return "/avatar/" + trimmed.replaceAll("^/+", "");
+        if (trimmed.startsWith("/avatar/") || trimmed.startsWith("avatar/")) {
+            String name = trimmed.replaceFirst("^/?avatar/", "");
+            return "/uploads/avatar/" + name;
+        }
+        // treat bare filename as avatar stored under uploads/avatar
+        String name = trimmed.replaceAll("^/+", "");
+        return "/uploads/avatar/" + name;
+    }
+
+    /**
+     * 尝试从评论内容中解析 @mention 的用户 ID（匹配用户名或显示名，忽略大小写）
+     */
+    private Long resolveMentionedUserId(String content) {
+        if (content == null) return null;
+        String prefix = extractMention(content);
+        if (prefix == null) return null;
+        // 先按用户名匹配
+        return userRepository.findByUsernameIgnoreCase(prefix)
+                .map(User::getId)
+                .orElseGet(() -> userRepository.findAll().stream()
+                        .filter(u -> !StringUtils.isBlank(u.getDisplayName()))
+                        .filter(u -> prefix.equalsIgnoreCase(u.getDisplayName()))
+                        .map(User::getId)
+                        .findFirst()
+                        .orElse(null));
+    }
+
+    private String extractMention(String content) {
+        String trimmed = content.trim();
+        if (!trimmed.startsWith("@")) return null;
+        // 取到首个空格或冒号
+        String body = trimmed.substring(1);
+        int stop = body.indexOf(' ');
+        int colon = body.indexOf(':');
+        int cnColon = body.indexOf('：');
+        int idx = -1;
+        for (int val : new int[]{colon, cnColon, stop}) {
+            if (val >= 0 && (idx == -1 || val < idx)) {
+                idx = val;
+            }
+        }
+        String name = idx >= 0 ? body.substring(0, idx) : body;
+        name = name.trim();
+        return name.isEmpty() ? null : name;
+    }
+
+    private boolean isMentioned(Comment c, String displayName, String username) {
+        if (c == null || c.getContent() == null) return false;
+        String mention = extractMention(c.getContent());
+        if (mention == null) return false;
+        if (!StringUtils.isBlank(username) && mention.equalsIgnoreCase(username)) return true;
+        return !StringUtils.isBlank(displayName) && mention.equalsIgnoreCase(displayName);
     }
 }
