@@ -1484,13 +1484,19 @@ const Navigation = ({
     }, []);
 
     useEffect(() => {
-        if (!(settingsOpen || menuOpen) || typeof document === 'undefined') return undefined;
-        const original = document.body.style.overflow;
+        if (!menuOpen || typeof document === 'undefined') return undefined;
+        const originalOverflow = document.body.style.overflow;
+        const originalPaddingRight = document.body.style.paddingRight;
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        if (scrollbarWidth > 0) {
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
+        }
         document.body.style.overflow = 'hidden';
         return () => {
-            document.body.style.overflow = original;
+            document.body.style.overflow = originalOverflow;
+            document.body.style.paddingRight = originalPaddingRight;
         };
-    }, [settingsOpen, menuOpen]);
+    }, [menuOpen]);
 
     useEffect(() => {
         if (menuOpen && typeof onCloseMenu === 'function') {
@@ -2024,46 +2030,62 @@ const Navigation = ({
 
         <AnimatePresence>
             {settingsOpen && (
-                <motion.div
-                    className="fixed inset-0 z-[120] flex items-start justify-end p-4 md:p-8 bg-black/40 backdrop-blur-[2px]"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => setSettingsOpen(false)}
-                >
+                <>
                     <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                        key="settings-mask"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.16 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.18 }}
+                        className="fixed inset-0 z-[110] bg-black"
+                        onClick={() => setSettingsOpen(false)}
+                    />
+                    <motion.div
+                        key="settings-panel"
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                        onClick={(e) => e.stopPropagation()}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 240, damping: 20 }}
                         role="dialog"
                         aria-modal="true"
-                        className={`w-full max-w-md border-4 border-black shadow-[10px_10px_0px_0px_#000] rounded-2xl ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                        className={`absolute right-3 top-20 z-[120] w-[min(500px,calc(100vw-32px))] max-h-[92vh] overflow-hidden border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
                     >
-                        <div className="flex items-center justify-between px-5 py-4 border-b-2 border-black bg-gradient-to-r from-[#FFD700]/60 via-white to-transparent">
-                            <div className="flex items-center gap-2 font-black text-lg">
-                                <Settings size={20} />
-                                <span>系统设定</span>
+                        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black">
+                            <div className="flex items-center gap-3">
+                                <span className={`w-10 h-10 rounded-full border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+                                    <Settings size={18} />
+                                </span>
+                                <div className="leading-tight">
+                                    <div className="font-black text-sm uppercase tracking-wide">系统设置</div>
+                                    <div className="text-[11px] font-semibold opacity-70">位置与信箱一致，纯白基底</div>
+                                </div>
                             </div>
-                            <button
-                                onClick={() => setSettingsOpen(false)}
-                                className={`p-2 border-2 border-black rounded-full ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-                                aria-label="关闭设定"
-                            >
-                                <X size={16} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <span className={`text-[11px] font-black px-2 py-1 rounded-full border border-black ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+                                    即时生效
+                                </span>
+                                <button
+                                    onClick={() => setSettingsOpen(false)}
+                                    className={`p-2 border-2 border-black rounded-full ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                                    aria-label="关闭设置"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="p-5 space-y-4">
-                            <div className={`flex items-center justify-between gap-4 p-4 border-2 border-black rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                <div className="space-y-1">
-                                    <div className="font-bold text-sm">彩蛋背景</div>
-                                    <div className="text-xs text-gray-500">显示/隐藏太阳与月亮动效</div>
+                        <div className="p-4 space-y-3 max-h-[calc(92vh-64px)] overflow-y-auto">
+                            <div className={`flex items-center gap-3 p-4 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                <div className={`w-11 h-11 rounded-full border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+                                    {backgroundEnabled ? <Sun size={18} /> : <Moon size={18} />}
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                    <div className="font-black text-sm">彩蛋背景</div>
+                                    <div className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>显示/隐藏太阳与月亮动画，外观对齐信箱弹层</div>
                                 </div>
                                 <button
                                     onClick={() => onToggleBackground && onToggleBackground()}
-                                    className={`relative w-16 h-9 border-2 border-black rounded-full transition-colors ${backgroundEnabled ? 'bg-[#FFE066]' : (isDarkMode ? 'bg-gray-700' : 'bg-gray-200')}`}
+                                    className={`relative w-16 h-9 border-2 border-black rounded-full transition-all ${backgroundEnabled ? 'bg-black text-white' : (isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black')}`}
                                     aria-pressed={backgroundEnabled}
                                     aria-label="切换彩蛋背景"
                                 >
@@ -2076,28 +2098,35 @@ const Navigation = ({
                                 </button>
                             </div>
 
-                            <div className={`flex items-center justify-between gap-4 p-4 border-2 border-black rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                <div className="space-y-1">
-                                    <div className="font-bold text-sm">首页每页文章数</div>
-                                    <div className="text-xs text-gray-500">默认 5 条，可选 10 / 20。</div>
+                            <div className={`flex items-start gap-3 p-4 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                <div className={`w-11 h-11 rounded-full border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+                                    <List size={18} />
                                 </div>
-                                <select
-                                    value={pageSize}
-                                    onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
-                                    className={`w-28 p-2 border-2 border-black rounded-lg font-black text-sm shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
-                                >
-                                    {pageSizeOptions.map((opt) => (
-                                        <option key={opt} value={opt}>{opt} 条/页</option>
-                                    ))}
-                                </select>
+                                <div className="flex-1 space-y-1">
+                                    <div className="font-black text-sm">首页每页文章数</div>
+                                    <div className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>默认 5 条，可选 10 / 20，纯白控件</div>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                    <select
+                                        value={pageSize}
+                                        onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
+                                        className={`w-28 p-2 border-2 border-black rounded-lg font-black text-sm shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                                    >
+                                        {pageSizeOptions.map((opt) => (
+                                            <option key={opt} value={opt}>{opt} 条/页</option>
+                                        ))}
+                                    </select>
+                                    <span className={`text-[11px] font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>选择后立即生效</span>
+                                </div>
                             </div>
 
-                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                系统设定存储在本地浏览器。
+                            <div className={`flex items-center gap-2 px-3 py-2 border-2 border-dashed border-black rounded-lg text-[11px] font-semibold ${isDarkMode ? 'bg-gray-900 text-gray-300' : 'bg-white text-gray-600'}`}>
+                                <Sparkles size={14} className="text-[#F97316]" />
+                                <span>设置仅存于本地浏览器，与信箱弹层交互一致，随时可关闭。</span>
                             </div>
                         </div>
                     </motion.div>
-                </motion.div>
+                </>
             )}
         </AnimatePresence>
     </>
@@ -8575,7 +8604,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.127';
+    const siteVersion = meta?.version || 'V2.1.130';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
