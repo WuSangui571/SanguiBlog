@@ -8206,6 +8206,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const [commentNotificationOpen, setCommentNotificationOpen] = useState(false);
     const [commentNotificationLoading, setCommentNotificationLoading] = useState(false);
     const commentNotificationTimerRef = useRef(null);
+    const [commentAnchorId, setCommentAnchorId] = useState(null);
     const handleToggleMenu = useCallback(() => {
         setMenuOpen((prev) => {
             const next = !prev;
@@ -8459,7 +8460,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.101';
+    const siteVersion = meta?.version || 'V2.1.102';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -8637,6 +8638,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         setCommentNotificationOpen(false);
         setCommentNotifications((prev) => prev.filter((n) => n.id !== notificationItem.id));
         setCommentNotificationTotal((prev) => Math.max(0, prev - 1));
+        if (notificationItem.commentId) {
+            setCommentAnchorId(notificationItem.commentId);
+        }
         try {
             await markNotificationRead(notificationItem.id);
         } catch (err) {
@@ -8703,6 +8707,19 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         const targetId = view === 'article' ? articleId : (view === 'game' ? gameId : null);
         onViewChange && onViewChange(view, targetId);
     }, [view, articleId, gameId]);
+
+    useEffect(() => {
+        if (view !== 'article' || !commentAnchorId) return;
+        if (!comments || comments.length === 0) return;
+        const el = typeof document !== 'undefined' ? document.getElementById(`comment-${commentAnchorId}`) : null;
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            const offset = typeof window !== 'undefined' ? window.pageYOffset : 0;
+            const top = rect.top + offset - 120; // offset for fixed nav
+            window.scrollTo({ top: top > 0 ? top : 0, behavior: 'smooth' });
+            setCommentAnchorId(null);
+        }
+    }, [comments, commentAnchorId, view]);
 
     useEffect(() => {
         const previousView = lastViewRef.current;

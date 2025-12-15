@@ -80,6 +80,7 @@ const CommentsSection = ({
 
         return (
             <div
+                id={c.id ? `comment-${c.id}` : undefined}
                 key={c.id || `${depth}-${c.authorName || c.user || 'comment'}`}
                 className={`flex gap-4 ${visualDepth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
                 <div
