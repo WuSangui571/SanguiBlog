@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   fetchSiteMeta,
   fetchCategories,
@@ -35,6 +35,7 @@ function useProvideBlog() {
   const [recentComments, setRecentComments] = useState([]);
   const [about, setAbout] = useState(null);
   const [user, setUser] = useState(null);
+  const postsErrorLoggedRef = useRef(false);
 
   const applyAssetOrigin = useCallback((origin) => {
     if (typeof window === "undefined") return;
@@ -99,8 +100,12 @@ function useProvideBlog() {
       const res = await fetchPosts({ page: 1, size: HOME_POSTS_PAGE_SIZE, ...filters });
       const data = res.data || res;
       setPosts(data?.records || []);
+      postsErrorLoggedRef.current = false;
     } catch (e) {
-      console.warn("load posts failed", e);
+      if (!postsErrorLoggedRef.current) {
+        console.debug("load posts failed (已忽略，使用本地占位数据)", e);
+        postsErrorLoggedRef.current = true;
+      }
     }
   }, []);
 

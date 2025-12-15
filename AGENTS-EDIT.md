@@ -1552,3 +1552,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.89 (2025-12-15)
 - **访客 IP 采集**：新增同源接口 `/api/analytics/client-ip`，前端默认优先调用该接口并仅在获取到非回环地址时上报 `clientIp`，可选通过 `VITE_ENABLE_PUBLIC_IP_FETCH=true`（或自定义 `VITE_PUBLIC_IP_ENDPOINT`）开启公网 IP 兜底。移除对外网 `api.ipify.org` 的强依赖，启动时不再出现 `net::ERR_CONNECTION_RESET` 报警。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.89`
+
+## V2.1.90 (2025-12-15)
+- **加载告警抑制**：`useBlogData` 的文章加载失败日志改为去重后的 `console.debug`，仅首次失败提示且不会在控制台显黄色警告，继续使用本地占位数据确保页面正常渲染。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.90`
