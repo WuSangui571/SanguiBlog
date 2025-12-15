@@ -7841,7 +7841,7 @@ const ScrollToTop = ({ isDarkMode }) => {
             if (!dragMetaRef.current.active) return;
             const point = event.touches ? event.touches[0] : event;
             if (!point) return;
-            event.preventDefault();
+            if (event.cancelable) event.preventDefault();
             dragMetaRef.current.moved = true;
             const next = clampPosition({
                 x: point.clientX - dragMetaRef.current.offsetX,
@@ -7923,10 +7923,10 @@ const ScrollToTop = ({ isDarkMode }) => {
         });
     };
 
-    const startDrag = (event) => {
+    const startDrag = useCallback((event) => {
         const point = event.touches ? event.touches[0] : event;
         if (!point) return;
-        event.preventDefault();
+        if (event.cancelable) event.preventDefault();
         const rect = buttonRef.current?.getBoundingClientRect();
         dragMetaRef.current = {
             active: true,
@@ -7936,18 +7936,30 @@ const ScrollToTop = ({ isDarkMode }) => {
             offsetY: point.clientY - (rect?.top ?? 0)
         };
         setIsDragging(true);
-    };
+    }, []);
+
+    useEffect(() => {
+        const btn = buttonRef.current;
+        if (!btn) return;
+        const handleTouchStart = (event) => startDrag(event);
+        btn.addEventListener('touchstart', handleTouchStart, { passive: false });
+        return () => {
+            btn.removeEventListener('touchstart', handleTouchStart);
+        };
+    }, [startDrag, isVisible]);
 
     const handleClick = (event) => {
         if (dragMetaRef.current.ignoreClick || isDragging) {
-            event.preventDefault();
+            if (event.cancelable) event.preventDefault();
             dragMetaRef.current.ignoreClick = false;
             return;
         }
-        if (scrollPercent > 0.95) {
-            spawnSparkles();
-        }
-        scrollToTop();
+        requestAnimationFrame(() => {
+            if (scrollPercent > 0.95) {
+                spawnSparkles();
+            }
+            scrollToTop();
+        });
     };
 
     const indicatorRadius = 28;
@@ -7968,9 +7980,8 @@ const ScrollToTop = ({ isDarkMode }) => {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     onMouseDown={startDrag}
-                    onTouchStart={startDrag}
                     onClick={handleClick}
-                    style={{ left: `${position.x}px`, top: `${position.y}px` }}
+                    style={{ left: `${position.x}px`, top: `${position.y}px`, touchAction: 'none' }}
                     aria-label={`返回顶部（已滚动 ${percentLabel}%）`}
                     className={`fixed z-50 p-3 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,0.45)] transition-colors ${isDarkMode ? 'bg-[#FF0080] text-white hover:bg-[#D9006C]' : 'bg-black text-[#FFD700] hover:bg-gray-900'} ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 >
@@ -8304,7 +8315,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.91';
+    const siteVersion = meta?.version || 'V2.1.94';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 

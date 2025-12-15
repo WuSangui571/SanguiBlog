@@ -1560,3 +1560,16 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.91 (2025-12-15)
 - **静默占位**：文章加载失败日志默认完全静默，只有在 `.env` 显式设置 `VITE_ENABLE_POSTS_DEBUG=true` 时才会输出一次调试信息，避免控制台出现任何白色/黄色提示。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.91`
+
+## V2.1.92 (2025-12-15)
+- **触控报错消除**：拖动“返回顶部”按钮的触摸事件在调用 `preventDefault` 前检查 `cancelable`，避免 `Unable to preventDefault inside passive event listener` 报错；`touchmove` 仍保持可拖拽逻辑。
+- **点击性能**：点击回顶操作移入 `requestAnimationFrame`，缩短同步阻塞时间以消除 `[Violation] 'click' handler took xxxms` 警告，行为与原逻辑一致。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.92`
+
+## V2.1.93 (2025-12-15)
+- **模块/页面**：返回顶部按钮的触摸拖拽改为绑定非被动的 `touchstart` 监听，并补充 `touch-action: none`，彻底消除被动监听下调用 `preventDefault` 的红色报错，拖拽/回顶逻辑保持不变。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.93`
+
+## V2.1.94 (2025-12-15)
+- **模块/页面**：调整返回顶部组件生命周期顺序，将自定义 `touchstart` 监听挂载移动到 `startDrag` 初始化之后，修复 “Cannot access 'startDrag' before initialization” 白屏报错，保持拖拽与回顶交互不变。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.94`
