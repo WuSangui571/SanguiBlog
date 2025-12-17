@@ -7409,8 +7409,8 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             <div
                 className={`rounded-2xl border-2 shadow-xl overflow-hidden ${
                     isDarkMode
-                        ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 border-gray-700 text-gray-50'
-                        : 'bg-gradient-to-br from-white via-amber-50 to-rose-50 border-gray-200 text-gray-900'
+                        ? 'bg-gray-950 border-gray-700 text-gray-50'
+                        : 'bg-white border-gray-200 text-gray-900'
                 }`}
             >
                 <div className="p-6 pb-4 flex flex-wrap items-center gap-3 justify-between">
@@ -8809,7 +8809,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.136';
+    const siteVersion = meta?.version || 'V2.1.137';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
