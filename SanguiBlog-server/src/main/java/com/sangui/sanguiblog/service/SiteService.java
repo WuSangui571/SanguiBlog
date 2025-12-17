@@ -10,6 +10,7 @@ import com.sangui.sanguiblog.model.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -169,18 +170,25 @@ public class SiteService {
         }
 
         @org.springframework.transaction.annotation.Transactional
-        public void updateBroadcast(String content, boolean isActive, String style) {
+        public void updateBroadcast(String content, boolean isActive, String style, Long creatorId) {
+                if (!StringUtils.hasText(content)) {
+                        throw new IllegalArgumentException("广播内容不能为空");
+                }
+
                 // Always create a new record to ensure history and correct ordering
                 SystemBroadcast broadcast = new SystemBroadcast();
                 broadcast.setCreatedAt(java.time.Instant.now());
-                broadcast.setContent(content);
+                broadcast.setContent(content.trim());
                 broadcast.setStyle(normalizeBroadcastStyle(style));
                 broadcast.setIsActive(isActive);
                 broadcast.setUpdatedAt(java.time.Instant.now());
                 broadcast.setActiveFrom(java.time.LocalDateTime.now());
+                if (creatorId != null) {
+                        userRepository.findById(creatorId).ifPresent(broadcast::setCreatedBy);
+                }
 
                 System.out.println("Creating new broadcast: content=" + content + ", active=" + isActive + ", style="
-                                + broadcast.getStyle());
+                                + broadcast.getStyle() + ", userId=" + creatorId);
                 systemBroadcastRepository.saveAndFlush(broadcast);
         }
 

@@ -536,7 +536,8 @@ ole_permissions in bulk.
 
 *   广播记录字段：`content`、`active`、`style`（默认 `ALERT`，对应 `system_broadcasts.style`），后端 `SiteService.updateBroadcast` 会兜底非法取值。
 
-*   SUPER_ADMIN 可在 `/admin/settings` 配置广播：填写文案、选择紧急/庆典风格并开启或关闭，提交调用 `POST /api/site/broadcast`，前端会立即同步通知条状态。
+*   SUPER_ADMIN 可在 `/admin/settings` 顶部卡片配置广播：填写文案、选择紧急/庆典风格并开启/关闭，保存即调用 `POST /api/site/broadcast` 并即时同步前台通知条。
+*   接口权限：`POST /api/site/broadcast` 现要求 SUPER_ADMIN（需携带 JWT），服务端会记录 `created_by`，未授权请求返回 403。
 
 *   `/api/site/meta.broadcast` 用于刷新前端初始广播，请确认数据库表 `system_broadcasts` 已持久化最新记录。
 

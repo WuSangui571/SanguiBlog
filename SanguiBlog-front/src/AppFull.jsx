@@ -7100,6 +7100,14 @@ const PermissionsView = ({ isDarkMode }) => {
 
 // 4.5 Sub-Component: System Settings (Super Admin) — 仅游戏管理精简版
 const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged }) => {
+    const [broadcastDraft, setBroadcastDraft] = useState({
+        content: notification?.content || '',
+        style: (notification?.style || 'ALERT').toUpperCase(),
+        active: Boolean(notification?.isOpen)
+    });
+    const [broadcastSaving, setBroadcastSaving] = useState(false);
+    const [broadcastError, setBroadcastError] = useState('');
+
     const [gameList, setGameList] = useState([]);
     const [gameLoading, setGameLoading] = useState(false);
     const [gameError, setGameError] = useState('');
@@ -7109,6 +7117,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [gameDeletingId, setGameDeletingId] = useState(null);
     const { hasPermission } = usePermissionContext();
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
+
+    useEffect(() => {
+        setBroadcastDraft({
+            content: notification?.content || '',
+            style: (notification?.style || 'ALERT').toUpperCase(),
+            active: Boolean(notification?.isOpen)
+        });
+    }, [notification?.content, notification?.style, notification?.isOpen]);
 
     const loadGames = useCallback(async () => {
         setGameLoading(true);
@@ -7353,8 +7369,138 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         return `${value % 1 === 0 ? value : value.toFixed(1)} ${units[idx]}`;
     }, []);
 
+    const handleBroadcastSave = useCallback(async (forceActive) => {
+        const content = (broadcastDraft.content || '').trim();
+        const targetActive = typeof forceActive === 'boolean' ? forceActive : broadcastDraft.active;
+        const style = (broadcastDraft.style || 'ALERT').toUpperCase();
+
+        if (!content) {
+            setBroadcastError('请填写广播文案');
+            return;
+        }
+
+        setBroadcastSaving(true);
+        setBroadcastError('');
+        try {
+            await updateBroadcast({ content, active: targetActive, style });
+            setNotification((prev) => ({
+                ...prev,
+                isOpen: targetActive,
+                content,
+                style
+            }));
+            setBroadcastDraft((prev) => ({ ...prev, active: targetActive, content, style }));
+            alert(targetActive ? '广播已发布，前台顶部已同步' : '广播已停用，最新文案已保存');
+        } catch (err) {
+            setBroadcastError(err?.message || '同步广播失败，请稍后重试');
+        } finally {
+            setBroadcastSaving(false);
+        }
+    }, [broadcastDraft, setNotification]);
+
     return (
         <div className="space-y-6">
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">紧急广播（全站顶部提示）</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                            超级管理员可发布或关闭首页顶部广播，支持紧急告警与庆典公告双样式。
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <label className="flex items-center gap-2 text-sm font-semibold">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 border-2 border-black rounded"
+                                checked={broadcastDraft.active}
+                                onChange={(e) => setBroadcastDraft((prev) => ({ ...prev, active: e.target.checked }))}
+                            />
+                            <span>开启广播</span>
+                        </label>
+                        <button
+                            type="button"
+                            onClick={() => handleBroadcastSave(broadcastDraft.active)}
+                            disabled={broadcastSaving}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {broadcastSaving ? '保存中…' : '保存设置'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleBroadcastSave(false)}
+                            disabled={broadcastSaving}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            停用广播
+                        </button>
+                    </div>
+                </div>
+
+                {broadcastError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {broadcastError}
+                    </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold">广播文案</label>
+                        <textarea
+                            value={broadcastDraft.content}
+                            onChange={(e) => setBroadcastDraft((prev) => ({ ...prev, content: e.target.value }))}
+                            rows={4}
+                            className="border-2 border-black px-3 py-2 rounded"
+                            placeholder="例如：系统将在 23:30 维护，期间访问可能受限"
+                        />
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            保存会同步到全站顶部；停用时仍会保留最新文案与样式，便于随时重新开启。
+                        </p>
+                    </div>
+                    <div className="space-y-3">
+                        <label className="text-sm font-semibold">展示样式</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {['ALERT', 'ANNOUNCE'].map((style) => {
+                                const config = BROADCAST_STYLE_CONFIG[style] || BROADCAST_STYLE_CONFIG.ALERT;
+                                const active = (broadcastDraft.style || 'ALERT').toUpperCase() === style;
+                                return (
+                                    <button
+                                        key={style}
+                                        type="button"
+                                        onClick={() => setBroadcastDraft((prev) => ({ ...prev, style }))}
+                                        className={`text-left px-3 py-2 border-2 rounded-xl transition-transform ${active ? 'ring-2 ring-black scale-[1.01]' : ''} ${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100 hover:border-gray-500' : 'bg-white border-black text-gray-900 hover:-translate-y-0.5'}`}
+                                    >
+                                        <div className="font-bold">{config.label}</div>
+                                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                            {style === 'ALERT' ? '紧急告警 · 红色闪烁' : '庆典公告 · 暖色渐变'}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div className="rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-3 space-y-2">
+                            <div className="text-xs font-semibold">预览</div>
+                            {(() => {
+                                const previewStyle = (broadcastDraft.style || 'ALERT').toUpperCase();
+                                const previewConfig = BROADCAST_STYLE_CONFIG[previewStyle] || BROADCAST_STYLE_CONFIG.ALERT;
+                                return (
+                                    <div className={`${previewConfig.containerClass} rounded-lg border border-black/20`}>
+                                        <div className="px-3 py-2 flex items-center justify-between gap-3">
+                                            <span className={`text-xs font-bold uppercase tracking-widest ${previewConfig.textClass}`}>
+                                                {previewConfig.label}
+                                            </span>
+                                            <span className={`text-xs ${previewConfig.textClass}`}>
+                                                {broadcastDraft.content.trim() || '尚未填写广播文案'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
@@ -8608,7 +8754,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.133';
+    const siteVersion = meta?.version || 'V2.1.134';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 

@@ -4,6 +4,7 @@ import com.sangui.sanguiblog.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -36,7 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/captcha",
-                                "/api/site/**",
+                                "/api/site/meta",
                                 "/api/categories/**",
                                 "/api/tags/**",
                                 "/api/comments/**",
@@ -56,6 +57,7 @@ public class SecurityConfig {
                                 "/uploads/**",
                                 "/error")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/site/broadcast").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/upload/**").authenticated()
                         .requestMatchers("/api/admin/**").authenticated()
                         .requestMatchers("/api/permissions/me").authenticated()
