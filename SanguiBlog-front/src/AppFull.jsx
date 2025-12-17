@@ -7406,10 +7406,20 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     return (
         <div className="space-y-6">
-            <div className="rounded-2xl border-2 shadow-xl overflow-hidden bg-gradient-to-br from-white via-amber-50 to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-800 border-black/10 dark:border-gray-700">
+            <div
+                className={`rounded-2xl border-2 shadow-xl overflow-hidden ${
+                    isDarkMode
+                        ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 border-gray-700 text-gray-50'
+                        : 'bg-gradient-to-br from-white via-amber-50 to-rose-50 border-gray-200 text-gray-900'
+                }`}
+            >
                 <div className="p-6 pb-4 flex flex-wrap items-center gap-3 justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center shadow-[4px_4px_0px_0px_#000]">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                            isDarkMode
+                                ? 'bg-gray-800 text-amber-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.45)]'
+                                : 'bg-black text-white shadow-[4px_4px_0px_0px_#000]'
+                        }`}>
                             <Megaphone size={18} />
                         </div>
                         <div>
@@ -7418,7 +7428,11 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="px-3 py-1 text-xs font-bold rounded-full border border-black/30 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-100">仅 SUPER_ADMIN</span>
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full border ${
+                            isDarkMode
+                                ? 'border-gray-600 bg-gray-800 text-gray-100'
+                                : 'border-black/30 bg-white text-gray-800'
+                        }`}>仅 SUPER_ADMIN</span>
                         <label className="flex items-center gap-2 text-sm font-semibold">
                             <input
                                 type="checkbox"
@@ -7448,7 +7462,11 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 </div>
 
                 {broadcastError && (
-                    <div className="mx-6 mb-0 px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                    <div className={`mx-6 mb-0 px-4 py-3 border-2 font-semibold rounded-xl ${
+                        isDarkMode
+                            ? 'border-red-500/70 bg-red-500/10 text-red-200'
+                            : 'border-red-400 bg-red-50 text-red-700'
+                    }`}>
                         {broadcastError}
                     </div>
                 )}
@@ -7464,10 +7482,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 value={broadcastDraft.content}
                                 onChange={(e) => handleBroadcastContentChange(e.target.value)}
                                 rows={5}
-                                className="w-full border-2 border-black px-3 py-3 rounded-xl bg-white/90 dark:bg-gray-900/80 shadow-[6px_6px_0px_0px_#000] focus:outline-none focus:ring-4 focus:ring-amber-200"
+                                className={`w-full border-2 px-3 py-3 rounded-xl focus:outline-none focus:ring-4 ${
+                                    isDarkMode
+                                        ? 'border-gray-700 bg-gray-900/80 text-gray-100 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.45)] focus:ring-indigo-300/40'
+                                        : 'border-gray-900 bg-white text-gray-900 shadow-[6px_6px_0px_0px_#000] focus:ring-amber-200/80'
+                                }`}
                                 placeholder="例如：系统将在今晚 23:30 维护；或“祝大家节日快乐，福利已上线！”"
                             />
-                            <div className="pointer-events-none absolute inset-0 rounded-xl border border-black/10 dark:border-white/5"></div>
+                            <div className={`pointer-events-none absolute inset-0 rounded-xl border ${isDarkMode ? 'border-white/5' : 'border-black/10'}`}></div>
                         </div>
                         <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             保存立即推送到全站顶部；停用时会保留最新文案与样式，便于随时重启。
@@ -7485,7 +7507,11 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                         key={style}
                                         type="button"
                                         onClick={() => setBroadcastDraft((prev) => ({ ...prev, style }))}
-                                        className={`relative text-left px-3 py-2 border-2 rounded-xl transition-all ${active ? 'ring-2 ring-black scale-[1.01]' : ''} ${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100 hover:border-gray-500' : 'bg-white border-black text-gray-900 hover:-translate-y-0.5'}`}
+                                        className={`relative text-left px-3 py-2 border-2 rounded-xl transition-all ${
+                                            active ? 'ring-2 ring-black scale-[1.01]' : ''
+                                        } ${isDarkMode
+                                            ? 'bg-gray-800 border-gray-700 text-gray-100 hover:border-gray-600'
+                                            : 'bg-white border-gray-900 text-gray-900 hover:-translate-y-0.5'}`}
                                     >
                                         <div className="flex items-center gap-2">
                                             <StyleIcon size={18} className={config.iconClass || 'text-[#FF0080]'} />
@@ -7501,7 +7527,11 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 );
                             })}
                         </div>
-                        <div className="rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-4 space-y-2 bg-white/80 dark:bg-gray-900/60">
+                        <div className={`rounded-2xl border-2 border-dashed p-4 space-y-2 ${
+                            isDarkMode
+                                ? 'border-gray-700 bg-gray-900/70'
+                                : 'border-gray-300 bg-white/80'
+                        }`}>
                             <div className="text-xs font-semibold flex items-center gap-2">
                                 <Sparkles size={14} /> 预览
                             </div>
@@ -8779,7 +8809,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.135';
+    const siteVersion = meta?.version || 'V2.1.136';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
