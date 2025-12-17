@@ -93,7 +93,7 @@ import {
     Search, LogIn, LogOut, Settings, Eye, EyeOff, Github, Twitter,
     BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
-    ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail,
+    ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail, Megaphone,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
     RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy
 } from 'lucide-react';
@@ -7100,6 +7100,7 @@ const PermissionsView = ({ isDarkMode }) => {
 
 // 4.5 Sub-Component: System Settings (Super Admin) — 仅游戏管理精简版
 const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged }) => {
+    const MAX_BROADCAST_LEN = 180;
     const [broadcastDraft, setBroadcastDraft] = useState({
         content: notification?.content || '',
         style: (notification?.style || 'ALERT').toUpperCase(),
@@ -7125,6 +7126,11 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             active: Boolean(notification?.isOpen)
         });
     }, [notification?.content, notification?.style, notification?.isOpen]);
+    const handleBroadcastContentChange = useCallback((value) => {
+        const next = (value || '').slice(0, MAX_BROADCAST_LEN);
+        setBroadcastDraft((prev) => ({ ...prev, content: next }));
+    }, []);
+    const broadcastContentLength = (broadcastDraft.content || '').length;
 
     const loadGames = useCallback(async () => {
         setGameLoading(true);
@@ -7400,15 +7406,19 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     return (
         <div className="space-y-6">
-            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <h3 className="text-xl font-bold">紧急广播（全站顶部提示）</h3>
-                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                            超级管理员可发布或关闭首页顶部广播，支持紧急告警与庆典公告双样式。
-                        </p>
+            <div className="rounded-2xl border-2 shadow-xl overflow-hidden bg-gradient-to-br from-white via-amber-50 to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-800 border-black/10 dark:border-gray-700">
+                <div className="p-6 pb-4 flex flex-wrap items-center gap-3 justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center shadow-[4px_4px_0px_0px_#000]">
+                            <Megaphone size={18} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold">紧急广播 · 顶部全局条</h3>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>紧急/庆典双样式，保存即刻同步首页顶部。</p>
+                        </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-3 py-1 text-xs font-bold rounded-full border border-black/30 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-100">仅 SUPER_ADMIN</span>
                         <label className="flex items-center gap-2 text-sm font-semibold">
                             <input
                                 type="checkbox"
@@ -7438,48 +7448,63 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 </div>
 
                 {broadcastError && (
-                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                    <div className="mx-6 mb-0 px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
                         {broadcastError}
                     </div>
                 )}
 
-                <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold">广播文案</label>
-                        <textarea
-                            value={broadcastDraft.content}
-                            onChange={(e) => setBroadcastDraft((prev) => ({ ...prev, content: e.target.value }))}
-                            rows={4}
-                            className="border-2 border-black px-3 py-2 rounded"
-                            placeholder="例如：系统将在 23:30 维护，期间访问可能受限"
-                        />
-                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            保存会同步到全站顶部；停用时仍会保留最新文案与样式，便于随时重新开启。
+                <div className="grid md:grid-cols-2 gap-6 p-6 pt-4">
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-semibold">广播文案</label>
+                            <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{broadcastContentLength}/{MAX_BROADCAST_LEN}</span>
+                        </div>
+                        <div className="relative">
+                            <textarea
+                                value={broadcastDraft.content}
+                                onChange={(e) => handleBroadcastContentChange(e.target.value)}
+                                rows={5}
+                                className="w-full border-2 border-black px-3 py-3 rounded-xl bg-white/90 dark:bg-gray-900/80 shadow-[6px_6px_0px_0px_#000] focus:outline-none focus:ring-4 focus:ring-amber-200"
+                                placeholder="例如：系统将在今晚 23:30 维护；或“祝大家节日快乐，福利已上线！”"
+                            />
+                            <div className="pointer-events-none absolute inset-0 rounded-xl border border-black/10 dark:border-white/5"></div>
+                        </div>
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            保存立即推送到全站顶部；停用时会保留最新文案与样式，便于随时重启。
                         </p>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         <label className="text-sm font-semibold">展示样式</label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-3">
                             {['ALERT', 'ANNOUNCE'].map((style) => {
                                 const config = BROADCAST_STYLE_CONFIG[style] || BROADCAST_STYLE_CONFIG.ALERT;
                                 const active = (broadcastDraft.style || 'ALERT').toUpperCase() === style;
+                                const StyleIcon = config.icon;
                                 return (
                                     <button
                                         key={style}
                                         type="button"
                                         onClick={() => setBroadcastDraft((prev) => ({ ...prev, style }))}
-                                        className={`text-left px-3 py-2 border-2 rounded-xl transition-transform ${active ? 'ring-2 ring-black scale-[1.01]' : ''} ${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100 hover:border-gray-500' : 'bg-white border-black text-gray-900 hover:-translate-y-0.5'}`}
+                                        className={`relative text-left px-3 py-2 border-2 rounded-xl transition-all ${active ? 'ring-2 ring-black scale-[1.01]' : ''} ${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100 hover:border-gray-500' : 'bg-white border-black text-gray-900 hover:-translate-y-0.5'}`}
                                     >
-                                        <div className="font-bold">{config.label}</div>
-                                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            {style === 'ALERT' ? '紧急告警 · 红色闪烁' : '庆典公告 · 暖色渐变'}
+                                        <div className="flex items-center gap-2">
+                                            <StyleIcon size={18} className={config.iconClass || 'text-[#FF0080]'} />
+                                            <div>
+                                                <div className="font-bold">{config.label}</div>
+                                                <div className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                    {style === 'ALERT' ? '紧急告警 · 红色闪烁' : '庆典公告 · 暖色渐变'}
+                                                </div>
+                                            </div>
                                         </div>
+                                        {active && <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-black text-white">当前</span>}
                                     </button>
                                 );
                             })}
                         </div>
-                        <div className="rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-3 space-y-2">
-                            <div className="text-xs font-semibold">预览</div>
+                        <div className="rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-4 space-y-2 bg-white/80 dark:bg-gray-900/60">
+                            <div className="text-xs font-semibold flex items-center gap-2">
+                                <Sparkles size={14} /> 预览
+                            </div>
                             {(() => {
                                 const previewStyle = (broadcastDraft.style || 'ALERT').toUpperCase();
                                 const previewConfig = BROADCAST_STYLE_CONFIG[previewStyle] || BROADCAST_STYLE_CONFIG.ALERT;
@@ -8754,7 +8779,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.134';
+    const siteVersion = meta?.version || 'V2.1.135';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
