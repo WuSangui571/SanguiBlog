@@ -1425,6 +1425,7 @@ const Navigation = ({
     onBackfill = null,
     notificationCanBackfill = true
 }) => {
+    const { headerHeight } = useLayoutOffsets();
     const roleInfo = user ? ROLES[user.role] : null;
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1543,6 +1544,8 @@ const Navigation = ({
             onCloseMenu();
         }
     }, [onProfileClick, setView, scrollNavToTop, onCloseMenu]);
+
+    const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
 
     return (
         <>
@@ -2048,7 +2051,8 @@ const Navigation = ({
                         transition={{ type: 'spring', stiffness: 240, damping: 20 }}
                         role="dialog"
                         aria-modal="true"
-                        className={`absolute right-3 top-[92px] z-[120] w-[min(500px,calc(100vw-32px))] max-h-[92vh] overflow-hidden border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                        className={`fixed right-3 md:right-6 z-[120] w-[min(500px,calc(100vw-32px))] max-h-[92vh] overflow-hidden border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                        style={{ top: settingsPanelTop }}
                     >
                         <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black">
                             <div className="flex items-center gap-3">
@@ -8604,7 +8608,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.132';
+    const siteVersion = meta?.version || 'V2.1.133';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
