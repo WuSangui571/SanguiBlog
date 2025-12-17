@@ -336,6 +336,7 @@ export default function AdminProfile({ isDarkMode = false }) {
                   name="oldPassword"
                   value={form.oldPassword}
                   onChange={handleChange}
+                  autoComplete="current-password"
                   className={`${inputClass} pr-10`}
                   placeholder="请输入当前密码"
                 />
@@ -377,6 +378,7 @@ export default function AdminProfile({ isDarkMode = false }) {
                   name="newPassword"
                   value={form.newPassword}
                   onChange={handleChange}
+                  autoComplete="new-password"
                   className={`${inputClass} pr-10`}
                   placeholder="请输入新密码"
                 />

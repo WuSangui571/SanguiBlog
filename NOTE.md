@@ -134,6 +134,10 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
     *   `/admin/*`: 后台管理面板 (Dashboard, 编辑器等)
 
+*   **全局错误过滤 (`src/main.jsx`)**:
+
+    *   监听 `unhandledrejection`，仅忽略浏览器扩展常见的 `A listener indicated an asynchronous response...` 噪声报错，避免控制台误报；若需要排查扩展或消息通道问题，可暂时移除此过滤。
+
 *   **状态管理 (`hooks/useBlogData.jsx`)**:
 
     *   使用 React Context (`BlogContext`) 管理全局状态：`user`, `posts`, `categories`。
