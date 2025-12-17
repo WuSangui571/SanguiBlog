@@ -7101,6 +7101,12 @@ const PermissionsView = ({ isDarkMode }) => {
 // 4.5 Sub-Component: System Settings (Super Admin) — 仅游戏管理精简版
 const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged }) => {
     const MAX_BROADCAST_LEN = 180;
+    const SETTINGS_TABS = [
+        { key: 'broadcast', label: '广播管理' },
+        { key: 'games', label: '游戏管理' },
+        { key: 'cleanup', label: '存储清理' }
+    ];
+    const [activeSettingsTab, setActiveSettingsTab] = useState('broadcast');
     const [broadcastDraft, setBroadcastDraft] = useState({
         content: notification?.content || '',
         style: (notification?.style || 'ALERT').toUpperCase(),
@@ -7406,12 +7412,34 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     return (
         <div className="space-y-6">
+            {/* 顶部子页切换 */}
+            <div className={`${isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'} rounded-2xl shadow-sm px-4 py-3 flex flex-wrap items-center gap-2`}>
+                <span className="text-sm font-semibold mr-2">设置分组：</span>
+                <div className="flex flex-wrap gap-2">
+                    {SETTINGS_TABS.map((tab) => (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setActiveSettingsTab(tab.key)}
+                            className={`px-4 py-2 rounded-full text-sm font-bold border-2 transition-all ${
+                                activeSettingsTab === tab.key
+                                    ? 'bg-black text-white border-black shadow-[3px_3px_0px_0px_#000]'
+                                    : `${isDarkMode ? 'bg-gray-800 text-gray-200 border-gray-700 hover:border-gray-500' : 'bg-white text-gray-800 border-black hover:-translate-y-0.5'}`
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* 广播管理 */}
             <div
                 className={`rounded-2xl border-2 shadow-xl overflow-hidden ${
                     isDarkMode
                         ? 'bg-gray-950 border-gray-700 text-gray-50'
                         : 'bg-white border-gray-200 text-gray-900'
-                }`}
+                } ${activeSettingsTab === 'broadcast' ? '' : 'hidden'}`}
             >
                 <div className="p-6 pb-4 flex flex-wrap items-center gap-3 justify-between">
                     <div className="flex items-center gap-3">
@@ -7556,7 +7584,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 </div>
             </div>
 
-            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'games' ? '' : 'hidden'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h3 className="text-xl font-bold">游戏页面管理（game_pages）</h3>
@@ -7723,7 +7751,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 </div>
             </div>
 
-            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'cleanup' ? '' : 'hidden'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h3 className="text-xl font-bold">存储清理 · 未引用图片</h3>
@@ -7824,7 +7852,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 </div>
             </div>
 
-            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4`}>
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'cleanup' ? '' : 'hidden'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h3 className="text-xl font-bold">存储清理 · 空目录</h3>
@@ -8809,7 +8837,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.137';
+    const siteVersion = meta?.version || 'V2.1.138';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
