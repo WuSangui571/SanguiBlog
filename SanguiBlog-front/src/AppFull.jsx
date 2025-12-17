@@ -1803,7 +1803,7 @@ const Navigation = ({
                                     <button
                                         type="button"
                                         onClick={() => onBackfill && onBackfill()}
-                                        className="text-xs font-black px-3 py-1 border-2 border-black rounded bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]"
+                                        className="text-xs font-black px-3 py-1 border-2 border-black rounded bg-white text-black hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]"
                                     >
                                         补全历史
                                     </button>
@@ -1814,7 +1814,7 @@ const Navigation = ({
                                     type="button"
                                     disabled={notificationPage <= 1}
                                     onClick={() => onNotificationPageChange && onNotificationPageChange(1)}
-                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage <= 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
+                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage <= 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white text-black hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
                                 >
                                     首页
                                 </button>
@@ -1822,11 +1822,11 @@ const Navigation = ({
                                     type="button"
                                     disabled={notificationPage <= 1}
                                     onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage - 1)}
-                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage <= 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
+                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage <= 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white text-black hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
                                 >
                                     上一页
                                 </button>
-                                <span className="text-[11px] text-gray-600 font-bold">
+                                <span className={`text-[11px] font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                                     第 {notificationPage} 页 / 共 {Math.max(1, Math.ceil(notificationTotal / notificationPageSize))} 页
                                 </span>
                                 <select
@@ -1837,7 +1837,7 @@ const Navigation = ({
                                             onNotificationPageChange && onNotificationPageChange(v);
                                         }
                                     }}
-                                    className="text-xs font-black border-2 border-black rounded px-2 py-1 bg-white shadow-[2px_2px_0px_0px_#000]"
+                                    className="text-xs font-black border-2 border-black rounded px-2 py-1 bg-white text-black shadow-[2px_2px_0px_0px_#000]"
                                 >
                                     {Array.from({ length: Math.max(1, Math.ceil(notificationTotal / notificationPageSize)) }).map((_, idx) => {
                                         const num = idx + 1;
@@ -1852,7 +1852,7 @@ const Navigation = ({
                                     type="button"
                                     disabled={notificationPage * notificationPageSize >= notificationTotal}
                                     onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage + 1)}
-                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage * notificationPageSize >= notificationTotal ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
+                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage * notificationPageSize >= notificationTotal ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white text-black hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
                                 >
                                     下一页
                                 </button>
@@ -1860,10 +1860,10 @@ const Navigation = ({
                                     type="button"
                                     disabled={notificationPage * notificationPageSize >= notificationTotal}
                                     onClick={() => {
-                                        const lastPage = Math.max(1, Math.ceil(notificationTotal / notificationPageSize));
-                                        onNotificationPageChange && onNotificationPageChange(lastPage);
-                                    }}
-                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage * notificationPageSize >= notificationTotal ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
+                                         const lastPage = Math.max(1, Math.ceil(notificationTotal / notificationPageSize));
+                                         onNotificationPageChange && onNotificationPageChange(lastPage);
+                                     }}
+                                    className={`text-xs font-black px-2 py-1 border-2 border-black rounded ${notificationPage * notificationPageSize >= notificationTotal ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white text-black hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_#000]'}`}
                                 >
                                     尾页
                                 </button>
@@ -8604,7 +8604,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.130';
+    const siteVersion = meta?.version || 'V2.1.131';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
