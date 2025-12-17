@@ -50,14 +50,14 @@ const SITE_STATS = {
 
 const MOCK_USER = {
   id: 1,
-  username: "三桂 SanGui",
+  username: "三桂",
   title: "Fullstack Developer",
-  bio: "用代码构建现实，用逻辑解构虚无。",
+  bio: "个人学习记录｜三桂醒着就行，慢慢努力中；灯还亮着，就不算困。",
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=SanGui&backgroundColor=FFD700",
   role: "SUPER_ADMIN", 
   social: {
     github: "https://github.com/Wusangui571",
-    wechatQr: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SanGuiBlogWeChat"
+      wechatQr: "/contact/wechat.jpg"
   }
 };
 
@@ -335,12 +335,12 @@ const Hero = ({ setView, isDarkMode }) => {
             用代码记录<span className="text-[#6366F1] underline decoration-8 decoration-black underline-offset-8">探索</span>
           </motion.span>
           <motion.span initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="block">
-            以分享照亮<span className="text-[#FF0080] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
+            以分享沉淀<span className="text-[#FF0080] bg-[#FFD700] px-2 ml-2 border-4 border-black skew-x-[-10deg] inline-block shadow-[6px_6px_0px_0px_#000]">成长</span>
           </motion.span>
         </h1>
 
         <p className={`text-xl md:text-2xl font-bold mb-12 max-w-2xl mx-auto border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-600'}`}>
-          拒绝平庸，在 SpringBoot 与 React 的边缘疯狂试探。
+          我是三桂，在这里把问题想清楚，把代码写简单。
           <br/><span className="text-sm font-mono text-[#FF0080]">{`>>`} PRESS START TO CONTINUE</span>
         </p>
 

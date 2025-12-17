@@ -1042,9 +1042,9 @@ const SITE_STATS = {
 
 const MOCK_USER = {
     id: 1,
-    username: "三桂 SanGui",
+    username: "三桂",
     title: "Fullstack Developer",
-    bio: "用代码构建现实，用逻辑解构虚无。",
+    bio: "个人学习记录｜三桂醒着就行，慢慢努力中；灯还亮着，就不算困。",
     avatar: DEFAULT_AVATAR,
     role: "SUPER_ADMIN",
     social: {
@@ -1085,8 +1085,8 @@ const MOCK_POSTS = GENERATE_POSTS();
 const DEFAULT_PAGE_SIZE = 5;
 const PAGE_SIZE_OPTIONS = [5, 10, 20];
 const PAGE_SIZE_STORAGE_KEY = 'sangui_home_page_size';
-const DEFAULT_HERO_TAGLINE = '拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。';
-const DEFAULT_HOME_QUOTE = '阻挡你的不是别人，而是你自己。';
+const DEFAULT_HERO_TAGLINE = '我是三桂，在这里把问题想清楚，把代码写简单。';
+const DEFAULT_HOME_QUOTE = '别急，先把问题想清楚。';
 const TAG_PREVIEW_COUNT = 9;
 const SPIN_WARNINGS = [
     '慢点慢点，我的小脑壳有点晕～',

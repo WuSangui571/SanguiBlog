@@ -53,7 +53,7 @@ public class SiteService {
         private String siteVersion;
         @Value("${site.asset-base-url:}")
         private String siteAssetBaseUrl;
-        @Value("${site.hero.tagline:拒绝平庸，在 SpringBoot 与 React 的边缘狂试探。}")
+        @Value("${site.hero.tagline:我是三桂，在这里把问题想清楚，把代码写简单。}")
         private String heroTagline;
         @Value("${site.home.signature-quote:阻挡你的不是别人，而是你自己。}")
         private String homeSignatureQuote;
