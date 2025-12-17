@@ -7663,7 +7663,11 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="file"
                             accept=".html,.htm,text/html"
                             onChange={(e) => setGameForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
-                            className="border-2 border-black px-3 py-2 rounded bg-white"
+                            className={`px-3 py-2 rounded text-sm ${
+                                isDarkMode
+                                    ? 'border-2 border-gray-700 bg-gray-800 text-gray-100 file:text-gray-100 file:bg-gray-800 file:border-0'
+                                    : 'border-2 border-black bg-white text-gray-900 file:text-gray-900 file:bg-white file:border-0'
+                            }`}
                         />
                         {gameForm.file && <span className="text-xs text-gray-500">已选择：{gameForm.file.name}</span>}
                     </div>
@@ -8837,7 +8841,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.138';
+    const siteVersion = meta?.version || 'V2.1.139';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
