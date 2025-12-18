@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Code, Menu, LogOut, LogIn, Settings } from "lucide-react";
 
@@ -85,3 +85,4 @@ export default function Navigation({ user, onLogout, isDarkMode, toggleDark }) {
     </nav>
   );
 }
+
