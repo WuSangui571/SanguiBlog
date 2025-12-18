@@ -2267,7 +2267,7 @@ const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
                             transition={{ type: 'spring', stiffness: 240, damping: 13 }}
                             className="inline-block"
                         >
-                            以分享照亮
+                            以分享沉淀
                         </motion.span>
                         <motion.span
                             whileHover={{ y: -6, scale: 1.05, rotate: 2.5, backgroundColor: '#FFD700', color: '#0EA5E9' }}
@@ -8882,7 +8882,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.142';
+    const siteVersion = meta?.version || 'V2.1.143';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
