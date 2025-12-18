@@ -43,7 +43,7 @@ export default function Navigation({ user, onLogout, isDarkMode, toggleDark }) {
         </button>
         {user ? (
           <div className="flex items-center gap-3">
-            <span className="font-bold text-sm">{user.username || user.displayName}</span>
+            <span className="font-bold text-sm">{user.displayName || user.display_name || user.nickname || user.username}</span>
             <button onClick={onLogout} className="p-2 hover:text-[#FF0080]">
               <LogOut size={18} />
             </button>

@@ -1772,3 +1772,8 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **模块/页面**：修复根目录 `AGENTS.md` 不是 UTF-8 编码导致在 UTF-8 环境下出现乱码的问题（仅编码转换，文档内容不变）；同步站点版本号与前端 Banner fallback 至 `V2.1.143`。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.143`
 
+## V2.1.144 (2025-12-18)
+- **模块/页面**：首页顶部导航改为展示登录用户 display_name（含中文昵称），不再误用 username。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.144`
+
+

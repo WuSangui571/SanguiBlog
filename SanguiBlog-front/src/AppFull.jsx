@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useBlog } from "./hooks/useBlogData";
 import { fetchLoginCaptcha } from "./api";
@@ -1468,6 +1468,7 @@ const Navigation = ({
 }) => {
     const { headerHeight } = useLayoutOffsets();
     const roleInfo = user ? ROLES[user.role] : null;
+    const displayName = user?.displayName || user?.display_name || user?.nickname || user?.username || 'USER';
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [logoClicks, setLogoClicks] = useState(0);
@@ -1651,7 +1652,7 @@ const Navigation = ({
                                         className="w-full h-full object-cover" />
                                 </div>
                                 <div className="flex flex-col items-start">
-                                    <span className="font-black text-sm leading-none">{user.username}</span>
+                                    <span className="font-black text-sm leading-none">{displayName}</span>
                                     <span className={`text-[10px] ${roleInfo?.color} text-white px-1 w-max mt-1 font-bold`}>
                                         {roleInfo?.label || "USER"}
                                     </span>
@@ -1994,7 +1995,7 @@ const Navigation = ({
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-black truncate">{user.username}</span>
+                                            <span className="font-black truncate">{displayName}</span>
                                             <span className={`text-[10px] px-1 rounded-sm ${ROLES[user.role]?.color || 'bg-gray-500'} text-white font-bold`}>
                                                 {ROLES[user.role]?.label || 'USER'}
                                             </span>
@@ -8882,7 +8883,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.143';
+    const siteVersion = meta?.version || 'V2.1.144';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -11716,3 +11717,8 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
         </div>
     );
 };
+
+
+
+
+
