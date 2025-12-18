@@ -279,9 +279,9 @@ export default function AdminProfile({ isDarkMode = false }) {
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 支持 JPG、PNG、GIF，文件大小不超过 2MB。上传成功即保存。
               </p>
-              {form.avatarUrl && (
-                <p className="text-xs font-mono text-gray-500 break-all">当前路径：{form.avatarUrl}</p>
-              )}
+              {/*{form.avatarUrl && (*/}
+              {/*  <p className="text-xs font-mono text-gray-500 break-all">当前路径：{form.avatarUrl}</p>*/}
+              {/*)}*/}
             </div>
           </div>
         </section>

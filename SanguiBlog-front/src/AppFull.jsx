@@ -2102,13 +2102,13 @@ const Navigation = ({
                                 </span>
                                 <div className="leading-tight">
                                     <div className="font-black text-sm uppercase tracking-wide">系统设置</div>
-                                    <div className="text-[11px] font-semibold opacity-70">位置与信箱一致，纯白基底</div>
+                                    {/*<div className="text-[11px] font-semibold opacity-70">位置与信箱一致，纯白基底</div>*/}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className={`text-[11px] font-black px-2 py-1 rounded-full border border-black ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
-                                    即时生效
-                                </span>
+                                {/*<span className={`text-[11px] font-black px-2 py-1 rounded-full border border-black ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>*/}
+                                {/*    即时生效*/}
+                                {/*</span>*/}
                                 <button
                                     onClick={() => setSettingsOpen(false)}
                                     className={`p-2 border-2 border-black rounded-full ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
@@ -2126,7 +2126,7 @@ const Navigation = ({
                                 </div>
                                 <div className="flex-1 space-y-1">
                                     <div className="font-black text-sm">彩蛋背景</div>
-                                    <div className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>显示/隐藏太阳与月亮动画，外观对齐信箱弹层</div>
+                                    <div className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>显示/隐藏太阳与月亮动画</div>
                                 </div>
                                 <button
                                     onClick={() => onToggleBackground && onToggleBackground()}
@@ -2149,7 +2149,7 @@ const Navigation = ({
                                 </div>
                                 <div className="flex-1 space-y-1">
                                     <div className="font-black text-sm">首页每页文章数</div>
-                                    <div className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>默认 5 条，可选 10 / 20，纯白控件</div>
+                                    <div className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>默认 5 条，可选 10 / 20</div>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                     <select
@@ -2167,7 +2167,7 @@ const Navigation = ({
 
                             <div className={`flex items-center gap-2 px-3 py-2 border-2 border-dashed border-black rounded-lg text-[11px] font-semibold ${isDarkMode ? 'bg-gray-900 text-gray-300' : 'bg-white text-gray-600'}`}>
                                 <Sparkles size={14} className="text-[#F97316]" />
-                                <span>设置仅存于本地浏览器，与信箱弹层交互一致，随时可关闭。</span>
+                                <span>设置仅存于本地浏览器</span>
                             </div>
                         </div>
                     </motion.div>
