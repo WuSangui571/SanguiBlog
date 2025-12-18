@@ -3,6 +3,7 @@ import { Routes, Route, Link, useLocation, useNavigate, useSearchParams } from '
 import { useBlog } from "./hooks/useBlogData";
 import { fetchLoginCaptcha } from "./api";
 import CommentsSection from "./components/comments/CommentsSection.jsx";
+import ImageWithFallback from "./components/common/ImageWithFallback.jsx";
 import PopButton from "./components/common/PopButton.jsx";
 import { LayoutOffsetContext, useLayoutOffsets } from "./contexts/LayoutOffsetContext.jsx";
 import { PermissionContext, usePermissionContext } from "./contexts/PermissionContext.jsx";
@@ -1647,9 +1648,7 @@ const Navigation = ({
                             <div className="flex items-center gap-2 cursor-pointer"
                                 onClick={onProfileClick || (() => setView('admin'))}>
                                 <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
-                                    <img
-                                        src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)}
-                                        className="w-full h-full object-cover" />
+                                    <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="flex flex-col items-start">
                                     <span className="font-black text-sm leading-none">{displayName}</span>
@@ -1991,8 +1990,8 @@ const Navigation = ({
                             {user ? (
                                 <div className={`flex items-center gap-3 p-3 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                                     <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-black bg-[#FFD700]">
-                                        <img src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} className="w-full h-full object-cover" />
-                                    </div>
+                                    <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
+                                </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <span className="font-black truncate">{displayName}</span>
@@ -8883,7 +8882,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.145';
+    const siteVersion = meta?.version || 'V2.1.146';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -11717,6 +11716,23 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
         </div>
     );
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
