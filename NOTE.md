@@ -416,6 +416,7 @@ ole_permissions in bulk.
 *   **前端处理**：`/admin/create-post` 的“插入图片”按钮会携带预留的 `slug` 调用 `/api/upload/post-assets`，后端在不清空目录的情况下追加文件并返回 `files`、`urls` 以及用分号拼接好的 `joined` 字符串；前端据此插入 Markdown，若需要把图片地址落库可直接使用 `joined`。`slug` 现改为按需懒生成：仅在首次上传图片或点击“立即发布”时才调用 `/api/upload/post-assets/reserve`，生成后在同一编辑会话内复用，发布成功会清空该值以避免产生空目录。
 
 *   **静态资源域名**：`site.asset-base-url` 支持占位 `${ASSET_BASE_URL:http://localhost:${server.port}/uploads}`，后端 `/api/site/meta` 会把该值透传给前端，`buildAssetUrl` 优先使用该值；若未配置，则依次回落到 `VITE_ASSET_ORIGIN` → `VITE_API_BASE` 对应域名 → `window.location.origin` → `http://localhost:8080`。若 `asset-base-url` 本身带有路径（如 `https://cdn.example.com/uploads`），前端会自动去重重复的 `uploads/` 段，不会生成 `uploads/uploads/...`；当页面以 HTTPS 访问而传入的域名仍为 `http://` 时，会自动升级为 `https://` 后再生成资源 URL，从源头消除 Mixed Content 告警（前提是资源域名已支持 HTTPS）。
+*   **图片回退重试**：`ImageWithFallback` 在 `src` 发生变化时会自动重置错误状态，允许资源域名或登录态更新后重新请求真实图片，避免导航头像在首次加载失败后长期停留在默认占位。
 
 *   **文章图片预览**：文章详情页会为 Markdown/HTML 中的所有 `<img>` 元素注入 `cursor-zoom-in` 样式，并在点击时打开全屏遮罩预览，图片路径自动经过 `resolveAssetPath` 补全，关闭遮罩后恢复页面滚动。
 
