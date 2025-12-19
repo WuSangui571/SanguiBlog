@@ -1793,3 +1793,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.148 (2025-12-19)
 - **模块/页面**：清理前端 lint 报错，放宽与当前代码风格不匹配的 lint 规则，并移除未使用代码/补齐 React Hook 引入。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.148`
+
+## V2.1.149 (2025-12-19)
+- **模块/页面**：继续清理前端 lint warning，调整 Hook 依赖与未使用项，确保 lint 零告警。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.149`

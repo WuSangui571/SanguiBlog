@@ -513,24 +513,24 @@ const ArticleDetail = ({
     const headingSluggerRef = useRef({});
     headingSluggerRef.current = {};
 
-    const extractText = (children) => {
+    const extractText = useCallback((children) => {
         if (typeof children === 'string' || typeof children === 'number') return String(children);
         if (Array.isArray(children)) return children.map(extractText).join('');
         if (children && typeof children === 'object' && 'props' in children) {
             return extractText(children.props.children);
         }
         return '';
-    };
+    }, []);
 
-    const slugifyHeading = (text) => {
+    const slugifyHeading = useCallback((text) => {
         const base = (text || '').trim();
         if (!base) return 'heading';
         const sanitized = base.replace(/[^A-Za-z0-9\u4e00-\u9fa5\s-]/g, '');
         const hyphenated = sanitized.replace(/\s+/g, '-').toLowerCase();
         return hyphenated || base;
-    };
+    }, []);
 
-    const createHeading = (Tag) => ({ children, ...props }) => {
+    const createHeading = useCallback((Tag) => ({ children, ...props }) => {
         const rawText = extractText(children);
         const baseSlug = slugifyHeading(rawText);
         const count = headingSluggerRef.current[baseSlug] || 0;
@@ -538,7 +538,7 @@ const ArticleDetail = ({
         headingSluggerRef.current[baseSlug] = nextCount;
         const finalSlug = count === 0 ? baseSlug : `${baseSlug}-${nextCount}`;
         return <Tag id={finalSlug} {...props}>{children}</Tag>;
-    };
+    }, [extractText, slugifyHeading]);
 
     const handleAdminEdit = useCallback(() => {
         if (!post.id) return;
@@ -546,7 +546,7 @@ const ArticleDetail = ({
         window.open(url, '_blank', 'noopener');
     }, [post.id]);
 
-    const handleAnchorClick = (event, href) => {
+    const handleAnchorClick = useCallback((event, href) => {
         if (!href || !href.startsWith('#')) return;
         event.preventDefault();
         const rawTarget = decodeURIComponent(href.slice(1));
@@ -562,7 +562,7 @@ const ArticleDetail = ({
         } else {
             window.location.hash = rawTarget;
         }
-    };
+    }, [slugifyHeading]);
 
     const prefixAssetOrigin = useCallback(
         (path = "") => {
@@ -709,7 +709,7 @@ const ArticleDetail = ({
                 </a>
             );
         },
-    }), [handleImagePreview, inlineCodeBg, isDarkMode, resolveAssetPath]);
+    }), [handleImagePreview, inlineCodeBg, resolveAssetPath, createHeading, handleAnchorClick]);
 
     const handleCommentSubmit = (payload) => {
         onSubmitComment && onSubmitComment(payload);
@@ -2852,7 +2852,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     useEffect(() => {
         loadLogs(1, size);
-    }, [loadLogs]);
+    }, [loadLogs, size]);
 
     const totalPages = Math.max(1, Math.ceil((total || 0) / size) || 1);
     const allSelected = logs.length > 0 && selectedIds.length === logs.length;
@@ -4781,7 +4781,7 @@ const EditPostView = ({ isDarkMode }) => {
         } finally {
             setDetailLoading(false);
         }
-    }, []);
+    }, [normalizeCoverValue]);
 
     const loadPostSiblings = useCallback(async (id) => {
         if (!id) return;
@@ -6280,7 +6280,7 @@ const UserManagementView = ({ isDarkMode }) => {
     const [loading, setLoading] = useState(false);
     const [formMode, setFormMode] = useState("create");
     const [selectedUserId, setSelectedUserId] = useState(null);
-    const emptyForm = {
+    const emptyForm = useMemo(() => ({
         username: "",
         displayName: "",
         email: "",
@@ -6292,7 +6292,7 @@ const UserManagementView = ({ isDarkMode }) => {
         roleCode: "USER",
         password: "",
         avatarUrl: "",
-    };
+    }), []);
     const [form, setForm] = useState(emptyForm);
     const [meta, setMeta] = useState({ id: null, createdAt: null, lastLoginAt: null });
     const [saving, setSaving] = useState(false);
@@ -6381,7 +6381,7 @@ const UserManagementView = ({ isDarkMode }) => {
         setFormMode('create');
         setFeedback(null);
         scrollFormIntoView();
-    }, [roles, scrollFormIntoView]);
+    }, [roles, scrollFormIntoView, emptyForm]);
 
     const formatDate = (value) => (value ? new Date(value).toLocaleString() : '—');
 
@@ -7119,7 +7119,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         } finally {
             setGameSaving(false);
         }
-    }, [gameForm, gameEditingId, adminUpdateGame, adminCreateGame, loadGames, resetGameForm, onGameChanged]);
+    }, [gameForm, gameEditingId, loadGames, resetGameForm, onGameChanged]);
 
     const handleGameEdit = useCallback((game) => {
         if (!game) return;
@@ -7148,7 +7148,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         } finally {
             setGameDeletingId(null);
         }
-    }, [adminDeleteGame, loadGames, onGameChanged, gameEditingId, resetGameForm]);
+    }, [loadGames, onGameChanged, gameEditingId, resetGameForm]);
 
     const handleGameOpen = useCallback((game) => {
         if (!game) return;
@@ -8238,8 +8238,9 @@ const ScrollToTop = ({ isDarkMode }) => {
     }, [clampPosition]);
 
     useEffect(() => {
+        const timers = sparkTimersRef.current;
         return () => {
-            sparkTimersRef.current.forEach((timer) => clearTimeout(timer));
+            timers.forEach((timer) => clearTimeout(timer));
         };
     }, []);
 
@@ -8505,7 +8506,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             setMenuOpen(false);
         }
         setCommentNotificationOpen(false);
-    }, [view]);
+    }, [view, menuOpen]);
     const [notification, setNotification] = useState({
         isOpen: false,
         content: "系统将于今晚 00:00 停机维护",
@@ -8653,7 +8654,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             themeComboRef.current = 0;
             triggerThemeOverdrive();
         }
-    }, [isDarkMode, triggerThemeOverdrive, themeOverdriveLock, showThemeMessage]);
+    }, [isDarkMode, triggerThemeOverdrive, themeOverdriveLock, showThemeMessage, themeOverdriveMessage, themeOverdriveNotice]);
     const [permissionState, setPermissionState] = useState({ permissions: [], loading: false, error: '' });
     const lastRecordedArticleRef = useRef(null);
     const clientIpRef = useRef(
@@ -8743,7 +8744,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.148';
+    const siteVersion = meta?.version || 'V2.1.149';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -8935,7 +8936,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 commentNotificationTimerRef.current = null;
             }
         };
-    }, [user, loadUnreadNotifications]);
+    }, [user, loadUnreadNotifications, loadNotificationHistory]);
 
     const handleNotificationToggle = useCallback(() => {
         if (!user) {
@@ -9028,7 +9029,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     useEffect(() => {
         const targetId = view === 'article' ? articleId : (view === 'game' ? gameId : null);
         onViewChange && onViewChange(view, targetId);
-    }, [view, articleId, gameId]);
+    }, [view, articleId, gameId, onViewChange]);
 
     useEffect(() => {
         if (view !== 'article' || !commentAnchorId) return;
@@ -9120,7 +9121,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         } else {
             resetAutoPageViewGuard();
         }
-    }, [view, sendPageView]);
+    }, [view, sendPageView, gameDetail, gameId, gameList]);
 
     useEffect(() => {
         if (view !== 'article') {
@@ -9744,7 +9745,11 @@ const ArticleList = ({
     const paginationScrollReadyRef = useRef(false);
     const [konamiActive, setKonamiActive] = useState(false);
     const konamiSequence = useRef([]);
-    const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    const KONAMI_CODE = useMemo(() => ([
+        'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+        'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
+        'b', 'a'
+    ]), []);
     const [avatarClicks, setAvatarClicks] = useState(0);
     const [spinWarning, setSpinWarning] = useState('');
     const [showSpinWarning, setShowSpinWarning] = useState(false);
@@ -9791,7 +9796,7 @@ const ArticleList = ({
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [KONAMI_CODE]);
 
     const categories = categoriesData && categoriesData.length
         ? (categoriesData.some((c) => c.id === "all") ? categoriesData : [{
@@ -9819,12 +9824,12 @@ const ArticleList = ({
             setActiveParent(catId);
         }
         scrollToPostsTop();
-    }, [activeParent, scrollToPostsTop]);
+    }, [activeParent, scrollToPostsTop, setActiveParent, setActiveSub]);
 
     const handleSubClick = useCallback((subId) => {
         setActiveSub(subId);
         scrollToPostsTop();
-    }, [scrollToPostsTop]);
+    }, [scrollToPostsTop, setActiveSub]);
 
     const showSpinHint = useCallback((message, duration = 2200) => {
         setSpinWarning(message);
@@ -11085,7 +11090,7 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
             }
             return <CodeBlockWithCopy textContent={textContent} className={className} {...props} />;
         }
-    }), [inlineCodeBg, isDarkMode]);
+    }), [inlineCodeBg]);
 
     return (
         <section className="relative pt-28 pb-20 min-h-screen">
@@ -11579,6 +11584,11 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
         </div>
     );
 };
+
+
+
+
+
 
 
 
