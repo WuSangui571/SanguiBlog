@@ -6785,6 +6785,7 @@ const UserManagementView = ({ isDarkMode }) => {
                             className={`${inputClass} mt-2`}
                             type="password"
                             name="password"
+                            autoComplete="new-password"
                             value={form.password}
                             onChange={handleInputChange}
                             placeholder={formMode === 'create' ? '请设置初始密码' : '若需要重置请输入新密码'}
@@ -8744,7 +8745,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.149';
+    const siteVersion = meta?.version || 'V2.1.150';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
