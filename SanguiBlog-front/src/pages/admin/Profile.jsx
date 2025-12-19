@@ -312,7 +312,13 @@ export default function AdminProfile({ isDarkMode = false }) {
             </div>
             <div>
               <FieldLabel icon={GithubIcon}>GitHub</FieldLabel>
-              <input className={`${inputClass} mt-2`} name="github" value={form.github} onChange={handleChange} />
+              <input
+                className={`${inputClass} mt-2`}
+                name="github"
+                value={form.github}
+                autoComplete="url"
+                onChange={handleChange}
+              />
             </div>
           </div>
           <div className="mt-6">
