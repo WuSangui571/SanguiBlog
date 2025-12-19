@@ -6750,6 +6750,7 @@ const UserManagementView = ({ isDarkMode }) => {
                             <label
                                 className="text-xs font-semibold text-gray-500 dark:text-gray-400">微信二维码地址</label>
                             <input className={inputClass} name="wechatQrUrl" value={form.wechatQrUrl}
+                                autoComplete="url"
                                 onChange={handleInputChange} />
                         </div>
                     </div>
@@ -8745,7 +8746,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.150';
+    const siteVersion = meta?.version || 'V2.1.151';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
