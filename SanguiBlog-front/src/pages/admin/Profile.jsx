@@ -1,4 +1,5 @@
 ﻿
+import React, { useEffect, useRef, useState } from "react";
 import ImageWithFallback from '../../components/common/ImageWithFallback.jsx';
 import { useBlog } from "../../hooks/useBlogData";
 import { updateProfile, uploadAvatar } from "../../api";
@@ -116,37 +117,6 @@ export default function AdminProfile({ isDarkMode = false }) {
 
   const formatDate = (value) => (value ? new Date(value).toLocaleString() : "—");
 
-    const compressImage = (file, maxSide = 512, quality = 0.82) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-          const width = Math.max(1, Math.round(img.width * scale));
-          const height = Math.max(1, Math.round(img.height * scale));
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) return reject(new Error('压缩失败'));
-              const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
-              resolve(new File([blob], name, { type: 'image/jpeg' }));
-            },
-            'image/jpeg',
-            quality
-          );
-        };
-        img.onerror = () => reject(new Error('图片解析失败'));
-        img.src = e.target.result;
-      };
-      reader.onerror = () => reject(new Error('读取图片失败'));
-      reader.readAsDataURL(file);
-    });
-  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));

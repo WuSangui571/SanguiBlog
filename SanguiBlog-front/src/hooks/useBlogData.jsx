@@ -11,7 +11,6 @@ import {
   deleteComment,
   updateComment,
   login as apiLogin,
-  fetchCurrentUser,
   fetchAbout,
 } from "../api";
 

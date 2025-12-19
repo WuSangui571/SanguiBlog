@@ -50,10 +50,7 @@ import {
     fetchCategories,
     fetchPosts,
     fetchTags,
-    fetchComments,
     createComment,
-    deleteComment,
-    updateComment,
     fetchUnreadNotifications,
     fetchNotificationHistory,
     backfillNotifications,
@@ -85,7 +82,6 @@ import {
     useTransform,
     useSpring,
     useMotionValue,
-    useMotionTemplate,
     LayoutGroup as AnimateSharedLayout
 } from 'framer-motion';
 import AdminProfile from './pages/admin/Profile';
@@ -112,10 +108,6 @@ const HERO_NOISE_TEXTURE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3
 const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none"><rect width="160" height="160" rx="28" fill="%23f8fafc"/><circle cx="80" cy="74" r="34" stroke="%2394a3b8" stroke-width="8" stroke-linecap="round" stroke-dasharray="60 32"><animateTransform attributeName="transform" type="rotate" from="0 80 80" to="360 80 80" dur="1s" repeatCount="indefinite"/></circle><rect x="40" y="116" width="80" height="18" rx="9" fill="%2394a3b8" opacity="0.28"/><text x="80" y="129" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="12" fill="%236b7280">加载中...</text></svg>';
 const PUBLIC_IP_ENDPOINT = import.meta.env.VITE_PUBLIC_IP_ENDPOINT || 'https://api.ipify.org?format=json';
 const ENABLE_PUBLIC_IP_FALLBACK = import.meta.env.VITE_ENABLE_PUBLIC_IP_FETCH === 'true';
-const randomBlobShape = () => {
-    const rand = () => `${30 + Math.round(Math.random() * 40)}%`;
-    return `${rand()} ${rand()} ${rand()} ${rand()} / ${rand()} ${rand()} ${rand()} ${rand()}`;
-};
 const randomAngle = () => Math.round(Math.random() * 360);
 const randomSprayPolygon = () => {
     const count = 8 + Math.floor(Math.random() * 4);
@@ -146,15 +138,6 @@ const countImagesInContent = (content = "") => {
     if (!content) return 0;
     const matches = content.match(/!\[[^\]]*]\([^)]+\)/g);
     return matches ? matches.length : 0;
-};
-
-// 通用工具：格式化文件大小（bytes -> 人类可读）
-const formatSize = (bytes) => {
-    const value = Number(bytes || 0);
-    if (value <= 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    const idx = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-    return `${(value / (1024 ** idx)).toFixed(idx === 0 ? 0 : 2)} ${units[idx]}`;
 };
 
 
@@ -475,7 +458,6 @@ const ArticleDetail = ({
 
     const quoteBg = isDarkMode ? 'bg-gray-800' : 'bg-[#FFFAF0]';
     const quoteText = isDarkMode ? 'text-gray-300' : 'text-black';
-    const codeBlockBg = isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900';
     const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
     const proseClass = `prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none prose-code:before:content-none prose-code:after:content-none ${isDarkMode ? 'prose-invert' : ''}`;
     const shouldRenderMarkdown = Boolean(contentMd && contentMd.trim());
@@ -1158,7 +1140,7 @@ const getReferrerMeta = () => {
             return { referrer, sourceLabel: `来自站内：${path}` };
         }
         return { referrer, sourceLabel: `外部链接：${parsed.hostname}` };
-    } catch (err) {
+    } catch {
         return { referrer, sourceLabel: '直接访问' };
     }
 };
@@ -1168,7 +1150,7 @@ const getGeoHint = () => {
         try {
             const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             if (zone) return zone;
-        } catch (e) {
+        } catch {
             return '';
         }
     }
@@ -1472,7 +1454,7 @@ const Navigation = ({
     const displayName = user?.displayName || user?.display_name || user?.nickname || user?.username || 'USER';
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const [logoClicks, setLogoClicks] = useState(0);
+    const [, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
     const normalizeAvatarPathLocal = (path) => {
         if (!path) return null;
@@ -2178,7 +2160,7 @@ const Navigation = ({
     );
 };
 // ... (Hero, StatsStrip, ArticleList, CommentsSection, ArticleDetail, LoginView components are kept unchanged in functionality, but are wrapped in the main App with the dark mode context.)
-const Hero = ({ setView, isDarkMode, onStartReading, version, tagline }) => {
+const Hero = ({ isDarkMode, onStartReading, version, tagline }) => {
     const { scrollY } = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const rotate = useTransform(scrollY, [0, 500], [0, 45]);
@@ -2390,7 +2372,6 @@ const DashboardView = ({ isDarkMode }) => {
     }, [trendRangeDays]);
 
     const trendFromApi = rawDailyTrends.slice(-trendRangeDays);
-    const hasApiData = trendFromApi.some((d) => Number(d?.views || 0) > 0 || Number(d?.visitors || 0) > 0);
     const hasAggData = aggregatedTrends.some((d) => Number(d?.views || 0) > 0 || Number(d?.visitors || 0) > 0);
     const dailyTrends = hasAggData ? aggregatedTrends : trendFromApi;
     const isUsingAggregated = hasAggData;
@@ -2753,7 +2734,6 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const border = isDarkMode ? 'border border-gray-700' : 'border border-gray-200';
-    const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const textMuted = isDarkMode ? 'text-gray-400' : 'text-gray-500';
     const refreshButtonClass = [
         'px-3 py-1 text-sm font-semibold rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
@@ -2969,7 +2949,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             await navigator.clipboard.writeText(ip);
             setActionMessage('');
             setCopyToast(`已复制 IP：${ip}`);
-        } catch (err) {
+        } catch {
             setCopyToast('复制失败，请手动复制该 IP。');
         } finally {
             if (copyToastTimer.current) {
@@ -3176,7 +3156,7 @@ const CreatePostView = ({ isDarkMode }) => {
     const [selectedTags, setSelectedTags] = useState([]);
     const [imageUploadMessage, setImageUploadMessage] = useState("");
     const [markdownMessage, setMarkdownMessage] = useState("");
-    const [submitNotice, setSubmitNotice] = useState("");
+    const [, setSubmitNotice] = useState("");
     const [submitError, setSubmitError] = useState("");
     const [publishBanner, setPublishBanner] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -3185,12 +3165,6 @@ const CreatePostView = ({ isDarkMode }) => {
     const markdownEditorRef = useRef(null);
     const inlineImageInputRef = useRef(null);
     const coverInputRef = useRef(null);
-    const {
-        notice: publishNotice,
-        showNotice: showPublishNotice,
-        hideNotice: hidePublishNotice
-    } = useTimedNotice(4200);
-
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
@@ -3258,37 +3232,6 @@ const CreatePostView = ({ isDarkMode }) => {
         mdFutureRef.current = [];
         setMdContent(next);
     }, [mdContent, pushMdHistory]);
-
-    const insertImagesAtCursor = useCallback((urls = []) => {
-        if (!urls.length) return;
-        const snippet = urls
-            .map((url, index) => `![${title || `插图${index + 1}`}](${url})`)
-            .join("\n") + "\n";
-        setMdContent((prev) => {
-            const textarea = markdownEditorRef.current;
-            if (!textarea) {
-                const prefix = prev.endsWith("\n") || prev.length === 0 ? prev : `${prev}\n`;
-                return `${prefix}${snippet}`;
-            }
-            const start = textarea.selectionStart ?? prev.length;
-            const end = textarea.selectionEnd ?? start;
-            const before = prev.slice(0, start);
-            const after = prev.slice(end);
-            const normalizedBefore = before && !before.endsWith("\n") ? `${before}\n` : before;
-            const normalizedAfter = after.startsWith("\n") || after.length === 0 ? after : `\n${after}`;
-            const nextContent = `${normalizedBefore}${snippet}${normalizedAfter}`;
-            const cursorPos = (normalizedBefore + snippet).length;
-            requestAnimationFrame(() => {
-                const el = markdownEditorRef.current;
-                if (el) {
-                    el.focus();
-                    el.selectionStart = cursorPos;
-                    el.selectionEnd = cursorPos;
-                }
-            });
-            return nextContent;
-        });
-    }, [markdownEditorRef, title]);
 
     useEffect(() => {
         const loadTags = async () => {
@@ -3468,6 +3411,12 @@ const CreatePostView = ({ isDarkMode }) => {
         );
     };
 
+    useEffect(() => {
+        if (!publishBanner) return;
+        const timer = setTimeout(() => setPublishBanner(""), 4500);
+        return () => clearTimeout(timer);
+    }, [publishBanner]);
+
     const canPublish = Boolean(
         title.trim() &&
         mdContent.trim() &&
@@ -3571,12 +3520,6 @@ const CreatePostView = ({ isDarkMode }) => {
         setThemeColor(DEFAULT_THEME_COLOR);
         setHasManualThemeColor(false);
     };
-
-    useEffect(() => {
-        if (!publishBanner) return;
-        const timer = setTimeout(() => setPublishBanner(""), 4500);
-        return () => clearTimeout(timer);
-    }, [publishBanner]);
 
     return (
         <div className="space-y-8">
@@ -4917,37 +4860,6 @@ const EditPostView = ({ isDarkMode }) => {
         setCoverPreview('');
     }, [updateCoverState]);
 
-    const insertImagesAtCursor = useCallback((urls = []) => {
-        if (!urls.length) return;
-        const snippet =
-            urls.map((url, index) => `![${form.title || `图片${index + 1}`}](${url})`).join('\n') + '\n';
-        setForm((prev) => {
-            const current = prev.mdContent || '';
-            const textarea = markdownEditorRef.current;
-            if (!textarea) {
-                const prefix = current.endsWith('\n') || current.length === 0 ? current : `${current}\n`;
-                return { ...prev, mdContent: `${prefix}${snippet}` };
-            }
-            const start = textarea.selectionStart ?? current.length;
-            const end = textarea.selectionEnd ?? start;
-            const before = current.slice(0, start);
-            const after = current.slice(end);
-            const normalizedBefore = before && !before.endsWith('\n') ? `${before}\n` : before;
-            const normalizedAfter = after.startsWith('\n') || after.length === 0 ? after : `\n${after}`;
-            const nextContent = `${normalizedBefore}${snippet}${normalizedAfter}`;
-            const cursorPos = (normalizedBefore + snippet).length;
-            requestAnimationFrame(() => {
-                const el = markdownEditorRef.current;
-                if (el) {
-                    el.focus();
-                    el.selectionStart = cursorPos;
-                    el.selectionEnd = cursorPos;
-                }
-            });
-            return { ...prev, mdContent: nextContent };
-        });
-    }, [form.title]);
-
     const handleMarkdownUpload = async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -4968,32 +4880,6 @@ const EditPostView = ({ isDarkMode }) => {
             setMarkdownMessage(error.message || '读取 Markdown 失败');
         } finally {
             event.target.value = null;
-        }
-    };
-
-    const handleInlineImageUpload = async (event) => {
-        const files = Array.from(event.target.files || []);
-        if (!files.length) return;
-        setUploadingImages(true);
-        setImageUploadMessage('图片上传中...');
-        try {
-            const folder = await ensureAssetsFolder();
-            const res = await uploadPostAssets(files, folder);
-            const data = res.data || res;
-            const urls = data?.urls || [];
-            if (urls.length) {
-                insertImagesAtCursor(urls);
-                setImageUploadMessage('已插入图片链接');
-            } else {
-                setImageUploadMessage('上传成功');
-            }
-        } catch (error) {
-            setImageUploadMessage(error.message || '图片上传失败');
-        } finally {
-            setUploadingImages(false);
-            if (event?.target) {
-                event.target.value = null;
-            }
         }
     };
 
@@ -6929,7 +6815,6 @@ const UserManagementView = ({ isDarkMode }) => {
 // 4.4 Sub-Component: Permissions View (Super Admin Only)
 const PermissionsView = ({ isDarkMode }) => {
     const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
-    const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const [matrix, setMatrix] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -7346,7 +7231,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [emptyLoading, setEmptyLoading] = useState(false);
     const [emptyError, setEmptyError] = useState('');
     const [emptySelected, setEmptySelected] = useState(new Set());
-    const [emptyDeleting, setEmptyDeleting] = useState(false);
+    const [, setEmptyDeleting] = useState(false);
 
     const loadEmptyFolders = useCallback(async () => {
         setEmptyLoading(true);
@@ -7404,10 +7289,6 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         loadEmptyFolders();
     }, [scanUnusedAssets, loadEmptyFolders]);
 
-    if (!hasPermission('SYSTEM_CLEAN_STORAGE') || user?.role !== 'SUPER_ADMIN') {
-        return <PermissionNotice title="仅超级管理员可用" description="系统设置仅限超级管理员访问。" />;
-    }
-
     const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
 
     const formatBytes = useCallback((bytes) => {
@@ -7450,6 +7331,10 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             setBroadcastSaving(false);
         }
     }, [broadcastDraft, setNotification]);
+
+    if (!hasPermission('SYSTEM_CLEAN_STORAGE') || user?.role !== 'SUPER_ADMIN') {
+        return <PermissionNotice title="仅超级管理员可用" description="系统设置仅限超级管理员访问。" />;
+    }
 
     return (
         <div className="space-y-6">
@@ -8058,7 +7943,6 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, loadGameList }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [broadcastSaving, setBroadcastSaving] = useState(false);
     const BROADCAST_STYLES = [
         { value: "ALERT", label: "紧急红色告警" },
         { value: "ANNOUNCE", label: "温和庆典公告" }
@@ -8186,30 +8070,6 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         reload: reloadAnalytics
     }), [analyticsSummary, analyticsLoading, analyticsError, analyticsRangeValue, reloadAnalytics]);
 
-    const handleBroadcastToggle = async () => {
-        if (broadcastSaving) return;
-        const previousState = notification.isOpen;
-        const nextState = !previousState;
-        const payloadContent = notification.content;
-
-        setNotification((prev) => ({ ...prev, isOpen: nextState }));
-        setBroadcastSaving(true);
-        try {
-            await updateBroadcast({
-                content: payloadContent,
-                active: nextState,
-                style: notification.style || "ALERT"
-            });
-            alert(nextState ? "紧急广播已开启并保存" : "紧急广播已关闭并保存");
-        } catch (error) {
-            console.error("Failed to toggle broadcast", error);
-            alert("同步广播状态失败，请稍后重试");
-            setNotification((prev) => ({ ...prev, isOpen: previousState }));
-        } finally {
-            setBroadcastSaving(false);
-        }
-    };
-
     return (
         <div className={`min-h-screen flex ${bgClass} ${textClass}`}>
             {/* Sidebar */}
@@ -8327,7 +8187,8 @@ const ScrollToTop = ({ isDarkMode }) => {
                 const parsed = JSON.parse(saved);
                 return parsed;
             }
-        } catch (e) {
+        } catch {
+            // ignore invalid stored position
         }
         return {
             x: window.innerWidth - BUTTON_SIZE - 24,
@@ -8882,7 +8743,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.147';
+    const siteVersion = meta?.version || 'V2.1.148';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -11367,12 +11228,15 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
             const res = await uploadPostAssets(files, slug);
             const data = res.data || res;
             const urls = data?.urls || [];
-            if (urls.length) insertImagesAtCursor(urls);
-            setMessage('图片已上传并插入 Markdown');
-        } catch (e) {
-            setError(e.message || '图片上传失败');
+            if (urls.length) {
+                insertImagesAtCursor(urls);
+                setMessage('图片已上传并插入 Markdown');
+            } else {
+                setMessage('图片上传完成');
+            }
+        } catch (err) {
+            setError(err.message || '图片上传失败');
         } finally {
-            setSaving(false);
             event.target.value = null;
         }
     };
@@ -11495,7 +11359,6 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
 }
 
 const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
-    const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -11716,6 +11579,12 @@ const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
         </div>
     );
 };
+
+
+
+
+
+
 
 
 
