@@ -1869,3 +1869,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.166 (2025-12-22)
 - **模块/页面**：修复 ArticleList 拆分后遗漏 `CATEGORY_TREE` 导入导致的运行期报错，并整理 import 断行。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.166`
+
+## V2.1.167 (2025-12-22)
+- **模块/页面**：修复 ArticleList 缺少 `MOCK_USER` 导入导致的运行期报错。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.167`
