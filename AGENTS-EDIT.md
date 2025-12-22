@@ -1849,3 +1849,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.161 (2025-12-22)
 - **模块/页面**：修复 AppFull 拆分后缺失 `extractHexFromBgClass` 导致的首页渲染报错，统一抽到 `shared.js` 并补齐导入。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.161`
+
+## V2.1.162 (2025-12-22)
+- **模块/页面**：进一步拆分 AppFull 前台组件，新增 `appfull/public`（ArticleDetail/Hero/ArticleList 等）与 `appfull/ui`（Navigation/ScrollToTop/提示条等），主文件仅保留编排逻辑。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.162`
