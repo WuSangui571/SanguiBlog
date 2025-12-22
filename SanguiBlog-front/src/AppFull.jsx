@@ -8767,7 +8767,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.155';
+    const siteVersion = meta?.version || 'V2.1.157';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -10128,7 +10128,7 @@ const ArticleList = ({
 
             <section id="posts" className="px-4 md:px-8 max-w-7xl mx-auto py-16 min-h-screen">
                 <div className="flex flex-col lg:flex-row gap-12">
-                    <div className="w-full lg:w-1/4 space-y-8">
+                    <div className="hidden lg:block w-full lg:w-1/4 space-y-8">
                         <div
                             className={`${sidebarBg} border-2 border-black p-6 shadow-[8px_8px_0px_0px_#000] text-center relative ${text}`}>
                             <motion.div
