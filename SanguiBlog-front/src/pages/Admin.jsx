@@ -10,8 +10,8 @@ export default function AdminPage() {
         if (view === "home") navigate("/", { replace: true });
         if (view === "login") navigate("/login", { replace: true });
         if (view === "article") navigate("/", { replace: true });
-        if (view === "games") navigate("/games", { replace: true });
-        if (view === "game") navigate("/games", { replace: true });
+        if (view === "games") navigate("/tools", { replace: true });
+        if (view === "game") navigate("/tools", { replace: true });
       }}
     />
   );

@@ -11,11 +11,13 @@ export default function GameDetailPage() {
       initialGameId={gid}
       onViewChange={(view, targetId) => {
         if (view === "home") navigate("/", { replace: true });
-        if (view === "games") navigate("/games", { replace: true });
+        if (view === "games") navigate("/tools", { replace: true });
         if (view === "admin") navigate("/admin", { replace: true });
         if (view === "login") navigate("/login", { replace: true });
         if (view === "article" && targetId) navigate(/article/, { replace: true });
-        if (view === "game" && targetId && targetId !== gid) navigate(/games/, { replace: true });
+        if (view === "game" && targetId && targetId !== gid) {
+          navigate(`/tools/${targetId}`, { replace: true });
+        }
       }}
     />
   );

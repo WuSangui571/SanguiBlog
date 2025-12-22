@@ -7516,7 +7516,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h3 className="text-xl font-bold">游戏页面管理（game_pages）</h3>
-                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>上传、替换或下线独立 HTML 页面，前台 /games 仅展示 ACTIVE 项。</p>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>上传、替换或下线独立 HTML 页面，前台 /tools 仅展示 ACTIVE 项（/games 仍兼容）。</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
@@ -8746,7 +8746,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.153';
+    const siteVersion = meta?.version || 'V2.1.154';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 

@@ -11,7 +11,7 @@ export default function GamesPage() {
         if (view === "admin") navigate("/admin", { replace: true });
         if (view === "login") navigate("/login", { replace: true });
         if (view === "article" && targetId) navigate(/article/, { replace: true });
-        if (view === "game" && targetId) navigate(/games/, { replace: true });
+        if (view === "game" && targetId) navigate(`/tools/${targetId}`, { replace: true });
       }}
     />
   );

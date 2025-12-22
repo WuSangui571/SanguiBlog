@@ -14,9 +14,9 @@ export default function HomePage() {
         } else if (view === "login") {
           navigate("/login", { replace: true });
         } else if (view === "games") {
-          navigate("/games", { replace: true });
+          navigate("/tools", { replace: true });
         } else if (view === "game" && articleId) {
-          navigate(`/games/${articleId}`, { replace: true });
+          navigate(`/tools/${articleId}`, { replace: true });
         }
       }}
     />

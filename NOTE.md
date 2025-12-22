@@ -183,7 +183,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   自 V1.3.106 起，主题切换按钮支持“超频模式”彩蛋：450ms 内连续点击 ≥6 次会触发 15 秒全屏矩阵光效与提示；V1.3.107 起冷却提示在超频展示期间自动抑制，避免消息互相覆盖，可通过 `THEME_SPREE_THRESHOLD`、`THEME_SPREE_DURATION`、`THEME_LOCK_DURATION` 调整。
 *   自 V1.3.108 起，顶部“首页 / 归档 / 关于”导航点击后会自动平滑回到页面顶部，防止切换视图时视口停留在中部。
 *   自 V1.3.109 起，文章详情页左上角的“首页”按钮在返回后会自动滚动至 `#posts` 区域（第一篇文章位置），保持与主页入口一致的体验。
-*   自 V2.1.88 起，移动端启用汉堡抽屉导航：包含首页/归档/关于/游戏、登录/后台入口、主题/背景开关与首页分页设置，打开时锁定 body 滚动防止底层页面可操作；系统状态条在小屏改为横向滑动（snap）并保持 sticky，避免统计项溢出，同时桌面端排版与交互保持不变。
+*   自 V2.1.88 起，移动端启用汉堡抽屉导航：包含首页/归档/关于/工具、登录/后台入口、主题/背景开关与首页分页设置，打开时锁定 body 滚动防止底层页面可操作；系统状态条在小屏改为横向滑动（snap）并保持 sticky，避免统计项溢出，同时桌面端排版与交互保持不变。
 *   自 V2.1.93 起，漂浮的“返回顶部”按钮改用非被动的 `touchstart` 监听并设置 `touch-action: none`，移动端拖动时不再出现 `Unable to preventDefault inside passive event listener` 报错，拖拽与回顶交互保持原有逻辑。
 
 
@@ -457,7 +457,7 @@ ole_permissions in bulk.
 ### 4.7 Data Collection
 * PV 采集
   * POST `/api/analytics/page-view`：前端在首页/Archive/Admin/文章详情等视图中调用 `recordPageView`，提交 `PageViewRequest(postId,pageTitle,referrer,geo,userAgent,clientIp)`；后台 `AnalyticsController` 通过 `IpUtils` 解析真实 IP、记录 UA 并结合 JWT 判定 `userId`，`referrer` 为空时统一写成 `Direct / None`。
-  * 自 V2.1.27 起，游戏中心：`/games` 列表仍按原样打点，进入具体游戏（内置详情或外链打开）时会写入 `pageTitle = Game: <游戏名>`，`sourceLabel = 游戏详情-<游戏名>`，与其它页面日志格式一致，便于在后台访问日志中定位具体游戏。
+  * 自 V2.1.27 起，工具中心：`/tools` 列表仍按原样打点（`/games` 兼容跳转），进入具体游戏（内置详情或外链打开）时会写入 `pageTitle = Game: <游戏名>`，`sourceLabel = 游戏详情-<游戏名>`，与其它页面日志格式一致，便于在后台访问日志中定位具体游戏。
   * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；代码内还做了 1 分钟的内存限流（IP+post）与 10 分钟的数据库去重，避免刷量。
   * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV。
   * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，仅首次进入这些视图时才会调用 `recordPageView`，一旦切换到其它视图即重置标记，彻底杜绝 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录。
@@ -614,7 +614,7 @@ npm run dev
   - `PUT /api/admin/games/{id}`：同上，`file` 可选（为空则仅改元数据）。
   - `DELETE /api/admin/games/{id}`：删除记录并尝试清理对应目录。
 
-- 前端：主导航新增「游戏」入口；`/games` 仅展示可用页面列表（内容居中，两侧保留日/月背景），`/games/:id` 通过 `iframe` 渲染上传的 HTML。超级管理员在 `/admin/settings` 的“游戏页面管理”块完成上传/编辑/删除/上下线与排序，操作成功会刷新前台列表。
+- 前端：主导航为「工具」入口；`/tools` 仅展示可用页面列表（内容居中，两侧保留日/月背景，`/games` 兼容跳转），`/tools/:id` 通过 `iframe` 渲染上传的 HTML。超级管理员在 `/admin/settings` 的“游戏页面管理”块完成上传/编辑/删除/上下线与排序，操作成功会刷新前台列表。
 
 ### Swagger 安全策略
 
