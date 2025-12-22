@@ -1889,3 +1889,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.171 (2025-12-22)
 - **模块/页面**：修复 ArticleList 缺少 `Code` 图标导入导致的运行期报错。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.171`
+
+## V2.1.172 (2025-12-22)
+- **模块/页面**：修复 ArchiveView 缺少 `useLayoutOffsets` 与 `MOCK_POSTS` 导入导致的运行期报错，并整理 import 断行。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.172`
