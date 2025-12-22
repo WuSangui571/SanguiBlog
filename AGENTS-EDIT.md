@@ -1861,3 +1861,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.164 (2025-12-22)
 - **模块/页面**：修复 `EmergencyBar.jsx` 拆分后缺失 `BROADCAST_STYLE_CONFIG` 导致白屏，补回广播样式配置。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.164`
+
+## V2.1.165 (2025-12-22)
+- **模块/页面**：修复导航与点击涟漪组件的动效依赖丢失问题，补齐 framer-motion 导入，避免运行期 undefined 报错。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.165`

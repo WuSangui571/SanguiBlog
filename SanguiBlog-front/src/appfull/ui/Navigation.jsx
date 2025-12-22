@@ -5,6 +5,7 @@ import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import { buildAssetUrl } from "../../utils/asset.js";
 import { DEFAULT_AVATAR, PAGE_SIZE_OPTIONS, ROLES } from "../shared.js";
 import {
+    Code,
     ChevronRight,
     Grid,
     Home,
@@ -21,6 +22,7 @@ import {
     User,
     X
 } from 'lucide-react';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 
 export const NAVIGATION_HEIGHT = 80;
 const PRIMARY_NAV_ITEMS = [
@@ -28,7 +30,9 @@ const PRIMARY_NAV_ITEMS = [
     { key: 'archive', label: '归档' },
     { key: 'games', label: '工具' },
     { key: 'about', label: '关于' }
-];const Navigation = ({
+];
+
+const Navigation = ({
     user,
     setView,
     currentView,
@@ -212,7 +216,7 @@ const PRIMARY_NAV_ITEMS = [
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-                <AnimateSharedLayout id="primary-nav-tabs">
+                <LayoutGroup id="primary-nav-tabs">
                     <div className="flex items-center gap-8">
                         {PRIMARY_NAV_ITEMS.map((item) => {
                             const isActive = activeView === item.key;
@@ -236,7 +240,7 @@ const PRIMARY_NAV_ITEMS = [
                             );
                         })}
                     </div>
-                </AnimateSharedLayout>
+                </LayoutGroup>
 
                 <div className="flex items-center gap-3">
                     {user ? (

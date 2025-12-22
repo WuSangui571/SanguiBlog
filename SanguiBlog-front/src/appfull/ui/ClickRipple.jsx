@@ -1,4 +1,7 @@
-锘縤mport React, { useEffect, useState } from 'react';const ClickRipple = () => {
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+
+const ClickRipple = () => {
     const [ripples, setRipples] = useState([]);
     useEffect(() => {
         const handleClick = (e) => {
@@ -32,5 +35,5 @@
     );
 };
 
-// --- 3. 鍓嶅彴瑙嗗浘缁勪欢 (淇濇寔涓嶅彉) ---
+// --- 3. 前台视图组件 (保持不变) ---
 export default ClickRipple;
