@@ -65,14 +65,9 @@ import {
     ROLES,
     THEME_COLOR_PRESETS,
     DEFAULT_THEME_COLOR,
-    countImagesInContent
+    countImagesInContent,
+    extractHexFromBgClass
 } from "./shared.js";
-
-const extractHexFromBgClass = (value = '', fallback = '#6366F1') => {
-    if (typeof value !== 'string') return fallback;
-    const match = value.match(/#([0-9a-fA-F]{6})/);
-    return match ? `#${match[1].toUpperCase()}` : fallback;
-};
 
 const formatBgClassFromHex = (hex) => {
     if (!hex) return DEFAULT_THEME_COLOR;

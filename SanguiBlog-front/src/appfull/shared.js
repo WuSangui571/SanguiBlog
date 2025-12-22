@@ -45,6 +45,12 @@ export const countImagesInContent = (content = "") => {
     return matches ? matches.length : 0;
 };
 
+export const extractHexFromBgClass = (value = '', fallback = '#6366F1') => {
+    if (typeof value !== 'string') return fallback;
+    const match = value.match(/#([0-9a-fA-F]{6})/);
+    return match ? `#${match[1].toUpperCase()}` : fallback;
+};
+
 const escapeHtml = (value = "") =>
     value
         .replace(/&/g, "&amp;")

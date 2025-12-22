@@ -1845,3 +1845,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.160 (2025-12-22)
 - **模块/页面**：拆分 AppFull.jsx，后台管理组件迁移至 `SanguiBlog-front/src/appfull/AdminPanel.jsx`，共享常量与工具抽离到 `SanguiBlog-front/src/appfull/shared.js`，前台逻辑保持不变。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.160`
+
+## V2.1.161 (2025-12-22)
+- **模块/页面**：修复 AppFull 拆分后缺失 `extractHexFromBgClass` 导致的首页渲染报错，统一抽到 `shared.js` 并补齐导入。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.161`
