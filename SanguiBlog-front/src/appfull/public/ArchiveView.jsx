@@ -29,17 +29,17 @@ const ArchiveView = ({
                 const parsed = rawDate ? new Date(rawDate) : null;
                 const isValidDate = parsed && !Number.isNaN(parsed.getTime());
                 const timestamp = isValidDate ? parsed.getTime() : 0;
-                const year = isValidDate ? `${parsed.getFullYear()}` : 'Î´¹éµµ';
+                const year = isValidDate ? `${parsed.getFullYear()}` : 'æœªå½’æ¡£';
                 const monthIndex = isValidDate ? parsed.getMonth() : -1;
                 const dateLabel = isValidDate
                     ? `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`
-                    : (rawDate || 'ÈÕÆÚ´ı¶¨');
+                    : (rawDate || 'æ—¥æœŸå¾…å®š');
                 return {
                     post,
                     timestamp,
                     year,
                     monthIndex,
-                    monthLabel: monthIndex >= 0 ? ARCHIVE_MONTH_LABELS[monthIndex] : 'ÈÕÆÚ´ı¶¨',
+                    monthLabel: monthIndex >= 0 ? ARCHIVE_MONTH_LABELS[monthIndex] : 'æ—¥æœŸå¾…å®š',
                     displayDate: dateLabel,
                     fallbackKey: `${post.id || index}-${timestamp}`
                 };
@@ -54,7 +54,7 @@ const ArchiveView = ({
                 grouped.set(item.year, new Map());
             }
             const monthKey = item.monthIndex >= 0 ? item.monthIndex : `unknown-${item.fallbackKey}`;
-            const monthLabel = item.monthIndex >= 0 ? item.monthLabel : 'ÈÕÆÚ´ı¶¨';
+            const monthLabel = item.monthIndex >= 0 ? item.monthLabel : 'æ—¥æœŸå¾…å®š';
             const monthMap = grouped.get(item.year);
             if (!monthMap.has(monthKey)) {
                 monthMap.set(monthKey, {
@@ -99,7 +99,7 @@ const ArchiveView = ({
                 .filter((month) => month.anchorId)
                 .map((month) => ({
                     id: month.anchorId,
-                    label: `${yearBlock.year}Äê${month.label}`
+                    label: `${yearBlock.year}å¹´${month.label}`
                 }))
         ))
     ), [timelineData]);
@@ -194,32 +194,32 @@ const ArchiveView = ({
                 <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
                     <div>
                         <p className="text-xs tracking-[0.4em] uppercase text-gray-500">ARCHIVE // TIMELINE</p>
-                        <h1 className="text-4xl md:text-5xl font-black mt-3">¹éµµÊ±¼äÏß</h1>
+                        <h1 className="text-4xl md:text-5xl font-black mt-3">å½’æ¡£æ—¶é—´çº¿</h1>
                         <p className={`mt-4 text-base md:text-lg ${secondaryText} max-w-2xl`}>
-                            ½«ËùÓĞÎÄÕÂ°´Äê·İÓëÔÂ·İÕÛµş³ÉÒ»Ìõ¿É×·ËİµÄÊ±¼äÖá£¬·½±ã¿ìËÙ¶¨Î»ÀúÊ·Êä³ö¡£µã»÷ÈÎÒâÌõÄ¿¼´¿ÉÌø×ªÖÁÎÄÕÂÏêÇé¡£
+                            å°†æ‰€æœ‰æ–‡ç« æŒ‰å¹´ä»½ä¸æœˆä»½æŠ˜å æˆä¸€æ¡å¯è¿½æº¯çš„æ—¶é—´è½´ï¼Œæ–¹ä¾¿å¿«é€Ÿå®šä½å†å²è¾“å‡ºã€‚ç‚¹å‡»ä»»æ„æ¡ç›®å³å¯è·³è½¬è‡³æ–‡ç« è¯¦æƒ…ã€‚
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
                         <PopButton variant="accent" onClick={onBackHome} className="shadow-[6px_6px_0px_0px_#000]">
-                            ·µ»ØÊ×Ò³
+                            è¿”å›é¦–é¡µ
                         </PopButton>
                         <PopButton variant="primary" onClick={onReload} disabled={loading} className="shadow-[6px_6px_0px_0px_#000]">
-                            {loading ? '¼ÓÔØÖĞ¡­' : 'Ë¢ĞÂ¹éµµ'}
+                            {loading ? 'åŠ è½½ä¸­â€¦' : 'åˆ·æ–°å½’æ¡£'}
                         </PopButton>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
                     <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
-                        <p className="text-xs font-bold uppercase text-gray-500">ÀÛ¼ÆÎÄÕÂ</p>
+                        <p className="text-xs font-bold uppercase text-gray-500">ç´¯è®¡æ–‡ç« </p>
                         <p className="text-3xl font-black mt-2">{totalCount}</p>
                     </div>
                     <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
-                        <p className="text-xs font-bold uppercase text-gray-500">¸²¸ÇÄê·İ</p>
+                        <p className="text-xs font-bold uppercase text-gray-500">è¦†ç›–å¹´ä»½</p>
                         <p className="text-3xl font-black mt-2">{totalYears}</p>
                     </div>
                     <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
-                        <p className="text-xs font-bold uppercase text-gray-500">×î½ü¸üĞÂ</p>
+                        <p className="text-xs font-bold uppercase text-gray-500">æœ€è¿‘æ›´æ–°</p>
                         <p className="text-xl font-black mt-2">{lastUpdated}</p>
                     </div>
                 </div>
@@ -240,8 +240,8 @@ const ArchiveView = ({
 
                 {!loading && !timelineData.length && (
                     <div className={`mt-12 ${cardBg} border-2 ${borderColor} rounded-2xl p-12 text-center`}>
-                        <p className="text-lg font-black">ÔİÎŞ¹éµµÎÄÕÂ</p>
-                        <p className="text-sm text-gray-500 mt-2">·¢²¼ĞÂÎÄÕÂºó»á×Ô¶¯³öÏÖÔÚÕâÀï¡£</p>
+                        <p className="text-lg font-black">æš‚æ— å½’æ¡£æ–‡ç« </p>
+                        <p className="text-sm text-gray-500 mt-2">å‘å¸ƒæ–°æ–‡ç« åä¼šè‡ªåŠ¨å‡ºç°åœ¨è¿™é‡Œã€‚</p>
                     </div>
                 )}
 
@@ -252,7 +252,7 @@ const ArchiveView = ({
                                 <div className="flex items-center gap-4">
                                     <span className="text-3xl md:text-4xl font-black">{yearBlock.year}</span>
                                     <div className="h-px flex-1 bg-gradient-to-r from-black/60 to-transparent"></div>
-                                    <span className="text-xs font-bold tracking-widest text-gray-500">{yearBlock.total} Æª</span>
+                                    <span className="text-xs font-bold tracking-widest text-gray-500">{yearBlock.total} ç¯‡</span>
                                 </div>
                                 <div className="mt-6 space-y-8">
                                     {yearBlock.months.map((monthBlock, monthIdx) => (
@@ -266,7 +266,7 @@ const ArchiveView = ({
                                             <div className="flex items-baseline justify-between flex-wrap gap-4">
                                                 <div>
                                                     <p className="text-lg font-black">{monthBlock.label}</p>
-                                                    <p className="text-xs font-bold text-gray-500">{monthBlock.posts.length} Æª</p>
+                                                    <p className="text-xs font-bold text-gray-500">{monthBlock.posts.length} ç¯‡</p>
                                                 </div>
                                             </div>
                                             <div className="mt-4 space-y-3">
@@ -276,7 +276,7 @@ const ArchiveView = ({
                                                         : [];
                                                     const parentCategory = post.parentCategory || post?.summary?.parentCategory || '';
                                                     const subCategory = post.category || post?.summary?.category || '';
-                                                    const category = subCategory || parentCategory || 'Î´·ÖÀà';
+                                                    const category = subCategory || parentCategory || 'æœªåˆ†ç±»';
                                                     const views = post.views ?? post.viewsCount ?? 0;
                                                     const comments = post.comments ?? post.commentsCount ?? 0;
                                                     return (
@@ -324,8 +324,8 @@ const ArchiveView = ({
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center justify-between text-xs font-mono text-gray-500">
-                                                                <span>ÔÄ¶Á {views}</span>
-                                                                <span>ÆÀÂÛ {comments}</span>
+                                                                <span>é˜…è¯» {views}</span>
+                                                                <span>è¯„è®º {comments}</span>
                                                             </div>
                                                         </button>
                                                     );
@@ -343,7 +343,7 @@ const ArchiveView = ({
                                 className={`${cardBg} border-2 ${borderColor} rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] sticky`}
                                 style={{ top: quickJumpTop, marginTop: quickDockTop }}
                             >
-                                <p className="text-sm font-black mb-4">¿ìËÙÌø×ª</p>
+                                <p className="text-sm font-black mb-4">å¿«é€Ÿè·³è½¬</p>
                                 <div className="space-y-2 max-h-[70vh] overflow-auto pr-1">
                                     {monthShortcuts.map((shortcut) => (
                                         <button

@@ -1,27 +1,7 @@
-﻿import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Sparkles, X } from 'lucide-react';
-
-const BROADCAST_STYLE_CONFIG = {
-    ALERT: {
-        label: "紧急广播 // SYSTEM ALERT",
-        containerClass: "bg-[#FF0080] text-white",
-        textClass: "text-white",
-        icon: AlertTriangle,
-        iconClass: "text-[#FFD700]",
-        iconSize: 24,
-        pulse: true
-    },
-    ANNOUNCE: {
-        label: "庆典公告 // CELEBRATION",
-        containerClass: "bg-gradient-to-r from-[#FFF1D0] via-[#FFE1A8] to-[#FFD166] text-[#3A2C0F]",
-        textClass: "text-[#3A2C0F]",
-        icon: Sparkles,
-        iconClass: "text-[#C2410C]",
-        iconSize: 24,
-        pulse: true
-    }
-};
+import { X } from 'lucide-react';
+import { BROADCAST_STYLE_CONFIG } from "../shared.js";
 
 const EmergencyBar = ({ isOpen, content, onClose, onHeightChange, style = "ALERT" }) => {
     const barRef = useRef(null);

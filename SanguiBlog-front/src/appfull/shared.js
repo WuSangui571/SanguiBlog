@@ -1,4 +1,5 @@
 import { visit } from 'unist-util-visit';
+import { AlertTriangle, Sparkles } from 'lucide-react';
 
 export const THEME_COLOR_PRESETS = [
     'bg-[#00E096]',
@@ -110,6 +111,27 @@ export const ROLES = {
     SUPER_ADMIN: { label: "超级管理员", color: "bg-[#FF0080]" },
     ADMIN: { label: "管理员", color: "bg-[#6366F1]" },
     USER: { label: "用户", color: "bg-[#00E096]" }
+};
+
+export const BROADCAST_STYLE_CONFIG = {
+    ALERT: {
+        label: "紧急广播 // SYSTEM ALERT",
+        containerClass: "bg-[#FF0080] text-white",
+        textClass: "text-white",
+        icon: AlertTriangle,
+        iconClass: "text-[#FFD700]",
+        iconSize: 24,
+        pulse: true
+    },
+    ANNOUNCE: {
+        label: "庆典公告 // CELEBRATION",
+        containerClass: "bg-gradient-to-r from-[#FFF1D0] via-[#FFE1A8] to-[#FFD166] text-[#3A2C0F]",
+        textClass: "text-[#3A2C0F]",
+        icon: Sparkles,
+        iconClass: "text-[#C2410C]",
+        iconSize: 24,
+        pulse: true
+    }
 };
 
 export const CATEGORY_TREE = [

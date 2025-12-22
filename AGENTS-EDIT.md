@@ -1893,3 +1893,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.172 (2025-12-22)
 - **模块/页面**：修复 ArchiveView 缺少 `useLayoutOffsets` 与 `MOCK_POSTS` 导入导致的运行期报错，并整理 import 断行。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.172`
+
+## V2.1.173 (2025-12-22)
+- **模块/页面**：修复 shared.js 中文编码导致归档页乱码的问题，并将广播样式配置统一抽到 shared.js，供前台与后台共用。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.173`
