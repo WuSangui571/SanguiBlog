@@ -1853,3 +1853,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.162 (2025-12-22)
 - **模块/页面**：进一步拆分 AppFull 前台组件，新增 `appfull/public`（ArticleDetail/Hero/ArticleList 等）与 `appfull/ui`（Navigation/ScrollToTop/提示条等），主文件仅保留编排逻辑。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.162`
+
+## V2.1.163 (2025-12-22)
+- **模块/页面**：修复拆分后 `TiltCard.jsx` 误带广播配置导致的 AlertTriangle 未定义报错，恢复为纯粹的倾斜卡片组件。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.163`
