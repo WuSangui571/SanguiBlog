@@ -124,6 +124,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 单页应用，入口为 `src/main.jsx` -> `AppFull.jsx`。
 
+*   **AppFull 拆分**：后台管理相关组件迁移到 `src/appfull/AdminPanel.jsx`，共享常量/工具抽离到 `src/appfull/shared.js`；`AppFull.jsx` 仅保留前台视图与主流程编排，减少单文件体积。
+
 
 
 *   **路由 (`AppFull.jsx`)**:

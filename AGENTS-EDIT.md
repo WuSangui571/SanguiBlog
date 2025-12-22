@@ -1841,3 +1841,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.160 (2025-12-22)
 - **模块/页面**：后台移动端新增抽屉式导航（默认收起，可展开），主体区域支持横向滚动以适配表格信息；桌面端布局与样式保持不变。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.160`
+
+## V2.1.160 (2025-12-22)
+- **模块/页面**：拆分 AppFull.jsx，后台管理组件迁移至 `SanguiBlog-front/src/appfull/AdminPanel.jsx`，共享常量与工具抽离到 `SanguiBlog-front/src/appfull/shared.js`，前台逻辑保持不变。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.160`
