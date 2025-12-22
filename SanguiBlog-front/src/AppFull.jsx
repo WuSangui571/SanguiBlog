@@ -1545,10 +1545,13 @@ const Navigation = ({
         };
     }, [menuOpen]);
 
+    const previousViewRef = useRef(currentView);
     useEffect(() => {
-        if (menuOpen && typeof onCloseMenu === 'function') {
+        const previousView = previousViewRef.current;
+        if (previousView !== currentView && menuOpen && typeof onCloseMenu === 'function') {
             onCloseMenu();
         }
+        previousViewRef.current = currentView;
     }, [currentView, menuOpen, onCloseMenu]);
 
     useEffect(() => {
@@ -8526,11 +8529,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, []);
     const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
     useEffect(() => {
-        if (menuOpen) {
-            setMenuOpen(false);
-        }
+        setMenuOpen(false);
         setCommentNotificationOpen(false);
-    }, [view, menuOpen]);
+    }, [view]);
     const [notification, setNotification] = useState({
         isOpen: false,
         content: "系统将于今晚 00:00 停机维护",
@@ -8768,7 +8769,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.158';
+    const siteVersion = meta?.version || 'V2.1.159';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
