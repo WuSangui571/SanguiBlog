@@ -1877,3 +1877,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.168 (2025-12-22)
 - **模块/页面**：修复 ArticleList 缺少 `StatsStrip` 引用导致的运行期报错，补齐组件导入。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.168`
+
+## V2.1.169 (2025-12-22)
+- **模块/页面**：修复 ArticleList 缺少 `Filter` 图标导入导致的运行期报错。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.169`

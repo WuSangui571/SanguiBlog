@@ -27,6 +27,7 @@ import {
     ChevronRight,
     Clock,
     Eye,
+    Filter,
     Github,
     Hash,
     Lock,
