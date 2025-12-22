@@ -422,6 +422,7 @@ const ArticleDetail = ({
         // Ensure fallback for fields that might be missing or named differently in Mock vs API
         authorName: postSource.authorName || postSource.author || 'Unknown',
         authorAvatar: postSource.authorAvatar || siteAuthorAvatar || postSource.avatar,
+        tags: Array.isArray(postSource.tags) ? postSource.tags : [],
         // PostSummaryDto does not have 'authorTitle', so we default it.
         // If needed, we would need to update the backend DTO.
         authorTitle: postSource.authorTitle || '博主',
@@ -429,6 +430,13 @@ const ArticleDetail = ({
         views: postSource.views || postSource.viewsCount || 0,
         color: postSource.color || postSource.themeColor || 'shadow-[8px_8px_0px_0px_#000]',
     };
+    const articleTags = (Array.isArray(articleData?.tags) && articleData.tags.length ? articleData.tags : post.tags)
+        .map((tag) => {
+            if (!tag) return null;
+            if (typeof tag === 'string') return tag;
+            return tag.name || tag.label || tag.slug || null;
+        })
+        .filter(Boolean);
 
     const contentHtml = articleData?.contentHtml;
     const contentMd = articleData?.contentMd;
@@ -863,7 +871,7 @@ const ArticleDetail = ({
                     </div>
 
                     <div
-                        className={`flex items-center justify-between p-4 border-2 border-black mb-12 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                        className={`flex flex-wrap items-center gap-4 p-4 border-2 border-black mb-12 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
                         <div className="flex items-center gap-3">
                             <div
                                 className="w-12 h-12 border-2 border-black rounded-full bg-white overflow-hidden flex items-center justify-center">
@@ -886,7 +894,20 @@ const ArticleDetail = ({
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {articleTags.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                {articleTags.map((tag) => (
+                                    <span
+                                        key={`article-tag-${tag}`}
+                                        className={`px-2.5 py-1 text-[11px] font-black border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-[#FFF5C0] text-black'}`}
+                                    >
+                                        #{tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-2 ml-auto">
                             {isSuperAdmin && (
                                 <button
                                     onClick={handleAdminEdit}
