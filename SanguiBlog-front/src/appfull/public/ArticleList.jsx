@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import PopButton from "../../components/common/PopButton.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
+import StatsStrip from "./StatsStrip.jsx";
 import { buildAssetUrl } from "../../utils/asset.js";
 import {
     DEFAULT_HOME_QUOTE,
