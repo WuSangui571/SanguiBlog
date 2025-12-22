@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import PopButton from "../../components/common/PopButton.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
@@ -595,7 +595,7 @@ const ArticleList = ({
                                 </div>
                             )}
                             {visibleTags.length ? (
-                                <AnimateSharedLayout id="tag-filter-shared-highlight">
+                                <LayoutGroup id="tag-filter-shared-highlight">
                                     <div className="mt-4 flex flex-wrap gap-2">
                                         {visibleTags.map((tag) => {
                                             const isActive = activeTag === tag;
@@ -619,7 +619,7 @@ const ArticleList = ({
                                             );
                                         })}
                                     </div>
-                                </AnimateSharedLayout>
+                                </LayoutGroup>
                             ) : (
                                 <div className="mt-4">
                                     <span className={`text-sm font-bold ${subText}`}>暂无标签</span>

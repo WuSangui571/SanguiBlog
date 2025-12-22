@@ -1881,3 +1881,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.169 (2025-12-22)
 - **模块/页面**：修复 ArticleList 缺少 `Filter` 图标导入导致的运行期报错。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.169`
+
+## V2.1.170 (2025-12-22)
+- **模块/页面**：修复 ArticleList 中 `AnimateSharedLayout` 未定义的问题，改用 `LayoutGroup` 并补齐导入。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.170`
