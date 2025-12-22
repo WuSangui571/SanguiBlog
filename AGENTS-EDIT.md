@@ -1865,3 +1865,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.165 (2025-12-22)
 - **模块/页面**：修复导航与点击涟漪组件的动效依赖丢失问题，补齐 framer-motion 导入，避免运行期 undefined 报错。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.165`
+
+## V2.1.166 (2025-12-22)
+- **模块/页面**：修复 ArticleList 拆分后遗漏 `CATEGORY_TREE` 导入导致的运行期报错，并整理 import 断行。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.166`

@@ -7,6 +7,7 @@ import { buildAssetUrl } from "../../utils/asset.js";
 import {
     DEFAULT_HOME_QUOTE,
     DEFAULT_PAGE_SIZE,
+    CATEGORY_TREE,
     MOCK_POSTS,
     SPIN_INTERVAL_MS,
     SPIN_LOCK_DURATION,
@@ -33,7 +34,9 @@ import {
     Sparkles,
     Tag,
     X
-} from 'lucide-react';const ArticleList = ({
+} from 'lucide-react';
+
+const ArticleList = ({
     setView,
     setArticleId,
     isDarkMode,
