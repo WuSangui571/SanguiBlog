@@ -26,6 +26,7 @@ import {
     ArrowUp,
     ChevronRight,
     Clock,
+    Code,
     Eye,
     Filter,
     Github,
