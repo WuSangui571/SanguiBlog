@@ -8746,7 +8746,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.154';
+    const siteVersion = meta?.version || 'V2.1.155';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -9213,7 +9213,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         <div className="space-y-2">
                             <p className="text-xs uppercase tracking-[0.2em] text-[#FFD700] font-semibold">Indie Lab</p>
                             <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
-                                <span>游戏中心</span>
+                                <span>工具中心</span>
                                 <span className="text-[11px] px-2 py-1 rounded-full bg-[#FFD700] text-black font-bold shadow-sm">测试</span>
                             </h1>
                             <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>点击『进入」卡片在新标签打开。</p>
