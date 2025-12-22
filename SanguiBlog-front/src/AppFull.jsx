@@ -1413,7 +1413,7 @@ const NAVIGATION_HEIGHT = 80;
 const PRIMARY_NAV_ITEMS = [
     { key: 'home', label: '首页' },
     { key: 'archive', label: '归档' },
-    { key: 'games', label: '游戏' },
+    { key: 'games', label: '工具' },
     { key: 'about', label: '关于' }
 ];
 
@@ -8746,7 +8746,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.152';
+    const siteVersion = meta?.version || 'V2.1.153';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
