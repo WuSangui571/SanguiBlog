@@ -5,10 +5,12 @@ import { useLayoutOffsets } from "../contexts/LayoutOffsetContext.jsx";
 import { usePermissionContext } from "../contexts/PermissionContext.jsx";
 import {
     adminFetchTags,
+    fetchTags,
     adminCreateTag,
     adminUpdateTag,
     adminDeleteTag,
     adminFetchCategories,
+    fetchCategories,
     adminCreateCategory,
     adminUpdateCategory,
     adminDeleteCategory,
