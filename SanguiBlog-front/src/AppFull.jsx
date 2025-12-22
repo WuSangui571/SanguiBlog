@@ -8357,7 +8357,8 @@ const ScrollToTop = ({ isDarkMode }) => {
     const startDrag = useCallback((event) => {
         const point = event.touches ? event.touches[0] : event;
         if (!point) return;
-        if (event.cancelable) event.preventDefault();
+        const isTouch = event.type === 'touchstart';
+        if (event.cancelable && !isTouch) event.preventDefault();
         const rect = buttonRef.current?.getBoundingClientRect();
         dragMetaRef.current = {
             active: true,
@@ -8767,7 +8768,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.157';
+    const siteVersion = meta?.version || 'V2.1.158';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
