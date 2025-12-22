@@ -7979,6 +7979,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     const [analyticsRange, setAnalyticsRange] = useState(7);
     const { loading: permissionLoading, error: permissionError, hasPermission } = usePermissionContext();
     const { headerHeight } = useLayoutOffsets();
+    const [adminNavOpen, setAdminNavOpen] = useState(false);
 
     const pathSegments = location.pathname.split('/').filter(Boolean);
     const lastSegment = pathSegments[pathSegments.length - 1] || 'dashboard';
@@ -8056,6 +8057,12 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
     const sidebarBorder = isDarkMode ? 'border-gray-700' : 'border-gray-200';
     const topbarBg = isDarkMode ? 'bg-gray-900' : 'bg-white';
+    const handleToggleAdminNav = useCallback(() => {
+        setAdminNavOpen((prev) => !prev);
+    }, []);
+    const handleCloseAdminNav = useCallback(() => {
+        setAdminNavOpen(false);
+    }, []);
 
     const fetchAnalyticsSummary = useCallback(async (daysValue) => {
         const targetDays = daysValue || analyticsRange;
@@ -8075,6 +8082,19 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     useEffect(() => {
         fetchAnalyticsSummary(analyticsRange);
     }, [analyticsRange, fetchAnalyticsSummary]);
+
+    useEffect(() => {
+        setAdminNavOpen(false);
+    }, [location.pathname]);
+
+    useEffect(() => {
+        if (!adminNavOpen || typeof document === 'undefined') return undefined;
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [adminNavOpen]);
 
     const reloadAnalytics = useCallback((daysValue) => {
         if (daysValue && daysValue !== analyticsRange) {
@@ -8096,52 +8116,120 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         reload: reloadAnalytics
     }), [analyticsSummary, analyticsLoading, analyticsError, analyticsRangeValue, reloadAnalytics]);
 
+    const adminNavContent = (
+        <>
+            <nav className="flex-1 p-4 pt-6 space-y-6 overflow-y-auto">
+                {navSections.map((section, idx) => (
+                    <div key={section.title || `section-${idx}`} className="space-y-2">
+                        {section.title && (
+                            <div className={`px-2 text-[11px] font-semibold uppercase tracking-[0.08em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {section.title}
+                            </div>
+                        )}
+                        <div className={`space-y-1 ${section.title ? (isDarkMode ? 'pl-2 border-l border-gray-800' : 'pl-2 border-l border-gray-200') : ''}`}>
+                            {section.items.map(({ key, label, icon: Icon }) => (
+                                <Link
+                                    key={key}
+                                    to={key === 'dashboard' ? '/admin' : `/admin/${key}`}
+                                    onClick={handleCloseAdminNav}
+                                    className={`group w-full text-left pl-3 pr-3 py-2 rounded text-sm font-medium flex items-center gap-3 transition-colors ${activeTab === key
+                                        ? 'bg-indigo-500 text-white shadow-lg'
+                                        : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800 hover:text-white' : 'text-gray-800'}`
+                                        }`}
+                                >
+                                    <Icon size={18} className="shrink-0" />
+                                    <span>{label}</span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </nav>
+            <div className={`p-4 border-t ${sidebarBorder}`}>
+                <button
+                    onClick={() => {
+                        setView('home');
+                        handleCloseAdminNav();
+                    }}
+                    className="text-sm text-gray-500 hover:text-black flex items-center gap-2"
+                >
+                    <LogOut size={14} /> 返回前台
+                </button>
+            </div>
+        </>
+    );
+
     return (
         <div className={`min-h-screen flex ${bgClass} ${textClass}`}>
-            {/* Sidebar */}
+            {/* Sidebar (Desktop) */}
             <aside
-                className={`w-64 flex-shrink-0 ${sidebarBg} border-r ${sidebarBorder} flex flex-col fixed h-full z-40 transition-colors`}>
-                <nav className="flex-1 p-4 pt-6 space-y-6 overflow-y-auto">
-                    {navSections.map((section, idx) => (
-                        <div key={section.title || `section-${idx}`} className="space-y-2">
-                            {section.title && (
-                                <div className={`px-2 text-[11px] font-semibold uppercase tracking-[0.08em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                    {section.title}
-                                </div>
-                            )}
-                            <div className={`space-y-1 ${section.title ? (isDarkMode ? 'pl-2 border-l border-gray-800' : 'pl-2 border-l border-gray-200') : ''}`}>
-                                {section.items.map(({ key, label, icon: Icon }) => (
-                                    <Link
-                                        key={key}
-                                        to={key === 'dashboard' ? '/admin' : `/admin/${key}`}
-                                        className={`group w-full text-left pl-3 pr-3 py-2 rounded text-sm font-medium flex items-center gap-3 transition-colors ${activeTab === key
-                                            ? 'bg-indigo-500 text-white shadow-lg'
-                                            : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800 hover:text-white' : 'text-gray-800'}`
-                                            }`}
-                                    >
-                                        <Icon size={18} className="shrink-0" />
-                                        <span>{label}</span>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </nav>
-                <div className="p-4 border-t border-gray-100">
-                    <button onClick={() => setView('home')}
-                        className="text-sm text-gray-500 hover:text-black flex items-center gap-2"><LogOut
-                            size={14} /> 返回前台
-                    </button>
-                </div>
+                className={`hidden md:flex w-64 flex-shrink-0 ${sidebarBg} border-r ${sidebarBorder} flex-col fixed h-full z-40 transition-colors`}>
+                {adminNavContent}
             </aside>
 
+            {/* Sidebar (Mobile Drawer) */}
+            <AnimatePresence>
+                {adminNavOpen && (
+                    <motion.div
+                        className="fixed inset-0 z-[120] md:hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            className="absolute inset-0 bg-black/50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={handleCloseAdminNav}
+                            aria-label="关闭后台菜单遮罩"
+                        />
+                        <motion.aside
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+                            className={`absolute left-0 top-0 h-full w-[78vw] max-w-xs flex flex-col ${sidebarBg} border-r ${sidebarBorder} shadow-[8px_0_0_0_#000]`}
+                        >
+                            <div className={`flex items-center justify-between px-4 py-3 border-b ${sidebarBorder}`}>
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-9 h-9 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'} flex items-center justify-center border-2 border-black`}>
+                                        <Shield size={16} />
+                                    </div>
+                                    <div className="font-black">后台菜单</div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleCloseAdminNav}
+                                    className={`p-2 border-2 border-black rounded-full ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`}
+                                    aria-label="关闭后台菜单"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            {adminNavContent}
+                        </motion.aside>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Main Content Area */}
-            <div className="flex-1 ml-64 flex flex-col">
+            <div className="flex-1 md:ml-64 ml-0 flex flex-col min-w-0">
                 {/* Top Bar */}
                 <header
-                    className={`sticky z-30 h-16 flex items-center justify-between px-8 ${topbarBg} border-b ${sidebarBorder} shadow-sm`}
+                    className={`sticky z-30 h-16 flex items-center justify-between px-4 md:px-8 ${topbarBg} border-b ${sidebarBorder} shadow-sm`}
                     style={{ top: headerHeight }}>
-                    <h1 className="text-xl font-bold">{activeLabel}</h1>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={handleToggleAdminNav}
+                            className={`md:hidden p-2 border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                            aria-label="打开后台菜单"
+                        >
+                            <Menu size={18} />
+                        </button>
+                        <h1 className="text-lg md:text-xl font-bold">{activeLabel}</h1>
+                    </div>
                     <div className="flex items-center space-x-4">
                         <span className={`text-xs px-3 py-1 rounded font-bold text-white ${ROLES[user.role].color}`}>
                             {ROLES[user.role].label}
@@ -8153,7 +8241,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                     </div>
                 </header>
 
-                <main className="flex-1 p-8">
+                <main className="flex-1 p-4 md:p-8 overflow-x-auto">
                     <AnalyticsSummaryContext.Provider value={analyticsContextValue}>
                         {permissionError && (
                             <div
@@ -8769,7 +8857,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.159';
+    const siteVersion = meta?.version || 'V2.1.160';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
