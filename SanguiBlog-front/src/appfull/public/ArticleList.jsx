@@ -293,6 +293,8 @@ const ArticleList = ({
     const buildMediaUrl = (path, fallback) => buildAssetUrl(path, fallback);
     const authorAvatar = buildMediaUrl(displayAuthor.avatar, MOCK_USER.avatar);
     const authorWechat = buildMediaUrl("/contact/wechat.jpg");
+    const authorBioHtml = typeof displayAuthor.bio === 'string' ? displayAuthor.bio.trim() : '';
+    const fallbackBio = displayAuthor.title || '保持热爱，持续创作。';
     const allTags = useMemo(() => {
         if (Array.isArray(tagsData) && tagsData.length) {
             const normalized = tagsData
@@ -444,7 +446,14 @@ const ArticleList = ({
                                 )}
                             </motion.div>
                             <h3 className="mt-12 font-black text-2xl">{displayAuthor.displayName || displayAuthor.username}</h3>
-                            <p className={`text-sm font-bold mb-4 ${subText}`}>{displayAuthor.bio || displayAuthor.title || '保持热爱，持续创作。'}</p>
+                            {authorBioHtml ? (
+                                <div
+                                    className={`text-sm font-bold mb-4 ${subText}`}
+                                    dangerouslySetInnerHTML={{ __html: authorBioHtml }}
+                                />
+                            ) : (
+                                <p className={`text-sm font-bold mb-4 ${subText}`}>{fallbackBio}</p>
+                            )}
                             <div className="flex justify-center gap-2">
                                 <PopButton variant="ghost" className={`!p-2 border-2 border-black ${socialButtonClass}`}
                                     onClick={() => window.open(displayAuthor.github || MOCK_USER.social.github)}><Github
