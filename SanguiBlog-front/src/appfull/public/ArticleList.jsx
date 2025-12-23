@@ -277,10 +277,10 @@ const ArticleList = ({
 
     const socialButtonClass = isDarkMode
         ? '!text-white hover:!text-black hover:!bg-white'
-        : 'hover:bg-black hover:text-white';
+        : 'hover:bg-black/10 hover:text-black';
     const wechatButtonClass = isDarkMode
         ? (showWechat ? '!bg-white !text-black' : '!text-white hover:!text-black hover:!bg-white')
-        : (showWechat ? 'bg-[#00E096] text-white' : 'hover:bg-[#00E096] hover:text-white');
+        : (showWechat ? 'bg-[#00E096] text-black' : 'hover:bg-[#00E096] hover:text-black');
 
     const sidebarBg = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const cardBg = isDarkMode ? 'bg-gray-800' : 'bg-white';
