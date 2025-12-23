@@ -6,7 +6,13 @@ import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
 import com.sangui.sanguiblog.model.entity.Post;
 import com.sangui.sanguiblog.model.entity.SystemBroadcast;
 import com.sangui.sanguiblog.model.entity.User;
-import com.sangui.sanguiblog.model.repository.*;
+import com.sangui.sanguiblog.model.repository.AnalyticsPageViewRepository;
+import com.sangui.sanguiblog.model.repository.AnalyticsTrafficSourceRepository;
+import com.sangui.sanguiblog.model.repository.CategoryRepository;
+import com.sangui.sanguiblog.model.repository.PostRepository;
+import com.sangui.sanguiblog.model.repository.SystemBroadcastRepository;
+import com.sangui.sanguiblog.model.repository.TagRepository;
+import com.sangui.sanguiblog.model.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,7 +37,6 @@ public class SiteService {
         private static final Set<String> SUPPORTED_BROADCAST_STYLES = Set.of("ALERT", "ANNOUNCE");
 
         private final PostRepository postRepository;
-        private final CommentRepository commentRepository;
         private final CategoryRepository categoryRepository;
         private final TagRepository tagRepository;
         private final AnalyticsPageViewRepository analyticsPageViewRepository;
@@ -59,13 +64,14 @@ public class SiteService {
         private String homeSignatureQuote;
 
         public SiteMetaDto meta() {
-                long postCount = postRepository.count();
-                long commentCount = commentRepository.count();
+                final String status = "PUBLISHED";
+                long postCount = postRepository.countByStatus(status);
+                long commentCount = Optional.ofNullable(postRepository.sumCommentsByStatus(status)).orElse(0L);
                 long categoryCount = categoryRepository.count();
-                long tagCount = tagRepository.count();
-                long totalViews = Optional.ofNullable(postRepository.sumViews()).orElse(0L);
+                long tagCount = tagRepository.countDistinctTagsByPostStatus(status);
+                long totalViews = Optional.ofNullable(postRepository.sumViewsByStatus(status)).orElse(0L);
 
-                Optional<Post> lastPublished = postRepository.findFirstByStatusOrderByPublishedAtDesc("PUBLISHED");
+                Optional<Post> lastPublished = postRepository.findFirstByStatusOrderByPublishedAtDesc(status);
                 String lastDate = lastPublished.map(p -> DATE_FMT.format(p.getPublishedAt())).orElse("-");
                 String lastDateFull = lastPublished.map(p -> DATE_FULL_FMT.format(p.getPublishedAt())).orElse("-");
 

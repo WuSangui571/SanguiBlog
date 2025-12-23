@@ -18,7 +18,7 @@ $config = @{
     prod = @{
         Port      = "8082"
         Storage   = '${STORAGE_BASE_PATH:/home/sangui/uploads}'
-        AssetBase = "http://new.sangui.top/uploads"
+        AssetBase = "http://sangui.top/uploads"
         ApiBase   = "/api"
     }
 }
