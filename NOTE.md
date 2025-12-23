@@ -519,22 +519,21 @@ ole_permissions in bulk.
 
 
 
-### ⚠️ 3. 跨域配置 (CORS)
+### ?? 3. ???? (CORS)
 
-*   后端 `SecurityConfig.java` 中硬编码了允许的源：
+*   ??? `application.yaml` ?? `security.cors.allowed-origins`?????????????
 
-    *   `http://localhost:5173`
+    *   `https://sangui.top`?`https://www.sangui.top`
 
-    *   `http://127.0.0.1:5173`
+    *   `http://localhost:5173` / `http://127.0.0.1:5173`
 
-    *   `http://localhost:5174`
+    *   `http://localhost:5174` / `http://127.0.0.1:5174`
 
-    *   `http://127.0.0.1:5174`
+    *   `http://localhost:8082` / `http://127.0.0.1:8082`
 
-    *   `http://localhost:3000`
+    *   `http://localhost:3000` / `http://127.0.0.1:3000`
 
-*   **注意**: 如果前端部署在其他域名或端口，**必须** 修改后端代码并重新编译，否则会报 CORS 错误。
-
+*   **??**: ???????????????????????????????????
 
 
 ### ⚠️ 4. React 19 兼容性

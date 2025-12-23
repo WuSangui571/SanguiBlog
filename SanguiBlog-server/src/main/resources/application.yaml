@@ -29,6 +29,20 @@ jwt:
   expiration-minutes: 180
   issuer: sangui-blog
 
+security:
+  cors:
+    allowed-origins: >
+      https://sangui.top,
+      https://www.sangui.top,
+      http://localhost:5173,
+      http://127.0.0.1:5173,
+      http://localhost:5174,
+      http://127.0.0.1:5174,
+      http://localhost:8082,
+      http://127.0.0.1:8082,
+      http://localhost:3000,
+      http://127.0.0.1:3000
+
 springdoc:
   swagger-ui:
     enabled: false
@@ -48,7 +62,7 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}
 
 site:
-  version: "V2.1.178"
+  version: "V2.1.179"
   asset-base-url: http://sangui.top/uploads
 #  asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
   hero:

@@ -1918,6 +1918,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **模块/页面**：GeoLocation 缓存改用 Caffeine（TTL + 最大容量）以避免无上限内存增长。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.178`
 
+## V2.1.179 (2025-12-23)
+- **模块/页面**：收敛 CORS 白名单配置，改为通过 `application.yaml` 控制允许域名与本地端口。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.179`
+
 ## V2.1.177 (2025-12-23)
 - **模块/页面**：首页作者简介支持 HTML 渲染，个人简介字段可包含 HTML 标签展示。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.177`

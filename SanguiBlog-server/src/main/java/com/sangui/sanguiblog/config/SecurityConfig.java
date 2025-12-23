@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.config;
 
 import com.sangui.sanguiblog.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,10 +15,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -26,6 +29,21 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private static final List<String> DEFAULT_CORS_ALLOWED_ORIGINS = List.of(
+            "https://sangui.top",
+            "https://www.sangui.top",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5174",
+            "http://localhost:8082",
+            "http://127.0.0.1:8082",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
+    );
+
+    @Value("${security.cors.allowed-origins:}")
+    private String corsAllowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -79,14 +97,7 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-//        configuration.setAllowedOrigins(List.of(
-//                "http://localhost:5173",
-//                "http://localhost:5174",
-//                "http://127.0.0.1:5173",
-//                "http://127.0.0.1:5174",
-//                "http://localhost:3000"));
-        // ✅ 开发用：直接允许所有域名（包括 ngrok）
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOrigins(resolveAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -95,5 +106,16 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    private List<String> resolveAllowedOrigins() {
+        if (!StringUtils.hasText(corsAllowedOrigins)) {
+            return DEFAULT_CORS_ALLOWED_ORIGINS;
+        }
+        List<String> parsed = Arrays.stream(corsAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .toList();
+        return parsed.isEmpty() ? DEFAULT_CORS_ALLOWED_ORIGINS : parsed;
     }
 }
