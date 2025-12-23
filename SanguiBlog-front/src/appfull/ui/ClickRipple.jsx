@@ -35,5 +35,5 @@ const ClickRipple = () => {
     );
 };
 
-// --- 3. 前台视图组件 (保持不变) ---
+// --- 3. 鍓嶅彴瑙嗗浘缁勪欢 (淇濇寔涓嶅彉) ---
 export default ClickRipple;
