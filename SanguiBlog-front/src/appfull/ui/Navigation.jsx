@@ -337,7 +337,7 @@ const Navigation = ({
                     <button
                         type="button"
                         onClick={onNotificationToggle}
-                        className="relative p-2 border-2 border-black bg-white shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none rounded-full"
+                        className={`relative p-2 border-2 border-black shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none rounded-full ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
                         aria-label="未读提醒"
                     >
                         <Mail size={22} />
