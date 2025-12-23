@@ -33,7 +33,8 @@ public class User {
     @Column(length = 128)
     private String title;
 
-    @Column(length = 512)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String bio;
 
     @Column(name = "avatar_url", length = 512)

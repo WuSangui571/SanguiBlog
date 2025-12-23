@@ -51,7 +51,7 @@ CREATE TABLE users (
     email           VARCHAR(128) NULL,
     password_hash   VARCHAR(255) NULL COMMENT '密码哈希（预留）',
     title           VARCHAR(128) NULL COMMENT '头衔/职位',
-    bio             VARCHAR(512) NULL COMMENT '个人简介',
+    bio             TEXT NULL COMMENT '个人简介',
     avatar_url      VARCHAR(512) NULL,
     github_url      VARCHAR(512) NULL,
     wechat_qr_url   VARCHAR(512) NULL,
