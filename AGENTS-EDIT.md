@@ -1914,6 +1914,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **模块/页面**：统一前端文件编码为 UTF-8，修复 `ClickRipple.jsx` 的中文注释乱码问题。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.177`
 
+## V2.1.178 (2025-12-23)
+- **模块/页面**：GeoLocation 缓存改用 Caffeine（TTL + 最大容量）以避免无上限内存增长。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.178`
+
 ## V2.1.177 (2025-12-23)
 - **模块/页面**：首页作者简介支持 HTML 渲染，个人简介字段可包含 HTML 标签展示。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.177`

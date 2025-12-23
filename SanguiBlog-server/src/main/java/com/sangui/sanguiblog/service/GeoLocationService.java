@@ -2,6 +2,8 @@ package com.sangui.sanguiblog.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,8 +15,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,7 +28,10 @@ import java.util.stream.Stream;
 public class GeoLocationService {
 
     private final ObjectMapper objectMapper;
-    private final Map<String, String> cache = new ConcurrentHashMap<>();
+    private final Cache<String, String> cache = Caffeine.newBuilder()
+            .maximumSize(10000)
+            .expireAfterWrite(Duration.ofHours(12))
+            .build();
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofMillis(1000))
             .build();
@@ -41,7 +44,7 @@ public class GeoLocationService {
         if (isPrivateOrLoopback(normalized)) {
             return "本地/内网";
         }
-        return cache.computeIfAbsent(normalized, this::lookupRemote);
+        return cache.get(normalized, this::lookupRemote);
     }
 
     private boolean isPrivateOrLoopback(String ip) {
