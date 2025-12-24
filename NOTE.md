@@ -557,7 +557,7 @@ ole_permissions in bulk.
 ### ⚠️ 5. 紧急广播 (System Broadcast)
 
 *   前端通过 `EmergencyBar` 展示广播，按 `style` 渲染：`ALERT`（红色闪烁紧急）与 `ANNOUNCE`（暖色庆典公告）。
-*   `ANNOUNCE` 视觉采用多层暖色渐变 + 顶/底彩带高光 + 烟花/纸屑/光晕装饰，后台 `/admin/settings` 的广播预览保持同款庆典风格。
+*   `ANNOUNCE` 目前改为纯红金/香槟金渐变底，不再叠加烟花或彩带等装饰；后台 `/admin/settings` 的广播预览保持同款配色与简洁布局。
 
 *   广播记录字段：`content`、`active`、`style`（默认 `ALERT`，对应 `system_broadcasts.style`），后端 `SiteService.updateBroadcast` 会兜底非法取值。
 
