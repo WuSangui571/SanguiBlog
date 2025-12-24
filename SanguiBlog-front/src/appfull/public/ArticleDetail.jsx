@@ -467,57 +467,67 @@ const ArticleDetail = ({
         const summaryText = disabled
             ? (isPrev ? '已经到达最早的文章' : '已经是最新的文章')
             : meta.excerpt;
+        const buttonTone = isPrev
+            ? (isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100')
+            : (isDarkMode ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-[#FFD700] text-black hover:bg-[#FFC400]');
         return (
-            <button
-                type="button"
-                disabled={disabled}
-                onClick={() => handleOpenSibling(meta)}
-                title={disabled ? `暂无${label}` : `跳转${label}：${meta.title}`}
-                className={`group w-full text-left border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] transition-all ${
+            <div
+                className={`border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] transition-all h-full ${
                     disabled
-                        ? 'opacity-50 cursor-not-allowed'
-                        : `hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-[#FFF7E1]'}`
+                        ? 'opacity-50'
+                        : `hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'hover:bg-gray-800/60' : 'hover:bg-[#FFF7E1]'}`
                 } ${navSurface}`}
             >
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <span className={`inline-flex items-center gap-2 px-2 py-1 text-[10px] font-black uppercase tracking-[0.3em] border-2 border-black ${badgeClass}`}>
-                            {label}
-                        </span>
-                        <h4 className="mt-3 text-lg font-black leading-snug">
-                            {disabled ? '暂无可跳转文章' : meta.title}
-                        </h4>
-                        <p className={`mt-2 text-sm font-medium ${navMuted}`}>
-                            {summaryText}
-                        </p>
-                    </div>
-                    <div className={`shrink-0 w-10 h-10 border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+                <div className="flex items-center justify-between">
+                    <span className={`inline-flex items-center gap-2 px-2 py-1 text-[10px] font-black uppercase tracking-[0.3em] border-2 border-black ${badgeClass}`}>
+                        {label}
+                    </span>
+                    <div className={`w-10 h-10 border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
                         {isPrev ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                     </div>
                 </div>
-                {!disabled && (
-                    <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
-                        {(meta.parentCategory || meta.category) && (
-                            <span className="inline-flex items-center gap-1">
-                                <Tag size={12} />
-                                {meta.parentCategory ? `${meta.parentCategory} / ${meta.category}` : meta.category}
-                            </span>
-                        )}
-                        {meta.date && (
-                            <span className="inline-flex items-center gap-1">
-                                <Clock size={12} />
-                                {meta.date}
-                            </span>
-                        )}
-                        {meta.views !== null && meta.views !== undefined && (
-                            <span className="inline-flex items-center gap-1">
-                                <Eye size={12} />
-                                {meta.views} 阅读
-                            </span>
-                        )}
-                    </div>
-                )}
-            </button>
+                <div className="mt-4 min-h-[104px]">
+                    <h4 className="text-lg font-black leading-snug">
+                        {disabled ? '暂无可跳转文章' : meta.title}
+                    </h4>
+                    <p className={`mt-2 text-sm font-medium ${navMuted}`}>
+                        {summaryText}
+                    </p>
+                </div>
+                <div className={`mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
+                    {(meta?.parentCategory || meta?.category) && !disabled && (
+                        <span className="inline-flex items-center gap-1">
+                            <Tag size={12} />
+                            {meta.parentCategory ? `${meta.parentCategory} / ${meta.category}` : meta.category}
+                        </span>
+                    )}
+                    {meta?.date && !disabled && (
+                        <span className="inline-flex items-center gap-1">
+                            <Clock size={12} />
+                            {meta.date}
+                        </span>
+                    )}
+                    {meta?.views !== null && meta?.views !== undefined && !disabled && (
+                        <span className="inline-flex items-center gap-1">
+                            <Eye size={12} />
+                            {meta.views} 阅读
+                        </span>
+                    )}
+                </div>
+                <div className="mt-5">
+                    <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => handleOpenSibling(meta)}
+                        title={disabled ? `暂无${label}` : `跳转${label}：${meta.title}`}
+                        className={`w-full px-3 py-2 border-2 border-black font-black text-sm shadow-[3px_3px_0px_0px_#000] transition-all ${
+                            disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : `${buttonTone} hover:-translate-y-0.5`
+                        }`}
+                    >
+                        {disabled ? '暂无可跳转' : `查看${label}`}
+                    </button>
+                </div>
+            </div>
         );
     };
 
@@ -707,6 +717,16 @@ const ArticleDetail = ({
                             <p className="font-semibold">暂无正文内容</p>
                         )}
                     </article>
+
+                    <div className="mt-10 mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className={`h-[2px] flex-1 ${isDarkMode ? 'bg-gray-700' : 'bg-black'}`}></div>
+                            <span className={`px-4 py-1 border-2 border-black text-xs font-black uppercase tracking-[0.4em] ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-black'}`}>
+                                正文到此结束
+                            </span>
+                            <div className={`h-[2px] flex-1 ${isDarkMode ? 'bg-gray-700' : 'bg-black'}`}></div>
+                        </div>
+                    </div>
 
                     <div className="mt-10">
                         <div className={`border-2 border-black rounded-3xl p-6 shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900/70' : 'bg-[#FFFDF2]'}`}>
