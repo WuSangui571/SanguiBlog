@@ -144,6 +144,8 @@ const ArticleDetail = ({
     const [tocItems, setTocItems] = useState([]);
     const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
     const [tocCollapsed, setTocCollapsed] = useState(false);
+    const [tocLeft, setTocLeft] = useState(null);
+    const commentJumpRef = useRef(null);
     const handleImagePreview = useCallback((src) => {
         if (!src) return;
         setPreviewImage(src);
@@ -473,6 +475,23 @@ const ArticleDetail = ({
     useEffect(() => {
         setTocDrawerOpen(false);
     }, [id]);
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const tocWidth = 256;
+        const margin = 16;
+        const updatePosition = () => {
+            const target = commentJumpRef.current;
+            if (!target) return;
+            const rect = target.getBoundingClientRect();
+            let nextLeft = rect.left;
+            const maxLeft = window.innerWidth - tocWidth - margin;
+            nextLeft = Math.max(margin, Math.min(nextLeft, maxLeft));
+            setTocLeft(nextLeft);
+        };
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        return () => window.removeEventListener('resize', updatePosition);
+    }, [fixedTopOffset, tocItems.length]);
 
     const handleShare = () => {
         const url = window.location.href;
@@ -635,8 +654,12 @@ const ArticleDetail = ({
 
             {tocItems.length > 0 && (
                 <div
-                    className="hidden xl:block fixed right-6 z-40"
-                    style={{ top: fixedTopOffset + 80 }}
+                    className="hidden xl:block fixed z-40"
+                    style={{
+                        top: fixedTopOffset + 80,
+                        left: tocLeft ?? 'auto',
+                        right: tocLeft === null ? '1.5rem' : 'auto'
+                    }}
                 >
                     <div className={`w-64 border-2 border-black rounded-2xl p-4 shadow-[6px_6px_0px_0px_#000] ${navSurface}`}>
                         <div className="flex items-center justify-between">
@@ -764,6 +787,7 @@ const ArticleDetail = ({
                         initial={{ opacity: 0, x: 50 }}
                         animate={{ opacity: 1, x: 0 }}
                         whileHover={{ scale: 1.05 }}
+                        ref={commentJumpRef}
                         className={`pointer-events-auto absolute -right-6 md:-right-40 px-4 py-2 font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
                     >
                         <div className="flex items-center gap-2">
