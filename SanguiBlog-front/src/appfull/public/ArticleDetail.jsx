@@ -719,17 +719,15 @@ const ArticleDetail = ({
                     </div>
 
                     <div className="mt-10">
-                        <div className={`border-2 border-black rounded-3xl p-6 shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900/70' : 'bg-[#FFFDF2]'}`}>
-                            <div className="flex items-center gap-3">
-                                <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] border-2 border-black ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-black text-white'}`}>
-                                    继续阅读
-                                </span>
-                                <span className={`text-xs font-semibold ${navMuted}`}>前后篇快速跳转</span>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2 mt-4">
-                                {renderNavCard(prevMeta, 'prev')}
-                                {renderNavCard(nextMeta, 'next')}
-                            </div>
+                        <div className="flex items-center gap-3">
+                            <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] border-2 border-black ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-black text-white'}`}>
+                                继续阅读
+                            </span>
+                            <span className={`text-xs font-semibold ${navMuted}`}>前后篇快速跳转</span>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2 mt-4">
+                            {renderNavCard(prevMeta, 'prev')}
+                            {renderNavCard(nextMeta, 'next')}
                         </div>
                     </div>
 
