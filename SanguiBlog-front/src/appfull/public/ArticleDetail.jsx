@@ -105,6 +105,16 @@ const ArticleDetail = ({
     }, [publishedPosts, post?.id]);
     const prevPost = currentIndex >= 0 ? publishedPosts[currentIndex + 1] : null;
     const nextPost = currentIndex > 0 ? publishedPosts[currentIndex - 1] : null;
+    const relatedPosts = useMemo(() => {
+        if (!post?.id || publishedPosts.length === 0) return [];
+        const categoryKey = post.category || post.parentCategory || '';
+        if (!categoryKey) return [];
+        return publishedPosts.filter((item) => {
+            if (!item || String(item.id) === String(post.id)) return false;
+            const itemCategory = item.category || item.categoryName || item.parentCategory || item.parentName || '';
+            return itemCategory === categoryKey;
+        }).slice(0, 3);
+    }, [post?.id, post?.category, post?.parentCategory, publishedPosts]);
     const buildNavMeta = useCallback((item) => {
         if (!item) return null;
         const rawDate = item.date || item.publishedAt || item.published_at || item.updatedAt || item.createdAt;
@@ -442,6 +452,48 @@ const ArticleDetail = ({
         }
         setView('article');
     }, [setArticleId, setView]);
+    const handleOpenRelated = useCallback((target) => {
+        if (!target?.id) return;
+        if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'auto' });
+        }
+        if (typeof setArticleId === 'function') {
+            setArticleId(target.id);
+        }
+        setView('article');
+    }, [setArticleId, setView]);
+    const renderRelatedCard = (item) => {
+        if (!item?.id) return null;
+        const title = item.title || item.name || '未命名文章';
+        const rawDate = item.date || item.publishedAt || item.published_at || item.updatedAt || item.createdAt;
+        const date = formatPostDate(rawDate);
+        const views = item.views ?? item.viewsCount ?? null;
+        return (
+            <button
+                key={`related-${item.id}`}
+                type="button"
+                onClick={() => handleOpenRelated(item)}
+                title={`跳转文章：${title}`}
+                className={`w-full text-left border-2 border-black rounded-2xl p-4 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] ${navSurface}`}
+            >
+                <h4 className="text-lg font-black leading-snug line-clamp-2">{title}</h4>
+                <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
+                    {date && (
+                        <span className="inline-flex items-center gap-1">
+                            <Clock size={12} />
+                            {date}
+                        </span>
+                    )}
+                    {views !== null && views !== undefined && (
+                        <span className="inline-flex items-center gap-1">
+                            <Eye size={12} />
+                            {views} 阅读
+                        </span>
+                    )}
+                </div>
+            </button>
+        );
+    };
 
     const getAvatarUrl = (avatarPath) => {
         if (!avatarPath) return DEFAULT_AVATAR;
@@ -717,6 +769,20 @@ const ArticleDetail = ({
                             <div className={`h-[2px] flex-1 ${isDarkMode ? 'bg-gray-700' : 'bg-black'}`}></div>
                         </div>
                     </div>
+
+                    {relatedPosts.length > 0 && (
+                        <div className="mt-8">
+                            <div className="flex items-center gap-3">
+                                <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] border-2 border-black ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-black text-white'}`}>
+                                    同分类推荐
+                                </span>
+                                <span className={`text-xs font-semibold ${navMuted}`}>继续阅读别的精彩内容</span>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                {relatedPosts.map((item) => renderRelatedCard(item))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="mt-10">
                         <div className="flex items-center gap-3">
