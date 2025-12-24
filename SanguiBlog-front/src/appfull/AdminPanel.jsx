@@ -5399,7 +5399,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                             <div>
                                                 <div className="font-bold">{config.label}</div>
                                                 <div className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                    {style === 'ALERT' ? '紧急告警 · 红色闪烁' : '庆典公告 · 彩带烟花'}
+                                                    {style === 'ALERT' ? '紧急告警 · 红色闪烁' : '庆典公告 · 红金香槟'}
                                                 </div>
                                             </div>
                                         </div>

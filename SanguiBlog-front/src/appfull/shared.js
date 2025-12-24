@@ -125,10 +125,10 @@ export const BROADCAST_STYLE_CONFIG = {
     },
     ANNOUNCE: {
         label: "庆典公告 // CELEBRATION",
-        containerClass: "bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.85)_0%,rgba(255,255,255,0)_55%),radial-gradient(circle_at_bottom_right,rgba(255,199,150,0.65)_0%,rgba(255,199,150,0)_60%),linear-gradient(120deg,#FFF6DB_0%,#FFD3A3_38%,#FFB57A_70%,#FFE6B8_100%)] text-[#3B2A12]",
-        textClass: "text-[#3B2A12]",
+        containerClass: "bg-[linear-gradient(120deg,#7A0C0C_0%,#B91C1C_32%,#D97706_68%,#E7B86A_100%)] text-[#FFF7E1]",
+        textClass: "text-[#FFF7E1]",
         icon: Sparkles,
-        iconClass: "text-[#B45309]",
+        iconClass: "text-[#FDE68A]",
         iconSize: 24,
         pulse: true
     }
