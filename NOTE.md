@@ -142,7 +142,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
     *   `/admin/*`: 后台管理面板 (Dashboard, 编辑器等)
 
-*   **视图-路由联动**：前台导航通过 `setView()` 触发 `onViewChange`，统一由 `src/pages/viewNavigation.js` 维护视图到 URL 的映射，保证“归档/关于/工具/文章详情”等视图切换时 URL 同步更新，便于 SEO 与日志追踪。
+*   **视图-路由联动**：前台导航通过 `setView()` 触发 `onViewChange`，统一由 `src/pages/viewNavigation.js` 维护视图到 URL 的映射，保证“归档/关于/工具/文章详情”等视图切换时 URL 同步更新，便于 SEO 与日志追踪；当处于 `/admin/*` 子路由时不会被强制拉回 `/admin`。
 
 *   **全局错误过滤 (`src/main.jsx`)**:
 
