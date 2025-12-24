@@ -141,6 +141,8 @@ const ArticleDetail = ({
     const { headerHeight } = useLayoutOffsets();
     const fixedTopOffset = headerHeight + 16;
     const [previewImage, setPreviewImage] = useState(null);
+    const [tocItems, setTocItems] = useState([]);
+    const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
     const handleImagePreview = useCallback((src) => {
         if (!src) return;
         setPreviewImage(src);
@@ -321,6 +323,16 @@ const ArticleDetail = ({
         scrollToTarget();
         setTimeout(scrollToTarget, 220);
     }, [fixedTopOffset]);
+    const handleTocJump = useCallback((targetId) => {
+        if (!targetId || typeof document === 'undefined' || typeof window === 'undefined') return;
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        const offset = fixedTopOffset + 12;
+        const rect = target.getBoundingClientRect();
+        const top = rect.top + window.pageYOffset - offset;
+        window.scrollTo({ top: top > 0 ? top : 0, behavior: 'smooth' });
+        setTocDrawerOpen(false);
+    }, [fixedTopOffset]);
 
     useEffect(() => {
         if (typeof document === 'undefined') return;
@@ -339,6 +351,29 @@ const ArticleDetail = ({
             images.forEach((img) => img.removeEventListener('click', handleClick));
         };
     }, [resolvedHtml, contentMd, handleImagePreview]);
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        const container = articleContentRef.current;
+        if (!container) return;
+        const headings = Array.from(container.querySelectorAll('h2, h3'));
+        const slugCounter = {};
+        const items = headings.map((node) => {
+            const text = (node.textContent || '').trim();
+            if (!text) return null;
+            if (!node.id) {
+                const base = slugifyHeading(text);
+                const count = slugCounter[base] || 0;
+                slugCounter[base] = count + 1;
+                node.id = count === 0 ? base : `${base}-${count + 1}`;
+            }
+            return {
+                id: node.id,
+                text,
+                level: node.tagName === 'H3' ? 3 : 2
+            };
+        }).filter(Boolean);
+        setTocItems(items);
+    }, [resolvedHtml, contentMd, slugifyHeading]);
 
     const markdownComponents = useMemo(() => ({
         pre: ({ children }) => <>{children}</>,
@@ -434,6 +469,9 @@ const ArticleDetail = ({
             document.body.style.overflow = originalOverflow;
         };
     }, [previewImage]);
+    useEffect(() => {
+        setTocDrawerOpen(false);
+    }, [id]);
 
     const handleShare = () => {
         const url = window.location.href;
@@ -590,6 +628,99 @@ const ArticleDetail = ({
                     >
                         <CheckCircle size={24} strokeWidth={3} />
                         <span className="font-black text-lg">链接已复制！</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {tocItems.length > 0 && (
+                <div
+                    className="hidden xl:block fixed right-6 z-40"
+                    style={{ top: fixedTopOffset + 80 }}
+                >
+                    <div className={`w-64 border-2 border-black rounded-2xl p-4 shadow-[6px_6px_0px_0px_#000] ${navSurface}`}>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-black uppercase tracking-[0.3em]">目录</span>
+                            <List size={16} />
+                        </div>
+                        <div className="mt-3 space-y-2 max-h-[60vh] overflow-auto pr-1">
+                            {tocItems.map((item) => (
+                                <button
+                                    key={`toc-${item.id}`}
+                                    type="button"
+                                    onClick={() => handleTocJump(item.id)}
+                                    className={`w-full text-left px-3 py-2 border-2 border-black rounded-xl font-bold transition-colors ${
+                                        item.level === 3 ? 'text-xs ml-2' : 'text-sm'
+                                    } ${isDarkMode ? 'bg-gray-800 text-gray-100 hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                >
+                                    {item.text}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {tocItems.length > 0 && (
+                <button
+                    type="button"
+                    onClick={() => setTocDrawerOpen(true)}
+                    className={`md:hidden fixed bottom-24 right-4 z-[60] px-4 py-2 border-2 border-black font-black shadow-[4px_4px_0px_0px_#000] inline-flex items-center gap-2 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                >
+                    <List size={16} />
+                    目录
+                </button>
+            )}
+
+            <AnimatePresence>
+                {tocDrawerOpen && (
+                    <motion.div
+                        className="fixed inset-0 z-[70] md:hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            className="absolute inset-0 bg-black/50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setTocDrawerOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
+                            className={`absolute right-0 top-0 h-full w-[80vw] max-w-xs border-l-2 border-black ${navSurface}`}
+                        >
+                            <div className={`flex items-center justify-between px-4 py-3 border-b-2 border-black ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                                <div className="flex items-center gap-2 font-black">
+                                    <List size={16} />
+                                    目录
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setTocDrawerOpen(false)}
+                                    className={`p-2 border-2 border-black ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            <div className="p-4 space-y-3 overflow-y-auto">
+                                {tocItems.map((item) => (
+                                    <button
+                                        key={`toc-drawer-${item.id}`}
+                                        type="button"
+                                        onClick={() => handleTocJump(item.id)}
+                                        className={`w-full text-left px-3 py-2 border-2 border-black rounded-xl font-bold transition-colors ${
+                                            item.level === 3 ? 'text-xs ml-2' : 'text-sm'
+                                        } ${isDarkMode ? 'bg-gray-800 text-gray-100 hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                    >
+                                        {item.text}
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
