@@ -8,6 +8,7 @@ const EmergencyBar = ({ isOpen, content, onClose, onHeightChange, style = "ALERT
     const normalizedStyle = (style || "ALERT").toUpperCase();
     const styleConfig = BROADCAST_STYLE_CONFIG[normalizedStyle] || BROADCAST_STYLE_CONFIG.ALERT;
     const StyleIcon = styleConfig.icon;
+    const isCelebration = normalizedStyle === "ANNOUNCE";
 
     useEffect(() => {
         if (typeof onHeightChange !== 'function') return;
@@ -37,21 +38,51 @@ const EmergencyBar = ({ isOpen, content, onClose, onHeightChange, style = "ALERT
                     exit={{ height: 0, opacity: 0 }}
                     className={`border-b-4 border-black overflow-hidden relative z-[60] w-full ${styleConfig.containerClass}`}
                 >
-                    <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between font-bold">
-                        <div className={`flex items-center gap-3 ${styleConfig.pulse ? 'animate-pulse' : ''}`}>
-                            <StyleIcon size={styleConfig.iconSize} strokeWidth={3}
-                                className={styleConfig.iconClass} />
-                            <span className={`uppercase tracking-widest ${styleConfig.textClass}`}>{styleConfig.label}</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <span className={`text-sm hidden md:inline ${styleConfig.textClass}`}>{content}</span>
-                            <button
-                                onClick={onClose}
-                                className="bg-black text-white p-1 hover:rotate-90 transition-transform border border-white"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
+                    <div className="max-w-7xl mx-auto px-4 py-3 font-bold">
+                        {isCelebration ? (
+                            <div className="relative flex items-center gap-3">
+                                <div className="pointer-events-none absolute inset-y-0 left-2 right-12 hidden md:flex items-center justify-between">
+                                    <div className="relative w-11 h-11">
+                                        <span className="absolute inset-0 rounded-full border-2 border-[#C2410C]/35"></span>
+                                        <span className="absolute left-1/2 top-1/2 w-10 h-0.5 bg-[#C2410C]/55 -translate-x-1/2 -translate-y-1/2 rotate-45"></span>
+                                        <span className="absolute left-1/2 top-1/2 w-10 h-0.5 bg-[#C2410C]/55 -translate-x-1/2 -translate-y-1/2 -rotate-45"></span>
+                                        <span className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full bg-[#FF7A59] shadow-[0_0_10px_rgba(255,122,89,0.75)] -translate-x-1/2 -translate-y-1/2 animate-pulse"></span>
+                                    </div>
+                                    <div className="relative w-11 h-11">
+                                        <span className="absolute inset-0 rounded-full border-2 border-[#B45309]/35"></span>
+                                        <span className="absolute left-1/2 top-1/2 w-10 h-0.5 bg-[#B45309]/55 -translate-x-1/2 -translate-y-1/2 rotate-90"></span>
+                                        <span className="absolute left-1/2 top-1/2 w-10 h-0.5 bg-[#B45309]/55 -translate-x-1/2 -translate-y-1/2 rotate-0"></span>
+                                        <span className="absolute left-1/2 top-1/2 w-2.5 h-2.5 rounded-full bg-[#FBBF24] shadow-[0_0_10px_rgba(251,191,36,0.75)] -translate-x-1/2 -translate-y-1/2 animate-pulse"></span>
+                                    </div>
+                                </div>
+                                <span className={`flex-1 text-center text-sm md:text-base font-black tracking-wide px-10 ${styleConfig.textClass}`}>
+                                    {content}
+                                </span>
+                                <button
+                                    onClick={onClose}
+                                    className="bg-black text-white p-1 hover:rotate-90 transition-transform border border-white shrink-0"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-between font-bold">
+                                <div className={`flex items-center gap-3 ${styleConfig.pulse ? 'animate-pulse' : ''}`}>
+                                    <StyleIcon size={styleConfig.iconSize} strokeWidth={3}
+                                        className={styleConfig.iconClass} />
+                                    <span className={`uppercase tracking-widest ${styleConfig.textClass}`}>{styleConfig.label}</span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <span className={`text-sm hidden md:inline ${styleConfig.textClass}`}>{content}</span>
+                                    <button
+                                        onClick={onClose}
+                                        className="bg-black text-white p-1 hover:rotate-90 transition-transform border border-white"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </motion.div>
             )}

@@ -125,7 +125,7 @@ export const BROADCAST_STYLE_CONFIG = {
     },
     ANNOUNCE: {
         label: "庆典公告 // CELEBRATION",
-        containerClass: "bg-gradient-to-r from-[#FFF1D0] via-[#FFE1A8] to-[#FFD166] text-[#3A2C0F]",
+        containerClass: "bg-[linear-gradient(120deg,#FFF4D6_0%,#FFD28A_38%,#FF9F68_76%,#FFD6A5_100%)] text-[#3A2C0F]",
         textClass: "text-[#3A2C0F]",
         icon: Sparkles,
         iconClass: "text-[#C2410C]",

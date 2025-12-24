@@ -5419,16 +5419,39 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             {(() => {
                                 const previewStyle = (broadcastDraft.style || 'ALERT').toUpperCase();
                                 const previewConfig = BROADCAST_STYLE_CONFIG[previewStyle] || BROADCAST_STYLE_CONFIG.ALERT;
+                                const isCelebration = previewStyle === 'ANNOUNCE';
                                 return (
-                                    <div className={`${previewConfig.containerClass} rounded-lg border border-black/20`}>
-                                        <div className="px-3 py-2 flex items-center justify-between gap-3">
-                                            <span className={`text-xs font-bold uppercase tracking-widest ${previewConfig.textClass}`}>
-                                                {previewConfig.label}
-                                            </span>
-                                            <span className={`text-xs ${previewConfig.textClass}`}>
-                                                {broadcastDraft.content.trim() || '尚未填写广播文案'}
-                                            </span>
-                                        </div>
+                                    <div className={`${previewConfig.containerClass} rounded-lg border border-black/20 overflow-hidden`}>
+                                        {isCelebration ? (
+                                            <div className="relative px-3 py-2">
+                                                <div className="pointer-events-none absolute inset-y-0 left-2 right-8 hidden sm:flex items-center justify-between">
+                                                    <div className="relative w-7 h-7">
+                                                        <span className="absolute inset-0 rounded-full border-2 border-[#C2410C]/35"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-6 h-0.5 bg-[#C2410C]/55 -translate-x-1/2 -translate-y-1/2 rotate-45"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-6 h-0.5 bg-[#C2410C]/55 -translate-x-1/2 -translate-y-1/2 -rotate-45"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-[#FF7A59] shadow-[0_0_8px_rgba(255,122,89,0.75)] -translate-x-1/2 -translate-y-1/2"></span>
+                                                    </div>
+                                                    <div className="relative w-7 h-7">
+                                                        <span className="absolute inset-0 rounded-full border-2 border-[#B45309]/35"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-6 h-0.5 bg-[#B45309]/55 -translate-x-1/2 -translate-y-1/2 rotate-90"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-6 h-0.5 bg-[#B45309]/55 -translate-x-1/2 -translate-y-1/2"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.75)] -translate-x-1/2 -translate-y-1/2"></span>
+                                                    </div>
+                                                </div>
+                                                <span className={`block text-xs font-bold tracking-wide text-center px-6 ${previewConfig.textClass}`}>
+                                                    {broadcastDraft.content.trim() || '尚未填写广播文案'}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div className="px-3 py-2 flex items-center justify-between gap-3">
+                                                <span className={`text-xs font-bold uppercase tracking-widest ${previewConfig.textClass}`}>
+                                                    {previewConfig.label}
+                                                </span>
+                                                <span className={`text-xs ${previewConfig.textClass}`}>
+                                                    {broadcastDraft.content.trim() || '尚未填写广播文案'}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })()}
