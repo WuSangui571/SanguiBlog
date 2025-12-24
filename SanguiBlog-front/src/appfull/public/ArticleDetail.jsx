@@ -464,15 +464,12 @@ const ArticleDetail = ({
         const badgeClass = isPrev
             ? (isDarkMode ? 'bg-gray-700 text-gray-100' : 'bg-black text-white')
             : (isDarkMode ? 'bg-yellow-500 text-black' : 'bg-[#FFD700] text-black');
-        const summaryText = disabled
-            ? (isPrev ? '已经到达最早的文章' : '已经是最新的文章')
-            : meta.excerpt;
         const buttonTone = isPrev
             ? (isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100')
             : (isDarkMode ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-[#FFD700] text-black hover:bg-[#FFC400]');
         return (
             <div
-                className={`border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] transition-all h-full ${
+                className={`border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] transition-all h-full flex flex-col ${
                     disabled
                         ? 'opacity-50'
                         : `hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'hover:bg-gray-800/60' : 'hover:bg-[#FFF7E1]'}`
@@ -486,13 +483,10 @@ const ArticleDetail = ({
                         {isPrev ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                     </div>
                 </div>
-                <div className="mt-4 min-h-[104px]">
-                    <h4 className="text-lg font-black leading-snug">
+                <div className="mt-4 min-h-[56px]">
+                    <h4 className="text-lg font-black leading-snug line-clamp-2">
                         {disabled ? '暂无可跳转文章' : meta.title}
                     </h4>
-                    <p className={`mt-2 text-sm font-medium ${navMuted}`}>
-                        {summaryText}
-                    </p>
                 </div>
                 <div className={`mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
                     {(meta?.parentCategory || meta?.category) && !disabled && (
@@ -514,7 +508,7 @@ const ArticleDetail = ({
                         </span>
                     )}
                 </div>
-                <div className="mt-5">
+                <div className="mt-auto pt-5">
                     <button
                         type="button"
                         disabled={disabled}
