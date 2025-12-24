@@ -623,7 +623,7 @@ npm run dev
   - `PUT /api/admin/games/{id}`：同上，`file` 可选（为空则仅改元数据）。
   - `DELETE /api/admin/games/{id}`：删除记录并尝试清理对应目录。
 
-- 前端：主导航为「工具」入口；`/tools` 仅展示可用页面列表（内容居中，两侧保留日/月背景，`/games` 兼容跳转），`/tools/:id` 通过 `iframe` 渲染上传的 HTML。超级管理员在 `/admin/settings` 的“游戏页面管理”块完成上传/编辑/删除/上下线与排序，操作成功会刷新前台列表。
+- 前端：主导航为「工具」入口；`/tools` 仅展示可用页面列表（内容居中，两侧保留日/月背景，`/games` 兼容跳转），`/tools/:id` 通过 `iframe` 渲染上传的 HTML；工具卡片“进入”会先用 `buildAssetUrl` 解析 `game.url` 再新开标签，确保静态资源域名/路径生效，`AppFull.jsx` 需保持该工具函数导入。超级管理员在 `/admin/settings` 的“游戏页面管理”块完成上传/编辑/删除/上下线与排序，操作成功会刷新前台列表。
 
 ### Swagger 安全策略
 
