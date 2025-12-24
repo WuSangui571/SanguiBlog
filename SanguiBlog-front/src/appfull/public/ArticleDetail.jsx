@@ -532,7 +532,7 @@ const ArticleDetail = ({
                 type="button"
                 onClick={() => handleOpenRelated(item)}
                 title={`跳转文章：${title}`}
-                className={`w-full text-left border-2 border-black rounded-2xl p-4 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] ${navSurface}`}
+                className={`w-full text-left border-2 border-black rounded-none p-4 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] ${navSurface}`}
             >
                 <h4 className="text-lg font-black leading-snug line-clamp-2">{title}</h4>
                 <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
@@ -585,7 +585,7 @@ const ArticleDetail = ({
                 disabled={disabled}
                 onClick={() => handleOpenSibling(meta)}
                 title={disabled ? `暂无${label}` : `跳转${label}：${meta.title}`}
-                className={`border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] transition-all h-full flex flex-col text-left ${
+                className={`border-2 border-black rounded-none p-5 shadow-[6px_6px_0px_0px_#000] transition-all h-full flex flex-col text-left ${
                     disabled
                         ? 'opacity-50 cursor-not-allowed'
                         : `hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'hover:bg-gray-800/60' : 'hover:bg-[#FFF7E1]'}`
@@ -661,7 +661,7 @@ const ArticleDetail = ({
                         right: tocLeft === null ? '1.5rem' : 'auto'
                     }}
                 >
-                    <div className={`w-64 border-2 border-black rounded-2xl p-4 shadow-[6px_6px_0px_0px_#000] ${navSurface}`}>
+                    <div className={`w-64 border-2 border-black rounded-none p-4 shadow-[6px_6px_0px_0px_#000] ${navSurface}`}>
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-black uppercase tracking-[0.3em]">目录</span>
                             <button
