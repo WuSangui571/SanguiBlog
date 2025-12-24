@@ -20,7 +20,6 @@ import {
 import {
     BookOpen,
     CheckCircle,
-    ChevronLeft,
     ChevronRight,
     Clock,
     Code,
@@ -300,12 +299,18 @@ const ArticleDetail = ({
     }, [contentHtml, resolveAssetPath]);
 
     const scrollToComments = useCallback(() => {
-        if (typeof document === 'undefined') return;
+        if (typeof document === 'undefined' || typeof window === 'undefined') return;
         const commentsEl = document.getElementById('comments-section');
-        if (commentsEl) {
-            commentsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }, []);
+        if (!commentsEl) return;
+        const offset = fixedTopOffset + 12;
+        const scrollToTarget = () => {
+            const rect = commentsEl.getBoundingClientRect();
+            const top = rect.top + window.pageYOffset - offset;
+            window.scrollTo({ top: top > 0 ? top : 0, behavior: 'smooth' });
+        };
+        scrollToTarget();
+        setTimeout(scrollToTarget, 220);
+    }, [fixedTopOffset]);
 
     useEffect(() => {
         if (typeof document === 'undefined') return;
@@ -464,14 +469,15 @@ const ArticleDetail = ({
         const badgeClass = isPrev
             ? (isDarkMode ? 'bg-gray-700 text-gray-100' : 'bg-black text-white')
             : (isDarkMode ? 'bg-yellow-500 text-black' : 'bg-[#FFD700] text-black');
-        const buttonTone = isPrev
-            ? (isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100')
-            : (isDarkMode ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-[#FFD700] text-black hover:bg-[#FFC400]');
         return (
-            <div
-                className={`border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] transition-all h-full flex flex-col ${
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => handleOpenSibling(meta)}
+                title={disabled ? `暂无${label}` : `跳转${label}：${meta.title}`}
+                className={`border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] transition-all h-full flex flex-col text-left ${
                     disabled
-                        ? 'opacity-50'
+                        ? 'opacity-50 cursor-not-allowed'
                         : `hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'hover:bg-gray-800/60' : 'hover:bg-[#FFF7E1]'}`
                 } ${navSurface}`}
             >
@@ -479,49 +485,39 @@ const ArticleDetail = ({
                     <span className={`inline-flex items-center gap-2 px-2 py-1 text-[10px] font-black uppercase tracking-[0.3em] border-2 border-black ${badgeClass}`}>
                         {label}
                     </span>
-                    <div className={`w-10 h-10 border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
-                        {isPrev ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-                    </div>
                 </div>
                 <div className="mt-4 min-h-[56px]">
                     <h4 className="text-lg font-black leading-snug line-clamp-2">
                         {disabled ? '暂无可跳转文章' : meta.title}
                     </h4>
                 </div>
-                <div className={`mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
-                    {(meta?.parentCategory || meta?.category) && !disabled && (
+                <div className={`mt-4 min-h-[20px] flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
+                    {!disabled && (meta?.parentCategory || meta?.category) && (
                         <span className="inline-flex items-center gap-1">
                             <Tag size={12} />
                             {meta.parentCategory ? `${meta.parentCategory} / ${meta.category}` : meta.category}
                         </span>
                     )}
-                    {meta?.date && !disabled && (
+                    {!disabled && meta?.date && (
                         <span className="inline-flex items-center gap-1">
                             <Clock size={12} />
                             {meta.date}
                         </span>
                     )}
-                    {meta?.views !== null && meta?.views !== undefined && !disabled && (
+                    {!disabled && meta?.views !== null && meta?.views !== undefined && (
                         <span className="inline-flex items-center gap-1">
                             <Eye size={12} />
                             {meta.views} 阅读
                         </span>
                     )}
+                    {disabled && (
+                        <span className="inline-flex items-center gap-1">
+                            <FileText size={12} />
+                            {isPrev ? '已到最早' : '已是最新'}
+                        </span>
+                    )}
                 </div>
-                <div className="mt-auto pt-5">
-                    <button
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => handleOpenSibling(meta)}
-                        title={disabled ? `暂无${label}` : `跳转${label}：${meta.title}`}
-                        className={`w-full px-3 py-2 border-2 border-black font-black text-sm shadow-[3px_3px_0px_0px_#000] transition-all ${
-                            disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : `${buttonTone} hover:-translate-y-0.5`
-                        }`}
-                    >
-                        {disabled ? '暂无可跳转' : `查看${label}`}
-                    </button>
-                </div>
-            </div>
+            </button>
         );
     };
 
