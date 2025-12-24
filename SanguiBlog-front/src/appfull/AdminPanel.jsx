@@ -43,6 +43,7 @@ import {
     adminFetchComments,
     adminUpdateComment,
     adminDeleteComment,
+    createComment,
     updateBroadcast,
     uploadAvatar,
     uploadPostAssets,
