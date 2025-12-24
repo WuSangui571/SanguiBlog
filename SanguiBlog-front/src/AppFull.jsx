@@ -61,6 +61,7 @@ import {
     resetAutoPageViewGuard
 } from "./appfull/shared.js";
 import { AnimatePresence, motion } from 'framer-motion';
+const BROADCAST_SESSION_KEY = 'sangui-broadcast-dismissed';
 export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, initialGameId = null, onViewChange }) {
     const {
         meta,
@@ -129,6 +130,22 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         content: "系统将于今晚 00:00 停机维护",
         style: "ALERT"
     });
+    const getBroadcastDismissed = useCallback(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return window.sessionStorage.getItem(BROADCAST_SESSION_KEY) === 'true';
+        } catch {
+            return false;
+        }
+    }, []);
+    const markBroadcastDismissed = useCallback(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            window.sessionStorage.setItem(BROADCAST_SESSION_KEY, 'true');
+        } catch {
+            // ignore
+        }
+    }, []);
     const [emergencyHeight, setEmergencyHeight] = useState(0);
     const [error, setError] = useState(null);
     const [archivePosts, setArchivePosts] = useState([]);
@@ -612,14 +629,15 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     useEffect(() => {
         if (meta?.stats) Object.assign(SITE_STATS, meta.stats);
         if (meta?.broadcast) {
+            const dismissed = getBroadcastDismissed();
             setNotification((prev) => ({
                 ...prev,
-                isOpen: Boolean(meta.broadcast.active),
+                isOpen: Boolean(meta.broadcast.active) && !dismissed,
                 content: meta.broadcast.content || prev.content,
                 style: (meta.broadcast.style || prev.style || "ALERT").toUpperCase()
             }));
         }
-    }, [meta]);
+    }, [meta, getBroadcastDismissed]);
 
     useEffect(() => {
         if (categories && categories.length) {
@@ -1214,7 +1232,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 isOpen={notification.isOpen}
                                 content={notification.content}
                                 style={notification.style}
-                                onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+                                onClose={() => {
+                                    markBroadcastDismissed();
+                                    setNotification(prev => ({ ...prev, isOpen: false }));
+                                }}
                                 onHeightChange={setEmergencyHeight}
                             />
                             <Navigation

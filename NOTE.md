@@ -563,6 +563,7 @@ ole_permissions in bulk.
 
 *   SUPER_ADMIN 可在 `/admin/settings` 顶部卡片配置广播：填写文案、选择紧急/庆典风格并开启/关闭，保存即调用 `POST /api/site/broadcast` 并即时同步前台通知条。
 *   接口权限：`POST /api/site/broadcast` 现要求 SUPER_ADMIN（需携带 JWT），服务端会记录 `created_by`，未授权请求返回 403。
+*   用户点击广播关闭按钮后，前端会将关闭状态写入 `sessionStorage`（`sangui-broadcast-dismissed`），在当前浏览器会话内不再展示；关闭标签页/浏览器后会恢复显示。
 
 *   `/api/site/meta.broadcast` 用于刷新前端初始广播，请确认数据库表 `system_broadcasts` 已持久化最新记录。
 
