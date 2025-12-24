@@ -439,7 +439,7 @@ const ArticleDetail = ({
     }, [setArticleId, setView]);
 
     const getAvatarUrl = (avatarPath) => {
-        if (!avatarPath) return MOCK_USER.avatar;
+        if (!avatarPath) return DEFAULT_AVATAR;
         if (/^(https?:)?\/\//i.test(avatarPath)) return avatarPath;
 
         // Ensure it starts with /
