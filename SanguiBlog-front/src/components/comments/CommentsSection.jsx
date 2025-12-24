@@ -205,7 +205,9 @@ const CommentsSection = ({
                                         setReplyTarget(null);
                                         setReplyContent("");
                                     }}
-                                    className="px-3 py-1 border-2 border-black font-bold shadow-[2px_2px_0px_0px_#000] bg-gray-200"
+                                    className={`px-3 py-1 border-2 border-black font-bold shadow-[2px_2px_0px_0px_#000] transition-colors ${
+                                        isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-gray-200 text-black hover:bg-gray-300'
+                                    }`}
                                 >
                                     取消
                                 </button>
