@@ -358,7 +358,7 @@ const ArticleDetail = ({
         if (typeof document === 'undefined') return;
         const container = articleContentRef.current;
         if (!container) return;
-        const headings = Array.from(container.querySelectorAll('h2, h3'));
+        const headings = Array.from(container.querySelectorAll('h1, h2, h3'));
         const slugCounter = {};
         const items = headings.map((node) => {
             const text = (node.textContent || '').trim();
@@ -369,10 +369,12 @@ const ArticleDetail = ({
                 slugCounter[base] = count + 1;
                 node.id = count === 0 ? base : `${base}-${count + 1}`;
             }
+            const tag = node.tagName;
+            const level = tag === 'H1' ? 1 : (tag === 'H3' ? 3 : 2);
             return {
                 id: node.id,
                 text,
-                level: node.tagName === 'H3' ? 3 : 2
+                level
             };
         }).filter(Boolean);
         setTocItems(items);
@@ -680,7 +682,7 @@ const ArticleDetail = ({
                                         type="button"
                                         onClick={() => handleTocJump(item.id)}
                                         className={`w-full text-left py-1 font-bold transition-colors border-l-2 ${
-                                            item.level === 3 ? 'text-xs pl-5 ml-2' : 'text-sm pl-3'
+                                            item.level === 1 ? 'text-sm pl-2' : (item.level === 3 ? 'text-xs pl-5 ml-2' : 'text-sm pl-3')
                                         } ${isDarkMode ? 'border-gray-600 text-gray-200 hover:text-white' : 'border-black/30 text-gray-700 hover:text-black'}`}
                                     >
                                         {item.text}
@@ -745,7 +747,7 @@ const ArticleDetail = ({
                                         type="button"
                                         onClick={() => handleTocJump(item.id)}
                                         className={`w-full text-left py-1 font-bold transition-colors border-l-2 ${
-                                            item.level === 3 ? 'text-xs pl-5 ml-2' : 'text-sm pl-3'
+                                            item.level === 1 ? 'text-sm pl-2' : (item.level === 3 ? 'text-xs pl-5 ml-2' : 'text-sm pl-3')
                                         } ${isDarkMode ? 'border-gray-600 text-gray-200 hover:text-white' : 'border-black/30 text-gray-700 hover:text-black'}`}
                                     >
                                         {item.text}
