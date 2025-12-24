@@ -1,5 +1,7 @@
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+﻿import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import HomePage from "./pages/Home";
+import ArchivePage from "./pages/Archive";
+import AboutPage from "./pages/About";
 import ArticlePage from "./pages/Article";
 import LoginPage from "./pages/Login";
 import AdminPage from "./pages/Admin";
@@ -21,6 +23,8 @@ export default function App() {
     <BlogProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/archive" element={<ArchivePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/article/:id" element={<ArticlePage />} />
         <Route path="/tools" element={<GamesPage />} />
         <Route path="/tools/:id" element={<GameDetailPage />} />

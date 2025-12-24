@@ -128,13 +128,21 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 
 
-*   **路由 (`AppFull.jsx`)**:
+*   **路由 (`App.jsx` + 页面壳)**:
 
     *   `/`: 首页 (Hero + 文章列表)
 
-    *   `/posts/:id`: 文章详情页
+    *   `/archive`: 归档视图
+
+    *   `/about`: 关于页
+
+    *   `/article/:id`: 文章详情页
+
+    *   `/tools` / `/tools/:id`: 工具中心列表 / 工具详情页（`/games` 兼容跳转）
 
     *   `/admin/*`: 后台管理面板 (Dashboard, 编辑器等)
+
+*   **视图-路由联动**：前台导航通过 `setView()` 触发 `onViewChange`，统一由 `src/pages/viewNavigation.js` 维护视图到 URL 的映射，保证“归档/关于/工具/文章详情”等视图切换时 URL 同步更新，便于 SEO 与日志追踪。
 
 *   **全局错误过滤 (`src/main.jsx`)**:
 

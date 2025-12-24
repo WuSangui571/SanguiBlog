@@ -2,11 +2,11 @@
 import SanGuiBlog from "../AppFull.jsx";
 import { buildViewNavigator } from "./viewNavigation.js";
 
-export default function AdminPage() {
+export default function AboutPage() {
   const navigate = useNavigate();
   return (
     <SanGuiBlog
-      initialView="admin"
+      initialView="about"
       onViewChange={buildViewNavigator(navigate)}
     />
   );

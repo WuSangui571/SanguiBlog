@@ -1,5 +1,6 @@
-import { useNavigate, useParams } from "react-router-dom";
+﻿import { useNavigate, useParams } from "react-router-dom";
 import SanGuiBlog from "../AppFull.jsx";
+import { buildViewNavigator } from "./viewNavigation.js";
 
 export default function ArticlePage() {
   const { id } = useParams();
@@ -9,14 +10,7 @@ export default function ArticlePage() {
     <SanGuiBlog
       initialView="article"
       initialArticleId={aid}
-      onViewChange={(view, articleId) => {
-        if (view === "home") navigate("/", { replace: true });
-        if (view === "admin") navigate("/admin", { replace: true });
-        if (view === "login") navigate("/login", { replace: true });
-        if (view === "article" && articleId && articleId !== aid) navigate(`/article/${articleId}`, { replace: true });
-        if (view === "games") navigate("/tools", { replace: true });
-        if (view === "game" && articleId) navigate(`/tools/${articleId}`, { replace: true });
-      }}
+      onViewChange={buildViewNavigator(navigate, { currentArticleId: aid })}
     />
   );
 }
