@@ -1060,6 +1060,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     <ArticleDetail
                         id={articleId}
                         setView={setView}
+                        setArticleId={setArticleId}
                         isDarkMode={isDarkMode}
                         articleData={article}
                         commentsData={comments}

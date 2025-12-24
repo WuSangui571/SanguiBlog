@@ -62,7 +62,7 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
 
 site:
-  version: "V2.1.194"
+  version: "V2.1.195"
   asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
 #  asset-base-url: http://sangui.top/uploads
   hero:

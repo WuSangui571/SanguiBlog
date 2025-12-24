@@ -20,6 +20,7 @@ import {
 import {
     BookOpen,
     CheckCircle,
+    ChevronLeft,
     ChevronRight,
     Clock,
     Code,
@@ -34,9 +35,11 @@ import {
     Share2,
     Tag,
     X
-} from 'lucide-react';const ArticleDetail = ({
+} from 'lucide-react';
+const ArticleDetail = ({
     id,
     setView,
+    setArticleId,
     isDarkMode,
     articleData,
     commentsData,
@@ -47,7 +50,7 @@ import {
     onCategoryClick,
     onBackToPrevious
 }) => {
-    const { meta: siteMeta } = useBlog();
+    const { meta: siteMeta, posts: allPosts } = useBlog();
     const summary = articleData?.summary;
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role?.code === 'SUPER_ADMIN';
 
@@ -77,6 +80,47 @@ import {
             return tag.name || tag.label || tag.slug || null;
         })
         .filter(Boolean);
+    const formatPostDate = useCallback((input) => {
+        if (!input) return '';
+        if (input instanceof Date) return input.toLocaleDateString();
+        const text = String(input).trim();
+        if (!text) return '';
+        const parsed = new Date(text);
+        if (!Number.isNaN(parsed.getTime())) {
+            return parsed.toLocaleDateString();
+        }
+        return text;
+    }, []);
+    const publishedPosts = useMemo(() => {
+        if (!Array.isArray(allPosts)) return [];
+        return allPosts.filter((item) => {
+            if (!item || !item.id) return false;
+            const status = String(item.status || item.state || '').toUpperCase();
+            if (!status) return true;
+            return ['PUBLISHED', 'PUBLIC', 'ACTIVE'].includes(status);
+        });
+    }, [allPosts]);
+    const currentIndex = useMemo(() => {
+        if (!post?.id) return -1;
+        return publishedPosts.findIndex((item) => String(item.id) === String(post.id));
+    }, [publishedPosts, post?.id]);
+    const prevPost = currentIndex >= 0 ? publishedPosts[currentIndex + 1] : null;
+    const nextPost = currentIndex > 0 ? publishedPosts[currentIndex - 1] : null;
+    const buildNavMeta = useCallback((item) => {
+        if (!item) return null;
+        const rawDate = item.date || item.publishedAt || item.published_at || item.updatedAt || item.createdAt;
+        return {
+            id: item.id,
+            title: item.title || item.name || '未命名文章',
+            excerpt: item.excerpt || item.summary || item.description || '暂无摘要',
+            date: formatPostDate(rawDate),
+            category: item.category || item.categoryName || '',
+            parentCategory: item.parentCategory || item.parentName || '',
+            views: item.views ?? item.viewsCount ?? null
+        };
+    }, [formatPostDate]);
+    const prevMeta = useMemo(() => buildNavMeta(prevPost), [prevPost, buildNavMeta]);
+    const nextMeta = useMemo(() => buildNavMeta(nextPost), [nextPost, buildNavMeta]);
 
     const contentHtml = articleData?.contentHtml;
     const contentMd = articleData?.contentMd;
@@ -109,6 +153,8 @@ import {
     const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
     const proseClass = `prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none prose-code:before:content-none prose-code:after:content-none ${isDarkMode ? 'prose-invert' : ''}`;
     const shouldRenderMarkdown = Boolean(contentMd && contentMd.trim());
+    const navSurface = isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-black';
+    const navMuted = isDarkMode ? 'text-gray-400' : 'text-gray-600';
 
     const CodeBlockWithCopy = ({ textContent, className }) => {
         const [copied, setCopied] = useState(false);
@@ -381,6 +427,16 @@ import {
             setTimeout(() => setShowShareToast(false), 3000);
         });
     };
+    const handleOpenSibling = useCallback((target) => {
+        if (!target?.id) return;
+        if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'auto' });
+        }
+        if (typeof setArticleId === 'function') {
+            setArticleId(target.id);
+        }
+        setView('article');
+    }, [setArticleId, setView]);
 
     const getAvatarUrl = (avatarPath) => {
         if (!avatarPath) return MOCK_USER.avatar;
@@ -401,6 +457,69 @@ import {
     const avatarSrc = getAvatarUrl(post.authorAvatar);
 
     const articleTopPadding = Math.max(16, fixedTopOffset - headerHeight);
+    const renderNavCard = (meta, direction) => {
+        const isPrev = direction === 'prev';
+        const label = isPrev ? '上一篇' : '下一篇';
+        const disabled = !meta?.id;
+        const badgeClass = isPrev
+            ? (isDarkMode ? 'bg-gray-700 text-gray-100' : 'bg-black text-white')
+            : (isDarkMode ? 'bg-yellow-500 text-black' : 'bg-[#FFD700] text-black');
+        const summaryText = disabled
+            ? (isPrev ? '已经到达最早的文章' : '已经是最新的文章')
+            : meta.excerpt;
+        return (
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => handleOpenSibling(meta)}
+                title={disabled ? `暂无${label}` : `跳转${label}：${meta.title}`}
+                className={`group w-full text-left border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] transition-all ${
+                    disabled
+                        ? 'opacity-50 cursor-not-allowed'
+                        : `hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-[#FFF7E1]'}`
+                } ${navSurface}`}
+            >
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <span className={`inline-flex items-center gap-2 px-2 py-1 text-[10px] font-black uppercase tracking-[0.3em] border-2 border-black ${badgeClass}`}>
+                            {label}
+                        </span>
+                        <h4 className="mt-3 text-lg font-black leading-snug">
+                            {disabled ? '暂无可跳转文章' : meta.title}
+                        </h4>
+                        <p className={`mt-2 text-sm font-medium ${navMuted}`}>
+                            {summaryText}
+                        </p>
+                    </div>
+                    <div className={`shrink-0 w-10 h-10 border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+                        {isPrev ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                    </div>
+                </div>
+                {!disabled && (
+                    <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
+                        {(meta.parentCategory || meta.category) && (
+                            <span className="inline-flex items-center gap-1">
+                                <Tag size={12} />
+                                {meta.parentCategory ? `${meta.parentCategory} / ${meta.category}` : meta.category}
+                            </span>
+                        )}
+                        {meta.date && (
+                            <span className="inline-flex items-center gap-1">
+                                <Clock size={12} />
+                                {meta.date}
+                            </span>
+                        )}
+                        {meta.views !== null && meta.views !== undefined && (
+                            <span className="inline-flex items-center gap-1">
+                                <Eye size={12} />
+                                {meta.views} 阅读
+                            </span>
+                        )}
+                    </div>
+                )}
+            </button>
+        );
+    };
 
     return (
         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
@@ -588,6 +707,21 @@ import {
                             <p className="font-semibold">暂无正文内容</p>
                         )}
                     </article>
+
+                    <div className="mt-10">
+                        <div className={`border-2 border-black rounded-3xl p-6 shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900/70' : 'bg-[#FFFDF2]'}`}>
+                            <div className="flex items-center gap-3">
+                                <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] border-2 border-black ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-black text-white'}`}>
+                                    继续阅读
+                                </span>
+                                <span className={`text-xs font-semibold ${navMuted}`}>前后篇快速跳转</span>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2 mt-4">
+                                {renderNavCard(prevMeta, 'prev')}
+                                {renderNavCard(nextMeta, 'next')}
+                            </div>
+                        </div>
+                    </div>
 
                     <div id="comments-section" className="scroll-mt-32">
                         <CommentsSection
