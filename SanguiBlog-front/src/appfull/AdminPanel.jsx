@@ -5399,7 +5399,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                             <div>
                                                 <div className="font-bold">{config.label}</div>
                                                 <div className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                    {style === 'ALERT' ? '紧急告警 · 红色闪烁' : '庆典公告 · 暖色渐变'}
+                                                    {style === 'ALERT' ? '紧急告警 · 红色闪烁' : '庆典公告 · 彩带烟花'}
                                                 </div>
                                             </div>
                                         </div>
@@ -5420,25 +5420,43 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 const previewStyle = (broadcastDraft.style || 'ALERT').toUpperCase();
                                 const previewConfig = BROADCAST_STYLE_CONFIG[previewStyle] || BROADCAST_STYLE_CONFIG.ALERT;
                                 const isCelebration = previewStyle === 'ANNOUNCE';
+                                const StyleIcon = previewConfig.icon;
                                 return (
                                     <div className={`${previewConfig.containerClass} rounded-lg border border-black/20 overflow-hidden`}>
                                         {isCelebration ? (
                                             <div className="relative px-3 py-2">
+                                                <div className="pointer-events-none absolute inset-0">
+                                                    <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-[#FF7A59] via-[#FDE68A] to-[#F97316] opacity-80"></div>
+                                                    <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-[#F59E0B] via-[#FBBF24] to-[#FB7185] opacity-70"></div>
+                                                    <div className="absolute left-1/4 top-1/2 w-14 h-14 -translate-y-1/2 rounded-full bg-white/40 blur-xl"></div>
+                                                    <div className="absolute right-1/3 top-1/3 w-12 h-12 rounded-full bg-[#FFD89B]/60 blur-xl"></div>
+                                                </div>
                                                 <div className="pointer-events-none absolute inset-y-0 left-2 right-8 hidden sm:flex items-center justify-between">
-                                                    <div className="relative w-7 h-7">
-                                                        <span className="absolute inset-0 rounded-full border-2 border-[#C2410C]/35"></span>
-                                                        <span className="absolute left-1/2 top-1/2 w-6 h-0.5 bg-[#C2410C]/55 -translate-x-1/2 -translate-y-1/2 rotate-45"></span>
-                                                        <span className="absolute left-1/2 top-1/2 w-6 h-0.5 bg-[#C2410C]/55 -translate-x-1/2 -translate-y-1/2 -rotate-45"></span>
-                                                        <span className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-[#FF7A59] shadow-[0_0_8px_rgba(255,122,89,0.75)] -translate-x-1/2 -translate-y-1/2"></span>
+                                                    <div className="relative w-8 h-8">
+                                                        <span className="absolute inset-0 rounded-full border-2 border-[#C2410C]/30"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-7 h-0.5 bg-[#C2410C]/55 -translate-x-1/2 -translate-y-1/2 rotate-45"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-7 h-0.5 bg-[#C2410C]/55 -translate-x-1/2 -translate-y-1/2 -rotate-45"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full bg-[#FF7A59] shadow-[0_0_8px_rgba(255,122,89,0.75)] -translate-x-1/2 -translate-y-1/2"></span>
+                                                        <span className="absolute left-[18%] top-[22%] w-1 h-1 rounded-full bg-[#FDBA74]"></span>
+                                                        <span className="absolute left-[70%] top-[68%] w-1 h-1 rounded-full bg-[#FDE047]"></span>
                                                     </div>
-                                                    <div className="relative w-7 h-7">
-                                                        <span className="absolute inset-0 rounded-full border-2 border-[#B45309]/35"></span>
-                                                        <span className="absolute left-1/2 top-1/2 w-6 h-0.5 bg-[#B45309]/55 -translate-x-1/2 -translate-y-1/2 rotate-90"></span>
-                                                        <span className="absolute left-1/2 top-1/2 w-6 h-0.5 bg-[#B45309]/55 -translate-x-1/2 -translate-y-1/2"></span>
-                                                        <span className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.75)] -translate-x-1/2 -translate-y-1/2"></span>
+                                                    <div className="relative w-8 h-8">
+                                                        <span className="absolute inset-0 rounded-full border-2 border-[#B45309]/30"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-7 h-0.5 bg-[#B45309]/55 -translate-x-1/2 -translate-y-1/2 rotate-90"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-7 h-0.5 bg-[#B45309]/55 -translate-x-1/2 -translate-y-1/2"></span>
+                                                        <span className="absolute left-1/2 top-1/2 w-2.5 h-2.5 rounded-full bg-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.75)] -translate-x-1/2 -translate-y-1/2"></span>
+                                                        <span className="absolute left-[20%] top-[70%] w-1 h-1 rounded-full bg-[#FB7185]"></span>
+                                                        <span className="absolute left-[68%] top-[20%] w-1 h-1 rounded-full bg-[#FDBA74]"></span>
                                                     </div>
                                                 </div>
-                                                <span className={`block text-xs font-bold tracking-wide text-center px-6 ${previewConfig.textClass}`}>
+                                                <div className="pointer-events-none absolute inset-0 hidden sm:block">
+                                                    <span className="absolute left-[15%] top-1 w-1.5 h-1.5 rotate-45 bg-[#F97316]"></span>
+                                                    <span className="absolute left-[30%] bottom-1 w-1.5 h-1.5 rounded-full bg-[#FACC15]"></span>
+                                                    <span className="absolute right-[28%] top-1 w-1.5 h-1.5 rounded-full bg-[#FB7185]"></span>
+                                                    <span className="absolute right-[18%] bottom-1 w-1.5 h-1.5 rotate-45 bg-[#F59E0B]"></span>
+                                                </div>
+                                                <span className={`relative z-10 flex items-center justify-center gap-1 text-xs font-bold tracking-wide text-center px-6 ${previewConfig.textClass}`}>
+                                                    {StyleIcon && <StyleIcon size={12} className={previewConfig.iconClass} />}
                                                     {broadcastDraft.content.trim() || '尚未填写广播文案'}
                                                 </span>
                                             </div>
