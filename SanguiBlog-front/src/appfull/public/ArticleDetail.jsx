@@ -143,6 +143,7 @@ const ArticleDetail = ({
     const [previewImage, setPreviewImage] = useState(null);
     const [tocItems, setTocItems] = useState([]);
     const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
+    const [tocCollapsed, setTocCollapsed] = useState(false);
     const handleImagePreview = useCallback((src) => {
         if (!src) return;
         setPreviewImage(src);
@@ -640,22 +641,30 @@ const ArticleDetail = ({
                     <div className={`w-64 border-2 border-black rounded-2xl p-4 shadow-[6px_6px_0px_0px_#000] ${navSurface}`}>
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-black uppercase tracking-[0.3em]">目录</span>
-                            <List size={16} />
+                            <button
+                                type="button"
+                                onClick={() => setTocCollapsed((prev) => !prev)}
+                                className={`px-2 py-1 border-2 border-black text-xs font-black ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                            >
+                                {tocCollapsed ? '展开' : '收起'}
+                            </button>
                         </div>
-                        <div className="mt-3 space-y-2 max-h-[60vh] overflow-auto pr-1">
-                            {tocItems.map((item) => (
-                                <button
-                                    key={`toc-${item.id}`}
-                                    type="button"
-                                    onClick={() => handleTocJump(item.id)}
-                                    className={`w-full text-left px-3 py-2 border-2 border-black rounded-xl font-bold transition-colors ${
-                                        item.level === 3 ? 'text-xs ml-2' : 'text-sm'
-                                    } ${isDarkMode ? 'bg-gray-800 text-gray-100 hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
-                                >
-                                    {item.text}
-                                </button>
-                            ))}
-                        </div>
+                        {!tocCollapsed && (
+                            <div className="mt-3 space-y-2 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2">
+                                {tocItems.map((item) => (
+                                    <button
+                                        key={`toc-${item.id}`}
+                                        type="button"
+                                        onClick={() => handleTocJump(item.id)}
+                                        className={`w-full text-left py-1 font-bold transition-colors border-l-2 ${
+                                            item.level === 3 ? 'text-xs pl-5 ml-2' : 'text-sm pl-3'
+                                        } ${isDarkMode ? 'border-gray-600 text-gray-200 hover:text-white' : 'border-black/30 text-gray-700 hover:text-black'}`}
+                                    >
+                                        {item.text}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -706,15 +715,15 @@ const ArticleDetail = ({
                                     <X size={14} />
                                 </button>
                             </div>
-                            <div className="p-4 space-y-3 overflow-y-auto">
+                            <div className="p-4 space-y-3 overflow-y-auto overflow-x-hidden">
                                 {tocItems.map((item) => (
                                     <button
                                         key={`toc-drawer-${item.id}`}
                                         type="button"
                                         onClick={() => handleTocJump(item.id)}
-                                        className={`w-full text-left px-3 py-2 border-2 border-black rounded-xl font-bold transition-colors ${
-                                            item.level === 3 ? 'text-xs ml-2' : 'text-sm'
-                                        } ${isDarkMode ? 'bg-gray-800 text-gray-100 hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                        className={`w-full text-left py-1 font-bold transition-colors border-l-2 ${
+                                            item.level === 3 ? 'text-xs pl-5 ml-2' : 'text-sm pl-3'
+                                        } ${isDarkMode ? 'border-gray-600 text-gray-200 hover:text-white' : 'border-black/30 text-gray-700 hover:text-black'}`}
                                     >
                                         {item.text}
                                     </button>
