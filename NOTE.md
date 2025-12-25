@@ -296,7 +296,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   系统设置（/admin/settings，SUPER_ADMIN，需 `SYSTEM_CLEAN_STORAGE`）：包含“游戏页面管理 / 未引用图片清理 / 空目录清理”三个维护模块。未引用图片清理通过 `/api/admin/maintenance/unused-assets` 扫描 uploads/posts 与 uploads/covers 中未被文章正文、文章封面字段或关于页 Markdown 引用的图片，支持多选+弹窗二次确认删除（`/unused-assets/delete`）；空目录清理通过 `/api/admin/maintenance/empty-folders` 扫描 uploads/posts 下空文件夹并批量删除（`/empty-folders/delete`）。
 *   发布/编辑页批量图片上传（V1.3.120 起发布页，V1.3.121 编辑页同步）：上传多图后按文件名匹配 Markdown 中的本地占位路径（如 `![alt](D:\xxx\abc.jpg)`），自动替换为上传后的 `/uploads/...` 路径，未匹配的图片追加到正文；提示“已上传 X 张，匹配替换 Y 张”，若匹配数小于检测到的图片数则提示手动补充。
 *   首页文章分页：前端一次加载最多 500 篇文章；分页容量可在顶部“系统设置”里选择 5/10/20 条并存本地，切换后重置到第 1 页；页码超过 7 位时自动插入省略号，保持列表不拥挤。
-*   鉴权：前端请求前会检测 JWT `exp`，若已过期则清空本地 token 并抛出 401，提示重新登录，避免 silent 403。
+*   鉴权：前端请求前会检测 JWT `exp`，若已过期则清空本地 token 并抛出 401，提示重新登录，避免 silent 403；恢复登录态时若返回 401/403 也会清理本地 token，避免卡死在无权限状态。
 *   安全链放行：`/api/posts/**`、`/api/comments/**` 仅放行 `GET`，写操作统一走认证与权限校验，避免写接口被误放开。
 *   会话超时弹窗：前端收到 401、权限接口 403 或检测到 token 过期时，会触发全局“会话已失效”弹窗，提示长时间未操作已自动退出；确认后跳转登录页，同时清理本地登录态，避免后台页面继续显示 403。
 

@@ -68,7 +68,7 @@ function useProvideBlog() {
       if (data) setUser(data);
     } catch (e) {
       console.warn("restore auth failed", e);
-      if (e?.status === 401) {
+      if (e?.status === 401 || e?.status === 403) {
         localStorage.removeItem("sg_token");
         setUser(null);
       }
