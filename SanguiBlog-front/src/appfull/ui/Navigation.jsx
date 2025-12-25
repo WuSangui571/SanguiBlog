@@ -761,7 +761,6 @@ const Navigation = ({
                                             <option key={opt} value={opt}>{opt} 条/页</option>
                                         ))}
                                     </select>
-                                    <span className={`text-[11px] font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>选择后立即生效</span>
                                 </div>
                             </div>
 
