@@ -27,6 +27,7 @@ import BackgroundEasterEggs from "./appfull/ui/BackgroundEasterEggs.jsx";
 import Navigation, { NAVIGATION_HEIGHT } from "./appfull/ui/Navigation.jsx";
 import EmergencyBar from "./appfull/ui/EmergencyBar.jsx";
 import ErrorToast from "./appfull/ui/ErrorToast.jsx";
+import SessionExpiredModal from "./appfull/ui/SessionExpiredModal.jsx";
 import ClickRipple from "./appfull/ui/ClickRipple.jsx";
 import ScrollToTop from "./appfull/ui/ScrollToTop.jsx";
 import { buildAssetUrl } from "./utils/asset.js";
@@ -150,6 +151,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, []);
     const [emergencyHeight, setEmergencyHeight] = useState(0);
     const [error, setError] = useState(null);
+    const sessionExpiredRef = useRef(false);
+    const [sessionExpired, setSessionExpired] = useState({ open: false, reason: '' });
     const [archiveSummary, setArchiveSummary] = useState(null);
     const [archiveMonthMap, setArchiveMonthMap] = useState({});
     const [archiveLoading, setArchiveLoading] = useState(false);
@@ -426,7 +429,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.216';
+    const siteVersion = meta?.version || 'V2.1.217';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -512,6 +515,36 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         if (blogUser) setUser(blogUser);
     }, [blogUser]);
 
+    const triggerSessionExpired = useCallback((detail = {}) => {
+        if (sessionExpiredRef.current) return;
+        const hasToken = typeof window !== 'undefined' && localStorage.getItem('sg_token');
+        const hasSession = Boolean(user || blogUser || hasToken);
+        if (!hasSession) return;
+        sessionExpiredRef.current = true;
+        logout && logout();
+        setUser(null);
+        setSessionExpired({
+            open: true,
+            reason: detail?.message || detail?.reason || ''
+        });
+    }, [logout, user, blogUser]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const handler = (event) => triggerSessionExpired(event?.detail || {});
+        window.addEventListener('sg-auth-expired', handler);
+        return () => window.removeEventListener('sg-auth-expired', handler);
+    }, [triggerSessionExpired]);
+
+    useEffect(() => {
+        if (user) {
+            sessionExpiredRef.current = false;
+            if (sessionExpired.open) {
+                setSessionExpired({ open: false, reason: '' });
+            }
+        }
+    }, [user, sessionExpired.open]);
+
     const sendPageView = useCallback((payload = {}) => {
         const ip = clientIpRef.current;
         const refMeta = getReferrerMeta();
@@ -538,11 +571,14 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             .catch((err) => {
                 if (!active) return;
                 setPermissionState({ permissions: [], loading: false, error: err.message || '获取权限失败' });
+                if (err?.status === 401 || err?.status === 403) {
+                    triggerSessionExpired({ reason: 'permissions', message: err.message });
+                }
             });
         return () => {
             active = false;
         };
-    }, [user]);
+    }, [user, triggerSessionExpired]);
 
     const loadUnreadNotifications = useCallback(async () => {
         if (!user) return;
@@ -824,6 +860,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         setUser(null);
         setView('home');
     };
+
+    const handleSessionExpiredConfirm = useCallback(() => {
+        setSessionExpired((prev) => ({ ...prev, open: false }));
+        setView('login');
+    }, [setView]);
 
     const handleProfileNav = () => {
         setView('admin');
@@ -1346,6 +1387,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         aria-hidden="true"
                     />
                     <ErrorToast error={error} onClose={() => setError(null)} />
+                    <SessionExpiredModal
+                        open={sessionExpired.open}
+                        onConfirm={handleSessionExpiredConfirm}
+                        isDarkMode={isDarkMode}
+                    />
 
                     <AnimatePresence mode="wait">
                         <motion.main key={view} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

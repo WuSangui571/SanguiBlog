@@ -46,6 +46,11 @@ const isTokenExpired = (token) => {
   return Date.now() >= expMs;
 };
 
+const notifyAuthExpired = (detail = {}) => {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("sg-auth-expired", { detail }));
+};
+
 const buildHeaders = () => {
   const token = localStorage.getItem("sg_token");
   const headers = { "Content-Type": "application/json" };
@@ -57,6 +62,7 @@ const request = async (path, options = {}) => {
   const token = localStorage.getItem("sg_token");
   if (isTokenExpired(token)) {
     localStorage.removeItem("sg_token");
+    notifyAuthExpired({ reason: "token_expired", status: 401, message: "登录已过期" });
     const expiredError = new Error("登录已过期，请重新登录");
     expiredError.status = 401;
     throw expiredError;
@@ -82,6 +88,11 @@ const request = async (path, options = {}) => {
     const error = new Error(message || res.statusText);
     error.status = res.status;
     if (payload) error.payload = payload;
+    if (res.status === 401) {
+      notifyAuthExpired({ reason: "unauthorized", status: 401, message });
+    } else if (res.status === 403 && !localStorage.getItem("sg_token")) {
+      notifyAuthExpired({ reason: "forbidden_no_token", status: 403, message });
+    }
     throw error;
   }
   return res.json();
