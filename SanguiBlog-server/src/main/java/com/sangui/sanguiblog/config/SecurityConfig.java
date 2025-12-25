@@ -58,8 +58,6 @@ public class SecurityConfig {
                                 "/api/site/meta",
                                 "/api/categories/**",
                                 "/api/tags/**",
-                                "/api/comments/**",
-                                "/api/posts/**",
                                 "/api/about/**",
                                 "/api/analytics/page-view",
                                 "/api/analytics/client-ip",
@@ -75,6 +73,7 @@ public class SecurityConfig {
                                 "/uploads/**",
                                 "/error")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/comments/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/site/broadcast").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/upload/**").authenticated()
                         .requestMatchers("/api/admin/**").authenticated()
