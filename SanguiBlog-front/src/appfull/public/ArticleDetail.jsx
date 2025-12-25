@@ -145,6 +145,7 @@ const ArticleDetail = ({
     const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
     const [tocCollapsed, setTocCollapsed] = useState(false);
     const [tocLeft, setTocLeft] = useState(null);
+    const [entryReady, setEntryReady] = useState(false);
     const commentJumpRef = useRef(null);
     const handleImagePreview = useCallback((src) => {
         if (!src) return;
@@ -478,7 +479,7 @@ const ArticleDetail = ({
         setTocDrawerOpen(false);
     }, [id]);
     useEffect(() => {
-        if (typeof window === 'undefined') return;
+        if (!entryReady || typeof window === 'undefined') return;
         const tocWidth = 256;
         const margin = 16;
         const updatePosition = () => {
@@ -493,7 +494,7 @@ const ArticleDetail = ({
         updatePosition();
         window.addEventListener('resize', updatePosition);
         return () => window.removeEventListener('resize', updatePosition);
-    }, [fixedTopOffset, tocItems.length]);
+    }, [entryReady, fixedTopOffset, tocItems.length]);
 
     const handleShare = () => {
         const url = window.location.href;
@@ -636,6 +637,7 @@ const ArticleDetail = ({
     return (
         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            onAnimationComplete={() => setEntryReady(true)}
             className={`min-h-screen px-4 md:px-0 pb-20 ${pageBackground} ${text}`}
             style={{ paddingTop: articleTopPadding }}>
             {/* Share Toast Notification */}
