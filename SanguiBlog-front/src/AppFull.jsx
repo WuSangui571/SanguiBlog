@@ -378,7 +378,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.209';
+    const siteVersion = meta?.version || 'V2.1.210';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -849,16 +849,19 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     const renderGamesView = () => {
         const formatDate = (value) => (value ? new Date(value).toLocaleString() : '--');
-        const surface = isDarkMode ? 'bg-gray-900/75 border border-gray-700 shadow-[8px_12px_0px_rgba(0,0,0,0.45)]' : 'bg-white/85 backdrop-blur border border-black/70 shadow-[8px_12px_0px_rgba(0,0,0,0.2)]';
+        const surface = isDarkMode
+            ? 'bg-gray-900 text-gray-100 border-2 border-black shadow-[8px_8px_0px_0px_#000]'
+            : 'bg-white text-gray-900 border-2 border-black shadow-[8px_8px_0px_0px_#000]';
+        const cardSurface = isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900';
         return (
             <div className="relative pt-28 pb-20 px-4">
                 <div className={`max-w-5xl mx-auto space-y-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    <div className={`${surface} rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4`}>
+                    <div className={`${surface} rounded-none p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4`}>
                         <div className="space-y-2">
                             <p className="text-xs uppercase tracking-[0.2em] text-[#FFD700] font-semibold">Indie Lab</p>
                             <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
                                 <span>工具中心</span>
-                                <span className="text-[11px] px-2 py-1 rounded-full bg-[#FFD700] text-black font-bold shadow-sm">测试</span>
+                                <span className="text-[11px] px-2 py-1 rounded-none bg-[#FFD700] text-black font-bold shadow-[2px_2px_0px_0px_#000] border-2 border-black">测试</span>
                             </h1>
                             <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>点击『进入」卡片在新标签打开。</p>
                         </div>
@@ -873,23 +876,23 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     </div>
 
                     {gameListError && (
-                        <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-2xl">
+                        <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-none">
                             {gameListError}
                         </div>
                     )}
 
-                    <div className={`${surface} rounded-3xl p-6 md:p-8`}>
+                    <div className={`${surface} rounded-none p-6 md:p-8`}>
                         <div className="grid gap-5 md:grid-cols-2">
                             {gameListLoading && Array.from({ length: 4 }).map((_, idx) => (
-                                <div key={`skeleton-${idx}`} className="border-2 border-dashed border-gray-400/70 rounded-2xl p-4 animate-pulse">
-                                    <div className="h-4 bg-gray-300/70 rounded w-1/2 mb-3"></div>
-                                    <div className="h-3 bg-gray-200/70 rounded w-2/3 mb-2"></div>
-                                    <div className="h-3 bg-gray-200/50 rounded w-1/3"></div>
+                                <div key={`skeleton-${idx}`} className={`${cardSurface} border-2 border-dashed border-black/60 rounded-none p-4 animate-pulse shadow-[4px_4px_0px_0px_#000]`}>
+                                    <div className="h-4 bg-gray-300/70 rounded-none w-1/2 mb-3"></div>
+                                    <div className="h-3 bg-gray-200/70 rounded-none w-2/3 mb-2"></div>
+                                    <div className="h-3 bg-gray-200/50 rounded-none w-1/3"></div>
                                 </div>
                             ))}
 
                             {!gameListLoading && gameList.length === 0 && (
-                                <div className="md:col-span-2 text-center py-12 border-2 border-dashed rounded-2xl text-sm font-semibold">
+                                <div className="md:col-span-2 text-center py-12 border-2 border-dashed border-black rounded-none text-sm font-semibold shadow-[4px_4px_0px_0px_#000]">
                                     还没有发布的独立页面，敬请期待。
                                 </div>
                             )}
@@ -903,14 +906,14 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 return (
                                     <div
                                         key={game.id}
-                                        className={`${isDarkMode ? 'bg-gray-800/70 border-gray-700' : 'bg-white/85 border-black/70'} border-2 rounded-2xl p-5 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-200 shadow-[6px_8px_0px_rgba(0,0,0,0.25)]`}
+                                        className={`${cardSurface} border-2 border-black rounded-none p-5 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-200 shadow-[6px_6px_0px_0px_#000]`}
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="space-y-2">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs px-2 py-0.5 rounded-full font-bold border border-black/60 bg-white/70 text-black">#{game.id}</span>
+                                                    <span className="text-xs px-2 py-0.5 rounded-none font-bold border-2 border-black bg-white text-black shadow-[2px_2px_0px_0px_#000]">#{game.id}</span>
                                                     {game.status && (
-                                                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold border border-black/50 ${statusTone}`}>
+                                                        <span className={`text-[11px] px-2 py-0.5 rounded-none font-bold border-2 border-black ${statusTone} shadow-[2px_2px_0px_0px_#000]`}>
                                                             {game.status}
                                                         </span>
                                                     )}
@@ -921,7 +924,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                             </div>
                                             <button
                                                 onClick={() => handleOpenGame(game)}
-                                                className="px-3 py-1.5 border-2 border-black bg-[#FFD700] text-black font-bold rounded hover:-translate-y-0.5 transition-transform"
+                                                className="px-3 py-1.5 border-2 border-black bg-[#FFD700] text-black font-bold rounded-none hover:-translate-y-0.5 transition-transform shadow-[2px_2px_0px_0px_#000]"
                                             >
                                                 进入
                                             </button>
