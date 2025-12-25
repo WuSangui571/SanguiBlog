@@ -231,10 +231,12 @@ const ArchiveView = ({
                 )}
 
                 {loading && (
-                    <div className="mt-12 space-y-6">
-                        {[1, 2, 3].map((skeleton) => (
-                            <div key={skeleton} className={`h-32 ${cardBg} border-2 border-dashed ${borderColor} rounded-2xl animate-pulse`}></div>
-                        ))}
+                    <div className={`mt-10 ${cardBg} border-2 ${borderColor} rounded-2xl px-6 py-5 shadow-[6px_6px_0px_0px_#000]`}>
+                        <div className="flex items-center gap-3 text-sm font-bold text-gray-500">
+                            <Grid size={16} />
+                            <span>归档加载中…</span>
+                        </div>
+                        <p className={`mt-2 text-xs ${secondaryText}`}>正在获取最新文章时间线，请稍候。</p>
                     </div>
                 )}
 
