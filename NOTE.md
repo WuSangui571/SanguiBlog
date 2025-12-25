@@ -167,7 +167,9 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   **归档视图 (`ArchiveView`)**：
 
-    *   导航“归档”会懒加载 `/api/posts?page=1&size=200&status=PUBLISHED`，按年/月对文章进行分组，默认展示最近 200 篇，并在右侧提供“月份速选”面板（`sticky` + 平滑滚动）快速定位到指定月份。
+    *   归档页先请求 `/api/posts/archive/summary` 获取“年/月 + 数量 + 最近更新时间”的摘要结构（含 `totalCount/totalYears/lastUpdated`），用于构建时间线与右侧“月份速选”面板；不再一次性拉取全量文章。
+
+    *   当月份区块进入视口或手动点击“加载本月文章”时，再调用 `/api/posts/archive/month?year=YYYY&month=MM&page=1&size=200` 拉取该月文章列表；前端会缓存已加载月份，点击“刷新归档”会清空缓存并重新拉取摘要。
 
     *   文章卡片展示“父分类 / 子分类”胶囊：父分类为白底黑字描边胶囊（含 FolderPlus 图标），子分类为浅灰描边胶囊；标签整体右对齐，分类居左，保持阅读/评论排版不变。
 

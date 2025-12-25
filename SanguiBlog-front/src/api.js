@@ -172,6 +172,17 @@ export const fetchPosts = (params = {}) => {
   return request(`/posts?${search.toString()}`);
 };
 
+export const fetchArchiveSummary = () => request("/posts/archive/summary");
+
+export const fetchArchiveMonth = (year, month, params = {}) => {
+  const search = new URLSearchParams();
+  if (year) search.append("year", year);
+  if (month) search.append("month", month);
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  return request(`/posts/archive/month?${search.toString()}`);
+};
+
 export const fetchPostDetail = (id) => request(`/posts/${id}`);
 
 export const login = (username, password, captcha) =>

@@ -6,6 +6,8 @@ import {
     updateBroadcast,
     fetchGames,
     fetchGameDetail,
+    fetchArchiveSummary,
+    fetchArchiveMonth,
     fetchMyPermissions,
     fetchCategories,
     fetchPosts,
@@ -148,7 +150,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, []);
     const [emergencyHeight, setEmergencyHeight] = useState(0);
     const [error, setError] = useState(null);
-    const [archivePosts, setArchivePosts] = useState([]);
+    const [archiveSummary, setArchiveSummary] = useState(null);
+    const [archiveMonthMap, setArchiveMonthMap] = useState({});
     const [archiveLoading, setArchiveLoading] = useState(false);
     const [archiveError, setArchiveError] = useState('');
     const lastViewRef = useRef(initialView);
@@ -307,18 +310,63 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         });
     }, []);
 
-    const loadArchivePosts = useCallback(async () => {
+    const loadArchiveSummary = useCallback(async () => {
         setArchiveLoading(true);
         setArchiveError('');
         try {
-            const res = await fetchPosts({ page: 1, size: 200, status: 'PUBLISHED' });
-            const data = res.data || res;
-            setArchivePosts(data?.records || data || []);
+            const res = await fetchArchiveSummary();
+            const data = res?.data || res;
+            setArchiveSummary(data || null);
+            setArchiveMonthMap({});
         } catch (err) {
-            console.warn('load archive posts failed', err);
-            setArchiveError(err?.message || '无法加载归档文章');
+            console.warn('load archive summary failed', err);
+            setArchiveError(err?.message || '无法加载归档摘要');
         } finally {
             setArchiveLoading(false);
+        }
+    }, []);
+
+    const loadArchiveMonth = useCallback(async (year, month) => {
+        if (!year || !month) return;
+        const key = `${year}-${month}`;
+        setArchiveMonthMap((prev) => {
+            const existing = prev[key];
+            if (existing?.loading || existing?.loaded) return prev;
+            return {
+                ...prev,
+                [key]: {
+                    ...existing,
+                    loading: true,
+                    loaded: false,
+                    error: ''
+                }
+            };
+        });
+        try {
+            const res = await fetchArchiveMonth(year, month, { page: 1, size: 200 });
+            const data = res?.data || res;
+            const records = data?.records || data || [];
+            setArchiveMonthMap((prev) => ({
+                ...prev,
+                [key]: {
+                    loading: false,
+                    loaded: true,
+                    error: '',
+                    records,
+                    total: data?.total ?? records.length
+                }
+            }));
+        } catch (err) {
+            console.warn('load archive month failed', err);
+            setArchiveMonthMap((prev) => ({
+                ...prev,
+                [key]: {
+                    ...prev[key],
+                    loading: false,
+                    loaded: false,
+                    error: err?.message || '加载归档月份失败'
+                }
+            }));
         }
     }, []);
 
@@ -378,7 +426,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.213';
+    const siteVersion = meta?.version || 'V2.1.214';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -709,10 +757,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, [view, articleId, loadPosts, loadArticle, gameId, loadGameDetail, loadGameList, gameList.length, gameListLoading]);
 
     useEffect(() => {
-        if (view === 'archive' && archivePosts.length === 0 && !archiveLoading) {
-            loadArchivePosts();
+        if (view === 'archive' && !archiveSummary && !archiveLoading) {
+            loadArchiveSummary();
         }
-    }, [view, archivePosts.length, archiveLoading, loadArchivePosts]);
+    }, [view, archiveSummary, archiveLoading, loadArchiveSummary]);
 
     useEffect(() => {
         if (view === 'home') {
@@ -833,7 +881,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         setHomePageSize(size);
     }, []);
 
-    const archiveData = archivePosts && archivePosts.length ? archivePosts : posts;
     const handleArticleBack = useCallback(() => {
         const target = (articleBackTarget && articleBackTarget !== 'article') ? articleBackTarget : 'home';
         setView(target);
@@ -1045,12 +1092,14 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             case 'archive':
                 return (
                     <ArchiveView
-                        postsData={archiveData}
+                        summary={archiveSummary}
+                        monthMap={archiveMonthMap}
+                        onLoadMonth={loadArchiveMonth}
                         isDarkMode={isDarkMode}
                         loading={archiveLoading}
                         error={archiveError}
                         onBackHome={() => setView('home')}
-                        onReload={loadArchivePosts}
+                        onReload={loadArchiveSummary}
                         onOpenArticle={handleArchiveArticleOpen}
                     />
                 );

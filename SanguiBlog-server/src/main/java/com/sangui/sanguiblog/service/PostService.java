@@ -2,13 +2,16 @@ package com.sangui.sanguiblog.service;
 
 import com.sangui.sanguiblog.model.dto.AdminPostDetailDto;
 import com.sangui.sanguiblog.model.dto.AdminPostUpdateRequest;
+import com.sangui.sanguiblog.model.dto.ArchiveMonthSummaryDto;
+import com.sangui.sanguiblog.model.dto.ArchiveSummaryDto;
+import com.sangui.sanguiblog.model.dto.ArchiveYearSummaryDto;
 import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.model.dto.PostAdminDto;
 import com.sangui.sanguiblog.model.dto.PostDetailDto;
+import com.sangui.sanguiblog.model.dto.PostSiblingDto;
 import com.sangui.sanguiblog.model.dto.PostSummaryDto;
 import com.sangui.sanguiblog.model.dto.SavePostRequest;
-import com.sangui.sanguiblog.model.dto.PostSiblingDto;
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
 import com.sangui.sanguiblog.model.entity.Category;
 import com.sangui.sanguiblog.model.entity.Post;
@@ -37,7 +40,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -91,6 +96,66 @@ public class PostService {
                 .map(this::toSummary)
                 .toList();
 
+        return new PageResponse<>(list, posts.getTotalElements(), posts.getNumber() + 1, posts.getSize());
+    }
+
+    @Transactional(readOnly = true)
+    public ArchiveSummaryDto getArchiveSummary() {
+        List<PostRepository.ArchiveMonthAggregation> rows = postRepository.aggregateArchiveMonths();
+        Map<Integer, List<ArchiveMonthSummaryDto>> grouped = new LinkedHashMap<>();
+        Map<Integer, Long> yearTotals = new LinkedHashMap<>();
+        for (PostRepository.ArchiveMonthAggregation row : rows) {
+            if (row == null || row.getYear() == null || row.getMonth() == null) {
+                continue;
+            }
+            int year = row.getYear();
+            int month = row.getMonth();
+            long count = row.getCount() == null ? 0L : row.getCount();
+            String lastDate = row.getLastDate() != null ? DATE_FMT.format(row.getLastDate()) : "";
+            grouped.computeIfAbsent(year, k -> new ArrayList<>())
+                    .add(ArchiveMonthSummaryDto.builder()
+                            .year(year)
+                            .month(month)
+                            .count(count)
+                            .lastDate(lastDate)
+                            .build());
+            yearTotals.merge(year, count, Long::sum);
+        }
+
+        List<ArchiveYearSummaryDto> years = grouped.entrySet().stream()
+                .map(entry -> ArchiveYearSummaryDto.builder()
+                        .year(entry.getKey())
+                        .total(yearTotals.getOrDefault(entry.getKey(), 0L))
+                        .months(entry.getValue())
+                        .build())
+                .toList();
+
+        long totalCount = postRepository.countByStatus("PUBLISHED");
+        LocalDateTime latest = postRepository.findLatestPublishedAt();
+        String lastUpdated = latest != null ? DATE_FMT.format(latest) : "";
+
+        return ArchiveSummaryDto.builder()
+                .totalCount(totalCount)
+                .totalYears(years.size())
+                .lastUpdated(lastUpdated)
+                .years(years)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PostSummaryDto> getArchiveMonthPosts(int year, int month, Integer page, Integer size) {
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("月份必须在 1~12 之间");
+        }
+        int p = page == null || page < 1 ? 0 : page - 1;
+        int s = size == null || size < 1 ? 200 : Math.min(size, 200);
+        Page<Post> posts = postRepository.findPublishedByYearMonth(
+                year,
+                month,
+                PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "publishedAt", "createdAt")));
+        List<PostSummaryDto> list = posts.getContent().stream()
+                .map(this::toSummary)
+                .toList();
         return new PageResponse<>(list, posts.getTotalElements(), posts.getNumber() + 1, posts.getSize());
     }
 

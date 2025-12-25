@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.controller;
 
 import com.sangui.sanguiblog.model.dto.ApiResponse;
+import com.sangui.sanguiblog.model.dto.ArchiveSummaryDto;
 import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.PostDetailDto;
 import com.sangui.sanguiblog.model.dto.PostSummaryDto;
@@ -29,6 +30,20 @@ public class PostController {
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) String keyword) {
         return ApiResponse.ok(postService.listPublished(page, size, categoryId, tagId, keyword));
+    }
+
+    @GetMapping("/archive/summary")
+    public ApiResponse<ArchiveSummaryDto> archiveSummary() {
+        return ApiResponse.ok(postService.getArchiveSummary());
+    }
+
+    @GetMapping("/archive/month")
+    public ApiResponse<PageResponse<PostSummaryDto>> archiveMonth(
+            @RequestParam int year,
+            @RequestParam int month,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ApiResponse.ok(postService.getArchiveMonthPosts(year, month, page, size));
     }
 
     @GetMapping("/{id}")

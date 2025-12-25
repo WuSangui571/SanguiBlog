@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PopButton from "../../components/common/PopButton.jsx";
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
-import { ARCHIVE_MONTH_LABELS, MOCK_POSTS } from "../shared.js";
-import { ChevronRight, Clock, FolderPlus, Grid, Tag } from 'lucide-react';
+import { ARCHIVE_MONTH_LABELS } from "../shared.js";
+import { ChevronRight, Clock, FolderPlus, Grid } from 'lucide-react';
 
 const ArchiveView = ({
-    postsData,
+    summary,
+    monthMap,
+    onLoadMonth,
     isDarkMode,
     onBackHome,
     onOpenArticle,
@@ -20,79 +22,41 @@ const ArchiveView = ({
     const [quickDockId, setQuickDockId] = useState('');
     const [quickDockTop, setQuickDockTop] = useState(0);
     const scrollTickingRef = useRef(false);
-    const postsSource = useMemo(() => (Array.isArray(postsData) && postsData.length ? postsData : MOCK_POSTS), [postsData]);
-
-    const normalizedList = useMemo(() => {
-        return postsSource
-            .map((post, index) => {
-                const rawDate = post.publishedAt || post.published_at || post.date || post.createdAt || post.created_at;
-                const parsed = rawDate ? new Date(rawDate) : null;
-                const isValidDate = parsed && !Number.isNaN(parsed.getTime());
-                const timestamp = isValidDate ? parsed.getTime() : 0;
-                const year = isValidDate ? `${parsed.getFullYear()}` : '未归档';
-                const monthIndex = isValidDate ? parsed.getMonth() : -1;
-                const dateLabel = isValidDate
-                    ? `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`
-                    : (rawDate || '日期待定');
-                return {
-                    post,
-                    timestamp,
-                    year,
-                    monthIndex,
-                    monthLabel: monthIndex >= 0 ? ARCHIVE_MONTH_LABELS[monthIndex] : '日期待定',
-                    displayDate: dateLabel,
-                    fallbackKey: `${post.id || index}-${timestamp}`
-                };
-            })
-            .sort((a, b) => b.timestamp - a.timestamp);
-    }, [postsSource]);
+    const summaryYears = useMemo(() => (
+        Array.isArray(summary?.years) ? summary.years : []
+    ), [summary]);
 
     const timelineData = useMemo(() => {
-        const grouped = new Map();
-        normalizedList.forEach((item) => {
-            if (!grouped.has(item.year)) {
-                grouped.set(item.year, new Map());
-            }
-            const monthKey = item.monthIndex >= 0 ? item.monthIndex : `unknown-${item.fallbackKey}`;
-            const monthLabel = item.monthIndex >= 0 ? item.monthLabel : '日期待定';
-            const monthMap = grouped.get(item.year);
-            if (!monthMap.has(monthKey)) {
-                monthMap.set(monthKey, {
-                    label: monthLabel,
-                    sortIndex: item.monthIndex,
-                    posts: []
-                });
-            }
-            monthMap.get(monthKey).posts.push(item);
-        });
-        return Array.from(grouped.entries())
-            .map(([year, monthMap]) => {
-                const yearValue = Number(year);
-                const sortValue = Number.isNaN(yearValue) ? -Infinity : yearValue;
-                const months = Array.from(monthMap.values()).map((month) => ({
-                    ...month,
-                    posts: month.posts.sort((a, b) => b.timestamp - a.timestamp),
-                    anchorId: typeof month.sortIndex === 'number' && month.sortIndex >= 0
-                        ? `archive-${year}-${String(month.sortIndex + 1).padStart(2, '0')}`
-                        : null
-                })).sort((a, b) => {
-                    const aIndex = typeof a.sortIndex === 'number' ? a.sortIndex : -1;
-                    const bIndex = typeof b.sortIndex === 'number' ? b.sortIndex : -1;
-                    return bIndex - aIndex;
-                });
+        return summaryYears.map((yearBlock) => {
+            const yearValue = typeof yearBlock?.year === 'number' ? yearBlock.year : Number(yearBlock?.year);
+            const sortValue = Number.isNaN(yearValue) ? -Infinity : yearValue;
+            const months = (yearBlock?.months || []).map((monthBlock) => {
+                const monthNumber = typeof monthBlock?.month === 'number' ? monthBlock.month : Number(monthBlock?.month);
+                const labelIndex = monthNumber ? monthNumber - 1 : -1;
                 return {
-                    year,
-                    sortValue,
-                    months,
-                    total: months.reduce((sum, month) => sum + month.posts.length, 0)
+                    ...monthBlock,
+                    month: monthNumber,
+                    label: labelIndex >= 0 ? ARCHIVE_MONTH_LABELS[labelIndex] : '日期待定',
+                    sortIndex: monthNumber || -1,
+                    anchorId: yearValue && monthNumber
+                        ? `archive-${yearValue}-${String(monthNumber).padStart(2, '0')}`
+                        : null
                 };
-            })
-            .sort((a, b) => b.sortValue - a.sortValue);
-    }, [normalizedList]);
+            }).sort((a, b) => (b.sortIndex ?? -1) - (a.sortIndex ?? -1));
+            return {
+                year: yearValue ? String(yearValue) : String(yearBlock?.year || '未归档'),
+                sortValue,
+                months,
+                total: typeof yearBlock?.total === 'number'
+                    ? yearBlock.total
+                    : months.reduce((sum, month) => sum + (month.count || 0), 0)
+            };
+        }).sort((a, b) => b.sortValue - a.sortValue);
+    }, [summaryYears]);
 
-    const totalCount = normalizedList.length;
-    const totalYears = timelineData.length;
-    const lastUpdated = normalizedList[0]?.displayDate || '-';
+    const totalCount = typeof summary?.totalCount === 'number' ? summary.totalCount : 0;
+    const totalYears = typeof summary?.totalYears === 'number' ? summary.totalYears : timelineData.length;
+    const lastUpdated = summary?.lastUpdated || '-';
     const monthShortcuts = useMemo(() => (
         timelineData.flatMap((yearBlock) => (
             yearBlock.months
@@ -103,6 +67,17 @@ const ArchiveView = ({
                 }))
         ))
     ), [timelineData]);
+
+    useEffect(() => {
+        if (typeof onLoadMonth !== 'function' || timelineData.length === 0) return;
+        const firstYear = timelineData[0];
+        const seeds = firstYear?.months?.slice(0, 2) || [];
+        seeds.forEach((monthBlock) => {
+            if (monthBlock?.year && monthBlock?.month) {
+                onLoadMonth(monthBlock.year, monthBlock.month);
+            }
+        });
+    }, [timelineData, onLoadMonth]);
 
     const recalcQuickDockTop = useCallback((anchorId) => {
         if (typeof document === 'undefined') return;
@@ -173,6 +148,28 @@ const ArchiveView = ({
             window.removeEventListener('scroll', syncActiveMonthByScroll);
         };
     }, [recalcQuickDockTop, syncActiveMonthByScroll, timelineData]);
+
+    useEffect(() => {
+        if (loading) return;
+        if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
+        if (!timelineData.length || typeof onLoadMonth !== 'function') return;
+        const wrapEl = timelineWrapRef.current;
+        if (!wrapEl) return;
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                const year = Number(entry.target.getAttribute('data-year'));
+                const month = Number(entry.target.getAttribute('data-month'));
+                if (year && month) {
+                    onLoadMonth(year, month);
+                }
+                observer.unobserve(entry.target);
+            });
+        }, { root: null, rootMargin: '220px 0px', threshold: 0.1 });
+        const nodes = wrapEl.querySelectorAll('[data-archive-month]');
+        nodes.forEach((node) => observer.observe(node));
+        return () => observer.disconnect();
+    }, [timelineData, onLoadMonth, loading]);
 
     const sectionText = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const secondaryText = isDarkMode ? 'text-gray-300' : 'text-gray-600';
@@ -262,10 +259,24 @@ const ArchiveView = ({
                                         <span className="text-xs font-bold tracking-widest text-gray-500">{yearBlock.total} 篇</span>
                                     </div>
                                     <div className="mt-6 space-y-8">
-                                        {yearBlock.months.map((monthBlock, monthIdx) => (
+                                        {yearBlock.months.map((monthBlock, monthIdx) => {
+                                            const yearValue = typeof monthBlock?.year === 'number'
+                                                ? monthBlock.year
+                                                : Number(yearBlock.year);
+                                            const safeYear = Number.isFinite(yearValue) ? yearValue : monthBlock?.year;
+                                            const monthKey = `${safeYear}-${monthBlock.month}`;
+                                            const monthState = monthMap?.[monthKey] || {};
+                                            const monthPosts = Array.isArray(monthState.records) ? monthState.records : [];
+                                            const monthLoaded = Boolean(monthState.loaded);
+                                            const monthLoading = Boolean(monthState.loading);
+                                            const monthError = monthState.error;
+                                            return (
                                             <div
                                                 key={`${yearBlock.year}-${monthIdx}`}
                                                 id={monthBlock.anchorId || undefined}
+                                                data-archive-month
+                                                data-year={safeYear}
+                                                data-month={monthBlock.month}
                                                 style={{ scrollMarginTop: archiveScrollMargin }}
                                                 className="relative pl-6 border-l-4 border-black/40"
                                             >
@@ -273,11 +284,40 @@ const ArchiveView = ({
                                                 <div className="flex items-baseline justify-between flex-wrap gap-4">
                                                     <div>
                                                         <p className="text-lg font-black">{monthBlock.label}</p>
-                                                        <p className="text-xs font-bold text-gray-500">{monthBlock.posts.length} 篇</p>
+                                                        <p className="text-xs font-bold text-gray-500">{monthBlock.count ?? 0} 篇</p>
                                                     </div>
                                                 </div>
                                                 <div className="mt-4 space-y-3">
-                                                    {monthBlock.posts.map(({ post, displayDate }) => {
+                                                    {monthLoading && (
+                                                        <div className={`border-2 border-dashed ${borderColor} rounded-none px-4 py-3 text-sm font-semibold ${cardBg}`}>
+                                                            本月文章加载中…
+                                                        </div>
+                                                    )}
+                                                    {!monthLoading && !monthLoaded && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (typeof onLoadMonth === 'function' && safeYear && monthBlock.month) {
+                                                                    onLoadMonth(safeYear, monthBlock.month);
+                                                                }
+                                                            }}
+                                                            className={`w-full text-left border-2 border-black rounded-none px-4 py-3 text-sm font-bold shadow-[4px_4px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${cardBg}`}
+                                                        >
+                                                            点击加载本月文章
+                                                        </button>
+                                                    )}
+                                                    {monthError && (
+                                                        <div className="border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-none px-4 py-3">
+                                                            {monthError}
+                                                        </div>
+                                                    )}
+                                                    {monthLoaded && !monthLoading && monthPosts.length === 0 && (
+                                                        <div className={`border-2 ${borderColor} rounded-none px-4 py-3 text-sm font-semibold ${cardBg}`}>
+                                                            本月暂无文章
+                                                        </div>
+                                                    )}
+                                                    {monthPosts.map((post) => {
+                                                        const displayDate = post?.date || monthBlock.lastDate || '';
                                                         const tags = Array.isArray(post.tags)
                                                             ? post.tags.map((tag) => (typeof tag === 'string' ? tag : tag?.name || tag?.label)).filter(Boolean)
                                                             : [];
@@ -339,7 +379,7 @@ const ArchiveView = ({
                                                     })}
                                                 </div>
                                             </div>
-                                        ))}
+                                        )})}
                                     </div>
                                 </div>
                             ))}
