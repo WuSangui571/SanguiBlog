@@ -210,15 +210,15 @@ const ArchiveView = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
-                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
+                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-none`}>
                         <p className="text-xs font-bold uppercase text-gray-500">累计文章</p>
                         <p className="text-3xl font-black mt-2">{totalCount}</p>
                     </div>
-                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
+                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-none`}>
                         <p className="text-xs font-bold uppercase text-gray-500">覆盖年份</p>
                         <p className="text-3xl font-black mt-2">{totalYears}</p>
                     </div>
-                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-2xl`}>
+                    <div className={`${cardBg} border-2 border-black shadow-[6px_6px_0px_0px_#000] px-6 py-5 rounded-none`}>
                         <p className="text-xs font-bold uppercase text-gray-500">最近更新</p>
                         <p className="text-xl font-black mt-2">{lastUpdated}</p>
                     </div>
@@ -231,7 +231,7 @@ const ArchiveView = ({
                 )}
 
                 {loading && (
-                    <div className={`mt-10 ${cardBg} border-2 ${borderColor} rounded-2xl px-6 py-5 shadow-[6px_6px_0px_0px_#000]`}>
+                    <div className={`mt-10 ${cardBg} border-2 ${borderColor} rounded-none px-6 py-5 shadow-[6px_6px_0px_0px_#000]`}>
                         <div className="flex items-center gap-3 text-sm font-bold text-gray-500">
                             <Grid size={16} />
                             <span>归档加载中…</span>
@@ -241,7 +241,7 @@ const ArchiveView = ({
                 )}
 
                 {!loading && !timelineData.length && (
-                    <div className={`mt-12 ${cardBg} border-2 ${borderColor} rounded-2xl p-12 text-center`}>
+                    <div className={`mt-12 ${cardBg} border-2 ${borderColor} rounded-none p-12 text-center`}>
                         <p className="text-lg font-black">暂无归档文章</p>
                         <p className="text-sm text-gray-500 mt-2">发布新文章后会自动出现在这里。</p>
                     </div>
@@ -285,7 +285,7 @@ const ArchiveView = ({
                                                         <button
                                                             key={`archive-${post.id || displayDate}`}
                                                             onClick={() => handleArticleClick(post.id)}
-                                                            className={`w-full text-left border-2 border-black rounded-2xl px-4 py-3 flex flex-col gap-2 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#000] ${cardBg}`}
+                                                            className={`w-full text-left border-2 border-black rounded-none px-4 py-3 flex flex-col gap-2 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#000] ${cardBg}`}
                                                         >
                                                             <div className="flex items-center justify-between gap-3">
                                                                 <p className="text-xl font-black flex-1">{post.title}</p>
@@ -342,7 +342,7 @@ const ArchiveView = ({
                     {monthShortcuts.length > 0 && (
                         <aside className="w-full lg:w-64">
                             <div
-                                className={`${cardBg} border-2 ${borderColor} rounded-2xl p-5 shadow-[6px_6px_0px_0px_#000] sticky`}
+                                className={`${cardBg} border-2 ${borderColor} rounded-none p-5 shadow-[6px_6px_0px_0px_#000] sticky`}
                                 style={{ top: quickJumpTop, marginTop: quickDockTop }}
                             >
                                 <p className="text-sm font-black mb-4">快速跳转</p>
@@ -351,7 +351,7 @@ const ArchiveView = ({
                                         <button
                                             key={shortcut.id}
                                             onClick={() => handleMonthJump(shortcut.id)}
-                                            className={`w-full text-left text-xs font-black tracking-wide border-2 border-black rounded-xl px-3 py-2 transition-all duration-200 hover:shadow-[4px_4px_0px_0px_#000] ${quickJumpBtn}`}
+                                            className={`w-full text-left text-xs font-black tracking-wide border-2 border-black rounded-none px-3 py-2 transition-all duration-200 hover:shadow-[4px_4px_0px_0px_#000] ${quickJumpBtn}`}
                                         >
                                             {shortcut.label}
                                         </button>
