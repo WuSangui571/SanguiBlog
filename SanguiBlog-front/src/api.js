@@ -53,6 +53,14 @@ const notifyAuthExpired = (detail = {}) => {
   window.dispatchEvent(new CustomEvent("sg-auth-expired", { detail }));
 };
 
+const SILENT_AUTH_PATHS = [
+  "/analytics/page-view",
+  "/analytics/client-ip",
+];
+
+const shouldSilentAuthNotice = (path = "") =>
+  SILENT_AUTH_PATHS.some((prefix) => path.startsWith(prefix));
+
 const buildHeaders = () => {
   const token = localStorage.getItem("sg_token");
   const headers = { "Content-Type": "application/json" };
@@ -90,7 +98,7 @@ const request = async (path, options = {}) => {
     const error = new Error(message || res.statusText);
     error.status = res.status;
     if (payload) error.payload = payload;
-    if (res.status === 401) {
+    if (res.status === 401 && !shouldSilentAuthNotice(path)) {
       notifyAuthExpired({ reason: "unauthorized", status: 401, message });
     } else if (res.status === 403 && !localStorage.getItem("sg_token")) {
       notifyAuthExpired({ reason: "forbidden_no_token", status: 403, message });
