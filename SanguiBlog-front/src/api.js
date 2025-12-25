@@ -31,7 +31,9 @@ const decodeJwtExp = (token) => {
   try {
     const payload = token.split(".")[1];
     const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(normalized);
+    const padLength = normalized.length % 4;
+    const padded = padLength ? normalized.padEnd(normalized.length + (4 - padLength), "=") : normalized;
+    const json = atob(padded);
     const data = JSON.parse(json);
     return typeof data.exp === "number" ? data.exp * 1000 : null;
   } catch {
