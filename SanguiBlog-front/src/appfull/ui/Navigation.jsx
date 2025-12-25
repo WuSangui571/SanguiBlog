@@ -720,7 +720,7 @@ const Navigation = ({
                         </div>
 
                         <div className="p-4 space-y-3 max-h-[calc(92vh-64px)] overflow-y-auto">
-                            <div className={`flex items-center gap-3 p-4 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                            <div className={`flex items-center gap-3 p-4 border-2 border-black rounded-none shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                 <div className={`w-11 h-11 rounded-full border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
                                     {backgroundEnabled ? <Sun size={18} /> : <Moon size={18} />}
                                 </div>
@@ -743,7 +743,7 @@ const Navigation = ({
                                 </button>
                             </div>
 
-                            <div className={`flex items-start gap-3 p-4 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                            <div className={`flex items-start gap-3 p-4 border-2 border-black rounded-none shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                 <div className={`w-11 h-11 rounded-full border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
                                     <List size={18} />
                                 </div>
@@ -755,7 +755,7 @@ const Navigation = ({
                                     <select
                                         value={pageSize}
                                         onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
-                                        className={`w-28 p-2 border-2 border-black rounded-lg font-black text-sm shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                                        className={`w-28 p-2 border-2 border-black rounded-none font-black text-sm shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
                                     >
                                         {pageSizeOptions.map((opt) => (
                                             <option key={opt} value={opt}>{opt} 条/页</option>
@@ -765,7 +765,7 @@ const Navigation = ({
                                 </div>
                             </div>
 
-                            <div className={`flex items-center gap-2 px-3 py-2 border-2 border-dashed border-black rounded-lg text-[11px] font-semibold ${isDarkMode ? 'bg-gray-900 text-gray-300' : 'bg-white text-gray-600'}`}>
+                            <div className={`flex items-center gap-2 px-3 py-2 border-2 border-dashed border-black rounded-none text-[11px] font-semibold ${isDarkMode ? 'bg-gray-900 text-gray-300' : 'bg-white text-gray-600'}`}>
                                 <Sparkles size={14} className="text-[#F97316]" />
                                 <span>设置仅存于本地浏览器</span>
                             </div>
