@@ -469,6 +469,13 @@ public class PostService {
 
         long commentCount = commentRepository.countByPostIdAndStatus(post.getId(), "APPROVED");
 
+        List<String> tags = post.getTags() == null ? List.of() : post.getTags().stream()
+                .map(Tag::getName)
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+
         return PostSummaryDto.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -476,7 +483,7 @@ public class PostService {
                 .coverImage(normalizeCoverPath(post.getCoverImage()))
                 .category(categoryName)
                 .parentCategory(parentName)
-                .tags(post.getTags().stream().map(Tag::getName).toList())
+                .tags(tags)
                 .color(post.getThemeColor() != null ? post.getThemeColor() : "bg-[#6366F1]")
                 .likes(post.getLikesCount() == null ? 0 : post.getLikesCount())
                 .comments((int) commentCount)

@@ -318,9 +318,11 @@ const ArchiveView = ({
                                                     )}
                                                     {monthPosts.map((post) => {
                                                         const displayDate = post?.date || monthBlock.lastDate || '';
-                                                        const tags = Array.isArray(post.tags)
+                                                        const tags = (Array.isArray(post.tags)
                                                             ? post.tags.map((tag) => (typeof tag === 'string' ? tag : tag?.name || tag?.label)).filter(Boolean)
-                                                            : [];
+                                                            : [])
+                                                            .slice()
+                                                            .sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN', { sensitivity: 'base' }));
                                                         const parentCategory = post.parentCategory || post?.summary?.parentCategory || '';
                                                         const subCategory = post.category || post?.summary?.category || '';
                                                         const category = subCategory || parentCategory || '未分类';
