@@ -11,11 +11,23 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long>, JpaSpecificationExecutor<Comment> {
+    interface PostApprovedCountRow {
+        Long getPostId();
+        Long getCount();
+    }
+
     List<Comment> findByPostIdAndStatusOrderByCreatedAtDesc(Long postId, String status);
 
     long countByPostIdAndStatus(Long postId, String status);
 
     Page<Comment> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
+
+    @Query("select c.post.id as postId, count(c.id) as count "
+            + "from Comment c "
+            + "where c.status = :status and c.post.id in :postIds "
+            + "group by c.post.id")
+    List<PostApprovedCountRow> countByPostIdInAndStatusGroupByPostId(@Param("postIds") List<Long> postIds,
+            @Param("status") String status);
 
     @Query("select c from Comment c where c.post.author.id = :authorId")
     List<Comment> findByPostAuthorId(@Param("authorId") Long authorId);

@@ -5,8 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -23,6 +25,12 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
 
         LocalDateTime getLastDate();
     }
+
+    interface PostTagRow {
+        Long getPostId();
+
+        String getTagName();
+    }
     Optional<Post> findBySlugAndStatus(String slug, String status);
 
     Optional<Post> findBySlug(String slug);
@@ -30,6 +38,10 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     Optional<Post> findFirstByStatusOrderByPublishedAtDesc(String status);
 
     long countByStatus(String status);
+
+    @Override
+    @EntityGraph(attributePaths = { "category", "category.parent", "author" })
+    Page<Post> findAll(Specification<Post> spec, Pageable pageable);
 
     @Query("select coalesce(sum(p.viewsCount),0) from Post p where (:status is null or p.status = :status)")
     Long sumViewsByStatus(@Param("status") String status);
@@ -77,9 +89,13 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     @Query("select max(p.publishedAt) from Post p where p.status = 'PUBLISHED' and p.publishedAt is not null")
     LocalDateTime findLatestPublishedAt();
 
+    @EntityGraph(attributePaths = { "category", "category.parent", "author" })
     @Query("select p from Post p where p.status = 'PUBLISHED' and p.publishedAt is not null "
             + "and function('year', p.publishedAt) = :year and function('month', p.publishedAt) = :month")
     Page<Post> findPublishedByYearMonth(@Param("year") int year, @Param("month") int month, Pageable pageable);
+
+    @Query("select p.id as postId, t.name as tagName from Post p join p.tags t where p.id in :postIds")
+    List<PostTagRow> findTagNamesByPostIds(@Param("postIds") List<Long> postIds);
 
     @Query("select p from Post p where p.status = 'PUBLISHED' and p.publishedAt is not null "
             + "and p.category.id = :categoryId and p.id <> :postId "

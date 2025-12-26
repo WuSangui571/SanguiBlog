@@ -49,6 +49,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -113,9 +115,7 @@ public class PostService {
 
         Page<Post> posts = postRepository.findAll(spec,
                 PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "publishedAt", "createdAt")));
-        List<PostSummaryDto> list = posts.stream()
-                .map(this::toSummary)
-                .toList();
+        List<PostSummaryDto> list = toSummaries(posts.getContent());
 
         return new PageResponse<>(list, posts.getTotalElements(), posts.getNumber() + 1, posts.getSize());
     }
@@ -174,9 +174,7 @@ public class PostService {
                 year,
                 month,
                 PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "publishedAt", "createdAt")));
-        List<PostSummaryDto> list = posts.getContent().stream()
-                .map(this::toSummary)
-                .toList();
+        List<PostSummaryDto> list = toSummaries(posts.getContent());
         return new PageResponse<>(list, posts.getTotalElements(), posts.getNumber() + 1, posts.getSize());
     }
 
@@ -531,6 +529,110 @@ public class PostService {
                 .color(post.getThemeColor() != null ? post.getThemeColor() : "bg-[#6366F1]")
                 .likes(post.getLikesCount() == null ? 0 : post.getLikesCount())
                 .comments((int) commentCount)
+                .views(post.getViewsCount() == null ? 0 : post.getViewsCount())
+                .date(post.getPublishedAt() != null ? DATE_FMT.format(post.getPublishedAt()) : "")
+                .slug(post.getSlug())
+                .authorName(post.getAuthor() != null ? post.getAuthor().getDisplayName() : "Unknown")
+                .authorAvatar(avatar)
+                .build();
+    }
+
+    private List<PostSummaryDto> toSummaries(List<Post> posts) {
+        if (posts == null || posts.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> postIds = posts.stream()
+                .map(Post::getId)
+                .filter(id -> id != null && id > 0)
+                .toList();
+
+        Map<Long, Long> approvedCommentCounts = new HashMap<>();
+        if (!postIds.isEmpty()) {
+            try {
+                commentRepository.countByPostIdInAndStatusGroupByPostId(postIds, "APPROVED")
+                        .forEach(row -> {
+                            if (row != null && row.getPostId() != null) {
+                                approvedCommentCounts.put(row.getPostId(), row.getCount() == null ? 0L : row.getCount());
+                            }
+                        });
+            } catch (Exception ex) {
+                // 统计失败时回退到 0（不让列表请求因为统计挂掉）；详情页仍会走单篇精确统计
+                log.warn("批量统计评论数失败，将回退为 0, size={}", postIds.size(), ex);
+            }
+        }
+
+        Map<Long, List<String>> tagsByPostId = new HashMap<>();
+        if (!postIds.isEmpty()) {
+            try {
+                for (PostRepository.PostTagRow row : postRepository.findTagNamesByPostIds(postIds)) {
+                    if (row == null || row.getPostId() == null) {
+                        continue;
+                    }
+                    String name = row.getTagName();
+                    if (!StringUtils.hasText(name)) {
+                        continue;
+                    }
+                    tagsByPostId.computeIfAbsent(row.getPostId(), k -> new ArrayList<>())
+                            .add(name.trim());
+                }
+
+                // 去重 + 稳定排序
+                tagsByPostId.replaceAll((id, list) -> {
+                    if (list == null || list.isEmpty()) {
+                        return List.of();
+                    }
+                    return list.stream()
+                            .filter(StringUtils::hasText)
+                            .map(String::trim)
+                            .collect(Collectors.toCollection(() -> new LinkedHashSet<>()))
+                            .stream()
+                            .sorted(String.CASE_INSENSITIVE_ORDER)
+                            .toList();
+                });
+            } catch (Exception ex) {
+                log.warn("批量加载 tags 失败，将回退为空标签列表, size={}", postIds.size(), ex);
+            }
+        }
+
+        return posts.stream()
+                .map(post -> {
+                    Long id = post.getId();
+                    long commentCount = id != null ? approvedCommentCounts.getOrDefault(id, 0L) : 0L;
+                    List<String> tags = id != null ? tagsByPostId.getOrDefault(id, List.of()) : List.of();
+                    return toSummaryPrefetched(post, commentCount, tags);
+                })
+                .toList();
+    }
+
+    private PostSummaryDto toSummaryPrefetched(Post post, long approvedCommentCount, List<String> tags) {
+        Category category = post.getCategory();
+        String categoryName = category != null ? category.getName() : "未分类";
+        String parentName = category != null && category.getParent() != null
+                ? category.getParent().getName()
+                : (category != null ? category.getName() : "未分类");
+
+        String avatar = post.getAuthor() != null ? post.getAuthor().getAvatarUrl() : null;
+        if (avatar != null && avatar.isBlank()) {
+            avatar = null;
+        } else if (avatar != null) {
+            avatar = avatar.trim();
+        }
+
+        int safeCommentCount = (int) Math.min(Math.max(approvedCommentCount, 0L), (long) Integer.MAX_VALUE);
+        List<String> safeTags = tags == null ? List.of() : tags;
+
+        return PostSummaryDto.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .excerpt(post.getExcerpt())
+                .coverImage(normalizeCoverPath(post.getCoverImage()))
+                .category(categoryName)
+                .parentCategory(parentName)
+                .tags(safeTags)
+                .color(post.getThemeColor() != null ? post.getThemeColor() : "bg-[#6366F1]")
+                .likes(post.getLikesCount() == null ? 0 : post.getLikesCount())
+                .comments(safeCommentCount)
                 .views(post.getViewsCount() == null ? 0 : post.getViewsCount())
                 .date(post.getPublishedAt() != null ? DATE_FMT.format(post.getPublishedAt()) : "")
                 .slug(post.getSlug())

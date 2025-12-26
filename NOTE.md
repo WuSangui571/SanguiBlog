@@ -187,7 +187,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
     *   若 `site.asset-base-url` 带路径前缀，`buildAssetUrl` 会自动去除重复段，保障归档页图片展示一致。
 
-*   首页文章卡片所展示的“浏览量 / 评论数”直接读取后端 `PostSummaryDto` 中的 `viewsCount` 与 `comments` 字段，其中评论数由后端实时统计 `APPROVED` 状态的评论数量。
+*   首页文章卡片所展示的“浏览量 / 评论数”直接读取后端 `PostSummaryDto` 中的 `viewsCount` 与 `comments` 字段，其中评论数统计口径为 `APPROVED` 状态；为避免列表页 N+1，分页接口会先按 postId 批量 group by 统计评论数再回填到 DTO。
 
 *   首页文章卡片若发布时间在 7 天内，会在卡片外围叠加呼吸光圈与流光扫边的赛博描边，并在标题旁短暂保留 “NEW” 徽章，突出近一周的新内容。
 
