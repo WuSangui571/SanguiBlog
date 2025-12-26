@@ -731,7 +731,7 @@ const ArticleList = ({
                                     </PopButton>
                                 </div>
                             )}
-                            {displayPosts.length > 0 ? (
+                            {!postsLoading && !postsError && (displayPosts.length > 0 ? (
                                 displayPosts.map((post, idx) => {
                                     const viewCount = post.views ?? post.viewsCount ?? 0;
                                     const commentCount = post.comments ?? post.commentsCount ?? 0;
@@ -930,10 +930,10 @@ const ArticleList = ({
                                         scrollToPostsTop();
                                     }}>RESET FILTERS</PopButton>
                                 </div>
-                            )}
+                            ))}
                         </div>
 
-                        {totalPages > 1 && (
+                        {!postsLoading && !postsError && totalPages > 1 && (
                             <div className="mt-12 flex flex-wrap justify-center items-center gap-2">
                                 {paginationItems.map((item, idx) => {
                                     if (typeof item === 'string') {
