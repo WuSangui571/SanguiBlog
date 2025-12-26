@@ -94,7 +94,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   **入口**: `com.sangui.sanguiblog.SanguiBlogServerApplication`
 
-*   **配置**: `src/main/resources/application.yaml`
+*   **配置**: `src/main/resources/application.yaml`
 
     *   **端口**: 8080
 
@@ -168,6 +168,14 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   `API_BASE`: 默认为 `http://localhost:8080/api`。
 
     *   接口报错时优先解析 JSON，若包含 `message`/`msg` 字段则只返回该文本给前台提示，避免把整段响应 JSON 暴露给终端用户。
+
+*   **前端日志与提示规范**：
+
+    *   禁止在生产代码中使用 `alert()` 作为提示手段；后台操作提示优先使用 `src/appfull/AdminPanel.jsx` 的 `AdminNoticeBar + useTimedNotice` 体系（非打断式），前台的彩蛋/交互提示应使用页面内提示组件或状态提示，而非系统弹窗。
+
+    *   控制台输出统一走 `src/utils/logger.js`：开发环境允许 `debug/info/warn` 全量打印；生产环境仅对 `warn` 做采样输出（默认 0.12），可用前端环境变量 `VITE_LOG_SAMPLE_RATE` 调整（0~1）。
+
+    *   错误上报扩展点：`logger.error(message, error, context)` 会尝试调用 `window.Sentry.captureException`（若存在），便于后续接入 Sentry/监控平台；对用户可见的提示文本应保持“可理解 + 不泄露内部实现细节”。
 
 *   **归档视图 (`ArchiveView`)**：
 

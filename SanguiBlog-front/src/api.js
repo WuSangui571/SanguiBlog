@@ -1,3 +1,5 @@
+import logger from "./utils/logger.js";
+
 // 这是本机测试的 API_BASE
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 // 勿该下面配置，这是专门用于测试部署的 API_BASE
@@ -9,7 +11,7 @@ const deriveApiOrigin = () => {
     try {
       return new URL(API_BASE).origin.replace(/\/$/, "");
     } catch (e) {
-      console.warn("Invalid VITE_API_BASE, fallback to default origin", e);
+      logger.warn("Invalid VITE_API_BASE, fallback to default origin", e);
     }
   }
   if (import.meta.env.VITE_API_ORIGIN) {

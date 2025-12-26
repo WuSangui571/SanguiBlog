@@ -31,6 +31,7 @@ import SessionExpiredModal from "./appfull/ui/SessionExpiredModal.jsx";
 import ClickRipple from "./appfull/ui/ClickRipple.jsx";
 import ScrollToTop from "./appfull/ui/ScrollToTop.jsx";
 import { buildAssetUrl } from "./utils/asset.js";
+import logger from "./utils/logger.js";
 import Hero from "./appfull/public/Hero.jsx";
 import StatsStrip from "./appfull/public/StatsStrip.jsx";
 import ArticleList from "./appfull/public/ArticleList.jsx";
@@ -324,7 +325,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             setArchiveSummary(data || null);
             setArchiveMonthMap({});
         } catch (err) {
-            console.warn('load archive summary failed', err);
+            logger.warn('load archive summary failed', err);
             setArchiveError(err?.message || '无法加载归档摘要');
         } finally {
             setArchiveLoading(false);
@@ -362,7 +363,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 }
             }));
         } catch (err) {
-            console.warn('load archive month failed', err);
+            logger.warn('load archive month failed', err);
             setArchiveMonthMap((prev) => ({
                 ...prev,
                 [key]: {
@@ -401,7 +402,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             });
             setGameList(sorted);
         } catch (err) {
-            console.warn('load games failed', err);
+            logger.warn('load games failed', err);
             setGameListError(err?.message || '加载页面失败');
         } finally {
             setGameListLoading(false);
@@ -418,7 +419,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             const data = res?.data || res;
             setGameDetail(data);
         } catch (err) {
-            console.warn('load game detail failed', err);
+            logger.warn('load game detail failed', err);
             setGameDetailError(err?.message || '无法加载页面');
         } finally {
             setGameDetailLoading(false);
@@ -431,7 +432,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.235';
+    const siteVersion = meta?.version || 'V2.1.236';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -590,7 +591,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             const total = typeof payload.total === 'number' ? payload.total : 0;
             setCommentNotificationUnread(total);
         } catch (e) {
-            console.warn('load unread notifications failed', e);
+            logger.warn('load unread notifications failed', e);
         }
     }, [user]);
 
@@ -626,7 +627,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             setNotificationCanBackfill(total === 0); // 如果总数为0，允许补全；补全后会刷新
             setCommentNotifications((prev) => append ? [...prev, ...normalizedItems] : normalizedItems);
         } catch (e) {
-            console.warn('load notification history failed', e);
+            logger.warn('load notification history failed', e);
         } finally {
             setCommentNotificationLoading(false);
         }
@@ -687,7 +688,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         try {
             await markNotificationRead(notificationItem.id);
         } catch (err) {
-            console.warn('mark notification read failed', err);
+            logger.warn('mark notification read failed', err);
         }
         if (notificationItem.postId) {
             setArticleId(notificationItem.postId);
@@ -702,7 +703,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         try {
             await markAllNotificationsRead();
         } catch (err) {
-            console.warn('mark all notifications failed', err);
+            logger.warn('mark all notifications failed', err);
         }
     }, []);
 
@@ -1419,7 +1420,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                         await loadUnreadNotifications();
                                         setNotificationCanBackfill(false);
                                     } catch (e) {
-                                        console.warn('backfill notifications failed', e);
+                                        logger.warn('backfill notifications failed', e);
                                     }
                                 }}
                             />

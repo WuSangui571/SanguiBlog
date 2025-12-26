@@ -1,6 +1,9 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion';
-import { ArrowUp } from 'lucide-react';const ScrollToTop = ({ isDarkMode }) => {
+import { ArrowUp } from 'lucide-react';
+import logger from "../../utils/logger.js";
+
+const ScrollToTop = ({ isDarkMode }) => {
     const STORAGE_KEY = 'sangui-scroll-button';
     const BUTTON_SIZE = 56;
     const [isVisible, setIsVisible] = useState(false);
@@ -44,7 +47,7 @@ import { ArrowUp } from 'lucide-react';const ScrollToTop = ({ isDarkMode }) => {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
         } catch (e) {
-            console.warn('无法保存滚动按钮位置', e);
+            logger.warn('无法保存滚动按钮位置', e);
         }
     }, []);
 

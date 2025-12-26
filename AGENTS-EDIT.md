@@ -2157,3 +2157,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.235 (2025-12-26)
 - **模块/页面**：修复后端启动编译失败：调整 `SecurityConfig` 中安全响应头链式调用方式，避免 `permissionsPolicy` 配置返回类型差异导致 `.contentTypeOptions(...)` 找不到方法，从而引发 `java: 找不到符号` 编译错误。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.235`
+
+## V2.1.236 (2025-12-26)
+- **模块/页面**：优化前端后台交互与日志规范：后台管理页移除 `alert()` 弹窗，统一改用 `AdminNoticeBar + useTimedNotice` 的非打断式提示；新增 `src/utils/logger.js`，将全站零散的 `console.warn` 收敛为可控输出（开发环境全量、生产环境采样，支持通过 `VITE_LOG_SAMPLE_RATE` 配置，并预留 Sentry 接入点）。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.236`

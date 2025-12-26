@@ -53,6 +53,7 @@ import {
     updatePost
 } from "../api";
 import { buildAssetUrl } from "../utils/asset.js";
+import logger from "../utils/logger.js";
 import { useBlog } from "../hooks/useBlogData";
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminProfile from '../pages/admin/Profile';
@@ -1797,6 +1798,7 @@ const TaxonomyView = ({ isDarkMode }) => {
     const [page, setPage] = useState(1);
     const [size, setSize] = useState(10);
     const [total, setTotal] = useState(0);
+    const { notice, showNotice, hideNotice } = useTimedNotice(4200);
 
     const loadTags = useCallback(async () => {
         setLoading(true);
@@ -1825,7 +1827,7 @@ const TaxonomyView = ({ isDarkMode }) => {
 
     const handleCreate = async () => {
         if (!form.name.trim()) {
-            alert("请输入标签名称");
+            showNotice("请输入标签名称", "error");
             return;
         }
         setSaving(true);
@@ -1834,9 +1836,9 @@ const TaxonomyView = ({ isDarkMode }) => {
             setForm({ name: "", slug: "", description: "" });
             setPage(1);
             await loadTags();
-            alert("标签创建成功");
+            showNotice("标签创建成功", "success");
         } catch (err) {
-            alert(err.message || "创建失败");
+            showNotice(err.message || "创建失败", "error");
         } finally {
             setSaving(false);
         }
@@ -1859,7 +1861,7 @@ const TaxonomyView = ({ isDarkMode }) => {
     const handleUpdate = async () => {
         if (!editingId) return;
         if (!editForm.name.trim()) {
-            alert("请输入标签名称");
+            showNotice("请输入标签名称", "error");
             return;
         }
         setSaving(true);
@@ -1867,9 +1869,9 @@ const TaxonomyView = ({ isDarkMode }) => {
             await adminUpdateTag(editingId, normalizePayload(editForm));
             cancelEdit();
             await loadTags();
-            alert("标签已更新");
+            showNotice("标签已更新", "success");
         } catch (err) {
-            alert(err.message || "更新失败");
+            showNotice(err.message || "更新失败", "error");
         } finally {
             setSaving(false);
         }
@@ -1887,7 +1889,7 @@ const TaxonomyView = ({ isDarkMode }) => {
             }
             await loadTags();
         } catch (err) {
-            alert(err.message || "删除失败");
+            showNotice(err.message || "删除失败", "error");
         }
     };
 
@@ -1898,7 +1900,9 @@ const TaxonomyView = ({ isDarkMode }) => {
     const totalPages = Math.max(Math.ceil(total / size), 1);
 
     return (
-        <div className="space-y-8">
+        <>
+            <AdminNoticeBar notice={notice} onClose={hideNotice} />
+            <div className="space-y-8">
             <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
                 <div className="flex items-center gap-3 mb-4">
                     <Tag className="text-[#FF0080]" />
@@ -2106,7 +2110,8 @@ const TaxonomyView = ({ isDarkMode }) => {
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 };
 
@@ -2124,6 +2129,7 @@ const CategoriesView = ({ isDarkMode }) => {
     const [page, setPage] = useState(1);
     const [size, setSize] = useState(10);
     const [total, setTotal] = useState(0);
+    const { notice, showNotice, hideNotice } = useTimedNotice(4200);
 
     const loadParentOptions = useCallback(async () => {
         try {
@@ -2131,7 +2137,7 @@ const CategoriesView = ({ isDarkMode }) => {
             const data = res.data || res || [];
             setParentOptions(data.map((item) => ({ id: item.id, label: item.label })));
         } catch (err) {
-            console.warn("load parent categories failed", err);
+            logger.warn("load parent categories failed", err);
         }
     }, []);
 
@@ -2171,7 +2177,7 @@ const CategoriesView = ({ isDarkMode }) => {
 
     const handleCreate = async () => {
         if (!form.name.trim()) {
-            alert("请输入分类名称");
+            showNotice("请输入分类名称", "error");
             return;
         }
         setSaving(true);
@@ -2181,9 +2187,9 @@ const CategoriesView = ({ isDarkMode }) => {
             setPage(1);
             await loadParentOptions();
             await loadCategories();
-            alert("分类创建成功");
+            showNotice("分类创建成功", "success");
         } catch (err) {
-            alert(err.message || "创建失败");
+            showNotice(err.message || "创建失败", "error");
         } finally {
             setSaving(false);
         }
@@ -2208,7 +2214,7 @@ const CategoriesView = ({ isDarkMode }) => {
     const handleUpdate = async () => {
         if (!editingId) return;
         if (!editForm.name.trim()) {
-            alert("请输入分类名称");
+            showNotice("请输入分类名称", "error");
             return;
         }
         setSaving(true);
@@ -2217,9 +2223,9 @@ const CategoriesView = ({ isDarkMode }) => {
             cancelEdit();
             await loadParentOptions();
             await loadCategories();
-            alert("分类已更新");
+            showNotice("分类已更新", "success");
         } catch (err) {
-            alert(err.message || "更新失败");
+            showNotice(err.message || "更新失败", "error");
         } finally {
             setSaving(false);
         }
@@ -2237,7 +2243,7 @@ const CategoriesView = ({ isDarkMode }) => {
             }
             await loadCategories();
         } catch (err) {
-            alert(err.message || "删除失败");
+            showNotice(err.message || "删除失败", "error");
         }
     };
 
@@ -2247,7 +2253,9 @@ const CategoriesView = ({ isDarkMode }) => {
     const formatDate = (value) => (value ? new Date(value).toLocaleString() : "—");
 
     return (
-        <div className="space-y-8">
+        <>
+            <AdminNoticeBar notice={notice} onClose={hideNotice} />
+            <div className="space-y-8">
             <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
                 <div className="flex items-center gap-3 mb-4">
                     <Layers className="text-[#6366F1]" />
@@ -2525,7 +2533,8 @@ const CategoriesView = ({ isDarkMode }) => {
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 };
 
@@ -2626,7 +2635,7 @@ const EditPostView = ({ isDarkMode }) => {
                 const data = res.data || res;
                 setTags(data || []);
             } catch (error) {
-                console.warn('load tags failed', error);
+                logger.warn('load tags failed', error);
             }
         };
         loadTags();
@@ -3392,7 +3401,7 @@ const PostsView = ({ isDarkMode }) => {
             const data = res.data || res || [];
             setCategoryOptions(buildSecondLevelOptions(data));
         } catch (err) {
-            console.warn('load categories failed', err);
+            logger.warn('load categories failed', err);
         }
     }, []);
 
@@ -3665,7 +3674,7 @@ const CommentsAdminView = ({ isDarkMode }) => {
             setPostOptions(data?.records || []);
             setPostTotal(data?.total || 0);
         } catch (error) {
-            console.warn('load posts failed', error);
+            logger.warn('load posts failed', error);
         } finally {
             setPostLoading(false);
         }
@@ -4977,6 +4986,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [gameDeletingId, setGameDeletingId] = useState(null);
     const { hasPermission } = usePermissionContext();
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
+    const { notice, showNotice, hideNotice } = useTimedNotice(4200);
 
     useEffect(() => {
         setBroadcastDraft({
@@ -5251,20 +5261,22 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 style
             }));
             setBroadcastDraft((prev) => ({ ...prev, active: targetActive, content, style }));
-            alert(targetActive ? '广播已发布，前台顶部已同步' : '广播已停用，最新文案已保存');
+            showNotice(targetActive ? '广播已发布，前台顶部已同步' : '广播已停用，最新文案已保存', 'success');
         } catch (err) {
             setBroadcastError(err?.message || '同步广播失败，请稍后重试');
         } finally {
             setBroadcastSaving(false);
         }
-    }, [broadcastDraft, setNotification]);
+    }, [broadcastDraft, setNotification, showNotice]);
 
     if (!hasPermission('SYSTEM_CLEAN_STORAGE') || user?.role !== 'SUPER_ADMIN') {
         return <PermissionNotice title="仅超级管理员可用" description="系统设置仅限超级管理员访问。" />;
     }
 
     return (
-        <div className="space-y-6">
+        <>
+            <AdminNoticeBar notice={notice} onClose={hideNotice} />
+            <div className="space-y-6">
             {/* 顶部子页切换 */}
             <div className={`${isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'} rounded-2xl shadow-sm px-4 py-3 flex flex-wrap items-center gap-2`}>
                 <span className="text-sm font-semibold mr-2">设置分组：</span>
@@ -5872,7 +5884,8 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     />
                 </div>
             )}
-        </div>
+            </div>
+        </>
     );
 };
 

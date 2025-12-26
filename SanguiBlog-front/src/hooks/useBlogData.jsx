@@ -13,6 +13,7 @@ import {
   login as apiLogin,
   fetchAbout,
 } from "../api";
+import logger from "../utils/logger.js";
 
 const BlogContext = createContext(null);
 const ENABLE_POSTS_DEBUG = import.meta.env.VITE_ENABLE_POSTS_DEBUG === "true";
@@ -57,7 +58,7 @@ function useProvideBlog() {
       applyAssetOrigin(data?.assetBaseUrl);
       // if (data?.author) setUser(data.author);
     } catch (e) {
-      console.warn("load meta failed", e);
+      logger.warn("load meta failed", e);
     }
   }, [applyAssetOrigin]);
 
@@ -69,7 +70,7 @@ function useProvideBlog() {
       const data = res.data || res;
       if (data) setUser(data);
     } catch (e) {
-      console.warn("restore auth failed", e);
+      logger.warn("restore auth failed", e);
       if (e?.status === 401 || e?.status === 403) {
         localStorage.removeItem("sg_token");
         setUser(null);
@@ -83,7 +84,7 @@ function useProvideBlog() {
       const data = res.data || res;
       setCategories([{ id: "all", label: "全部", children: [] }, ...(data || [])]);
     } catch (e) {
-      console.warn("load categories failed", e);
+      logger.warn("load categories failed", e);
     }
   }, []);
 
@@ -93,7 +94,7 @@ function useProvideBlog() {
       const data = res.data || res;
       setTags(data || []);
     } catch (e) {
-      console.warn("load tags failed", e);
+      logger.warn("load tags failed", e);
     }
   }, []);
 
@@ -115,7 +116,7 @@ function useProvideBlog() {
       postsErrorLoggedRef.current = false;
     } catch (e) {
       if (ENABLE_POSTS_DEBUG && !postsErrorLoggedRef.current) {
-        console.debug("load posts failed (已忽略，使用本地占位数据)", e);
+        logger.debug("load posts failed (已忽略，使用本地占位数据)", e);
         postsErrorLoggedRef.current = true;
       }
       setPostsPage({ records: [], total: 0, page, size });
@@ -131,7 +132,7 @@ function useProvideBlog() {
       const data = res.data || res;
       setComments(data || []);
     } catch (e) {
-      console.warn("load comments failed", e);
+      logger.warn("load comments failed", e);
     }
   }, []);
 
@@ -141,7 +142,7 @@ function useProvideBlog() {
       const data = res.data || res;
       setRecentComments(data || []);
     } catch (e) {
-      console.warn("load recent comments failed", e);
+      logger.warn("load recent comments failed", e);
     }
   }, []);
 
@@ -151,7 +152,7 @@ function useProvideBlog() {
       const data = res.data || res;
       setAbout(data || null);
     } catch (e) {
-      console.warn("load about failed", e);
+      logger.warn("load about failed", e);
       setAbout(null);
     }
   }, []);
@@ -172,7 +173,7 @@ function useProvideBlog() {
       setArticleState({ status: "ok", error: "" });
       await loadComments(numericId);
     } catch (e) {
-      console.warn("load article failed", e);
+      logger.warn("load article failed", e);
       const message = e?.message || "加载文章失败";
       const status = e?.status;
       const isNotFound = status === 404

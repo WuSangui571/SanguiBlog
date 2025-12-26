@@ -1,3 +1,5 @@
+import logger from "./logger.js";
+
 export const buildAssetUrl = (path, fallback = null) => {
     const upgradeToHttpsIfSecure = (url) => {
         if (!url) return url;
@@ -57,7 +59,7 @@ export const buildAssetUrl = (path, fallback = null) => {
             const value = upgradeToHttpsIfSecure(resolveWithOrigin(origin));
             if (value) return value;
         } catch (err) {
-            console.warn('Invalid VITE_API_BASE for asset url resolution', err);
+            logger.warn('Invalid VITE_API_BASE for asset url resolution', err);
         }
     }
 

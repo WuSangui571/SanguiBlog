@@ -112,7 +112,7 @@ const ArticleList = ({
             konamiSequence.current = [...konamiSequence.current, e.key].slice(-10);
             if (JSON.stringify(konamiSequence.current) === JSON.stringify(KONAMI_CODE)) {
                 setKonamiActive(true);
-                alert("⚡️ 开发者模式已激活！系统过载中... ⚡️");
+                showSpinHint("开发者模式已激活：系统过载中…", 2600);
                 setTimeout(() => setKonamiActive(false), 5000);
             }
         };
