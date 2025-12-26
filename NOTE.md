@@ -588,6 +588,8 @@ ole_permissions in bulk.
 
 *   `/api/site/meta.broadcast` 用于刷新前端初始广播，请确认数据库表 `system_broadcasts` 已持久化最新记录。
 
+*   自 V2.1.227 起，后端不再使用 `System.out.println` 输出广播请求/内容，改为 slf4j 结构化日志；为避免泄露与污染日志，广播内容不会完整打印，仅记录长度与状态信息。
+
 
 
 ### ?? 6. 全局异常处理（错误信息泄露）

@@ -14,6 +14,8 @@ import com.sangui.sanguiblog.model.repository.SystemBroadcastRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -30,6 +32,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class SiteService {
 
+        private static final Logger log = LoggerFactory.getLogger(SiteService.class);
         private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         private static final DateTimeFormatter DATE_FULL_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -77,9 +80,11 @@ public class SiteService {
 
                 SystemBroadcast broadcast = systemBroadcastRepository.findTopByOrderByCreatedAtDesc()
                                 .orElse(null);
-                System.out.println("Meta broadcast: "
-                                + (broadcast != null ? "ID=" + broadcast.getId() + ", Active=" + broadcast.getIsActive()
-                                                : "null"));
+                if (log.isDebugEnabled()) {
+                        log.debug("Meta broadcast: {}", broadcast != null
+                                        ? ("id=" + broadcast.getId() + ", active=" + broadcast.getIsActive())
+                                        : "null");
+                }
 
                 List<SiteMetaDto.TrafficSourceDto> trafficSources = new java.util.ArrayList<>(
                                 analyticsTrafficSourceRepository
@@ -193,8 +198,9 @@ public class SiteService {
                         userRepository.findById(creatorId).ifPresent(broadcast::setCreatedBy);
                 }
 
-                System.out.println("Creating new broadcast: content=" + content + ", active=" + isActive + ", style="
-                                + broadcast.getStyle() + ", userId=" + creatorId);
+                int contentLen = content != null ? content.length() : 0;
+                log.info("创建广播记录: active={}, style={}, contentLen={}, userId={}",
+                                isActive, broadcast.getStyle(), contentLen, creatorId);
                 systemBroadcastRepository.saveAndFlush(broadcast);
         }
 

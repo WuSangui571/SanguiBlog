@@ -2121,3 +2121,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.226 (2025-12-26)
 - **模块/页面**：修复后端全局异常处理信息泄露风险：移除 `printStackTrace`，统一使用 `log.error` 记录堆栈；生产环境对外固定返回“服务器内部错误”，仅在 `dev/local` profile 下返回真实异常 message 便于调试。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.226`
+
+## V2.1.227 (2025-12-26)
+- **模块/页面**：修复后端 `System.out.println` 直出日志：站点广播与 meta 输出统一改用 slf4j（`log.info/debug`），日志不再输出完整广播 content，仅记录长度/状态，降低信息泄露与线上日志污染风险。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.227`
