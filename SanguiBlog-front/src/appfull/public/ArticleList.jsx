@@ -11,7 +11,6 @@ import {
     DEFAULT_PAGE_SIZE,
     CATEGORY_TREE,
     MOCK_USER,
-    MOCK_POSTS,
     SPIN_INTERVAL_MS,
     SPIN_LOCK_DURATION,
     SPIN_WARNINGS,
@@ -45,7 +44,10 @@ const ArticleList = ({
     setView,
     setArticleId,
     isDarkMode,
-    postsData,
+    postsPage,
+    postsLoading,
+    postsError,
+    onQueryChange,
     categoriesData,
     tagsData,
     stats,
@@ -77,6 +79,7 @@ const ArticleList = ({
     const [expandedTags, setExpandedTags] = useState(false);
     const [activeTag, setActiveTag] = useState('all');
     const [keyword, setKeyword] = useState('');
+    const [appliedKeyword, setAppliedKeyword] = useState('');
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
     const warningTimerRef = useRef(null);
     const lastSpinAtRef = useRef(0);
@@ -94,7 +97,7 @@ const ArticleList = ({
     ]), []);
     const NEW_POST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
-    const keywordText = keyword.trim().toLowerCase();
+    const keywordText = appliedKeyword.trim();
     const isPostNew = (dateStr) => {
         if (!dateStr) return false;
         const parsed = Date.parse(`${dateStr}T00:00:00`);
@@ -126,7 +129,7 @@ const ArticleList = ({
         : CATEGORY_TREE;
     const currentParentObj = categories.find(c => c.id === activeParent);
     const subCategories = currentParentObj ? currentParentObj.children : [];
-    const sourcePosts = postsData && postsData.length ? postsData : MOCK_POSTS;
+    const sourcePosts = Array.isArray(postsPage?.records) ? postsPage.records : [];
     const scrollToPostsTop = useCallback(() => {
         if (onScrollToPosts) {
             onScrollToPosts();
@@ -221,30 +224,48 @@ const ArticleList = ({
         };
     }, []);
 
-    const filteredPosts = sourcePosts.filter(post => {
-        if (activeParent !== "all" && post.parentCategory !== currentParentObj.label) return false;
-        if (activeSub !== "all" && post.category !== subCategories.find(s => s.id === activeSub)?.label) return false;
-        if (activeTag !== 'all') {
-            const tags = Array.isArray(post.tags) ? post.tags : [];
-            const normalized = tags.map((tag) => {
-                if (!tag) return '';
-                if (typeof tag === 'string') return tag;
-                return tag.name || tag.label || '';
-            });
-            if (!normalized.includes(activeTag)) return false;
-        }
-        if (keywordText) {
-            const titleText = `${post.title || ''}`.toLowerCase();
-            const abstractText = `${post.excerpt || post.summary || post.description || ''}`.toLowerCase();
-            if (!titleText.includes(keywordText) && !abstractText.includes(keywordText)) return false;
-        }
-        return true;
-    });
+    const normalizeNumericId = useCallback((value) => {
+        if (value === null || value === undefined) return null;
+        const num = Number(value);
+        return Number.isFinite(num) && num > 0 ? num : null;
+    }, []);
+
+    const selectedCategoryId = useMemo(() => {
+        if (activeSub !== 'all') return normalizeNumericId(activeSub);
+        if (activeParent !== 'all') return normalizeNumericId(activeParent);
+        return null;
+    }, [activeParent, activeSub, normalizeNumericId]);
+
+    const selectedTagId = useMemo(() => {
+        if (activeTag === 'all') return null;
+        if (!Array.isArray(tagsData) || !tagsData.length) return null;
+        const matched = tagsData.find((tag) => {
+            if (!tag) return false;
+            const name = typeof tag === 'string' ? tag : (tag.name || tag.label || tag.slug || '');
+            return name === activeTag;
+        });
+        const id = typeof matched === 'string' ? null : matched?.id;
+        return normalizeNumericId(id);
+    }, [activeTag, tagsData, normalizeNumericId]);
+
+    const buildQueryParams = useCallback((overrides = {}) => {
+        const params = {
+            page: typeof overrides.page === 'number' ? overrides.page : 1,
+            size: pageSize,
+        };
+        if (selectedCategoryId) params.categoryId = selectedCategoryId;
+        if (selectedTagId) params.tagId = selectedTagId;
+        if (keywordText) params.keyword = keywordText;
+        return params;
+    }, [keywordText, pageSize, selectedCategoryId, selectedTagId]);
 
     useEffect(() => {
         setCurrentPage(1);
         paginationScrollReadyRef.current = false;
-    }, [activeParent, activeSub, activeTag, pageSize, keyword]);
+        if (onQueryChange) {
+            onQueryChange(buildQueryParams({ page: 1 }));
+        }
+    }, [activeParent, activeSub, activeTag, pageSize, keywordText, onQueryChange, buildQueryParams]);
 
     useEffect(() => {
         if (!paginationScrollReadyRef.current) {
@@ -254,8 +275,8 @@ const ArticleList = ({
         scrollToPostsTop();
     }, [currentPage, scrollToPostsTop]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredPosts.length / pageSize));
-    const displayPosts = filteredPosts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const totalPages = Math.max(1, Math.ceil((Number(postsPage?.total ?? 0) || 0) / pageSize));
+    const displayPosts = sourcePosts;
     const paginationItems = useMemo(() => {
         if (totalPages <= 7) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -308,20 +329,8 @@ const ArticleList = ({
                 .filter(Boolean);
             return Array.from(new Set(normalized));
         }
-        const source = postsData && postsData.length ? postsData : MOCK_POSTS;
-        const unique = [];
-        const seen = new Set();
-        source.forEach((post) => {
-            (post.tags || []).forEach((tag) => {
-                if (!tag) return;
-                const name = typeof tag === 'string' ? tag : tag.name || tag.label;
-                if (!name || seen.has(name)) return;
-                seen.add(name);
-                unique.push(name);
-            });
-        });
-        return unique;
-    }, [tagsData, postsData]);
+        return [];
+    }, [tagsData]);
     useEffect(() => {
         setExpandedTags(false);
         if (activeTag !== 'all' && !allTags.includes(activeTag)) {
@@ -666,11 +675,12 @@ const ArticleList = ({
                                             onChange={(e) => setKeyword(e.target.value)}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
+                                                    setAppliedKeyword(keyword);
                                                     setCurrentPage(1);
                                                     scrollToPostsTop();
                                                 }
                                             }}
-                                            placeholder="搜索标题或摘要，实时模糊匹配"
+                                            placeholder="输入关键词后按回车搜索（标题/摘要模糊匹配）"
                                             className={`w-full bg-transparent outline-none text-sm font-semibold placeholder:font-normal placeholder:text-gray-400 ${isDarkMode ? 'text-white' : 'text-black'}`}
                                         />
                                         {keyword && (
@@ -678,6 +688,7 @@ const ArticleList = ({
                                                 type="button"
                                                 onClick={() => {
                                                     setKeyword('');
+                                                    setAppliedKeyword('');
                                                     setCurrentPage(1);
                                                     scrollToPostsTop();
                                                 }}
@@ -689,12 +700,36 @@ const ArticleList = ({
                                     </div>
                                     <div
                                         className={`text-[11px] font-mono font-black px-3 py-2 border-2 border-black shadow-[3px_3px_0px_0px_#000] rounded-none ${isDarkMode ? 'bg-[#111827] text-gray-100' : 'bg-[#FFD700] text-black'}`}>
-                                        {keywordText ? `已筛选 ${filteredPosts.length} 篇` : `共 ${sourcePosts.length} 篇`}
+                                        {(() => {
+                                            const hasFilters = Boolean(selectedCategoryId || selectedTagId || keywordText);
+                                            const total = Number(postsPage?.total ?? 0) || 0;
+                                            const globalTotal = Number(stats?.posts ?? 0) || total;
+                                            if (hasFilters) return `已筛选 ${total} 篇`;
+                                            return `共 ${globalTotal} 篇`;
+                                        })()}
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div className="space-y-8">
+                            {postsLoading && (
+                                <div className={`p-10 border-4 border-black text-center ${cardBg}`}>
+                                    <p className={`text-xl font-black ${subText}`}>文章加载中…</p>
+                                </div>
+                            )}
+                            {!postsLoading && postsError && (
+                                <div className={`p-10 border-4 border-black text-center ${cardBg}`}>
+                                    <p className={`text-xl font-black ${subText}`}>文章加载失败</p>
+                                    <p className={`mt-3 text-sm font-bold ${subText}`}>{postsError}</p>
+                                    <PopButton
+                                        variant="primary"
+                                        className="mt-4"
+                                        onClick={() => onQueryChange && onQueryChange(buildQueryParams({ page: currentPage }))}
+                                    >
+                                        重试加载
+                                    </PopButton>
+                                </div>
+                            )}
                             {displayPosts.length > 0 ? (
                                 displayPosts.map((post, idx) => {
                                     const viewCount = post.views ?? post.viewsCount ?? 0;
@@ -878,17 +913,19 @@ const ArticleList = ({
                             ) : (
                                 <div className={`p-12 border-4 border-black border-dashed text-center ${cardBg}`}>
                                     <p className={`text-2xl font-black ${subText}`}>
-                                        {keywordText ? '未找到匹配的文章，换个关键词试试？' : 'NO DATA FOUND'}
+                                        {(selectedCategoryId || selectedTagId || keywordText) ? '未找到匹配的文章，换个筛选条件试试？' : 'NO DATA FOUND'}
                                     </p>
                                     {keywordText && (
                                         <p className={`mt-3 text-sm font-bold ${subText}`}>
-                                            当前关键词：{keyword}
+                                            当前关键词：{keywordText}
                                         </p>
                                     )}
                                     <PopButton variant="primary" className="mt-4" onClick={() => {
                                         setActiveParent('all');
                                         setActiveSub('all');
                                         setKeyword('');
+                                        setAppliedKeyword('');
+                                        setActiveTag('all');
                                         scrollToPostsTop();
                                     }}>RESET FILTERS</PopButton>
                                 </div>
@@ -920,6 +957,9 @@ const ArticleList = ({
                                             key={item}
                                             onClick={() => {
                                                 setCurrentPage(item);
+                                                if (onQueryChange) {
+                                                    onQueryChange(buildQueryParams({ page: item }));
+                                                }
                                                 scrollToPostsTop();
                                             }}
                                             className={`w-10 h-10 border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000]

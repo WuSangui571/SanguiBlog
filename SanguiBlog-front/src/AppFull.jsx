@@ -70,7 +70,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         meta,
         categories,
         tags,
-        posts,
+        postsPage,
+        postsLoading: postsLoading,
+        postsError: postsError,
         article,
         articleState,
         comments,
@@ -430,7 +432,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.227';
+    const siteVersion = meta?.version || 'V2.1.228';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -781,7 +783,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     useEffect(() => {
         if (view === 'home') {
-            loadPosts && loadPosts();
+            // 首页文章列表由 ArticleList 触发分页查询，避免一次性拉全量数据
         } else if (view === 'article' && articleId) {
             loadArticle && loadArticle(articleId);
         } else if (view === 'games') {
@@ -1095,7 +1097,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                             setView={setView}
                             setArticleId={setArticleId}
                             isDarkMode={isDarkMode}
-                            postsData={posts}
+                            postsPage={postsPage}
+                            postsLoading={postsLoading}
+                            postsError={postsError}
+                            onQueryChange={loadPosts}
                             categoriesData={categories}
                             tagsData={tags}
                             recentComments={recentComments}

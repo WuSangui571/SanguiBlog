@@ -10,6 +10,7 @@ import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.model.dto.PostAdminDto;
 import com.sangui.sanguiblog.model.dto.PostDetailDto;
 import com.sangui.sanguiblog.model.dto.PostSiblingDto;
+import com.sangui.sanguiblog.model.dto.PostNeighborsDto;
 import com.sangui.sanguiblog.model.dto.PostSummaryDto;
 import com.sangui.sanguiblog.model.dto.SavePostRequest;
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
@@ -24,6 +25,7 @@ import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -69,12 +71,16 @@ public class PostService {
     public PageResponse<PostSummaryDto> listPublished(Integer page, Integer size, Long categoryId, Long tagId,
             String keyword) {
         int p = page == null || page < 1 ? 0 : page - 1;
-        int s = size == null || size < 1 ? 10 : size;
+        int s = size == null || size < 1 ? 10 : Math.min(size, 50);
         Specification<Post> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("status"), "PUBLISHED"));
             if (categoryId != null) {
-                predicates.add(cb.equal(root.get("category").get("id"), categoryId));
+                Join<Object, Object> categoryJoin = root.join("category");
+                Join<Object, Object> parentJoin = categoryJoin.join("parent", JoinType.LEFT);
+                predicates.add(cb.or(
+                        cb.equal(categoryJoin.get("id"), categoryId),
+                        cb.equal(parentJoin.get("id"), categoryId)));
             }
             if (tagId != null) {
                 Join<Object, Object> tagsJoin = root.join("tags");
@@ -299,6 +305,37 @@ public class PostService {
         return PostSiblingDto.builder()
                 .prevId(prev)
                 .nextId(next)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PostNeighborsDto getPublishedNeighbors(Long postId) {
+        Post current = postRepository.findById(postId)
+                .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
+                .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
+
+        LocalDateTime pub = current.getPublishedAt();
+        Instant created = current.getCreatedAt() != null ? current.getCreatedAt() : Instant.EPOCH;
+        Long prevId = pub == null ? null : postRepository.findPrevPublishedId(pub, created);
+        Long nextId = pub == null ? null : postRepository.findNextPublishedId(pub, created);
+
+        PostSummaryDto prev = prevId != null ? postRepository.findById(prevId).map(this::toSummary).orElse(null) : null;
+        PostSummaryDto next = nextId != null ? postRepository.findById(nextId).map(this::toSummary).orElse(null) : null;
+
+        Long categoryId = current.getCategory() != null ? current.getCategory().getId() : null;
+        List<PostSummaryDto> related = List.of();
+        if (categoryId != null) {
+            related = postRepository
+                    .findRelatedPublishedByCategory(categoryId, current.getId(), PageRequest.of(0, 3))
+                    .stream()
+                    .map(this::toSummary)
+                    .toList();
+        }
+
+        return PostNeighborsDto.builder()
+                .prev(prev)
+                .next(next)
+                .related(related)
                 .build();
     }
 

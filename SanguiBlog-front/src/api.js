@@ -288,6 +288,8 @@ export const fetchPostDetail = (id) =>
     headers: buildAnalyticsReferrerHeaders(),
   });
 
+export const fetchPostNeighbors = (id) => request(`/posts/${id}/neighbors`);
+
 export const login = (username, password, captcha) =>
   request("/auth/login", {
     method: "POST",

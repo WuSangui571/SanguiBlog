@@ -3,6 +3,7 @@ import { useBlog } from "../../hooks/useBlogData";
 import CommentsSection from "../../components/comments/CommentsSection.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import { buildAssetUrl } from "../../utils/asset.js";
+import { fetchPostNeighbors } from "../../api";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -50,7 +51,7 @@ const ArticleDetail = ({
     onCategoryClick,
     onBackToPrevious
 }) => {
-    const { meta: siteMeta, posts: allPosts } = useBlog();
+    const { meta: siteMeta } = useBlog();
     const summary = articleData?.summary;
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role?.code === 'SUPER_ADMIN';
 
@@ -101,31 +102,34 @@ const ArticleDetail = ({
         }
         return text;
     }, []);
-    const publishedPosts = useMemo(() => {
-        if (!Array.isArray(allPosts)) return [];
-        return allPosts.filter((item) => {
-            if (!item || !item.id) return false;
-            const status = String(item.status || item.state || '').toUpperCase();
-            if (!status) return true;
-            return ['PUBLISHED', 'PUBLIC', 'ACTIVE'].includes(status);
-        });
-    }, [allPosts]);
-    const currentIndex = useMemo(() => {
-        if (!post?.id) return -1;
-        return publishedPosts.findIndex((item) => String(item.id) === String(post.id));
-    }, [publishedPosts, post?.id]);
-    const prevPost = currentIndex >= 0 ? publishedPosts[currentIndex + 1] : null;
-    const nextPost = currentIndex > 0 ? publishedPosts[currentIndex - 1] : null;
-    const relatedPosts = useMemo(() => {
-        if (!post?.id || publishedPosts.length === 0) return [];
-        const categoryKey = post.category || post.parentCategory || '';
-        if (!categoryKey) return [];
-        return publishedPosts.filter((item) => {
-            if (!item || String(item.id) === String(post.id)) return false;
-            const itemCategory = item.category || item.categoryName || item.parentCategory || item.parentName || '';
-            return itemCategory === categoryKey;
-        }).slice(0, 3);
-    }, [post?.id, post?.category, post?.parentCategory, publishedPosts]);
+
+    const [neighbors, setNeighbors] = useState({ prev: null, next: null, related: [] });
+
+    useEffect(() => {
+        if (!id) return;
+        let active = true;
+        fetchPostNeighbors(id)
+            .then((res) => {
+                if (!active) return;
+                const data = res?.data || res || {};
+                setNeighbors({
+                    prev: data?.prev || null,
+                    next: data?.next || null,
+                    related: Array.isArray(data?.related) ? data.related : []
+                });
+            })
+            .catch(() => {
+                if (!active) return;
+                setNeighbors({ prev: null, next: null, related: [] });
+            });
+        return () => {
+            active = false;
+        };
+    }, [id]);
+
+    const relatedPosts = useMemo(() => (
+        Array.isArray(neighbors?.related) ? neighbors.related : []
+    ), [neighbors?.related]);
     const buildNavMeta = useCallback((item) => {
         if (!item) return null;
         const rawDate = item.date || item.publishedAt || item.published_at || item.updatedAt || item.createdAt;
@@ -139,8 +143,8 @@ const ArticleDetail = ({
             views: item.views ?? item.viewsCount ?? null
         };
     }, [formatPostDate]);
-    const prevMeta = useMemo(() => buildNavMeta(prevPost), [prevPost, buildNavMeta]);
-    const nextMeta = useMemo(() => buildNavMeta(nextPost), [nextPost, buildNavMeta]);
+    const prevMeta = useMemo(() => buildNavMeta(neighbors?.prev), [neighbors?.prev, buildNavMeta]);
+    const nextMeta = useMemo(() => buildNavMeta(neighbors?.next), [neighbors?.next, buildNavMeta]);
 
     const contentHtml = articleData?.contentHtml;
     const contentMd = articleData?.contentMd;

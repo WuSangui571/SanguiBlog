@@ -15,7 +15,6 @@ import {
 } from "../api";
 
 const BlogContext = createContext(null);
-const HOME_POSTS_PAGE_SIZE = 500;
 const ENABLE_POSTS_DEBUG = import.meta.env.VITE_ENABLE_POSTS_DEBUG === "true";
 
 export const BlogProvider = ({ children }) => {
@@ -28,7 +27,9 @@ export const useBlog = () => useContext(BlogContext);
 function useProvideBlog() {
   const [meta, setMeta] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [posts, setPosts] = useState([]);
+  const [postsPage, setPostsPage] = useState({ records: [], total: 0, page: 1, size: 10 });
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsError, setPostsError] = useState("");
   const [tags, setTags] = useState([]);
   const [article, setArticle] = useState(null);
   const [articleState, setArticleState] = useState({ status: "idle", error: "" }); // idle | loading | ok | not_found | error
@@ -96,17 +97,31 @@ function useProvideBlog() {
     }
   }, []);
 
-  const loadPosts = useCallback(async (filters = {}) => {
+  const loadPosts = useCallback(async (params = {}) => {
+    const page = Math.max(1, Number(params.page || 1));
+    const size = Math.min(Math.max(1, Number(params.size || 10)), 50);
     try {
-      const res = await fetchPosts({ page: 1, size: HOME_POSTS_PAGE_SIZE, ...filters });
+      setPostsLoading(true);
+      setPostsError("");
+      const res = await fetchPosts({ ...params, page, size });
       const data = res.data || res;
-      setPosts(data?.records || []);
+      const next = {
+        records: Array.isArray(data?.records) ? data.records : [],
+        total: typeof data?.total === "number" ? data.total : 0,
+        page: typeof data?.page === "number" ? data.page : page,
+        size: typeof data?.size === "number" ? data.size : size,
+      };
+      setPostsPage(next);
       postsErrorLoggedRef.current = false;
     } catch (e) {
       if (ENABLE_POSTS_DEBUG && !postsErrorLoggedRef.current) {
         console.debug("load posts failed (已忽略，使用本地占位数据)", e);
         postsErrorLoggedRef.current = true;
       }
+      setPostsPage({ records: [], total: 0, page, size });
+      setPostsError(e?.message || "加载文章列表失败");
+    } finally {
+      setPostsLoading(false);
     }
   }, []);
 
@@ -205,18 +220,19 @@ function useProvideBlog() {
     loadMeta();
     loadCategories();
     loadTags();
-    loadPosts();
     loadRecentComments();
     loadAbout();
     checkAuth();
-  }, [loadCategories, loadTags, loadMeta, loadPosts, loadRecentComments, loadAbout, checkAuth]);
+  }, [loadCategories, loadTags, loadMeta, loadRecentComments, loadAbout, checkAuth]);
 
   return useMemo(
     () => ({
       meta,
       categories,
       tags,
-      posts,
+      postsPage,
+      postsLoading,
+      postsError,
       article,
       articleState,
       comments,
@@ -233,6 +249,6 @@ function useProvideBlog() {
       doLogin,
       logout,
     }),
-    [meta, categories, tags, posts, article, articleState, comments, recentComments, about, user, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
+    [meta, categories, tags, postsPage, postsLoading, postsError, article, articleState, comments, recentComments, about, user, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
   );
 }

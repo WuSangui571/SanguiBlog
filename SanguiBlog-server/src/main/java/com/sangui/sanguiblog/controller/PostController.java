@@ -4,6 +4,7 @@ import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.ArchiveSummaryDto;
 import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.PostDetailDto;
+import com.sangui.sanguiblog.model.dto.PostNeighborsDto;
 import com.sangui.sanguiblog.model.dto.PostSummaryDto;
 import com.sangui.sanguiblog.model.dto.SavePostRequest;
 import com.sangui.sanguiblog.security.UserPrincipal;
@@ -56,6 +57,11 @@ public class PostController {
         String userAgent = request.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
         return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId, analyticsReferrer, analyticsSourceLabel));
+    }
+
+    @GetMapping("/{id}/neighbors")
+    public ApiResponse<PostNeighborsDto> neighbors(@PathVariable Long id) {
+        return ApiResponse.ok(postService.getPublishedNeighbors(id));
     }
 
     @GetMapping("/slug/{slug}")

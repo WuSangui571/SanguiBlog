@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificationExecutor<Post> {
@@ -79,4 +80,9 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     @Query("select p from Post p where p.status = 'PUBLISHED' and p.publishedAt is not null "
             + "and function('year', p.publishedAt) = :year and function('month', p.publishedAt) = :month")
     Page<Post> findPublishedByYearMonth(@Param("year") int year, @Param("month") int month, Pageable pageable);
+
+    @Query("select p from Post p where p.status = 'PUBLISHED' and p.publishedAt is not null "
+            + "and p.category.id = :categoryId and p.id <> :postId "
+            + "order by p.publishedAt desc, p.createdAt desc")
+    List<Post> findRelatedPublishedByCategory(@Param("categoryId") Long categoryId, @Param("postId") Long postId, Pageable pageable);
 }
