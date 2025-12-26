@@ -1,3 +1,4 @@
+// LEGACY：旧版 PopButton 原型组件（已由 src/components/common/PopButton.jsx 替代/扩展），保留仅供参考，请勿在现网入口中引用。
 import { motion } from "framer-motion";
 
 export default function PopButton({ children, className = "", variant = "primary", icon: Icon, ...props }) {

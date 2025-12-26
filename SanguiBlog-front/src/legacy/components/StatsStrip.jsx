@@ -1,3 +1,4 @@
+// LEGACY：旧版统计条原型组件（已由 src/appfull/public/StatsStrip.jsx 与相关 UI 替代），保留仅供参考，请勿在现网入口中引用。
 import { Activity, FileText, Eye, MessageSquare, Hash, Clock } from "lucide-react";
 
 export default function StatsStrip({ stats, isDarkMode }) {

@@ -45,6 +45,7 @@ out/
 # VSCode (optional)
 # ======================
 .vscode/
+pw-temp/
 
 # ======================
 # Node / Front-end (if future added)

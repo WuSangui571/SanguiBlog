@@ -1,4 +1,5 @@
 ﻿import { useState } from "react";
+// LEGACY：旧版导航栏原型组件（已由 src/appfull/ui/Navigation.jsx 替代），保留仅供参考，请勿在现网入口中引用。
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Code, Menu, LogOut, LogIn, Settings } from "lucide-react";
 

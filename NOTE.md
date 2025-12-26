@@ -617,6 +617,8 @@ ole_permissions in bulk.
 
 *   **大文件治理**：避免把 `SanguiBlog-front/node_modules/`、`SanguiBlog-server/target/`、`uploads/` 等构建产物/运行时文件提交到 Git；如果确实需要共享图片/封面，建议走对象存储/CDN，或采用 Git LFS（按团队习惯二选一）。
 
+*   **Legacy 收拢**：对“已弃用但暂时保留”的旧组件/资源，统一迁入 `SanguiBlog-front/src/legacy/` 并在 `SanguiBlog-front/src/legacy/README.md` 写明弃用原因与使用规范，避免同一功能出现多份实现导致误维护。
+
 
 
 ---

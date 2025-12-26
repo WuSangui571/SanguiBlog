@@ -1,3 +1,4 @@
+// LEGACY：旧版首页文章列表原型组件（已由 src/appfull/public/ArticleList.jsx 替代），保留仅供参考，请勿在现网入口中引用。
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, MessageSquare, Filter } from "lucide-react";

@@ -1,3 +1,4 @@
+// LEGACY：旧版 Hero 原型组件（已由 src/appfull/public/Hero.jsx 替代），保留仅供参考，请勿在现网入口中引用。
 import { ArrowUpRight, Sparkles, Github } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 

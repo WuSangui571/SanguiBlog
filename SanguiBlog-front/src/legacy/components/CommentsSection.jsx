@@ -1,3 +1,4 @@
+// LEGACY：旧版评论区原型组件（已由 src/components/comments/CommentsSection.jsx 与 AppFull 内实现替代），保留仅供参考，请勿在现网入口中引用。
 import { useState } from "react";
 import { MessageSquare } from "lucide-react";
 import PopButton from "./PopButton";
