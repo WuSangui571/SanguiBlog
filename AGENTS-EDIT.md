@@ -2161,3 +2161,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.236 (2025-12-26)
 - **模块/页面**：优化前端后台交互与日志规范：后台管理页移除 `alert()` 弹窗，统一改用 `AdminNoticeBar + useTimedNotice` 的非打断式提示；新增 `src/utils/logger.js`，将全站零散的 `console.warn` 收敛为可控输出（开发环境全量、生产环境采样，支持通过 `VITE_LOG_SAMPLE_RATE` 配置，并预留 Sentry 接入点）。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.236`
+
+## V2.1.237 (2025-12-26)
+- **模块/页面**：修复首页二级分类筛选加载体验：筛选/分页触发 `postsLoading` 时隐藏旧文章卡片，避免“加载中卡片 + 旧卡片堆叠”的视觉别扭；同时清理仓库根目录遗留的入口原型 `App.jsx`，避免后续维护者误改。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.237`

@@ -128,11 +128,13 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 单页应用，入口为 `src/main.jsx` -> `AppFull.jsx`。
 
+*   **入口文件**：实际构建入口为 `SanguiBlog-front/src/main.jsx`（`createRoot`）→ `SanguiBlog-front/src/App.jsx`（路由壳）→ `SanguiBlog-front/src/AppFull.jsx`（主流程编排）。仓库根目录历史上曾存在一个同名 `App.jsx` 原型文件，现已移除以避免误改。
+
 *   **AppFull 拆分**：后台管理相关组件迁移到 `src/appfull/AdminPanel.jsx`，共享常量/工具抽离到 `src/appfull/shared.js`；前台视图拆分到 `src/appfull/public/`，通用 UI 组件拆分到 `src/appfull/ui/`，`AppFull.jsx` 仅保留主流程编排。
 
 
 
-*   **路由 (`App.jsx` + 页面壳)**:
+*   **路由（`SanguiBlog-front/src/App.jsx` + 页面壳）**:
 
     *   `/`: 首页 (Hero + 文章列表)
 
@@ -563,21 +565,17 @@ ole_permissions in bulk.
 
 
 
-### ?? 3. ???? (CORS)
+### ⚠️ 3. 跨域 (CORS)
 
-*   ??? `application.yaml` ?? `security.cors.allowed-origins`?????????????
+*   请在 `application.yaml` 中配置 `security.cors.allowed-origins`，至少包含你实际访问前端的域名/端口，例如：
 
-    *   `https://sangui.top`?`https://www.sangui.top`
+    *   `https://sangui.top` / `https://www.sangui.top`
 
-    *   `http://localhost:5173` / `http://127.0.0.1:5173`
+    *   `http://localhost:5173` / `http://127.0.0.1:5173`（本地前端）
 
-    *   `http://localhost:5174` / `http://127.0.0.1:5174`
+    *   其它你实际使用的本地端口（如 `5174/8082/3000` 等）
 
-    *   `http://localhost:8082` / `http://127.0.0.1:8082`
-
-    *   `http://localhost:3000` / `http://127.0.0.1:3000`
-
-*   **??**: ???????????????????????????????????
+*   **后果**：若未放行，会被浏览器 CORS 策略直接拦截，表现为前端请求失败、控制台提示跨域错误。
 
 
 ### ⚠️ 4. React 19 兼容性
@@ -605,11 +603,19 @@ ole_permissions in bulk.
 
 
 
-### ?? 6. 全局异常处理（错误信息泄露）
+### ⚠️ 6. 全局异常处理（错误信息泄露）
 
 *   后端统一由 `GlobalExceptionHandler` 处理未捕获异常。自 V2.1.226 起：生产环境（无 `dev/local` profile）对外固定返回“服务器内部错误”，避免把堆栈/内部实现细节泄露给前端；同时服务端使用 `log.error` 记录完整堆栈便于排查。
 
 *   若需要在本地调试时查看真实异常 message，可通过设置 `SPRING_PROFILES_ACTIVE=dev`（或 `local`）启用“对外返回异常 message”的调试模式；上线环境请勿启用该 profile。
+
+
+
+### ⚠️ 7. 仓库体积与重复入口（误维护风险）
+
+*   **前端真实入口**在 `SanguiBlog-front/src/main.jsx`，不要在仓库根目录新增/保留“看起来像入口”的同名文件，否则后续维护者容易误改。
+
+*   **大文件治理**：避免把 `SanguiBlog-front/node_modules/`、`SanguiBlog-server/target/`、`uploads/` 等构建产物/运行时文件提交到 Git；如果确实需要共享图片/封面，建议走对象存储/CDN，或采用 Git LFS（按团队习惯二选一）。
 
 
 

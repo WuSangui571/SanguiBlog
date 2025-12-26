@@ -276,7 +276,8 @@ const ArticleList = ({
     }, [currentPage, scrollToPostsTop]);
 
     const totalPages = Math.max(1, Math.ceil((Number(postsPage?.total ?? 0) || 0) / pageSize));
-    const displayPosts = sourcePosts;
+    // 筛选/分页触发加载时，隐藏旧文章卡片，避免“加载中卡片 + 旧卡片堆叠”的视觉别扭
+    const displayPosts = postsLoading ? [] : sourcePosts;
     const paginationItems = useMemo(() => {
         if (totalPages <= 7) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
