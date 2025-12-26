@@ -5,6 +5,7 @@ import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
 import StatsStrip from "./StatsStrip.jsx";
 import { buildAssetUrl } from "../../utils/asset.js";
+import sanitizeHtml from "../../utils/sanitize.js";
 import {
     DEFAULT_HOME_QUOTE,
     DEFAULT_PAGE_SIZE,
@@ -294,6 +295,7 @@ const ArticleList = ({
     const authorAvatar = buildMediaUrl(displayAuthor.avatar, MOCK_USER.avatar);
     const authorWechat = buildMediaUrl("/contact/wechat.jpg");
     const authorBioHtml = typeof displayAuthor.bio === 'string' ? displayAuthor.bio.trim() : '';
+    const safeAuthorBioHtml = useMemo(() => (authorBioHtml ? sanitizeHtml(authorBioHtml) : ''), [authorBioHtml]);
     const fallbackBio = displayAuthor.title || '保持热爱，持续创作。';
     const allTags = useMemo(() => {
         if (Array.isArray(tagsData) && tagsData.length) {
@@ -446,10 +448,10 @@ const ArticleList = ({
                                 )}
                             </motion.div>
                             <h3 className="mt-12 font-black text-2xl">{displayAuthor.displayName || displayAuthor.username}</h3>
-                            {authorBioHtml ? (
+                            {safeAuthorBioHtml ? (
                                 <div
                                     className={`text-sm font-bold mb-4 ${subText}`}
-                                    dangerouslySetInnerHTML={{ __html: authorBioHtml }}
+                                    dangerouslySetInnerHTML={{ __html: safeAuthorBioHtml }}
                                 />
                             ) : (
                                 <p className={`text-sm font-bold mb-4 ${subText}`}>{fallbackBio}</p>

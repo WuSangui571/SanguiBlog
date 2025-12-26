@@ -232,7 +232,9 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
     *   `remark-math` + `rehype-katex`: 支持 `$...$` 行内、`$$...$$` 块级公式，样式依赖 `katex/dist/katex.min.css`（在 `AppFull.jsx` 头部全局引入）。
 
-    *   `rehype-raw`: 允许 Markdown 中的原生 HTML（如 `<p style="color:red">`）直接渲染，满足自定义排版需求。
+    *   自 V2.1.225 起，Markdown 渲染移除 `rehype-raw`（不再执行原生 HTML），并加入 `rehype-sanitize` 对链接协议等进行清洗，降低存储型 XSS 风险（例如阻断 `javascript:` 链接）。
+
+    *   HTML 兜底路径（`contentHtml` / `dangerouslySetInnerHTML`）会在前端使用 `DOMPurify` 做二次清洗后再渲染（包含 KaTeX 的 MathML 白名单），并同样用于作者简介等富文本字段，避免后台配置/内容误写入脚本导致全站被注入。
 
     *   **扩展高亮**：通过自定义 `remarkHighlight` 插件把 `==文本==` 转换为 `<mark>` 标签，兼容 Markdown 与 HTML 渲染路径，便于作者强调关键词。
 

@@ -2113,3 +2113,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.224 (2025-12-26)
 - **模块/页面**：修复归档页（`/archive`）文章卡片标签顺序抖动：前后端统一对 tags 做稳定排序，避免因后端 Set/无序集合序列化导致同一文章标签顺序在加载后发生变化。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.224`
+
+## V2.1.225 (2025-12-26)
+- **模块/页面**：修复前端潜在 XSS 注入面：移除 Markdown 渲染中的 `rehype-raw`（不再执行原生 HTML），并引入 HTML/Markdown 清洗（`rehype-sanitize` + `DOMPurify`）对文章正文 HTML 与作者简介等 `dangerouslySetInnerHTML` 输出做安全过滤，阻断 `javascript:` 链接与脚本注入。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.225`

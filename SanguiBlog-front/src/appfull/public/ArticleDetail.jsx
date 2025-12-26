@@ -6,11 +6,12 @@ import { buildAssetUrl } from "../../utils/asset.js";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import rehypeRaw from 'rehype-raw';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
+import sanitizeHtml from "../../utils/sanitize.js";
+import { rehypeSanitize, SG_REHYPE_SANITIZE_SCHEMA } from "../../utils/rehypeSanitizeSchema.js";
 import {
     THEME,
     MOCK_POSTS,
@@ -323,6 +324,11 @@ const ArticleDetail = ({
         const doubleQuoteReplaced = contentHtml.replace(/src="([^"]+)"/g, (_, src) => `src="${resolveAssetPath(src)}"`);
         return doubleQuoteReplaced.replace(/src='([^']+)'/g, (_, src) => `src='${resolveAssetPath(src)}'`);
     }, [contentHtml, resolveAssetPath]);
+
+    const safeHtml = useMemo(() => {
+        const html = resolvedHtml || contentHtml;
+        return sanitizeHtml(html);
+    }, [resolvedHtml, contentHtml]);
 
     const scrollToComments = useCallback(() => {
         if (typeof document === 'undefined' || typeof window === 'undefined') return;
@@ -924,14 +930,14 @@ const ArticleDetail = ({
                         {shouldRenderMarkdown ? (
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm, remarkMath, remarkHighlight]}
-                                rehypePlugins={[rehypeRaw, rehypeKatex]}
+                                rehypePlugins={[rehypeKatex, [rehypeSanitize, SG_REHYPE_SANITIZE_SCHEMA]]}
                                 components={markdownComponents}
                             >
                                 {contentMd}
                             </ReactMarkdown>
                         ) : contentHtml ? (
                             <div
-                                dangerouslySetInnerHTML={{ __html: resolvedHtml || contentHtml }}
+                                dangerouslySetInnerHTML={{ __html: safeHtml }}
                             />
                         ) : (
                             <p className="font-semibold">暂无正文内容</p>

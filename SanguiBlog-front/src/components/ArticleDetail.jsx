@@ -1,6 +1,7 @@
 import { Heart, Share2 } from "lucide-react";
 import CommentsSection from "./CommentsSection";
 import PopButton from "./PopButton";
+import sanitizeHtml from "../utils/sanitize.js";
 
 export default function ArticleDetail({ article, comments, onSubmitComment, isDarkMode, back }) {
   if (!article?.summary) return <p className="p-10 text-center font-bold">加载中...</p>;
@@ -31,7 +32,7 @@ export default function ArticleDetail({ article, comments, onSubmitComment, isDa
           </div>
           <article className={`prose max-w-none ${isDarkMode ? "prose-invert" : ""}`}>
             <div className="p-4 border-l-8 border-[#FFD700] bg-[#FFF9E6] text-lg font-serif mb-6">{summary.excerpt}</div>
-            {contentHtml ? <div dangerouslySetInnerHTML={{ __html: contentHtml }} /> : <p>{contentMd}</p>}
+            {contentHtml ? <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(contentHtml) }} /> : <p>{contentMd}</p>}
           </article>
           <CommentsSection comments={comments} count={summary.comments} onSubmit={onSubmitComment} isDarkMode={isDarkMode} />
         </div>

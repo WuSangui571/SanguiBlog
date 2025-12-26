@@ -2,8 +2,8 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import rehypeRaw from 'rehype-raw';
 import rehypeKatex from 'rehype-katex';
+import { rehypeSanitize, SG_REHYPE_SANITIZE_SCHEMA } from "../../utils/rehypeSanitizeSchema.js";
 import 'katex/dist/katex.min.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { buildAssetUrl } from "../../utils/asset.js";
@@ -154,7 +154,7 @@ import { Copy } from 'lucide-react';function AboutView({ about, isDarkMode, onRe
                         <article className={`prose prose-xl max-w-none prose-headings:font-black prose-p:font-medium prose-code:before:content-none prose-code:after:content-none prose-pre:p-0 prose-pre:bg-transparent ${isDarkMode ? 'prose-invert' : ''}`}>
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm, remarkMath, remarkHighlight]}
-                                rehypePlugins={[rehypeRaw, rehypeKatex]}
+                                rehypePlugins={[rehypeKatex, [rehypeSanitize, SG_REHYPE_SANITIZE_SCHEMA]]}
                                 components={markdownComponents}
                             >
                                 {about.contentMd}
