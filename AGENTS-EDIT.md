@@ -2141,3 +2141,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.231 (2025-12-26)
 - **模块/页面**：清理前端遗留未使用组件：删除 `src/components/ArticleDetail.jsx`（旧版详情页组件，包含 `dangerouslySetInnerHTML` 且当前无引用），避免后续维护者误改错文件并降低潜在误用风险。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.231`
+
+## V2.1.232 (2025-12-26)
+- **模块/页面**：补齐后端统一 HTTP 安全响应头：在 Spring Security 中新增 CSP、Referrer-Policy、X-Frame-Options、HSTS（仅 https 生效）、Permissions-Policy、X-Content-Type-Options，作为前端 XSS 清洗之外的第二道防线，降低被嵌入点击劫持与浏览器侧能力滥用风险。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.232`
