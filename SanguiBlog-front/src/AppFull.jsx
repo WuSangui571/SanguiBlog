@@ -42,7 +42,6 @@ import {
     THEME,
     CATEGORY_TREE,
     SITE_STATS,
-    MOCK_POSTS,
     DEFAULT_PAGE_SIZE,
     PAGE_SIZE_OPTIONS,
     PAGE_SIZE_STORAGE_KEY,
@@ -432,7 +431,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.228';
+    const siteVersion = meta?.version || 'V2.1.229';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -731,22 +730,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             CATEGORY_TREE.splice(0, CATEGORY_TREE.length, { id: "all", label: "全部", children: [] }, ...categories);
         }
     }, [categories]);
-
-    useEffect(() => {
-        if (posts && posts.length) {
-            MOCK_POSTS.splice(
-                0,
-                MOCK_POSTS.length,
-                ...posts.map((p) => ({
-                    ...p,
-                    color: p.color || "bg-[#6366F1]",
-                    likes: p.likes ?? 0,
-                    comments: p.comments ?? p.commentsCount ?? 0,
-                    views: p.views ?? 0,
-                }))
-            );
-        }
-    }, [posts]);
 
     useEffect(() => {
         const targetId = view === 'article' ? articleId : (view === 'game' ? gameId : null);
