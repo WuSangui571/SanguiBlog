@@ -1,4 +1,4 @@
-﻿# SanguiBlog 技术手册 (Technical Manual)
+# SanguiBlog 技术手册 (Technical Manual)
 
 
 
@@ -618,6 +618,8 @@ ole_permissions in bulk.
 *   **大文件治理**：避免把 `SanguiBlog-front/node_modules/`、`SanguiBlog-server/target/`、`uploads/` 等构建产物/运行时文件提交到 Git；如果确实需要共享图片/封面，建议走对象存储/CDN，或采用 Git LFS（按团队习惯二选一）。
 
 *   **Legacy 收拢**：对“已弃用但暂时保留”的旧组件/资源，统一迁入 `SanguiBlog-front/src/legacy/` 并在 `SanguiBlog-front/src/legacy/README.md` 写明弃用原因与使用规范，避免同一功能出现多份实现导致误维护。
+
+*   **文档编码**：仓库内 Markdown 文档建议统一为 UTF-8（无 BOM），并避免零宽字符/控制字符混入，防止后续复制、搜索、正则匹配时出现“看不见但影响结果”的协作问题。
 
 
 

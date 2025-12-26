@@ -63,8 +63,8 @@ storage:
 
 site:
     version: "V2.1.240"
-    asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
-    #  asset-base-url: http://sangui.top/uploads
+  asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
+#  asset-base-url: http://sangui.top/uploads
     hero:
       tagline: 我是三桂，在这里把问题想清楚，把代码写简单。
     home:
