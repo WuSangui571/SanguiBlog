@@ -3,6 +3,7 @@ package com.sangui.sanguiblog.service;
 import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.TagDto;
 import com.sangui.sanguiblog.model.dto.TagRequest;
+import com.sangui.sanguiblog.exception.NotFoundException;
 import com.sangui.sanguiblog.model.entity.Tag;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
@@ -72,7 +73,7 @@ public class TagService {
 
     @Transactional
     public TagDto update(Long id, TagRequest request) {
-        Tag tag = tagRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("标签不存在"));
+        Tag tag = tagRepository.findById(id).orElseThrow(() -> new NotFoundException("标签不存在"));
         String name = request.getName().trim();
         String slug = resolveSlug(request.getSlug(), name);
         tagRepository.findByNameIgnoreCase(name)
@@ -94,7 +95,7 @@ public class TagService {
 
     @Transactional
     public void delete(Long id) {
-        Tag tag = tagRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("标签不存在"));
+        Tag tag = tagRepository.findById(id).orElseThrow(() -> new NotFoundException("标签不存在"));
         tagRepository.delete(tag);
     }
 

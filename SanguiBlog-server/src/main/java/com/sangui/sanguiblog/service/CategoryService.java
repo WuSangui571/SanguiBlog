@@ -4,6 +4,7 @@ import com.sangui.sanguiblog.model.dto.CategoryAdminDto;
 import com.sangui.sanguiblog.model.dto.CategoryRequest;
 import com.sangui.sanguiblog.model.dto.CategoryTreeDto;
 import com.sangui.sanguiblog.model.dto.PageResponse;
+import com.sangui.sanguiblog.exception.NotFoundException;
 import com.sangui.sanguiblog.model.entity.Category;
 import com.sangui.sanguiblog.model.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -102,7 +103,7 @@ public class CategoryService {
 
     @Transactional
     public CategoryAdminDto update(Long id, CategoryRequest request) {
-        Category category = categoryRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("分类不存在"));
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("分类不存在"));
         String name = request.getName().trim();
         String slug = resolveSlug(request.getSlug(), name);
         categoryRepository.findByNameIgnoreCase(name)
@@ -126,7 +127,7 @@ public class CategoryService {
 
     @Transactional
     public void delete(Long id) {
-        Category category = categoryRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("分类不存在"));
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("分类不存在"));
         List<Category> children = categoryRepository.findByParentIdOrderBySortOrderAsc(id);
         if (!children.isEmpty()) {
             throw new IllegalStateException("请先删除子分类");
@@ -142,7 +143,7 @@ public class CategoryService {
             throw new IllegalArgumentException("父级分类不能是自身");
         }
         Category parent = categoryRepository.findById(parentId)
-                .orElseThrow(() -> new IllegalArgumentException("父级分类不存在"));
+                .orElseThrow(() -> new NotFoundException("父级分类不存在"));
         if (parent.getParent() != null) {
             throw new IllegalArgumentException("仅支持两级分类，请选择一级分类作为父级");
         }

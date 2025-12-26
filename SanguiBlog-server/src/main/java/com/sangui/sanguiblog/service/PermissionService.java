@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.exception.NotFoundException;
 import com.sangui.sanguiblog.model.dto.PermissionMatrixDto;
 import com.sangui.sanguiblog.model.entity.Permission;
 import com.sangui.sanguiblog.model.entity.Role;
@@ -151,7 +152,7 @@ public class PermissionService {
 
     private void assignPermissionsToRole(String roleCode, Set<String> codes, Map<String, Permission> permissionMap) {
         Role role = roleRepository.findByCode(roleCode)
-                .orElseThrow(() -> new IllegalArgumentException("角色不存在：" + roleCode));
+                .orElseThrow(() -> new NotFoundException("角色不存在：" + roleCode));
         if (permissionMap.isEmpty()) {
             permissionMap.putAll(permissionRepository.findAll().stream()
                     .collect(Collectors.toMap(Permission::getCode, p -> p)));

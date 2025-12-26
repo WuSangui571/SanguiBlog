@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.exception.NotFoundException;
 import com.sangui.sanguiblog.model.dto.AdminCommentItemDto;
 import com.sangui.sanguiblog.model.dto.CommentDto;
 import com.sangui.sanguiblog.model.dto.CreateCommentRequest;
@@ -112,14 +113,14 @@ public class CommentService {
     @Transactional
     public CommentDto create(Long postId, CreateCommentRequest request, String ip, Long userId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("文章不存在"));
+                .orElseThrow(() -> new NotFoundException("文章不存在"));
 
         Comment comment = new Comment();
         comment.setPost(post);
 
         if (request.getParentId() != null) {
             Comment parent = commentRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new IllegalArgumentException("父评论不存在"));
+                    .orElseThrow(() -> new NotFoundException("父评论不存在"));
             comment.setParent(parent);
         }
 
@@ -230,7 +231,7 @@ public class CommentService {
 
     private Comment requireComment(Long commentId, Long postId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("评论不存在"));
+                .orElseThrow(() -> new NotFoundException("评论不存在"));
         if (postId != null) {
             Long actualPostId = comment.getPost() != null ? comment.getPost().getId() : null;
             if (actualPostId == null || !postId.equals(actualPostId)) {

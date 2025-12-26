@@ -6,6 +6,7 @@ import com.sangui.sanguiblog.model.dto.GamePageDetailDto;
 import com.sangui.sanguiblog.model.dto.GamePageDto;
 import com.sangui.sanguiblog.model.dto.GamePageRequest;
 import com.sangui.sanguiblog.model.dto.PageResponse;
+import com.sangui.sanguiblog.exception.NotFoundException;
 import com.sangui.sanguiblog.model.entity.GamePage;
 import com.sangui.sanguiblog.model.repository.GamePageRepository;
 import lombok.RequiredArgsConstructor;
@@ -68,10 +69,10 @@ public class GamePageService {
     @Transactional(readOnly = true)
     public GamePageDetailDto getDetail(Long idOrNull) {
         if (idOrNull == null) {
-            throw new IllegalArgumentException("游戏页面不存在");
+            throw new NotFoundException("游戏页面不存在");
         }
         GamePage page = gamePageRepository.findById(idOrNull)
-                .orElseThrow(() -> new IllegalArgumentException("游戏页面不存在"));
+                .orElseThrow(() -> new NotFoundException("游戏页面不存在"));
         if (page.getStatus() != GamePage.Status.ACTIVE) {
             throw new IllegalStateException("该页面未发布或已停用");
         }
@@ -103,7 +104,7 @@ public class GamePageService {
     @Transactional
     public GamePageAdminDto update(Long id, GamePageRequest request, MultipartFile file, Long operatorId) {
         GamePage entity = gamePageRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("游戏页面不存在"));
+                .orElseThrow(() -> new NotFoundException("游戏页面不存在"));
         if (StringUtils.hasText(request.getTitle())) {
             entity.setTitle(request.getTitle());
         }
@@ -126,7 +127,7 @@ public class GamePageService {
     @Transactional
     public void delete(Long id) {
         GamePage entity = gamePageRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("游戏页面不存在"));
+                .orElseThrow(() -> new NotFoundException("游戏页面不存在"));
         deleteFileQuietly(entity.getFilePath());
         gamePageRepository.delete(entity);
     }

@@ -2145,3 +2145,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.232 (2025-12-26)
 - **模块/页面**：补齐后端统一 HTTP 安全响应头：在 Spring Security 中新增 CSP、Referrer-Policy、X-Frame-Options、HSTS（仅 https 生效）、Permissions-Policy、X-Content-Type-Options，作为前端 XSS 清洗之外的第二道防线，降低被嵌入点击劫持与浏览器侧能力滥用风险。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.232`
+
+## V2.1.233 (2025-12-26)
+- **模块/页面**：统一后端错误码语义：新增 `NotFoundException` 并由全局异常处理映射为 404；将文章/评论/分类/标签/游戏页/角色等“资源不存在”场景从 `IllegalArgumentException`（400）调整为 404，便于 SEO/爬虫与日志分析；同时补齐 `IllegalStateException` 的 400 映射，避免状态类异常误返 500。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.233`

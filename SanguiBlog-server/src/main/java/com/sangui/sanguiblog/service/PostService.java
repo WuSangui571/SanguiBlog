@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.service;
 
+import com.sangui.sanguiblog.exception.NotFoundException;
 import com.sangui.sanguiblog.model.dto.AdminPostDetailDto;
 import com.sangui.sanguiblog.model.dto.AdminPostUpdateRequest;
 import com.sangui.sanguiblog.model.dto.ArchiveMonthSummaryDto;
@@ -183,7 +184,7 @@ public class PostService {
     public PostDetailDto getPublishedDetail(Long id, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
         Post post = postRepository.findById(id)
                 .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
-                .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
+                .orElseThrow(() -> new NotFoundException("文章不存在或未发布"));
         incrementViews(post, ip, userAgent, userId, referrer, sourceLabel);
         return toDetail(post);
     }
@@ -191,7 +192,7 @@ public class PostService {
     @Transactional
     public PostDetailDto getPublishedDetailBySlug(String slug, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
         Post post = postRepository.findBySlugAndStatus(slug, "PUBLISHED")
-                .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
+                .orElseThrow(() -> new NotFoundException("文章不存在或未发布"));
         incrementViews(post, ip, userAgent, userId, referrer, sourceLabel);
         return toDetail(post);
     }
@@ -199,10 +200,10 @@ public class PostService {
     @Transactional
     public PostDetailDto saveOrUpdate(SavePostRequest request, Long userId) {
         Post post = request.getId() != null ? postRepository.findById(request.getId())
-                .orElseThrow(() -> new IllegalArgumentException("文章不存在")) : new Post();
+                .orElseThrow(() -> new NotFoundException("文章不存在")) : new Post();
 
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("分类不存在"));
+                .orElseThrow(() -> new NotFoundException("分类不存在"));
 
         User author = userRepository.findById(userId)
                 .orElseGet(() -> userRepository.findAll().stream().findFirst()
@@ -261,7 +262,7 @@ public class PostService {
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             Set<Tag> tags = request.getTagIds().stream()
                     .map(id -> tagRepository.findById(id)
-                            .orElseThrow(() -> new IllegalArgumentException("标签不存在: " + id)))
+                            .orElseThrow(() -> new NotFoundException("标签不存在: " + id)))
                     .collect(Collectors.toSet());
             post.setTags(tags);
         }
@@ -304,14 +305,14 @@ public class PostService {
     @Transactional(readOnly = true)
     public AdminPostDetailDto getAdminDetail(Long id) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("文章不存在"));
+                .orElseThrow(() -> new NotFoundException("文章不存在"));
         return toAdminDetail(post);
     }
 
     @Transactional(readOnly = true)
     public PostSiblingDto findPublishedSiblings(Long postId) {
         Post current = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("文章不存在"));
+                .orElseThrow(() -> new NotFoundException("文章不存在"));
         LocalDateTime pub = current.getPublishedAt();
         Instant created = current.getCreatedAt() != null ? current.getCreatedAt() : Instant.EPOCH;
         Long prev = pub == null ? null : postRepository.findPrevPublishedId(pub, created);
@@ -326,7 +327,7 @@ public class PostService {
     public PostNeighborsDto getPublishedNeighbors(Long postId) {
         Post current = postRepository.findById(postId)
                 .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
-                .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
+                .orElseThrow(() -> new NotFoundException("文章不存在或未发布"));
 
         LocalDateTime pub = current.getPublishedAt();
         Instant created = current.getCreatedAt() != null ? current.getCreatedAt() : Instant.EPOCH;
@@ -355,11 +356,11 @@ public class PostService {
 
     @Transactional
     public PostAdminDto updateMeta(Long id, AdminPostUpdateRequest request) {
-        Post post = postRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("文章不存在"));
+        Post post = postRepository.findById(id).orElseThrow(() -> new NotFoundException("文章不存在"));
         String title = request.getTitle().trim();
         String slug = resolveAssetSlug(request.getSlug(), post.getId());
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("分类不存在"));
+                .orElseThrow(() -> new NotFoundException("分类不存在"));
         post.setTitle(title);
         post.setSlug(slug);
         postAssetService.ensureFolder(slug);
@@ -380,7 +381,7 @@ public class PostService {
         if (request.getTagIds() != null) {
             Set<Tag> tags = request.getTagIds().stream()
                     .map(tagId -> tagRepository.findById(tagId)
-                            .orElseThrow(() -> new IllegalArgumentException("标签不存在: " + tagId)))
+                            .orElseThrow(() -> new NotFoundException("标签不存在: " + tagId)))
                     .collect(Collectors.toSet());
             post.setTags(tags);
         }

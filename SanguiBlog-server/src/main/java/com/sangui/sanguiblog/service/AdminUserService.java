@@ -5,6 +5,7 @@ import com.sangui.sanguiblog.model.dto.AdminUserDto;
 import com.sangui.sanguiblog.model.dto.AdminUserRequest;
 import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.RoleOptionDto;
+import com.sangui.sanguiblog.exception.NotFoundException;
 import com.sangui.sanguiblog.model.entity.Role;
 import com.sangui.sanguiblog.model.entity.User;
 import com.sangui.sanguiblog.model.repository.RoleRepository;
@@ -67,7 +68,7 @@ public class AdminUserService {
     @Transactional(readOnly = true)
     public AdminUserDto get(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new NotFoundException("用户不存在"));
         return toDto(user);
     }
 
@@ -99,7 +100,7 @@ public class AdminUserService {
     @Transactional
     public AdminUserDto update(Long id, AdminUserRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new NotFoundException("用户不存在"));
         validateUnique(request.getUsername(), request.getEmail(), id);
         Role role = resolveRole(request.getRoleCode());
         user.setUsername(request.getUsername().trim());
@@ -167,7 +168,7 @@ public class AdminUserService {
             throw new IllegalArgumentException("请指定角色");
         }
         return roleRepository.findByCode(roleCode.trim().toUpperCase())
-                .orElseThrow(() -> new IllegalArgumentException("角色不存在"));
+                .orElseThrow(() -> new NotFoundException("角色不存在"));
     }
 
     private String trimToNull(String value) {

@@ -114,6 +114,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
     *   安全响应头：`SecurityConfig` 统一下发 CSP、Referrer-Policy、X-Frame-Options、HSTS（仅 https 生效）、Permissions-Policy、X-Content-Type-Options 等浏览器安全头，作为前端 XSS 清洗之外的第二道防线；若前端由 Nginx/静态站点独立托管，建议在该层同样配置这些头（因为后端只会给 API/静态资源响应加头，无法覆盖前端 `index.html` 的响应头）。
 
+    *   错误码语义：后端接口统一返回 `ApiResponse` 结构；参数/业务校验错误一般返回 400（`IllegalArgumentException`/校验异常），资源不存在返回 404（`NotFoundException`），未捕获异常返回 500（生产环境对外统一“服务器内部错误”）。
+
 *   **内容管理**:
 
     *   `PostController`: 处理文章的 CRUD。
