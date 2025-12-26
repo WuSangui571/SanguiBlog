@@ -590,6 +590,14 @@ ole_permissions in bulk.
 
 
 
+### ?? 6. 全局异常处理（错误信息泄露）
+
+*   后端统一由 `GlobalExceptionHandler` 处理未捕获异常。自 V2.1.226 起：生产环境（无 `dev/local` profile）对外固定返回“服务器内部错误”，避免把堆栈/内部实现细节泄露给前端；同时服务端使用 `log.error` 记录完整堆栈便于排查。
+
+*   若需要在本地调试时查看真实异常 message，可通过设置 `SPRING_PROFILES_ACTIVE=dev`（或 `local`）启用“对外返回异常 message”的调试模式；上线环境请勿启用该 profile。
+
+
+
 ---
 
 

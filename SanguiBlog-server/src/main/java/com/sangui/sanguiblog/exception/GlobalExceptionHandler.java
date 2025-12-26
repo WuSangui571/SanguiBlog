@@ -2,13 +2,26 @@ package com.sangui.sanguiblog.exception;
 
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.exception.LoginChallengeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.core.env.Environment;
+
+import java.util.Arrays;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    private final Environment environment;
+
+    public GlobalExceptionHandler(Environment environment) {
+        this.environment = environment;
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadRequest(IllegalArgumentException ex) {
@@ -39,9 +52,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleOther(Exception ex) {
-        ex.printStackTrace();
-        // Return actual error message for better debugging
-        String message = ex.getMessage() != null ? ex.getMessage() : "服务器内部错误";
+        log.error("未捕获异常", ex);
+        String message = shouldExposeErrorDetail()
+                ? (ex.getMessage() != null ? ex.getMessage() : "服务器内部错误")
+                : "服务器内部错误";
         return ResponseEntity.internalServerError().body(ApiResponse.fail(message));
+    }
+
+    private boolean shouldExposeErrorDetail() {
+        if (environment == null) {
+            return false;
+        }
+        String[] profiles = environment.getActiveProfiles();
+        if (profiles == null || profiles.length == 0) {
+            return false;
+        }
+        return Arrays.stream(profiles).anyMatch(p -> "dev".equalsIgnoreCase(p) || "local".equalsIgnoreCase(p));
     }
 }

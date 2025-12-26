@@ -2117,3 +2117,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.225 (2025-12-26)
 - **模块/页面**：修复前端潜在 XSS 注入面：移除 Markdown 渲染中的 `rehype-raw`（不再执行原生 HTML），并引入 HTML/Markdown 清洗（`rehype-sanitize` + `DOMPurify`）对文章正文 HTML 与作者简介等 `dangerouslySetInnerHTML` 输出做安全过滤，阻断 `javascript:` 链接与脚本注入。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.225`
+
+## V2.1.226 (2025-12-26)
+- **模块/页面**：修复后端全局异常处理信息泄露风险：移除 `printStackTrace`，统一使用 `log.error` 记录堆栈；生产环境对外固定返回“服务器内部错误”，仅在 `dev/local` profile 下返回真实异常 message 便于调试。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.226`
