@@ -55,7 +55,17 @@ const ArticleDetail = ({
 
     // The backend returns a PostDetailDto which contains a 'summary' field (PostSummaryDto).
     // We should prioritize using 'summary' as the source of post metadata.
-    const postSource = summary || MOCK_POSTS.find(p => p.id === id) || MOCK_POSTS[0];
+    const postSource = summary || MOCK_POSTS.find(p => p.id === id) || {
+        id,
+        title: '文章加载中…',
+        excerpt: '',
+        parentCategory: '',
+        category: '',
+        tags: [],
+        views: 0,
+        date: '',
+        color: 'shadow-[8px_8px_0px_0px_#000]'
+    };
 
     const siteAuthorAvatar = siteMeta?.author?.avatar || siteMeta?.author?.avatarUrl;
 

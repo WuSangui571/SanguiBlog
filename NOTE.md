@@ -496,6 +496,7 @@ ole_permissions in bulk.
   * 自 V2.1.186 起，关于页 `/about` 也会写入访问日志（`pageTitle = About`），与首页/归档/工具保持一致，便于在后台访问日志中统计与检索。
   * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；代码内还做了 1 分钟的内存限流（IP+post）与 10 分钟的数据库去重，避免刷量。
   * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV；为解决 SPA 下 `document.referrer` 不可靠的问题，前端在请求文章详情 `GET /api/posts/{id}` 时会附带 `X-SG-Referrer`（外部来源或站内上一页 URL）与可选的 `X-SG-Source-Label`（站内跳转中文描述），后端据此写入正确来源。
+  * 自 V2.1.223 起，访问不存在的文章（例如 `/article/999999` 或 `/article/xxxx`）会在前端明确展示 404；不再回退展示 `MOCK_POSTS[0]`（最新文章占位）导致的“标题/摘要像对、正文为空”的错觉。
   * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，仅首次进入这些视图时才会调用 `recordPageView`，一旦切换到其它视图即重置标记，彻底杜绝 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录。
 * 数据落库
 * `viewer_ip`：优先读取 `X-Forwarded-For`/`X-Real-IP`。前端默认通过同源接口 `GET /api/analytics/client-ip` 获取归一化 IP，若拿到的不是回环地址则随 PV 请求附带 `clientIp`；若返回仍是 `127.0.0.1`/`::1` 且需要公网地址，可在前端 `.env` 设置 `VITE_ENABLE_PUBLIC_IP_FETCH=true`（可选用 `VITE_PUBLIC_IP_ENDPOINT` 覆盖默认 `https://api.ipify.org?format=json`）启用公网兜底。默认不再直接访问外网 IP 服务，避免公司/校园网络拦截导致控制台报错。

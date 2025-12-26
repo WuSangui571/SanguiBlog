@@ -31,6 +31,7 @@ function useProvideBlog() {
   const [posts, setPosts] = useState([]);
   const [tags, setTags] = useState([]);
   const [article, setArticle] = useState(null);
+  const [articleState, setArticleState] = useState({ status: "idle", error: "" }); // idle | loading | ok | not_found | error
   const [comments, setComments] = useState([]);
   const [recentComments, setRecentComments] = useState([]);
   const [about, setAbout] = useState(null);
@@ -141,16 +142,29 @@ function useProvideBlog() {
   }, []);
 
   const loadArticle = useCallback(async (id) => {
+    const numericId = Number(id);
     setArticle(null);
     setComments([]);
+    setArticleState({ status: "loading", error: "" });
     try {
-      const res = await fetchPostDetail(id);
+      if (!Number.isFinite(numericId) || numericId <= 0) {
+        setArticleState({ status: "not_found", error: "文章不存在" });
+        return;
+      }
+      const res = await fetchPostDetail(numericId);
       const data = res.data || res;
       setArticle(data);
-      await loadComments(id);
+      setArticleState({ status: "ok", error: "" });
+      await loadComments(numericId);
     } catch (e) {
       console.warn("load article failed", e);
-      throw e;
+      const message = e?.message || "加载文章失败";
+      const status = e?.status;
+      const isNotFound = status === 404
+        || (status === 400 && (message.includes("文章不存在") || message.includes("未发布")));
+      setArticle(null);
+      setComments([]);
+      setArticleState({ status: isNotFound ? "not_found" : "error", error: message });
     }
   }, [loadComments]);
 
@@ -204,6 +218,7 @@ function useProvideBlog() {
       tags,
       posts,
       article,
+      articleState,
       comments,
        recentComments,
       about,
@@ -218,6 +233,6 @@ function useProvideBlog() {
       doLogin,
       logout,
     }),
-    [meta, categories, tags, posts, article, comments, recentComments, about, user, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
+    [meta, categories, tags, posts, article, articleState, comments, recentComments, about, user, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
   );
 }

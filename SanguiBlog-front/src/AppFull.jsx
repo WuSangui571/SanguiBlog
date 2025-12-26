@@ -72,6 +72,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         tags,
         posts,
         article,
+        articleState,
         comments,
         recentComments,
         about,
@@ -429,7 +430,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.222';
+    const siteVersion = meta?.version || 'V2.1.223';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
@@ -1149,6 +1150,67 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             case 'game':
                 return renderGamePlayer();
             case 'article':
+                if (articleState?.status === 'loading' || articleState?.status === 'idle') {
+                    return (
+                        <div className="max-w-4xl mx-auto px-4 pt-32">
+                            <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-10 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+                                <div className="text-2xl font-black">加载中…</div>
+                                <div className={`mt-3 text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    正在从北极数据中心把文章雪橇运过来（别担心，不会给你塞一篇“最新文章”冒充）。
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+                if (articleState?.status === 'not_found') {
+                    return (
+                        <div className="max-w-4xl mx-auto px-4 pt-32">
+                            <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-10 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+                                <div className="text-3xl font-black">404：文章不存在</div>
+                                <div className={`mt-3 text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    你访问的文章 ID 不存在或未发布，请检查链接是否正确。
+                                </div>
+                                <div className="mt-6 flex flex-wrap gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setView('home')}
+                                        className={`px-6 py-3 font-black border-2 border-black shadow-[6px_6px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                    >
+                                        返回首页
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+                if (articleState?.status === 'error') {
+                    return (
+                        <div className="max-w-4xl mx-auto px-4 pt-32">
+                            <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-10 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+                                <div className="text-2xl font-black">文章加载失败</div>
+                                <div className={`mt-3 text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    {articleState?.error || '未知错误'}
+                                </div>
+                                <div className="mt-6 flex flex-wrap gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => articleId && loadArticle && loadArticle(articleId)}
+                                        className={`px-6 py-3 font-black border-2 border-black shadow-[6px_6px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${isDarkMode ? 'bg-pink-600 text-white hover:bg-pink-500' : 'bg-[#FF0080] text-white'}`}
+                                    >
+                                        重试加载
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setView('home')}
+                                        className={`px-6 py-3 font-black border-2 border-black shadow-[6px_6px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                    >
+                                        返回首页
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
                 return (
                     <ArticleDetail
                         id={articleId}
