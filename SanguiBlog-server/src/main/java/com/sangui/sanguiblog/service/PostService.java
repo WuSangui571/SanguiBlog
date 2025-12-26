@@ -160,19 +160,19 @@ public class PostService {
     }
 
     @Transactional
-    public PostDetailDto getPublishedDetail(Long id, String ip, String userAgent, Long userId) {
+    public PostDetailDto getPublishedDetail(Long id, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
         Post post = postRepository.findById(id)
                 .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
                 .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
-        incrementViews(post, ip, userAgent, userId);
+        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel);
         return toDetail(post);
     }
 
     @Transactional
-    public PostDetailDto getPublishedDetailBySlug(String slug, String ip, String userAgent, Long userId) {
+    public PostDetailDto getPublishedDetailBySlug(String slug, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
         Post post = postRepository.findBySlugAndStatus(slug, "PUBLISHED")
                 .orElseThrow(() -> new IllegalArgumentException("文章不存在或未发布"));
-        incrementViews(post, ip, userAgent, userId);
+        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel);
         return toDetail(post);
     }
 
@@ -369,7 +369,7 @@ public class PostService {
                 .build();
     }
 
-    private void incrementViews(Post post, String ip, String userAgent, Long userId) {
+    private void incrementViews(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
         // 1. Memory Check (Fast, handles race conditions/StrictMode)
         String key = ip + "_" + post.getId();
         long now = System.currentTimeMillis();
@@ -400,10 +400,10 @@ public class PostService {
         long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
         post.setViewsCount(current + 1);
         postRepository.save(post);
-        recordAnalyticsPageView(post, ip, userAgent, userId);
+        recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel);
     }
 
-    private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId) {
+    private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
         if (post == null) {
             return;
         }
@@ -413,6 +413,8 @@ public class PostService {
                 PageViewRequest request = new PageViewRequest();
                 request.setPostId(post.getId());
                 request.setPageTitle(post.getTitle());
+                request.setReferrer(referrer);
+                request.setSourceLabel(sourceLabel);
                 analyticsService.recordPageView(request, ip, userAgent, userId);
                 recorded = true;
             } catch (Exception ex) {

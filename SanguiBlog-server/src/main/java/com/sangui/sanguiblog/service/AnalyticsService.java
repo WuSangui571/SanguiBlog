@@ -12,6 +12,7 @@ import com.sangui.sanguiblog.model.repository.AnalyticsTrafficSourceRepository;
 import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
+import com.sangui.sanguiblog.util.ReferrerUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,19 +78,19 @@ public class AnalyticsService {
         pv.setPageTitle(normalizePageTitle(request.getPageTitle()));
         String normalizedIp = normalizeViewerIp(ip);
         pv.setViewerIp(normalizedIp);
-        pv.setReferrerUrl(resolveReferrerLabel(request));
+        pv.setReferrerUrl(resolveReferrerDisplayLabel(request));
         pv.setGeoLocation(resolveGeoLocation(normalizedIp, request.getGeo()));
         pv.setUserAgent(trimToLength(userAgent, 512));
         pv.setViewedAt(LocalDateTime.now());
         analyticsPageViewRepository.save(pv);
 
         try {
-            updateTrafficSourceStat(request.getSourceLabel(), request.getReferrer(), pv.getViewedAt());
+            updateTrafficSourceStat(request, pv.getViewedAt());
         } catch (DataIntegrityViolationException ex) {
             log.warn("流量来源统计写入冲突，已忽略本次来源，上报维度 date={}, label={}",
                     pv.getViewedAt() != null ? pv.getViewedAt().toLocalDate() : LocalDate.now(),
 
-                    determineSourceLabel(request.getReferrer()));
+                    determineTrafficSourceLabel(request));
         } catch (Exception ex) {
             log.warn("流量来源统计写入失败，已忽略本次来源记录", ex);
         }
@@ -319,9 +320,9 @@ public class AnalyticsService {
                 .collect(Collectors.toList());
     }
 
-    private void updateTrafficSourceStat(String preferredLabel, String referrer, LocalDateTime viewedAt) {
+    private void updateTrafficSourceStat(PageViewRequest request, LocalDateTime viewedAt) {
         LocalDate statDate = viewedAt != null ? viewedAt.toLocalDate() : LocalDate.now();
-        String label = determineSourceLabel(preferredLabel, referrer);
+        String label = determineTrafficSourceLabel(request);
         try {
             analyticsTrafficSourceRepository.upsertSourceVisit(statDate, label);
             recalculateTrafficSourcePercentages(statDate);
@@ -349,51 +350,38 @@ public class AnalyticsService {
         analyticsTrafficSourceRepository.saveAll(sources);
     }
 
-    private String determineSourceLabel(String preferredLabel, String referrer) {
-        if (preferredLabel != null && !preferredLabel.isBlank()) {
+    private String determineTrafficSourceLabel(PageViewRequest request) {
+        String preferredLabel = request != null ? request.getSourceLabel() : null;
+        String referrer = request != null ? request.getReferrer() : null;
+
+        // 搜索引擎统一聚合到引擎名（避免“谷歌：关键词”导致统计维度爆炸）
+        ReferrerUtils.ParsedReferrer parsed = ReferrerUtils.parse(referrer);
+        if (parsed.engine() != null) {
+            return trimToLength(parsed.engine().zhName(), 255);
+        }
+
+        if (StringUtils.hasText(preferredLabel)) {
             return trimToLength(preferredLabel, 255);
         }
-        return localizeReferrerLabel(referrer);
+        return trimToLength(ReferrerUtils.buildTrafficSourceKey(referrer), 255);
     }
 
-    private String determineSourceLabel(String referrer) {
-        return determineSourceLabel(null, referrer);
-    }
+    private String resolveReferrerDisplayLabel(PageViewRequest request) {
+        String preferredLabel = request != null ? request.getSourceLabel() : null;
+        String referrer = request != null ? request.getReferrer() : null;
 
-    private String extractHost(String referrer) {
-        try {
-            java.net.URI uri = new java.net.URI(referrer);
-            if (uri.getHost() != null) return uri.getHost();
-        } catch (Exception ignored) {
+        // 若 referrer 是搜索引擎且带关键词，优先展示“谷歌：xxx”
+        ReferrerUtils.ParsedReferrer parsed = ReferrerUtils.parse(referrer);
+        if (parsed.engine() != null && StringUtils.hasText(parsed.keyword())) {
+            return trimToLength(parsed.engine().zhName() + "：" + parsed.keyword(), 512);
         }
-        return referrer;
-    }
 
-    private String resolveReferrerLabel(PageViewRequest request) {
-        if (request != null && StringUtils.hasText(request.getSourceLabel())) {
-            return trimToLength(request.getSourceLabel(), 255);
+        // 站内跳转来源（SPA）优先使用前端上报的中文描述
+        if (StringUtils.hasText(preferredLabel)) {
+            return trimToLength(preferredLabel, 512);
         }
-        return localizeReferrerLabel(request != null ? request.getReferrer() : null);
-    }
 
-    private String localizeReferrerLabel(String referrer) {
-        if (!StringUtils.hasText(referrer)) {
-            return "直接访问";
-        }
-        String host = extractHost(referrer);
-        if (!StringUtils.hasText(host)) {
-            return "直接访问";
-        }
-        String lower = host.toLowerCase(Locale.ROOT);
-        if (lower.contains("google") || lower.contains("bing") || lower.contains("baidu") || lower.contains("yahoo")) {
-            return "来自搜索引擎：" + host;
-        }
-        if (lower.contains("twitter") || lower.contains("x.com") || lower.contains("weibo")
-                || lower.contains("wechat") || lower.contains("facebook") || lower.contains("douyin")
-                || lower.contains("instagram")) {
-            return "来自社交平台：" + host;
-        }
-        return "外部链接：" + host;
+        return trimToLength(ReferrerUtils.buildDisplayLabel(referrer), 512);
     }
 
     private String resolveGeoLocation(String normalizedIp, String requestGeo) {

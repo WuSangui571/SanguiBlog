@@ -22,6 +22,15 @@ export const buildViewNavigator = (navigate, options = {}) => {
   const go = (path) => {
     if (!path) return;
     if (shouldSkip(path)) return;
+    if (typeof window !== "undefined") {
+      try {
+        // 记录“站内跳转来源”，供文章详情接口/埋点读取（避免 SPA 下 document.referrer 恒不变的问题）
+        window.sessionStorage.setItem("sg_prev_url", window.location.href || "");
+        window.sessionStorage.setItem("sg_prev_url_ts", String(Date.now()));
+      } catch {
+        // ignore
+      }
+    }
     navigate(path, { replace: true });
   };
 

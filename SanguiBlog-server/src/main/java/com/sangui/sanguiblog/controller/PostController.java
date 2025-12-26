@@ -49,21 +49,25 @@ public class PostController {
     @GetMapping("/{id}")
     public ApiResponse<PostDetailDto> detail(@PathVariable Long id,
             jakarta.servlet.http.HttpServletRequest request,
+            @RequestHeader(value = "X-SG-Referrer", required = false) String analyticsReferrer,
+            @RequestHeader(value = "X-SG-Source-Label", required = false) String analyticsSourceLabel,
             @AuthenticationPrincipal UserPrincipal principal) {
         String ip = IpUtils.resolveIp(request);
         String userAgent = request.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
-        return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId));
+        return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId, analyticsReferrer, analyticsSourceLabel));
     }
 
     @GetMapping("/slug/{slug}")
     public ApiResponse<PostDetailDto> detailBySlug(@PathVariable String slug,
             jakarta.servlet.http.HttpServletRequest request,
+            @RequestHeader(value = "X-SG-Referrer", required = false) String analyticsReferrer,
+            @RequestHeader(value = "X-SG-Source-Label", required = false) String analyticsSourceLabel,
             @AuthenticationPrincipal UserPrincipal principal) {
         String ip = IpUtils.resolveIp(request);
         String userAgent = request.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
-        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip, userAgent, userId));
+        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip, userAgent, userId, analyticsReferrer, analyticsSourceLabel));
     }
 
     @PostMapping

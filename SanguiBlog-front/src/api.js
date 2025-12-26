@@ -68,6 +68,81 @@ const buildHeaders = () => {
   return headers;
 };
 
+const ANALYTICS_REFERRER_HEADER = "X-SG-Referrer";
+const ANALYTICS_SOURCE_LABEL_HEADER = "X-SG-Source-Label";
+const SG_PREV_URL_KEY = "sg_prev_url";
+const SG_PREV_URL_TS_KEY = "sg_prev_url_ts";
+const SG_PREV_URL_MAX_AGE_MS = 15000;
+
+const safeTrim = (value, maxLen) => {
+  if (typeof value !== "string") return "";
+  const v = value.trim();
+  if (!v) return "";
+  return v.length > maxLen ? v.slice(0, maxLen) : v;
+};
+
+const takeSpaPrevUrl = () => {
+  if (typeof window === "undefined") return "";
+  try {
+    const url = window.sessionStorage.getItem(SG_PREV_URL_KEY) || "";
+    const tsStr = window.sessionStorage.getItem(SG_PREV_URL_TS_KEY) || "";
+    window.sessionStorage.removeItem(SG_PREV_URL_KEY);
+    window.sessionStorage.removeItem(SG_PREV_URL_TS_KEY);
+
+    const ts = Number(tsStr);
+    if (!url || !Number.isFinite(ts)) return "";
+    if (Date.now() - ts > SG_PREV_URL_MAX_AGE_MS) return "";
+    return url;
+  } catch {
+    return "";
+  }
+};
+
+const classifyInternalSourceLabel = (pathname = "/") => {
+  const path = pathname || "/";
+  if (path === "/" || path === "") return "来自首页";
+  if (path.startsWith("/admin")) return "来自后台页面";
+  if (path.startsWith("/archive")) return "来自归档页";
+  if (path.startsWith("/article")) return "来自站内文章";
+  if (path.startsWith("/tools") || path.startsWith("/games")) return "来自工具页";
+  if (path.startsWith("/about")) return "来自关于页";
+  if (path.startsWith("/login")) return "来自登录页";
+  return `来自站内：${path}`;
+};
+
+const buildAnalyticsReferrerHeaders = () => {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return {};
+  }
+
+  const prevUrl = takeSpaPrevUrl();
+  const docReferrer = document.referrer || "";
+  const referrer = safeTrim(prevUrl || docReferrer, 900);
+
+  const headers = {};
+  if (referrer) {
+    headers[ANALYTICS_REFERRER_HEADER] = referrer;
+  }
+
+  // 站内跳转由前端给出中文来源；外部来源（尤其搜索引擎）交给后端解析关键词并展示
+  if (prevUrl) {
+    try {
+      const parsed = new URL(prevUrl);
+      const currentOrigin = window.location?.origin || "";
+      if (currentOrigin && parsed.origin === currentOrigin) {
+        const label = safeTrim(classifyInternalSourceLabel(parsed.pathname), 200);
+        if (label) {
+          headers[ANALYTICS_SOURCE_LABEL_HEADER] = label;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return headers;
+};
+
 const request = async (path, options = {}) => {
   const token = localStorage.getItem("sg_token");
   if (isTokenExpired(token)) {
@@ -77,9 +152,13 @@ const request = async (path, options = {}) => {
     expiredError.status = 401;
     throw expiredError;
   }
+  const mergedHeaders = {
+    ...buildHeaders(),
+    ...(options && options.headers ? options.headers : {}),
+  };
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: buildHeaders(),
     ...options,
+    headers: mergedHeaders,
   });
   if (!res.ok) {
     const txt = await res.text();
@@ -204,7 +283,10 @@ export const fetchArchiveMonth = (year, month, params = {}) => {
   return request(`/posts/archive/month?${search.toString()}`);
 };
 
-export const fetchPostDetail = (id) => request(`/posts/${id}`);
+export const fetchPostDetail = (id) =>
+  request(`/posts/${id}`, {
+    headers: buildAnalyticsReferrerHeaders(),
+  });
 
 export const login = (username, password, captcha) =>
   request("/auth/login", {

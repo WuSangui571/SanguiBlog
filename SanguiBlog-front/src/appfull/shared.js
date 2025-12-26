@@ -236,32 +236,53 @@ export const getReferrerMeta = () => {
     if (typeof document === 'undefined' || typeof window === 'undefined') {
         return { referrer: '', sourceLabel: '直接访问' };
     }
-    const referrer = document.referrer || '';
-    if (!referrer) {
-        return { referrer: '', sourceLabel: '直接访问' };
-    }
     try {
+        const maxAgeMs = 15000;
+        const takeSpaPrevUrl = () => {
+            try {
+                const url = window.sessionStorage.getItem('sg_prev_url') || '';
+                const tsStr = window.sessionStorage.getItem('sg_prev_url_ts') || '';
+                window.sessionStorage.removeItem('sg_prev_url');
+                window.sessionStorage.removeItem('sg_prev_url_ts');
+                const ts = Number(tsStr);
+                if (!url || !Number.isFinite(ts)) return '';
+                if (Date.now() - ts > maxAgeMs) return '';
+                return url;
+            } catch {
+                return '';
+            }
+        };
+
+        const classifyInternal = (pathname = '/') => {
+            const path = pathname || '/';
+            if (path === '/' || path === '') return '来自首页';
+            if (path.startsWith('/admin')) return '来自后台页面';
+            if (path.startsWith('/archive')) return '来自归档页';
+            if (path.startsWith('/article')) return '来自站内文章';
+            if (path.startsWith('/tools') || path.startsWith('/games')) return '来自工具页';
+            if (path.startsWith('/about')) return '来自关于页';
+            if (path.startsWith('/login')) return '来自登录页';
+            return `来自站内：${path}`;
+        };
+
+        const spaPrevUrl = takeSpaPrevUrl();
+        const docReferrer = document.referrer || '';
+        const referrer = spaPrevUrl || docReferrer;
+        if (!referrer) {
+            return { referrer: '', sourceLabel: '直接访问' };
+        }
+
         const parsed = new URL(referrer);
         const currentOrigin = window.location.origin;
         if (currentOrigin && parsed.origin === currentOrigin) {
-            const path = parsed.pathname || '/';
-            if (path === '/' || path === '') {
-                return { referrer, sourceLabel: '来自首页' };
-            }
-            if (path.startsWith('/admin')) {
-                return { referrer, sourceLabel: '来自后台页面' };
-            }
-            if (path.startsWith('/archive')) {
-                return { referrer, sourceLabel: '来自归档页' };
-            }
-            if (path.startsWith('/posts') || path.startsWith('/article')) {
-                return { referrer, sourceLabel: '来自站内文章' };
-            }
-            return { referrer, sourceLabel: `来自站内：${path}` };
+            return { referrer, sourceLabel: classifyInternal(parsed.pathname) };
         }
-        return { referrer, sourceLabel: `外部链接：${parsed.hostname}` };
+
+        // 外部来源（尤其搜索引擎）不在前端硬编码 label，交给后端统一解析并抽取关键词
+        return { referrer };
     } catch {
-        return { referrer, sourceLabel: '直接访问' };
+        const referrer = (document && document.referrer) ? document.referrer : '';
+        return referrer ? { referrer } : { referrer: '', sourceLabel: '直接访问' };
     }
 };
 

@@ -491,16 +491,16 @@ ole_permissions in bulk.
 
 ### 4.7 Data Collection
 * PV 采集
-  * POST `/api/analytics/page-view`：前端在首页/Archive/Admin/文章详情等视图中调用 `recordPageView`，提交 `PageViewRequest(postId,pageTitle,referrer,geo,userAgent,clientIp)`；后台 `AnalyticsController` 通过 `IpUtils` 解析真实 IP、记录 UA 并结合 JWT 判定 `userId`，`referrer` 为空时统一写成 `Direct / None`。
+  * POST `/api/analytics/page-view`：前端在首页/Archive/Admin/工具/关于等视图中调用 `recordPageView`，提交 `PageViewRequest(postId,pageTitle,referrer,geo,userAgent,clientIp,sourceLabel)`；后台 `AnalyticsController` 通过 `IpUtils` 解析真实 IP、记录 UA 并结合 JWT 判定 `userId`，`referrer` 为空时记为“直接访问”。
   * 自 V2.1.27 起，工具中心：`/tools` 列表仍按原样打点（`/games` 兼容跳转），进入具体游戏（内置详情或外链打开）时会写入 `pageTitle = Game: <游戏名>`，`sourceLabel = 游戏详情-<游戏名>`，与其它页面日志格式一致，便于在后台访问日志中定位具体游戏。
   * 自 V2.1.186 起，关于页 `/about` 也会写入访问日志（`pageTitle = About`），与首页/归档/工具保持一致，便于在后台访问日志中统计与检索。
   * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；代码内还做了 1 分钟的内存限流（IP+post）与 10 分钟的数据库去重，避免刷量。
-  * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV。
+  * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV；为解决 SPA 下 `document.referrer` 不可靠的问题，前端在请求文章详情 `GET /api/posts/{id}` 时会附带 `X-SG-Referrer`（外部来源或站内上一页 URL）与可选的 `X-SG-Source-Label`（站内跳转中文描述），后端据此写入正确来源。
   * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，仅首次进入这些视图时才会调用 `recordPageView`，一旦切换到其它视图即重置标记，彻底杜绝 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录。
 * 数据落库
 * `viewer_ip`：优先读取 `X-Forwarded-For`/`X-Real-IP`。前端默认通过同源接口 `GET /api/analytics/client-ip` 获取归一化 IP，若拿到的不是回环地址则随 PV 请求附带 `clientIp`；若返回仍是 `127.0.0.1`/`::1` 且需要公网地址，可在前端 `.env` 设置 `VITE_ENABLE_PUBLIC_IP_FETCH=true`（可选用 `VITE_PUBLIC_IP_ENDPOINT` 覆盖默认 `https://api.ipify.org?format=json`）启用公网兜底。默认不再直接访问外网 IP 服务，避免公司/校园网络拦截导致控制台报错。
-  * `referrer_url`：自 V1.3.87 起记录中文来源描述。前端在埋点时会根据 `document.referrer` 自动生成 `sourceLabel`，例如“来自首页”“来自归档页”“来自站内文章”“外部链接：example.com”或“直接访问”，由后端直接落库；若前端埋点失败，兜底记录为“系统兜底（前端埋点失败）”。
-  * `analytics_traffic_sources`：自 V1.3.88 起表结构默认 `CURRENT_TIMESTAMP`，实体也通过 `@CreationTimestamp/@UpdateTimestamp` 自动填充，避免 `created_at/updated_at` 为 NULL；V1.3.90 起 `updateTrafficSourceStat` 直接调用 `INSERT ... ON DUPLICATE KEY UPDATE`，数据库负责自增 visits，再无 Hibernate Session 冲突；V1.3.92 之后在服务层重新查询当天来源并以 `BigDecimal` 精确计算占比（四舍五入 2 位），写回 `percentage` 供仪表盘直接消费；V1.3.93 起 `source_label` 优先使用前端上报的中文描述（如“来自首页”“外部链接：example.com”）。
+  * `referrer_url`：自 V1.3.87 起记录中文来源描述。站内跳转来源优先使用前端上报的 `sourceLabel`（例如“来自首页/归档页/站内文章”等，基于 `viewNavigation.js` 在跳转前写入的 `sessionStorage: sg_prev_url`），外部来源则由后端解析 `referrer` 并识别搜索引擎：若 referrer 含关键词参数，会展示为“谷歌：MyBatis 源码解析”这类格式；若无法拿到关键词则展示“来自搜索引擎：谷歌”。若前端埋点失败，兜底记录为“系统兜底（前端埋点失败）”。
+  * `analytics_traffic_sources`：自 V1.3.88 起表结构默认 `CURRENT_TIMESTAMP`，实体也通过 `@CreationTimestamp/@UpdateTimestamp` 自动填充，避免 `created_at/updated_at` 为 NULL；V1.3.90 起 `updateTrafficSourceStat` 直接调用 `INSERT ... ON DUPLICATE KEY UPDATE`，数据库负责自增 visits，再无 Hibernate Session 冲突；V1.3.92 之后在服务层重新查询当天来源并以 `BigDecimal` 精确计算占比（四舍五入 2 位），写回 `percentage` 供仪表盘直接消费；统计维度对搜索引擎会聚合到引擎名（如“谷歌/百度”），避免关键词导致来源表维度爆炸。
   * `user_id`：根据 JWT 中的主体 ID 关联 `users` 表，未登录访客则写入 `NULL`。
   * `geo_location`：默认通过 `GeoIpService` 调用 ipapi.co 反查；前端传入的 `geo`（本地时区）仅作兜底。
 * 管理端读取
