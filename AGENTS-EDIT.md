@@ -2153,3 +2153,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.234 (2025-12-26)
 - **模块/页面**：优化文章列表/归档列表性能：修复 `PostService.toSummary` 的 N+1 查询风险，分页返回前批量统计每篇文章的已审核评论数（group by post_id）并批量加载标签（post_tags join tags），同时通过 `@EntityGraph` 预加载 category/author，避免列表页与归档月列表在文章增多后导致 DB QPS 飙升。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.234`
+
+## V2.1.235 (2025-12-26)
+- **模块/页面**：修复后端启动编译失败：调整 `SecurityConfig` 中安全响应头链式调用方式，避免 `permissionsPolicy` 配置返回类型差异导致 `.contentTypeOptions(...)` 找不到方法，从而引发 `java: 找不到符号` 编译错误。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.235`

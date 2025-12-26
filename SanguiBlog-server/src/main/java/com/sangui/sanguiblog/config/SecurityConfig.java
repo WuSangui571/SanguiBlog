@@ -66,26 +66,28 @@ public class SecurityConfig {
         http
                 .cors(c -> c.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers
-                        .contentSecurityPolicy(csp -> csp.policyDirectives(DEFAULT_CSP))
-                        .referrerPolicy(rp -> rp.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                        .frameOptions(frame -> frame.deny())
-                        .httpStrictTransportSecurity(hsts -> hsts
-                                .includeSubDomains(true)
-                                .preload(true)
-                                .maxAgeInSeconds(31536000))
-                        .permissionsPolicy(policy -> policy.policy(String.join(", ",
-                                "geolocation=()",
-                                "camera=()",
-                                "microphone=()",
-                                "payment=()",
-                                "usb=()",
-                                "interest-cohort=()",
-                                "accelerometer=()",
-                                "gyroscope=()",
-                                "magnetometer=()",
-                                "fullscreen=(self)")))
-                        .contentTypeOptions(Customizer.withDefaults()))
+                .headers(headers -> {
+                    headers.contentSecurityPolicy(csp -> csp.policyDirectives(DEFAULT_CSP));
+                    headers.referrerPolicy(rp -> rp
+                            .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN));
+                    headers.frameOptions(frame -> frame.deny());
+                    headers.httpStrictTransportSecurity(hsts -> hsts
+                            .includeSubDomains(true)
+                            .preload(true)
+                            .maxAgeInSeconds(31536000));
+                    headers.permissionsPolicy(policy -> policy.policy(String.join(", ",
+                            "geolocation=()",
+                            "camera=()",
+                            "microphone=()",
+                            "payment=()",
+                            "usb=()",
+                            "interest-cohort=()",
+                            "accelerometer=()",
+                            "gyroscope=()",
+                            "magnetometer=()",
+                            "fullscreen=(self)")));
+                    headers.contentTypeOptions(Customizer.withDefaults());
+                })
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
