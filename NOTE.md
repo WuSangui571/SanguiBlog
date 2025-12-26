@@ -354,7 +354,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   访问日志页（/admin/analytics）当前包含“概览 + 区间筛选”、“最近 14 天 PV/UV 折线”、“流量来源”和“实时访问日志”四块，热门文章/最新访问/紧急广播已下线；SUPER_ADMIN 可在表格中单条或勾选批量删除访问日志。
 
-*   AnalyticsService.recordPageView 负责写入 analytics_page_views 并同步流量来源：PV 端做 1 分钟 (IP+post) 内存限流与 10 分钟数据库去重，SUPER_ADMIN 仅当 pageTitle/referrer 含 admin 时跳过；若前端埋点失败，PostService.incrementViews 会即时构造 PageViewRequest 再兜底写入。自 V1.3.96 起，DELETE `/api/admin/analytics/page-views/me` 会先删除 user_id=本人 的日志，再依据这些记录包含的全部 viewer_ip 清理 user_id 为空且 IP 命中的访客日志，从而把登录前的自访数据一并抹掉（多 IP 会逐一匹配）。V1.3.110 起新增单条/批量删除接口，只对 SUPER_ADMIN 开放。
+*   AnalyticsService.recordPageView 负责写入 analytics_page_views 并同步流量来源：PV 端使用 Caffeine（IP+post）做 10 分钟 TTL 内存限流，并配合 10 分钟数据库去重（重启/缓存淘汰时兜底确保不重复计数）；SUPER_ADMIN 仅当 pageTitle/referrer 含 admin 时跳过；若前端埋点失败，PostService.incrementViews 会即时构造 PageViewRequest 再兜底写入。自 V1.3.96 起，DELETE `/api/admin/analytics/page-views/me` 会先删除 user_id=本人 的日志，再依据这些记录包含的全部 viewer_ip 清理 user_id 为空且 IP 命中的访客日志，从而把登录前的自访数据一并抹掉（多 IP 会逐一匹配）。V1.3.110 起新增单条/批量删除接口，只对 SUPER_ADMIN 开放。
 
 
 *   updateTrafficSourceStat classifies referrers (search engine / social media / specific domain / Direct / None) and updates analytics_traffic_sources(stat_date, source_label, visits, percentage).
@@ -499,7 +499,7 @@ ole_permissions in bulk.
   * POST `/api/analytics/page-view`：前端在首页/Archive/Admin/工具/关于等视图中调用 `recordPageView`，提交 `PageViewRequest(postId,pageTitle,referrer,geo,userAgent,clientIp,sourceLabel)`；后台 `AnalyticsController` 通过 `IpUtils` 解析真实 IP、记录 UA 并结合 JWT 判定 `userId`，`referrer` 为空时记为“直接访问”。
   * 自 V2.1.27 起，工具中心：`/tools` 列表仍按原样打点（`/games` 兼容跳转），进入具体游戏（内置详情或外链打开）时会写入 `pageTitle = Game: <游戏名>`，`sourceLabel = 游戏详情-<游戏名>`，与其它页面日志格式一致，便于在后台访问日志中定位具体游戏。
   * 自 V2.1.186 起，关于页 `/about` 也会写入访问日志（`pageTitle = About`），与首页/归档/工具保持一致，便于在后台访问日志中统计与检索。
-  * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；代码内还做了 1 分钟的内存限流（IP+post）与 10 分钟的数据库去重，避免刷量。
+  * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；同时使用 Caffeine（IP+post）做 10 分钟 TTL 限流 + 10 分钟数据库去重，避免刷量并降低短时间重复请求的 DB 压力。
   * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV；为解决 SPA 下 `document.referrer` 不可靠的问题，前端在请求文章详情 `GET /api/posts/{id}` 时会附带 `X-SG-Referrer`（外部来源或站内上一页 URL）与可选的 `X-SG-Source-Label`（站内跳转中文描述），后端据此写入正确来源。
   * 自 V2.1.223 起，访问不存在的文章（例如 `/article/999999` 或 `/article/xxxx`）会在前端明确展示 404；不再回退展示 `MOCK_POSTS[0]`（最新文章占位）导致的“标题/摘要像对、正文为空”的错觉。
   * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，仅首次进入这些视图时才会调用 `recordPageView`，一旦切换到其它视图即重置标记，彻底杜绝 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录。

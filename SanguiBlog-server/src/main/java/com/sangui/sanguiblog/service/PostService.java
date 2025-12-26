@@ -24,6 +24,8 @@ import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -39,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -65,7 +68,18 @@ public class PostService {
     private final PostAssetService postAssetService;
     private final AnalyticsService analyticsService;
     private final GeoIpService geoIpService;
-    private static final java.util.concurrent.ConcurrentHashMap<String, Long> VIEW_RATE_LIMITER = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * 浏览量限流（每 IP + 每文章）：用于减少短时间重复刷新/StrictMode 双调用导致的重复记数，
+     * 并降低 DB exists 查询压力。
+     *
+     * 说明：TTL 与 DB 检查窗口保持一致（10 分钟）。即使缓存淘汰，DB 检查仍能兜底保证准确性。
+     */
+    private static final Duration VIEW_RATE_LIMIT_TTL = Duration.ofMinutes(10);
+    private static final Cache<String, Boolean> VIEW_RATE_LIMITER = Caffeine.newBuilder()
+            .expireAfterWrite(VIEW_RATE_LIMIT_TTL)
+            .maximumSize(200_000)
+            .build();
 
     @Transactional(readOnly = true)
     public PageResponse<PostSummaryDto> listPublished(Integer page, Integer size, Long categoryId, Long tagId,
@@ -407,37 +421,29 @@ public class PostService {
     }
 
     private void incrementViews(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
-        // 1. Memory Check (Fast, handles race conditions/StrictMode)
         String key = ip + "_" + post.getId();
-        long now = System.currentTimeMillis();
-        Long lastViewTime = VIEW_RATE_LIMITER.get(key);
-        if (lastViewTime != null && (now - lastViewTime) < 60000) { // 1 minute throttle
+        if (VIEW_RATE_LIMITER.asMap().putIfAbsent(key, Boolean.TRUE) != null) {
             return;
         }
 
-        // 2. DB Check (Persistence, handles server restarts)
-        // Check if this IP viewed this post in the last 10 minutes
-        boolean exists = analyticsPageViewRepository.existsByPostIdAndViewerIpAndViewedAtAfter(
-                post.getId(), ip, java.time.LocalDateTime.now().minusMinutes(10));
+        try {
+            // DB Check（兜底：保证重启/缓存淘汰场景下仍不会重复计数）
+            boolean exists = analyticsPageViewRepository.existsByPostIdAndViewerIpAndViewedAtAfter(
+                    post.getId(), ip, LocalDateTime.now().minusMinutes(VIEW_RATE_LIMIT_TTL.toMinutes()));
 
-        if (exists) {
-            // Update memory cache to avoid hitting DB again soon
-            VIEW_RATE_LIMITER.put(key, now);
-            return;
+            if (exists) {
+                return;
+            }
+
+            long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
+            post.setViewsCount(current + 1);
+            postRepository.save(post);
+            recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel);
+        } catch (Exception ex) {
+            // 如果本次请求异常失败，则回滚缓存占位，避免“失败一次=10分钟都不计数”的误伤
+            VIEW_RATE_LIMITER.invalidate(key);
+            throw ex;
         }
-
-        // Update Memory Cache
-        VIEW_RATE_LIMITER.put(key, now);
-        // Cleanup old entries occasionally (simple approach: if size > 10000, clear
-        // half? or just let it grow for this demo)
-        if (VIEW_RATE_LIMITER.size() > 5000) {
-            VIEW_RATE_LIMITER.clear(); // Simple brute-force cleanup for demo
-        }
-
-        long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
-        post.setViewsCount(current + 1);
-        postRepository.save(post);
-        recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel);
     }
 
     private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {

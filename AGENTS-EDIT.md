@@ -2133,3 +2133,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.229 (2025-12-26)
 - **模块/页面**：修复前端白屏：移除 `AppFull.jsx` 中遗留的 `posts` 引用（已切换为后端分页 `postsPage`），避免运行时 `ReferenceError: posts is not defined` 直接导致页面崩溃。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.229`
+
+## V2.1.230 (2025-12-26)
+- **模块/页面**：优化浏览量限流实现：用 Caffeine TTL 缓存（IP+post，10 分钟过期 + 最大容量上限）替代 `VIEW_RATE_LIMITER.size() > 5000` 直接 `clear()` 的演示型做法；缓存与 10 分钟数据库去重窗口对齐，减少抖动与 DB 压力，并在异常时回滚缓存占位避免误伤计数。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.230`
