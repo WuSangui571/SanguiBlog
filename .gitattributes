@@ -1,0 +1,27 @@
+# 统一文本文件换行符为 LF，避免跨平台协作产生“换行符幽灵”。
+* text=auto eol=lf
+
+# 常见文本类型（显式声明便于阅读）
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.xml  text eol=lf
+*.properties text eol=lf
+*.env  text eol=lf
+*.ps1  text eol=lf
+
+# 常见二进制类型（禁止 eol 转换）
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.jar  binary
+*.zip  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.eot  binary
+

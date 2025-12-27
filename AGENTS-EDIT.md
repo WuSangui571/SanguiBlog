@@ -2177,3 +2177,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.240 (2025-12-26)
 - **模块/页面**：仓库维护性治理：对前端做“引用追踪 + legacy 收拢”，将无引用的早期原型组件迁入 `SanguiBlog-front/src/legacy/` 并增加弃用说明；将未引用的模板资源 `react.svg` 迁入 legacy；补充 `.gitignore` 忽略 `pw-temp/`，降低误提交与误维护风险；对 `NOTE.md`/`AGENTS.md`/`AGENTS-EDIT.md` 做 UTF-8（无 BOM）与不可见控制字符清理，避免复制/搜索异常与协作踩坑。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.240`
+
+## V2.1.241 (2025-12-27)
+- **模块/页面**：仓库 UTF-8/换行符规范化：新增根目录 `.editorconfig` 与 `.gitattributes`，统一文本编码为 UTF-8、换行符为 LF，降低在不同终端/编辑器下出现乱码与 diff 噪声的风险。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.241`
