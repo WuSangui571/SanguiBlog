@@ -32,9 +32,7 @@ import ClickRipple from "./appfull/ui/ClickRipple.jsx";
 import ScrollToTop from "./appfull/ui/ScrollToTop.jsx";
 import { buildAssetUrl } from "./utils/asset.js";
 import logger from "./utils/logger.js";
-import Hero from "./appfull/public/Hero.jsx";
-import StatsStrip from "./appfull/public/StatsStrip.jsx";
-import ArticleList from "./appfull/public/ArticleList.jsx";
+import HomeView from "./appfull/public/HomeView.jsx";
 import ArticleDetail from "./appfull/public/ArticleDetail.jsx";
 import ArchiveView from "./appfull/public/ArchiveView.jsx";
 import AboutView from "./appfull/public/AboutView.jsx";
@@ -425,17 +423,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             setGameDetailLoading(false);
         }
     }, []);
-    const footerInfo = meta?.footer || {};
-    const footerYear = footerInfo.year || new Date().getFullYear();
-    const footerBrand = footerInfo.brand || 'SANGUI BLOG';
-    const footerCopyright = footerInfo.copyrightText || `Copyright © ${footerYear} ${footerBrand} All rights reserved.`;
-    const footerIcpNumber = footerInfo.icpNumber;
-    const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
-    const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
-    const siteVersion = meta?.version || 'V2.1.241';
-    const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
-    const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
-
     const hasPermission = useCallback((code) => {
         if (!code) return true;
         if (user?.role === 'SUPER_ADMIN') return true;
@@ -1075,50 +1062,25 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         switch (view) {
             case 'home':
                 return (
-                    <>
-                        <Hero setView={setView} isDarkMode={isDarkMode} onStartReading={scrollToPostsTop} version={siteVersion} tagline={heroTagline} />
-                        <ArticleList
-                            setView={setView}
-                            setArticleId={setArticleId}
-                            isDarkMode={isDarkMode}
-                            postsPage={postsPage}
-                            postsLoading={postsLoading}
-                            postsError={postsError}
-                            onQueryChange={loadPosts}
-                            categoriesData={categories}
-                            tagsData={tags}
-                            recentComments={recentComments}
-                            onScrollToPosts={scrollToPostsTop}
-                            stats={meta?.stats}
-                            author={meta?.author}
-                            activeParent={activeParent}
-                            setActiveParent={setActiveParent}
-                            activeSub={activeSub}
-                            setActiveSub={setActiveSub}
-                            homeQuote={homeQuote}
-                            pageSize={homePageSize}
-                        />
-                        <footer
-                            className={`py-12 text-center mt-12 border-t-8 ${isDarkMode ? 'bg-gray-900 text-white border-[#FF0080]' : 'bg-black text-white border-[#FFD700]'}`}>
-                            <h2 className="text-3xl font-black italic tracking-tighter mb-3">{footerBrand}</h2>
-                            <p className="text-sm font-mono text-gray-200">{footerCopyright}</p>
-                            {footerIcpNumber && (
-                                <a
-                                    href={footerIcpLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center text-xs font-bold text-[#FFD700] underline underline-offset-4 mt-2"
-                                >
-                                    {footerIcpNumber}
-                                </a>
-                            )}
-                            {footerPoweredBy && (
-                                <p className="text-xs text-gray-400 font-mono mt-3">
-                                    {footerPoweredBy}
-                                </p>
-                            )}
-                        </footer>
-                    </>
+                    <HomeView
+                        meta={meta}
+                        setView={setView}
+                        setArticleId={setArticleId}
+                        isDarkMode={isDarkMode}
+                        postsPage={postsPage}
+                        postsLoading={postsLoading}
+                        postsError={postsError}
+                        onQueryChange={loadPosts}
+                        categoriesData={categories}
+                        tagsData={tags}
+                        recentComments={recentComments}
+                        onScrollToPosts={scrollToPostsTop}
+                        activeParent={activeParent}
+                        setActiveParent={setActiveParent}
+                        activeSub={activeSub}
+                        setActiveSub={setActiveSub}
+                        pageSize={homePageSize}
+                    />
                 );
             case 'archive':
                 return (

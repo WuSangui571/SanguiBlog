@@ -130,7 +130,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   **入口文件**：实际构建入口为 `SanguiBlog-front/src/main.jsx`（`createRoot`）→ `SanguiBlog-front/src/App.jsx`（路由壳）→ `SanguiBlog-front/src/AppFull.jsx`（主流程编排）。仓库根目录历史上曾存在一个同名 `App.jsx` 原型文件，现已移除以避免误改。
 
-*   **AppFull 拆分**：后台管理相关组件迁移到 `src/appfull/AdminPanel.jsx`，共享常量/工具抽离到 `src/appfull/shared.js`；前台视图拆分到 `src/appfull/public/`，通用 UI 组件拆分到 `src/appfull/ui/`，`AppFull.jsx` 仅保留主流程编排。
+*   **AppFull 拆分**：后台管理相关组件迁移到 `src/appfull/AdminPanel.jsx`，共享常量/工具抽离到 `src/appfull/shared.js`；前台视图拆分到 `src/appfull/public/`，通用 UI 组件拆分到 `src/appfull/ui/`，`AppFull.jsx` 仅保留主流程编排；其中首页组合视图已抽离为 `src/appfull/public/HomeView.jsx`，页脚抽离为 `src/appfull/ui/SiteFooter.jsx`，避免单文件体量过大。
 
 
 

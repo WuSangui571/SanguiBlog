@@ -62,19 +62,19 @@ storage:
 #    base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
 
 site:
-    version: "V2.1.241"
-    asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
+     version: "V2.1.242"
+     asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
 #    asset-base-url: http://sangui.top/uploads
-    hero:
-      tagline: 我是三桂，在这里把问题想清楚，把代码写简单。
-    home:
-      signature-quote: 别急，先把问题想清楚。
-    footer:
-      year: 2025
-      brand: 三桂博客
-      icp-number: 浙ICP备2025167176号
-      icp-link: https://beian.miit.gov.cn/
-      powered-by: Powered by Spring Boot 3 & React 19
+     hero:
+       tagline: 我是三桂，在这里把问题想清楚，把代码写简单。
+     home:
+       signature-quote: 别急，先把问题想清楚。
+     footer:
+       year: 2025
+       brand: 三桂博客
+       icp-number: 浙ICP备2025167176号
+       icp-link: https://beian.miit.gov.cn/
+       powered-by: Powered by Spring Boot 3 & React 19
 
 
 

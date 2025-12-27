@@ -2181,3 +2181,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.241 (2025-12-27)
 - **模块/页面**：仓库 UTF-8/换行符规范化：新增根目录 `.editorconfig` 与 `.gitattributes`，统一文本编码为 UTF-8、换行符为 LF，降低在不同终端/编辑器下出现乱码与 diff 噪声的风险。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.241`
+
+## V2.1.242 (2025-12-27)
+- **模块/页面**：前端可维护性拆分：将首页渲染组合从 `AppFull.jsx` 抽离为 `src/appfull/public/HomeView.jsx`，将页脚抽离为 `src/appfull/ui/SiteFooter.jsx`，降低 `AppFull.jsx` 体量并收敛 Home/Footer 相关逻辑与样式，便于后续分层演进。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.242`
