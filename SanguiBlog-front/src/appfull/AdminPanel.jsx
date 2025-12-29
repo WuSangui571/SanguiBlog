@@ -5043,10 +5043,15 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         setGameSaving(true);
         setGameError('');
         try {
+            let res = null;
             if (gameEditingId) {
-                await adminUpdateGame(gameEditingId, gameForm);
+                res = await adminUpdateGame(gameEditingId, gameForm);
             } else {
-                await adminCreateGame(gameForm);
+                res = await adminCreateGame(gameForm);
+            }
+            const msg = res?.message;
+            if (msg && msg !== 'ok') {
+                showNotice(msg, 'success');
             }
             await loadGames();
             resetGameForm({}, true);

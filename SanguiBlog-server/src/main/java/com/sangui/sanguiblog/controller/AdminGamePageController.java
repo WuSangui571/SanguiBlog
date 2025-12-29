@@ -32,7 +32,8 @@ public class AdminGamePageController {
     public ApiResponse<GamePageAdminDto> create(@Valid @ModelAttribute GamePageRequest request,
                                                 @RequestPart("file") MultipartFile file,
                                                 @AuthenticationPrincipal UserPrincipal principal) {
-        return ApiResponse.ok(gamePageService.create(request, file, principal != null ? principal.getId() : null));
+        GamePageService.CreateResult result = gamePageService.create(request, file, principal != null ? principal.getId() : null);
+        return new ApiResponse<>(true, result.message(), result.data());
     }
 
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})

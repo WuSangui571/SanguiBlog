@@ -27,7 +27,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +34,9 @@ public class GamePageService {
 
     private final GamePageRepository gamePageRepository;
     private final StoragePathResolver storagePathResolver;
+
+    public record CreateResult(GamePageAdminDto data, String message) {
+    }
 
     @Transactional(readOnly = true)
     public List<GamePageDto> listActive() {
@@ -80,16 +82,17 @@ public class GamePageService {
     }
 
     @Transactional
-    public GamePageAdminDto create(GamePageRequest request, MultipartFile file, Long operatorId) {
+    public CreateResult create(GamePageRequest request, MultipartFile file, Long operatorId) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("请上传 HTML 文件");
         }
+        SlugResolution slugResolution = resolveSlugByUploadedFilename(file, request != null ? request.getTitle() : null);
         GamePage entity = new GamePage();
         entity.setTitle(request.getTitle());
         entity.setDescription(request.getDescription());
         entity.setStatus(parseStatus(request.getStatus(), GamePage.Status.ACTIVE));
         entity.setSortOrder(Optional.ofNullable(request.getSortOrder()).orElse(0));
-        entity.setSlug(generateSlug(request.getTitle()));
+        entity.setSlug(slugResolution.slug());
         entity.setCreatedBy(operatorId);
         entity.setUpdatedBy(operatorId);
         entity.setCreatedAt(Instant.now());
@@ -98,7 +101,11 @@ public class GamePageService {
         String filePath = storeHtmlFile(entity.getSlug(), file);
         entity.setFilePath(filePath);
         GamePage saved = gamePageRepository.save(entity);
-        return toAdminDto(saved);
+        String message = "ok";
+        if (slugResolution.renamedDueToConflict()) {
+            message = "检测到同名游戏目录已存在，已自动改为 `" + slugResolution.slug() + "`（原计划目录为 `" + slugResolution.baseSlug() + "`），请避免重复上传同名 HTML。";
+        }
+        return new CreateResult(toAdminDto(saved), message);
     }
 
     @Transactional
@@ -141,24 +148,63 @@ public class GamePageService {
         }
     }
 
-    private String generateSlug(String title) {
-        String base = StringUtils.hasText(title) ? title : "game";
-        String normalized = base.toLowerCase(Locale.ROOT)
+    private record SlugResolution(String baseSlug, String slug, boolean renamedDueToConflict) {
+    }
+
+    private SlugResolution resolveSlugByUploadedFilename(MultipartFile file, String fallbackTitle) {
+        String originalFilename = file != null ? file.getOriginalFilename() : null;
+        String baseName = extractFilenameBase(originalFilename);
+        String normalizedBase = normalizeSlugBase(StringUtils.hasText(baseName) ? baseName : fallbackTitle);
+        return resolveUniqueSlug(normalizedBase);
+    }
+
+    private SlugResolution resolveUniqueSlug(String baseSlug) {
+        String base = normalizeSlugBase(baseSlug);
+        String candidate = base;
+        boolean renamed = false;
+        if (isSlugOccupied(candidate)) {
+            renamed = true;
+            int suffix = 2;
+            while (isSlugOccupied(base + suffix)) {
+                suffix++;
+            }
+            candidate = base + suffix;
+        }
+        return new SlugResolution(base, candidate, renamed);
+    }
+
+    private boolean isSlugOccupied(String slug) {
+        if (!StringUtils.hasText(slug)) return true;
+        if (gamePageRepository.existsBySlug(slug)) return true;
+        try {
+            Path dir = storagePathResolver.resolve("games", slug);
+            return Files.exists(dir);
+        } catch (RuntimeException e) {
+            return true;
+        }
+    }
+
+    private String extractFilenameBase(String originalFilename) {
+        if (!StringUtils.hasText(originalFilename)) return null;
+        String name = originalFilename.replace('\\', '/');
+        int slash = name.lastIndexOf('/');
+        if (slash >= 0) {
+            name = name.substring(slash + 1);
+        }
+        if (!StringUtils.hasText(name)) return null;
+        int dot = name.lastIndexOf('.');
+        if (dot > 0) {
+            return name.substring(0, dot);
+        }
+        return name;
+    }
+
+    private String normalizeSlugBase(String base) {
+        String raw = StringUtils.hasText(base) ? base : "game";
+        String normalized = raw.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-+|-+$", "");
-        if (!StringUtils.hasText(normalized)) {
-            normalized = "game";
-        }
-        String slug = normalized;
-        int guard = 0;
-        while (gamePageRepository.existsBySlug(slug) && guard < 5) {
-            slug = normalized + "-" + UUID.randomUUID().toString().substring(0, 6);
-            guard++;
-        }
-        if (gamePageRepository.existsBySlug(slug)) {
-            slug = "game-" + UUID.randomUUID().toString().substring(0, 8);
-        }
-        return slug;
+        return StringUtils.hasText(normalized) ? normalized : "game";
     }
 
     private String storeHtmlFile(String slug, MultipartFile file) {
@@ -189,7 +235,12 @@ public class GamePageService {
     private void deleteFileQuietly(String filePath) {
         if (!StringUtils.hasText(filePath)) return;
         try {
-            Path target = storagePathResolver.getRootPath().resolve(filePath).normalize();
+            String relative = filePath.replace('\\', '/');
+            relative = relative.replaceFirst("^/+", "");
+            if (relative.startsWith("uploads/")) {
+                relative = relative.substring("uploads/".length());
+            }
+            Path target = storagePathResolver.getRootPath().resolve(relative).normalize();
             if (Files.exists(target)) {
                 Files.delete(target);
             }

@@ -2185,3 +2185,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.242 (2025-12-27)
 - **模块/页面**：前端可维护性拆分：将首页渲染组合从 `AppFull.jsx` 抽离为 `src/appfull/public/HomeView.jsx`，将页脚抽离为 `src/appfull/ui/SiteFooter.jsx`，降低 `AppFull.jsx` 体量并收敛 Home/Footer 相关逻辑与样式，便于后续分层演进。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.242`
+
+## V2.1.243 (2025-12-29)
+- **模块/页面**：后台 `/admin/settings` 游戏管理上传路径规则调整：创建游戏页时目录名改为上传 HTML 文件名（如 `register.html` -> `uploads/games/register/index.html`），并对目录/slug 冲突自动递增为 `register2`、`register3`…；若发生自动改名，会通过创建接口的 `message` 提示上传人，避免误以为覆盖了旧页面。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.243`
