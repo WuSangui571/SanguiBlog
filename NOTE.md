@@ -677,7 +677,11 @@ npm run dev
 
 - 数据库：新增表 `game_pages`，字段包含 `title`、`description`、`slug`、`file_path`、`status`（ACTIVE/DISABLED/DRAFT）、`sort_order`、`created_by/updated_by`、时间戳。初始化 SQL 已创建空表，并为 SUPER_ADMIN 注入 `GAME_MANAGE` 权限。
 
-- 静态资源：HTML 文件落盘到 `uploads/games/{slug}/index.html`，对外访问路径 `/uploads/games/{slug}/index.html`；其中 `{slug}` 默认取上传的 HTML 文件名（去扩展名后做 URL-safe 归一化，如 `register.html` -> `register`）。若同名目录/slug 已存在，会自动改为 `register2`、`register3`… 并在创建接口的 `message` 中提示上传人；存储路径由 `StoragePathResolver` 统一管理。
+- 静态资源：HTML 文件落盘到 `uploads/games/{slug}/index.html`，对外访问路径 `/uploads/games/{slug}/index.html`；其中 `{slug}` 默认取上传的 HTML 文件名（去扩展名）。
+  - 若文件名为英文/数字：会做 URL-safe 归一化（如 `register.html` -> `register`）。
+  - 若文件名包含中文等非 ASCII 字符：会尽量保留 Unicode 字符（并过滤 Windows 不允许的目录字符与控制字符），避免退化成难读的 `game-xxxxxx`。
+  - 若文件名不可用，会回落使用表单 `title` 生成。
+  - 若同名目录/slug 已存在，会自动改为 `register2`、`register3`…（中文同理，如 `注册2`、`注册3`…）并在创建接口的 `message` 中提示上传人；存储路径由 `StoragePathResolver` 统一管理。
 
 - 公共接口：
   - `GET /api/games`：返回所有 `ACTIVE` 状态的页面列表（包含 title/description/url/slug/updatedAt）。

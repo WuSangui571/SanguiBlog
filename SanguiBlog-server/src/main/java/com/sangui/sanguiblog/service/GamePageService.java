@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -154,12 +155,21 @@ public class GamePageService {
     private SlugResolution resolveSlugByUploadedFilename(MultipartFile file, String fallbackTitle) {
         String originalFilename = file != null ? file.getOriginalFilename() : null;
         String baseName = extractFilenameBase(originalFilename);
-        String normalizedBase = normalizeSlugBase(StringUtils.hasText(baseName) ? baseName : fallbackTitle);
-        return resolveUniqueSlug(normalizedBase);
+        String raw = StringUtils.hasText(baseName) ? baseName : fallbackTitle;
+        if (!StringUtils.hasText(raw)) {
+            raw = "game";
+        }
+
+        String ascii = normalizeSlugAscii(raw);
+        if ("game".equals(ascii) && containsNonAsciiLetterOrDigit(raw)) {
+            String unicode = normalizeSlugUnicode(raw);
+            return resolveUniqueSlug(unicode);
+        }
+        return resolveUniqueSlug(ascii);
     }
 
     private SlugResolution resolveUniqueSlug(String baseSlug) {
-        String base = normalizeSlugBase(baseSlug);
+        String base = normalizeSlugUnicode(baseSlug);
         String candidate = base;
         boolean renamed = false;
         if (isSlugOccupied(candidate)) {
@@ -184,6 +194,11 @@ public class GamePageService {
         }
     }
 
+    private boolean containsNonAsciiLetterOrDigit(String input) {
+        if (!StringUtils.hasText(input)) return false;
+        return input.codePoints().anyMatch(cp -> (Character.isLetterOrDigit(cp) && cp > 127));
+    }
+
     private String extractFilenameBase(String originalFilename) {
         if (!StringUtils.hasText(originalFilename)) return null;
         String name = originalFilename.replace('\\', '/');
@@ -199,11 +214,72 @@ public class GamePageService {
         return name;
     }
 
-    private String normalizeSlugBase(String base) {
+    private String normalizeSlugAscii(String base) {
         String raw = StringUtils.hasText(base) ? base : "game";
         String normalized = raw.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-+|-+$", "");
+        return StringUtils.hasText(normalized) ? normalized : "game";
+    }
+
+    private String normalizeSlugUnicode(String base) {
+        String raw = StringUtils.hasText(base) ? base : "game";
+        raw = Normalizer.normalize(raw, Normalizer.Form.NFKC).trim();
+        if (!StringUtils.hasText(raw)) {
+            return "game";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        boolean lastDash = false;
+        for (int offset = 0; offset < raw.length(); ) {
+            int cp = raw.codePointAt(offset);
+            offset += Character.charCount(cp);
+
+            if (cp <= 0x1F || cp == 0x7F) {
+                if (!lastDash && sb.length() > 0) {
+                    sb.append('-');
+                    lastDash = true;
+                }
+                continue;
+            }
+
+            // Windows 目录名禁用字符：< > : " / \ | ? *
+            if (cp == '<' || cp == '>' || cp == ':' || cp == '"' || cp == '/' || cp == '\\' || cp == '|'
+                    || cp == '?' || cp == '*') {
+                if (!lastDash && sb.length() > 0) {
+                    sb.append('-');
+                    lastDash = true;
+                }
+                continue;
+            }
+
+            // 分隔符统一转为 '-'
+            if (Character.isWhitespace(cp) || Character.getType(cp) == Character.DASH_PUNCTUATION
+                    || Character.getType(cp) == Character.CONNECTOR_PUNCTUATION
+                    || Character.getType(cp) == Character.OTHER_PUNCTUATION
+                    || Character.getType(cp) == Character.MATH_SYMBOL
+                    || Character.getType(cp) == Character.CURRENCY_SYMBOL) {
+                if (!lastDash && sb.length() > 0) {
+                    sb.append('-');
+                    lastDash = true;
+                }
+                continue;
+            }
+
+            if (Character.isLetterOrDigit(cp)) {
+                sb.appendCodePoint(Character.toLowerCase(cp));
+                lastDash = false;
+                continue;
+            }
+
+            // 其它字符（如 emoji）一律当作分隔符处理
+            if (!lastDash && sb.length() > 0) {
+                sb.append('-');
+                lastDash = true;
+            }
+        }
+
+        String normalized = sb.toString().replaceAll("^-+|-+$", "").replaceAll("-{2,}", "-");
         return StringUtils.hasText(normalized) ? normalized : "game";
     }
 
