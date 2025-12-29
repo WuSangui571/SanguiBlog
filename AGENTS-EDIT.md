@@ -2193,3 +2193,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.244 (2025-12-29)
 - **模块/页面**：修复游戏页面 `iframe` 可能被浏览器拦截的问题：全站默认仍禁止被嵌入（`frame-ancestors 'none'` + `X-Frame-Options: DENY`），但对 `/uploads/games/**` 单独放开为仅允许同源嵌入（`frame-ancestors 'self'` + `X-Frame-Options: SAMEORIGIN`），确保工具页可正常通过 `iframe` 展示上传的 HTML。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.244`
+
+## V2.1.245 (2025-12-29)
+- **模块/页面**：统一存储根路径文档与默认配置：将 `storage.base-path` 默认值调整为跨平台相对路径 `uploads`，并在 `NOTE.md` 明确生产环境建议通过 `STORAGE_BASE_PATH` 指向 `/home/sangui/uploads`（或实际挂载目录），避免因工作目录变化导致落盘位置漂移。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.245`

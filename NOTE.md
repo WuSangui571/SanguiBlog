@@ -454,7 +454,7 @@ ole_permissions in bulk.
 
 ### 4.4 静态资源与头像存储 (Static Resources & Avatars)
 
-*   **根路径配置**：`application.yaml` 暴露 `storage.base-path`（支持环境变量 `STORAGE_BASE_PATH`），默认值改为 `/home/sangui/uploads`，生产与开发一致；应用启动时会自动创建根目录以及 `avatar/`、`posts/` 等必要子目录。
+*   **根路径配置**：`application.yaml` 暴露 `storage.base-path`（支持环境变量 `STORAGE_BASE_PATH`），默认值为相对路径 `uploads`（跨平台，通常对应项目/部署目录下的 `uploads/`）；生产环境建议显式设置 `STORAGE_BASE_PATH=/home/sangui/uploads`（或你的实际挂载目录），避免因工作目录变化导致落盘位置漂移。应用启动时会自动创建根目录以及 `avatar/`、`posts/` 等必要子目录。
 
 *   **站点版本**：`application.yaml` 提供 `site.version`，后端会在 `/api/site/meta` 中返回该值；前端首页 Banner 直接读取该字段显示 `SANGUI BLOG // <version>`，统一版本号来源。
 
