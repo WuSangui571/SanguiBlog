@@ -7,6 +7,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -62,6 +63,43 @@ public class SecurityConfig {
             "upgrade-insecure-requests");
 
     @Bean
+    @Order(0)
+    public SecurityFilterChain uploadsGamesSecurityFilterChain(HttpSecurity http) throws Exception {
+        String gamesCsp = DEFAULT_CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
+        http
+                .securityMatcher("/uploads/games/**")
+                .cors(c -> c.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> {
+                    headers.contentSecurityPolicy(csp -> csp.policyDirectives(gamesCsp));
+                    headers.referrerPolicy(rp -> rp
+                            .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN));
+                    headers.frameOptions(frame -> frame.sameOrigin());
+                    headers.httpStrictTransportSecurity(hsts -> hsts
+                            .includeSubDomains(true)
+                            .preload(true)
+                            .maxAgeInSeconds(31536000));
+                    headers.permissionsPolicy(policy -> policy.policy(String.join(", ",
+                            "geolocation=()",
+                            "camera=()",
+                            "microphone=()",
+                            "payment=()",
+                            "usb=()",
+                            "interest-cohort=()",
+                            "accelerometer=()",
+                            "gyroscope=()",
+                            "magnetometer=()",
+                            "fullscreen=(self)")));
+                    headers.contentTypeOptions(Customizer.withDefaults());
+                })
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(1)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(c -> c.configurationSource(corsConfigurationSource()))

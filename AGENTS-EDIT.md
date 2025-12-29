@@ -2189,3 +2189,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.243 (2025-12-29)
 - **模块/页面**：后台 `/admin/settings` 游戏管理上传路径规则调整：创建游戏页时目录名改为上传 HTML 文件名（如 `register.html` -> `uploads/games/register/index.html`），并对目录/slug 冲突自动递增为 `register2`、`register3`…；若发生自动改名，会通过创建接口的 `message` 提示上传人，避免误以为覆盖了旧页面。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.243`
+
+## V2.1.244 (2025-12-29)
+- **模块/页面**：修复游戏页面 `iframe` 可能被浏览器拦截的问题：全站默认仍禁止被嵌入（`frame-ancestors 'none'` + `X-Frame-Options: DENY`），但对 `/uploads/games/**` 单独放开为仅允许同源嵌入（`frame-ancestors 'self'` + `X-Frame-Options: SAMEORIGIN`），确保工具页可正常通过 `iframe` 展示上传的 HTML。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.244`

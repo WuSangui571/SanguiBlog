@@ -691,6 +691,8 @@ npm run dev
 
 - 前端：主导航为「工具」入口；`/tools` 仅展示可用页面列表（内容居中，两侧保留日/月背景，`/games` 兼容跳转），`/tools/:id` 通过 `iframe` 渲染上传的 HTML；工具卡片“进入”会先用 `buildAssetUrl` 解析 `game.url` 再新开标签，确保静态资源域名/路径生效，`AppFull.jsx` 需保持该工具函数导入。超级管理员在 `/admin/settings` 的“游戏页面管理”块完成上传/编辑/删除/上下线与排序，操作成功会刷新前台列表。
 
+- 安全策略：为避免全站被第三方站点嵌入，默认 CSP 设置 `frame-ancestors 'none'` 且 `X-Frame-Options: DENY`；但游戏页需要站内 `iframe` 展示，因此服务端对 `/uploads/games/**` 单独放开为“仅允许同源嵌入”（`frame-ancestors 'self'` + `X-Frame-Options: SAMEORIGIN`），其它页面仍保持禁止嵌入。
+
 ### Swagger 安全策略
 
 - 默认/生产环境：`springdoc.swagger-ui.enabled=false`、`api-docs.enabled=false`，杜绝接口模型暴露。
