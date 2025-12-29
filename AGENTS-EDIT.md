@@ -2209,3 +2209,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.248 (2025-12-29)
 - **模块/页面**：修复环境切换脚本破坏 YAML 缩进的问题：`scripts/switch-env.ps1` 改为在原有缩进基础上只替换值（保留前导空格与注释后的空格），避免切换 dev/prod 后 `application.yaml` 出现 `site:` 下子项缩进不一致导致解析异常；同时统一 `application.yaml` 中 `storage/site` 块的缩进为 2 空格，并补充 `ChangeEnv.md` 说明。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.248`
+
+## V2.1.249 (2025-12-29)
+- **模块/页面**：修复生产环境静态资源域名误指向问题：生产环境切换时将 `site.asset-base-url` 固定写入为 `http://sangui.top/uploads`（不再依赖 `ASSET_BASE_URL` 覆盖），避免误配环境变量导致 `/uploads/**` 资源前缀变为 `new.sangui.top` 等非预期域名。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.249`

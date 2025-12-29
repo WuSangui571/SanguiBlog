@@ -11,14 +11,14 @@ $frontEnvFile = Join-Path $repoRoot "SanguiBlog-front/.env.local"
 $config = @{
     dev  = @{
         Port      = "8080"
-        Storage   = '${STORAGE_BASE_PATH:uploads}'
+        Storage   = '${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}'
         AssetBase = '${ASSET_BASE_URL:http://localhost:${server.port}/uploads}'
         ApiBase   = "http://localhost:8080/api"
     }
     prod = @{
         Port      = "8082"
         Storage   = '${STORAGE_BASE_PATH:/home/sangui/uploads}'
-        AssetBase = '${ASSET_BASE_URL:http://sangui.top/uploads}'
+        AssetBase = 'http://sangui.top/uploads'
         ApiBase   = "/api"
     }
 }
