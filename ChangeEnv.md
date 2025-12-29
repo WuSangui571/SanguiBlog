@@ -14,6 +14,8 @@
 1) 后端端口、存储路径、`asset-base-url`；
 2) 前端 `VITE_API_BASE`。
 
+> 说明：脚本会在原有缩进基础上“只替换值”，不会再把 `application.yaml` 的缩进改乱（避免出现 `site:` 下子项缩进不一致导致 YAML 解析异常）。
+
 #### 手工切换（备用）
 
 1. 后端 application.yaml 修改
@@ -21,21 +23,21 @@
    + 开发环境：
 
      ```
-     port: 8080
-     
-     base-path: D:\02-WorkSpace\02-Java\SanguiBlog\uploads
-     
-     asset-base-url: http://localhost:8080/uploads
+     server.port: 8080
+
+     storage.base-path: ${STORAGE_BASE_PATH:uploads}
+
+     site.asset-base-url: ${ASSET_BASE_URL:http://localhost:8080/uploads}
      ```
 
    + 生产环境：
 
      ```
-     port: 8082
-     
-     base-path: ${STORAGE_BASE_PATH:uploads}
-     
-     asset-base-url: http://new.sangui.top/uploads
+     server.port: 8082
+
+     storage.base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
+
+     site.asset-base-url: ${ASSET_BASE_URL:http://sangui.top/uploads}
      ```
 
 2. 前端 .env.local 修改

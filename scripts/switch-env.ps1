@@ -11,14 +11,14 @@ $frontEnvFile = Join-Path $repoRoot "SanguiBlog-front/.env.local"
 $config = @{
     dev  = @{
         Port      = "8080"
-        Storage   = '${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}'
+        Storage   = '${STORAGE_BASE_PATH:uploads}'
         AssetBase = '${ASSET_BASE_URL:http://localhost:${server.port}/uploads}'
         ApiBase   = "http://localhost:8080/api"
     }
     prod = @{
         Port      = "8082"
         Storage   = '${STORAGE_BASE_PATH:/home/sangui/uploads}'
-        AssetBase = "http://sangui.top/uploads"
+        AssetBase = '${ASSET_BASE_URL:http://sangui.top/uploads}'
         ApiBase   = "/api"
     }
 }
@@ -40,12 +40,14 @@ function Update-ServerYaml {
     $lines = Get-Content -Path $Path -Encoding UTF8
     for ($i = 0; $i -lt $lines.Length; $i++) {
         switch -Regex ($lines[$i]) {
-            '^\s*port:\s*\S+'         { $lines[$i] = "  port: $($Current.Port)"; break }
-            '^\s*#\s*port:\s*\S+'     { $lines[$i] = "#  port: $($Other.Port)"; break }
-            '^\s*base-path:'          { $lines[$i] = "    base-path: $($Current.Storage)"; break }
-            '^\s*#\s*base-path:'      { $lines[$i] = "#    base-path: $($Other.Storage)"; break }
-            '^\s*asset-base-url:'     { $lines[$i] = "  asset-base-url: $($Current.AssetBase)"; break }
-            '^\s*#\s*asset-base-url:' { $lines[$i] = "#  asset-base-url: $($Other.AssetBase)"; break }
+            '^(\s*)port:\s*\S+' { $lines[$i] = "$($Matches[1])port: $($Current.Port)"; break }
+            '^(\s*)#(\s*)port:\s*\S+' { $lines[$i] = "$($Matches[1])#$($Matches[2])port: $($Other.Port)"; break }
+
+            '^(\s*)base-path:\s*.*$' { $lines[$i] = "$($Matches[1])base-path: $($Current.Storage)"; break }
+            '^(\s*)#(\s*)base-path:\s*.*$' { $lines[$i] = "$($Matches[1])#$($Matches[2])base-path: $($Other.Storage)"; break }
+
+            '^(\s*)asset-base-url:\s*.*$' { $lines[$i] = "$($Matches[1])asset-base-url: $($Current.AssetBase)"; break }
+            '^(\s*)#(\s*)asset-base-url:\s*.*$' { $lines[$i] = "$($Matches[1])#$($Matches[2])asset-base-url: $($Other.AssetBase)"; break }
         }
     }
     Set-Content -Path $Path -Value $lines -Encoding UTF8

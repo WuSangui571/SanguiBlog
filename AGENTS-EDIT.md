@@ -2205,3 +2205,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.247 (2025-12-29)
 - **模块/页面**：优化游戏页上传 slug 规则对中文文件名的兼容性：创建游戏页时 slug 默认取上传 HTML 文件名（去扩展名），英文仍按 URL-safe 规则生成；当文件名包含中文等非 ASCII 字符时，slug 尽量保留 Unicode 字符（并过滤 Windows 不允许的目录字符与控制字符），避免退化为 `game`；同时保持目录冲突时自动递增为 `xxx2/xxx3...` 并提示上传人。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.247`
+
+## V2.1.248 (2025-12-29)
+- **模块/页面**：修复环境切换脚本破坏 YAML 缩进的问题：`scripts/switch-env.ps1` 改为在原有缩进基础上只替换值（保留前导空格与注释后的空格），避免切换 dev/prod 后 `application.yaml` 出现 `site:` 下子项缩进不一致导致解析异常；同时统一 `application.yaml` 中 `storage/site` 块的缩进为 2 空格，并补充 `ChangeEnv.md` 说明。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.248`

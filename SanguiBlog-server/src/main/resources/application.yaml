@@ -58,23 +58,23 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
 
 storage:
-    base-path: ${STORAGE_BASE_PATH:uploads}
-#    base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
+  base-path: ${STORAGE_BASE_PATH:uploads}
+#  base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
 
 site:
-     version: "V2.1.247"
-     asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
-#     asset-base-url: http://sangui.top/uploads
-     hero:
-       tagline: 我是三桂，在这里把问题想清楚，把代码写简单。
-     home:
-       signature-quote: 别急，先把问题想清楚。
-     footer:
-       year: 2025
-       brand: 三桂博客
-       icp-number: 浙ICP备2025167176号
-       icp-link: https://beian.miit.gov.cn/
-       powered-by: Powered by Spring Boot 3 & React 19
+  version: "V2.1.248"
+  asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
+#  asset-base-url: ${ASSET_BASE_URL:http://sangui.top/uploads}
+  hero:
+    tagline: 我是三桂，在这里把问题想清楚，把代码写简单。
+  home:
+    signature-quote: 别急，先把问题想清楚。
+  footer:
+    year: 2025
+    brand: 三桂博客
+    icp-number: 浙ICP备2025167176号
+    icp-link: https://beian.miit.gov.cn/
+    powered-by: Powered by Spring Boot 3 & React 19
 
 
 
