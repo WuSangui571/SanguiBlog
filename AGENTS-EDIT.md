@@ -2197,3 +2197,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.245 (2025-12-29)
 - **模块/页面**：统一存储根路径文档与默认配置：将 `storage.base-path` 默认值调整为跨平台相对路径 `uploads`，并在 `NOTE.md` 明确生产环境建议通过 `STORAGE_BASE_PATH` 指向 `/home/sangui/uploads`（或实际挂载目录），避免因工作目录变化导致落盘位置漂移。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.245`
+
+## V2.1.246 (2025-12-29)
+- **模块/页面**：修复首页页脚默认版权文案显示异常：将 `Copyright ©` 改为更稳妥的 `Copyright (c)`，避免部分环境/字体导致 © 被替换成问号等乱码字符。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.246`

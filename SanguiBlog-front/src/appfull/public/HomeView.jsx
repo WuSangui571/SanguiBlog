@@ -27,12 +27,12 @@ export default function HomeView({
     const footerYear = footerInfo.year || new Date().getFullYear();
     const footerBrand = footerInfo.brand || 'SANGUI BLOG';
     const footerCopyright = footerInfo.copyrightText
-        || `Copyright © ${footerYear} ${footerBrand} All rights reserved.`;
+        || `Copyright (c) ${footerYear} ${footerBrand} All rights reserved.`;
     const footerIcpNumber = footerInfo.icpNumber;
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
 
-    const siteVersion = meta?.version || 'V2.1.245';
+    const siteVersion = meta?.version || 'V2.1.246';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
 
