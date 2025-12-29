@@ -38,16 +38,42 @@ function Update-ServerYaml {
     )
 
     $lines = Get-Content -Path $Path -Encoding UTF8
+    $section = ""
     for ($i = 0; $i -lt $lines.Length; $i++) {
         switch -Regex ($lines[$i]) {
-            '^(\s*)port:\s*\S+' { $lines[$i] = "$($Matches[1])port: $($Current.Port)"; break }
-            '^(\s*)#(\s*)port:\s*\S+' { $lines[$i] = "$($Matches[1])#$($Matches[2])port: $($Other.Port)"; break }
+            '^\s*server:\s*$'  { $section = "server"; continue }
+            '^\s*storage:\s*$' { $section = "storage"; continue }
+            '^\s*site:\s*$'    { $section = "site"; continue }
+            '^\s*[a-zA-Z0-9_-]+:\s*$' { $section = ""; continue }
+        }
 
-            '^(\s*)base-path:\s*.*$' { $lines[$i] = "$($Matches[1])base-path: $($Current.Storage)"; break }
-            '^(\s*)#(\s*)base-path:\s*.*$' { $lines[$i] = "$($Matches[1])#$($Matches[2])base-path: $($Other.Storage)"; break }
+        switch -Regex ($lines[$i]) {
+            '^(\s*)port:\s*\S+' {
+                if ($section -eq "server") { $lines[$i] = "$($Matches[1])port: $($Current.Port)" }
+                break
+            }
+            '^(\s*)#(\s*)port:\s*\S+' {
+                if ($section -eq "server") { $lines[$i] = "$($Matches[1])#$($Matches[2])port: $($Other.Port)" }
+                break
+            }
 
-            '^(\s*)asset-base-url:\s*.*$' { $lines[$i] = "$($Matches[1])asset-base-url: $($Current.AssetBase)"; break }
-            '^(\s*)#(\s*)asset-base-url:\s*.*$' { $lines[$i] = "$($Matches[1])#$($Matches[2])asset-base-url: $($Other.AssetBase)"; break }
+            '^(\s*)base-path:\s*.*$' {
+                if ($section -eq "storage") { $lines[$i] = "$($Matches[1])base-path: $($Current.Storage)" }
+                break
+            }
+            '^(\s*)#(\s*)base-path:\s*.*$' {
+                if ($section -eq "storage") { $lines[$i] = "$($Matches[1])#$($Matches[2])base-path: $($Other.Storage)" }
+                break
+            }
+
+            '^(\s*)asset-base-url:\s*.*$' {
+                if ($section -eq "site") { $lines[$i] = "$($Matches[1])asset-base-url: $($Current.AssetBase)" }
+                break
+            }
+            '^(\s*)#(\s*)asset-base-url:\s*.*$' {
+                if ($section -eq "site") { $lines[$i] = "$($Matches[1])#$($Matches[2])asset-base-url: $($Other.AssetBase)" }
+                break
+            }
         }
     }
     Set-Content -Path $Path -Value $lines -Encoding UTF8
