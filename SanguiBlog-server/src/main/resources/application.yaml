@@ -59,7 +59,7 @@ logging:
 
 storage:
   base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
-#  base-path: ${STORAGE_BASE_PATH:uploads}
+#  base-path: ${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}
 
 site:
   version: "V2.1.249"

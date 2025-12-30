@@ -2213,3 +2213,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.249 (2025-12-29)
 - **模块/页面**：修复生产环境静态资源域名误指向问题：生产环境切换时将 `site.asset-base-url` 固定写入为 `http://sangui.top/uploads`（不再依赖 `ASSET_BASE_URL` 覆盖），避免误配环境变量导致 `/uploads/**` 资源前缀变为 `new.sangui.top` 等非预期域名。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.249`
+
+## V2.1.249 (2025-12-30)
+- **模块/页面**：新增首个对外发布版本 Release 文档 `release/V2.1.249.md`，用于发布页/公告直接引用。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.249`
