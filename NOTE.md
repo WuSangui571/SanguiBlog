@@ -633,7 +633,7 @@ ole_permissions in bulk.
 ## 6. 快速开始 (Quick Start)
 
 - 环境切换：在仓库根目录执行 `./scripts/switch-env.ps1 dev|prod`，会同时更新后端 `application.yaml` 与前端 `.env.local`。
-- 同步生产端游戏 uploads：在仓库根目录执行 `./scripts/sync-uploads.bat`，会将生产端 `REMOTE_DIR`（默认 `/home/sangui/uploads/games`）镜像到本地 `uploads/games`（只读生产端；冲突以生产端为准，本地会覆盖/删除差异文件）。
+- 同步生产端游戏 uploads：在仓库根目录执行 `./scripts/sync-uploads.bat`（内部调用 `scripts/sync-uploads.ps1`），会将生产端 `REMOTE_DIR`（默认 `/home/sangui/uploads/games`）镜像到本地 `uploads/games`（只读生产端；冲突以生产端为准，本地会覆盖/删除差异文件）。
 
 ### 后端启动
 

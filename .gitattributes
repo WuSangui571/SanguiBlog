@@ -10,6 +10,8 @@
 *.properties text eol=lf
 *.env  text eol=lf
 *.ps1  text eol=lf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
 
 # 常见二进制类型（禁止 eol 转换）
 *.png  binary
@@ -24,4 +26,3 @@
 *.woff2 binary
 *.ttf  binary
 *.eot  binary
-

@@ -2237,3 +2237,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.254 (2025-12-31)
 - **模块/页面**：新增 uploads 同步脚本 `scripts/sync-uploads.bat`：通过 `scp` 拉取生产端 `/home/sangui/uploads/games` 到临时目录，再用 `robocopy /MIR` 镜像到本地 `uploads/games`，确保“以生产端为准”且不对远程做任何写操作；同时 `NOTE.md` 补充使用方式，并在 `.gitignore` 忽略 `scripts/.tmp/` 避免临时目录误提交。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.254`
+
+## V2.1.255 (2025-12-31)
+- **模块/页面**：修复 uploads 同步脚本在 Windows 下双击运行报错的问题：由于仓库 `.gitattributes` 强制文本使用 LF，导致 `.bat` 被 `cmd.exe` 解析异常；现改为 ASCII 的 `scripts/sync-uploads.bat` 作为包装器，核心逻辑迁移到 `scripts/sync-uploads.ps1`（PowerShell 处理 UTF-8 更稳），并在 `.gitattributes` 为 `*.bat/*.cmd` 单独指定 `eol=crlf`。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.255`
