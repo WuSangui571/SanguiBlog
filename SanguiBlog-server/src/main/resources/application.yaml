@@ -62,7 +62,7 @@ storage:
 #  base-path: ${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}
 
 site:
-  version: "V2.1.260"
+  version: "V2.1.261"
   asset-base-url: http://sangui.top/uploads
 #  asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
   hero:

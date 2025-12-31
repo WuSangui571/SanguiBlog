@@ -54,6 +54,8 @@ public class BotGuardEngine {
             return new BotGuardDecision(BotGuardAction.PASS, 0, 0, 0);
         }
 
+        boolean apiPath = path.startsWith("/api/");
+
         long nowMs = System.currentTimeMillis();
         long nowSec = nowMs / 1000;
 
@@ -144,7 +146,9 @@ public class BotGuardEngine {
         long blockedUntil = state.blockedUntilMs();
         if (blockedUntil > nowMs) {
             int retry = (int) Math.max(1, (blockedUntil - nowMs + 999) / 1000);
-            return new BotGuardDecision(BotGuardAction.BLOCK, score, 0, retry);
+            // 只对 API 做阻断：避免刷新页面时 CSS/JS 等静态资源被 429 打断导致“无样式/白屏”
+            return apiPath ? new BotGuardDecision(BotGuardAction.BLOCK, score, 0, retry)
+                    : new BotGuardDecision(BotGuardAction.PASS, score, 0, 0);
         }
 
         boolean highRisk = !verified && score >= props.getBlockThreshold();
@@ -153,7 +157,9 @@ public class BotGuardEngine {
             long until = nowMs + Math.max(1, props.getBlockDuration().toMillis());
             state.blockUntil(until);
             int retry = (int) Math.max(1, props.getBlockDuration().toSeconds());
-            return new BotGuardDecision(BotGuardAction.BLOCK, score, 0, retry);
+            // 只对 API 做阻断：静态资源与页面入口不短封，避免影响正常访问渲染
+            return apiPath ? new BotGuardDecision(BotGuardAction.BLOCK, score, 0, retry)
+                    : new BotGuardDecision(BotGuardAction.PASS, score, 0, 0);
         }
 
         if (!verified && score >= props.getCaptchaThreshold() && isCaptchaCandidate(request, path)) {
@@ -190,6 +196,9 @@ public class BotGuardEngine {
 
     private boolean shouldDelay(String path) {
         if (!StringUtils.hasText(path)) {
+            return false;
+        }
+        if (isAssetRequest(path)) {
             return false;
         }
         return !path.startsWith("/uploads/")

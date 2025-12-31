@@ -730,6 +730,7 @@ npm run dev
 
 - **登录态接口白名单**：`/api/notifications/**`、`/api/users/**`、`/api/permissions/**` 默认不参与 BotGuard 的 403/429 决策，优先交由 Spring Security 返回 401/403（避免通知中心等 `isAuthenticated()` 接口在鉴权生效前被误判为异常并短封 429）。
 - **已登录请求放行**：若请求头携带 `Authorization: Bearer <token>` 且 token 校验通过，BotGuard 将直接放行（不再返回 403/429）；权限与数据访问仍由 Spring Security 与业务侧校验负责。
+- **静态资源保护**：BotGuard 的 429 短暂阻断仅对 `/api/**` 生效；页面入口与 CSS/JS 等静态资源即便命中短封窗口也不会被 429 打断（最多做业务侧正常加载/失败），避免“刷新后无样式/白屏”的用户体验问题。
 
 ### 角色初始化更新
 
