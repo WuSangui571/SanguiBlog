@@ -84,5 +84,7 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
 
     long deleteByUserIsNullAndViewerIpIn(Collection<String> viewerIps);
 
+    long deleteByUserIsNullAndViewerIp(String viewerIp);
+
     long countByIdIn(Collection<Long> ids);
 }

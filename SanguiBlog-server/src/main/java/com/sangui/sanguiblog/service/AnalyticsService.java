@@ -196,6 +196,9 @@ public class AnalyticsService {
         if (!sanitizedIps.isEmpty()) {
             deleted += analyticsPageViewRepository.deleteByUserIsNullAndViewerIpIn(sanitizedIps);
         }
+        // 部分环境/代理下，匿名访问可能被写入为 127.0.0.1（回环地址），不一定能被上面的“关联 IP”命中。
+        // 这里额外清理 viewer_ip=127.0.0.1 的匿名记录，避免“清理我的访问日志”后仍残留本地回环日志。
+        deleted += analyticsPageViewRepository.deleteByUserIsNullAndViewerIp("127.0.0.1");
         return deleted;
     }
 

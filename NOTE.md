@@ -532,6 +532,7 @@ ole_permissions in bulk.
   * DELETE `/api/admin/analytics/page-views?ids=<id>&ids=<id>` 仅 SUPER_ADMIN 可用；支持批量删除，内部先统计命中条数（countByIdIn），再执行 deleteAllByIdInBatch，空列表或全未命中时返回 0。
   * 访问日志页头像：前端复用用户列表的头像解析（avatar/avatarUrl/avatar_url → buildAssetUrl），无头像时以首字母色块兜底；头像悬停提示为 `id-username-display_name`，与用户管理列表保持一致。自 V1.3.85 起，后端 `AdminAnalyticsSummaryDto.RecentVisit` 直接返回 `display_name` 字段，前端也会将缺少目录层级的存储路径归一化为 `/uploads/avatar/<file>`，避免因裸文件名导致破图或昵称缺失。
   * DELETE `/api/admin/analytics/page-views/me` 仅 SUPER_ADMIN 可用；V1.3.96 起会先收集该账号历史日志中的全部 viewer_ip，再连同 user_id 为空且 IP 命中的访客记录一并清理，避免登录前遗留的自访数据被漏删。
+  * 自 V2.1.252 起，清理“我的访问日志”时会额外删除 `viewer_ip = 127.0.0.1` 且 `user_id` 为空的记录，用于处理本地/反代环境下匿名日志被写成回环地址而无法通过“关联 IP”命中的残留问题。
 
 ### 4.7 Initial Accounts & Default Passwords
 
