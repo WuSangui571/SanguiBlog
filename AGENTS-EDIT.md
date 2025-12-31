@@ -2249,3 +2249,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.257 (2025-12-31)
 - **模块/页面**：修复后端启动失败：`SecurityConfig` 中 `addFilterBefore` 不能以自定义 Filter（`JwtAuthenticationFilter`）作为参照顺序，否则会报 “Filter does not have a registered order”；现改为以 Spring Security 内置的 `UsernamePasswordAuthenticationFilter` 作为锚点，确保 BotGuard/JWT 过滤器链可正常构建。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.257`
+
+## V2.1.258 (2025-12-31)
+- **模块/页面**：修复 BotGuard 误伤管理端：管理后台请求（如 `/api/admin/posts`、`/api/admin/analytics/page-views`）在鉴权前被 BotGuard 判定为高风险并返回 429，导致 Admin 面板 “load posts failed”；现将 `/api/admin/**`、`/api/permissions/me`、`/api/upload/**` 加入 BotGuard 白名单，仅交由 Spring Security 做认证/授权，避免真实管理员被“请求过于频繁”拦截。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.258`

@@ -1,6 +1,6 @@
 ﻿server:
-  port: 8080
-#  port: 8082
+  port: 8082
+#  port: 8080
 
 spring:
   application:
@@ -58,13 +58,13 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
 
 storage:
-  base-path: ${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}
-#  base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
+  base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
+#  base-path: ${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}
 
 site:
-  version: "V2.1.257"
-  asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
-#  asset-base-url: http://sangui.top/uploads
+  version: "V2.1.258"
+  asset-base-url: http://sangui.top/uploads
+#  asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
   hero:
     tagline: 我是三桂，在这里把问题想清楚，把代码写简单。
   home:

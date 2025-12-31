@@ -726,6 +726,8 @@ npm run dev
 - **多实例说明**：该风控为“单实例内生效”。若未来演进为多实例部署，各实例之间不会共享风险状态（这是当前阶段为了降低复杂度与误伤风险的设计取舍）。
 - **可配置项**：`security.bot-guard.*`（见 `BotGuardProperties`，可调整阈值/延迟区间/验证码触发范围/阻断时长/Cookie 策略等）。
 
+- **管理端白名单**：`/api/admin/**`、`/api/permissions/me`、`/api/upload/**` 默认不参与 BotGuard 的 403/429 决策（避免在 JWT 鉴权之前误伤真实管理员操作）；这些路径由 Spring Security 负责认证与授权控制。
+
 ### 角色初始化更新
 
 - 自 V1.3.76 起，`DataInitializer` 仅创建基础角色（SUPER_ADMIN / ADMIN / USER）并同步默认权限，不再为固定用户名自动分配角色；请通过后台或 SQL 显式授予角色，避免弱口令账户被静默升权。
