@@ -545,6 +545,37 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         recordPageView(body);
     }, []);
 
+    const homePostsLoadingSeenRef = useRef(false);
+    useEffect(() => {
+        if (view !== 'home') {
+            homePostsLoadingSeenRef.current = false;
+            return;
+        }
+        if (postsLoading) {
+            homePostsLoadingSeenRef.current = true;
+        }
+    }, [view, postsLoading]);
+
+    useEffect(() => {
+        if (view !== 'home') return;
+        if (!homePostsLoadingSeenRef.current) return;
+        if (postsLoading) return;
+
+        const current = Math.max(1, Number(postsPage?.page || 1));
+        const size = Math.max(1, Number(homePageSize || DEFAULT_PAGE_SIZE));
+        const total = Number(postsPage?.total ?? 0) || 0;
+        const totalPages = Math.max(1, Math.ceil(total / size));
+        const pageTitle = `home(${current}/${totalPages})`;
+        const key = `home-${current}-${totalPages}-size-${size}`;
+
+        if (claimAutoPageView(key)) {
+            sendPageView({
+                pageTitle,
+                geo: getGeoHint()
+            });
+        }
+    }, [view, postsLoading, postsPage?.page, postsPage?.total, homePageSize, sendPageView]);
+
     useEffect(() => {
         if (!user) {
             setPermissionState({ permissions: [], loading: false, error: '' });
@@ -774,12 +805,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     useEffect(() => {
         if (view === 'home') {
-            if (claimAutoPageView('home')) {
-                sendPageView({
-                    pageTitle: 'Home',
-                    geo: getGeoHint()
-                });
-            }
+            // 首页访问日志由 posts 分页加载后补齐：pageTitle = home(当前页/总页数)
         } else if (view === 'archive') {
             if (claimAutoPageView('archive')) {
                 sendPageView({

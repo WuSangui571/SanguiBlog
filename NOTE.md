@@ -516,7 +516,8 @@ ole_permissions in bulk.
   * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；同时使用 Caffeine（IP+post）做 10 分钟 TTL 限流 + 10 分钟数据库去重，避免刷量并降低短时间重复请求的 DB 压力。
   * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV；为解决 SPA 下 `document.referrer` 不可靠的问题，前端在请求文章详情 `GET /api/posts/{id}` 时会附带 `X-SG-Referrer`（外部来源或站内上一页 URL）与可选的 `X-SG-Source-Label`（站内跳转中文描述），后端据此写入正确来源。
   * 自 V2.1.223 起，访问不存在的文章（例如 `/article/999999` 或 `/article/xxxx`）会在前端明确展示 404；不再回退展示 `MOCK_POSTS[0]`（最新文章占位）导致的“标题/摘要像对、正文为空”的错觉。
-  * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，仅首次进入这些视图时才会调用 `recordPageView`，一旦切换到其它视图即重置标记，彻底杜绝 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录。
+  * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，避免 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录（同一视图 key 不变时不会重复写入；切换到其它视图会重置标记）。
+  * 自 V2.1.250 起，首页访问日志 `pageTitle` 由 `Home` 调整为 `home(当前页/总页数)`（例如 `home(1/16)`）；由于首页 URL 不体现页码，前端会在文章列表分页请求完成后，根据 `postsPage.page + postsPage.total/pageSize` 计算并写入标题，同时将守卫 key 细化为 `home-<page>-<totalPages>-size-<pageSize>`，从而支持“翻页也能打点”，且同一页不会重复记录。
 * 数据落库
 * `viewer_ip`：优先读取 `X-Forwarded-For`/`X-Real-IP`。前端默认通过同源接口 `GET /api/analytics/client-ip` 获取归一化 IP，若拿到的不是回环地址则随 PV 请求附带 `clientIp`；若返回仍是 `127.0.0.1`/`::1` 且需要公网地址，可在前端 `.env` 设置 `VITE_ENABLE_PUBLIC_IP_FETCH=true`（可选用 `VITE_PUBLIC_IP_ENDPOINT` 覆盖默认 `https://api.ipify.org?format=json`）启用公网兜底。默认不再直接访问外网 IP 服务，避免公司/校园网络拦截导致控制台报错。
   * `referrer_url`：自 V1.3.87 起记录中文来源描述。站内跳转来源优先使用前端上报的 `sourceLabel`（例如“来自首页/归档页/站内文章”等，基于 `viewNavigation.js` 在跳转前写入的 `sessionStorage: sg_prev_url`），外部来源则由后端解析 `referrer` 并识别搜索引擎：若 referrer 含关键词参数，会展示为“谷歌：MyBatis 源码解析”这类格式；若无法拿到关键词则展示“来自搜索引擎：谷歌”。若前端埋点失败，兜底记录为“系统兜底（前端埋点失败）”。
