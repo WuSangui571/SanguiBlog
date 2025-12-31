@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.security.botguard;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
+import com.sangui.sanguiblog.security.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,16 +23,25 @@ public class BotGuardFilter extends OncePerRequestFilter {
     private final BotGuardEngine engine;
     private final BotGuardProperties props;
     private final ObjectMapper objectMapper;
+    private final JwtUtil jwtUtil;
 
-    public BotGuardFilter(BotGuardEngine engine, BotGuardProperties props, ObjectMapper objectMapper) {
+    public BotGuardFilter(BotGuardEngine engine, BotGuardProperties props, ObjectMapper objectMapper, JwtUtil jwtUtil) {
         this.engine = engine;
         this.props = props;
         this.objectMapper = objectMapper;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
+        // 若携带有效 JWT，则视为已认证请求（管理端/通知等），避免 BotGuard 在鉴权前置阶段误伤真实用户。
+        // 注意：这里只做“有效 token”判断，不改变权限控制，权限仍由 Spring Security 负责。
+        if (hasValidJwt(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         BotGuardDecision decision = engine.decide(request);
         if (props.isExposeDebugHeaders()) {
@@ -61,6 +71,23 @@ public class BotGuardFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean hasValidJwt(HttpServletRequest request) {
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return false;
+        }
+        String token = authHeader.substring(7);
+        if (token.isBlank()) {
+            return false;
+        }
+        try {
+            String username = jwtUtil.extractUsername(token);
+            return username != null && !username.isBlank();
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private void writeCaptchaRequired(HttpServletRequest request, HttpServletResponse response, BotGuardDecision decision)
@@ -125,4 +152,3 @@ public class BotGuardFilter extends OncePerRequestFilter {
         }
     }
 }
-

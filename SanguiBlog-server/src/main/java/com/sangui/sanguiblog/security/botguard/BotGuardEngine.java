@@ -177,7 +177,10 @@ public class BotGuardEngine {
                 // 管理端接口本身已由 Spring Security 鉴权保护（未登录会 401/403），
                 // BotGuard 不应在认证前置阶段用 429 误伤真实管理员操作。
                 || path.startsWith("/api/admin/")
-                || Objects.equals(path, "/api/permissions/me")
+                // 登录态接口同理：让 Spring Security 先做 401/403，不要被 BotGuard 提前打成 429。
+                || path.startsWith("/api/notifications/")
+                || path.startsWith("/api/users/")
+                || path.startsWith("/api/permissions/")
                 || path.startsWith("/api/upload/")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")

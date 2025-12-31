@@ -2253,3 +2253,11 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.258 (2025-12-31)
 - **模块/页面**：修复 BotGuard 误伤管理端：管理后台请求（如 `/api/admin/posts`、`/api/admin/analytics/page-views`）在鉴权前被 BotGuard 判定为高风险并返回 429，导致 Admin 面板 “load posts failed”；现将 `/api/admin/**`、`/api/permissions/me`、`/api/upload/**` 加入 BotGuard 白名单，仅交由 Spring Security 做认证/授权，避免真实管理员被“请求过于频繁”拦截。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.258`
+
+## V2.1.259 (2025-12-31)
+- **模块/页面**：修复已登录用户接口仍被 BotGuard 429 的问题：通知中心等 `isAuthenticated()` 接口（如 `/api/notifications/history`）在 JWT 鉴权生效前被 BotGuard 误判为异常并短封；现 BotGuard 在检测到请求携带“有效 JWT”时直接放行（权限仍由 Spring Security 控制），避免后台与已登录用户体验被“请求过于频繁”影响。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.259`
+
+## V2.1.260 (2025-12-31)
+- **模块/页面**：进一步降低登录态接口被 429 误伤的概率：将 `/api/notifications/**`、`/api/users/**`、`/api/permissions/**` 加入 BotGuard 白名单，让这些登录态接口优先交由 Spring Security 返回 401/403（而非被 BotGuard 提前短封 429），提升后台与通知中心稳定性。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.260`

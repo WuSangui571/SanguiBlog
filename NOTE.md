@@ -726,7 +726,10 @@ npm run dev
 - **多实例说明**：该风控为“单实例内生效”。若未来演进为多实例部署，各实例之间不会共享风险状态（这是当前阶段为了降低复杂度与误伤风险的设计取舍）。
 - **可配置项**：`security.bot-guard.*`（见 `BotGuardProperties`，可调整阈值/延迟区间/验证码触发范围/阻断时长/Cookie 策略等）。
 
-- **管理端白名单**：`/api/admin/**`、`/api/permissions/me`、`/api/upload/**` 默认不参与 BotGuard 的 403/429 决策（避免在 JWT 鉴权之前误伤真实管理员操作）；这些路径由 Spring Security 负责认证与授权控制。
+- **管理端白名单**：`/api/admin/**`、`/api/upload/**` 默认不参与 BotGuard 的 403/429 决策（避免在 JWT 鉴权之前误伤真实管理员操作）；这些路径由 Spring Security 负责认证与授权控制。
+
+- **登录态接口白名单**：`/api/notifications/**`、`/api/users/**`、`/api/permissions/**` 默认不参与 BotGuard 的 403/429 决策，优先交由 Spring Security 返回 401/403（避免通知中心等 `isAuthenticated()` 接口在鉴权生效前被误判为异常并短封 429）。
+- **已登录请求放行**：若请求头携带 `Authorization: Bearer <token>` 且 token 校验通过，BotGuard 将直接放行（不再返回 403/429）；权限与数据访问仍由 Spring Security 与业务侧校验负责。
 
 ### 角色初始化更新
 
