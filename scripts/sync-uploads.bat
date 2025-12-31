@@ -76,14 +76,15 @@ echo.
 where ssh >nul 2>nul
 if not errorlevel 1 (
   echo [1/3] 预检查生产端目录...
-  ssh %SSH_PORT_ARG% %SSH_COMMON_OPTS% %REMOTE_USER%@%REMOTE_HOST% "test -d %REMOTE_DIR% && echo OK || echo MISSING"
+  ssh %SSH_PORT_ARG% %SSH_COMMON_OPTS% %REMOTE_USER%@%REMOTE_HOST% "test -d %REMOTE_DIR%"
   if errorlevel 1 (
     echo.
-    echo [ERROR] 预检查失败：SSH 连接失败或免密配置不可用。
+    echo [ERROR] 预检查失败：SSH 连接失败、免密配置不可用，或生产端目录不存在：%REMOTE_DIR%
     echo.
     pause
     exit /b 1
   )
+  echo OK
 ) else (
   echo [1/3] 未检测到 ssh，跳过预检查（仅依赖 scp 返回值）...
 )
@@ -146,4 +147,3 @@ echo [SUCCESS] 同步完成：本地 uploads\\games 已与生产端保持一致�
 echo.
 pause
 exit /b 0
-

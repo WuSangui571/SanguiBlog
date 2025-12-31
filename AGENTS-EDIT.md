@@ -2233,3 +2233,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.253 (2025-12-31)
 - **模块/页面**：后台访问日志（`/admin/analytics`）新增筛选/检索：支持按 IP、关键词、用户状态（已登录/访客）与日期区间过滤访问日志；后端 `/api/admin/analytics/page-views` 扩展对应查询参数并以 JPA Specification 组合条件查询，前端新增筛选栏与“查询/重置”操作，显著提升排障效率。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.253`
+
+## V2.1.254 (2025-12-31)
+- **模块/页面**：新增 uploads 同步脚本 `scripts/sync-uploads.bat`：通过 `scp` 拉取生产端 `/home/sangui/uploads/games` 到临时目录，再用 `robocopy /MIR` 镜像到本地 `uploads/games`，确保“以生产端为准”且不对远程做任何写操作；同时 `NOTE.md` 补充使用方式，并在 `.gitignore` 忽略 `scripts/.tmp/` 避免临时目录误提交。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.254`

@@ -22,6 +22,9 @@ log/
 *.seed
 *.tmp
 
+# Local sync temp (scripts)
+scripts/.tmp/
+
 # Uploaded files (your blog's image uploads, markdown uploads etc)
 uploads/
 static/uploads/
