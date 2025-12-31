@@ -160,7 +160,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").authenticated()
                         .requestMatchers("/api/permissions/me").authenticated()
                         .anyRequest().authenticated())
-                .addFilterBefore(botGuardFilter, JwtAuthenticationFilter.class)
+                .addFilterBefore(botGuardFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

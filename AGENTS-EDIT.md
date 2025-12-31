@@ -2245,3 +2245,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.256 (2025-12-31)
 - **模块/页面**：后端新增“BotGuard”反爬风控：在 Java Web 层统一采集请求基础信息并基于进程内短期内存状态做风险评分（不依赖 Redis）；按风险分执行放行/轻度延迟/高滥用路径验证码/短暂阻断，并提供“主动降分”机制减少 NAT 场景误伤；新增验证码接口 `/api/guard/captcha` 与 `/api/guard/verify` 用于完成短期验证并下发 `sg_guard` Cookie。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.256`
+
+## V2.1.257 (2025-12-31)
+- **模块/页面**：修复后端启动失败：`SecurityConfig` 中 `addFilterBefore` 不能以自定义 Filter（`JwtAuthenticationFilter`）作为参照顺序，否则会报 “Filter does not have a registered order”；现改为以 Spring Security 内置的 `UsernamePasswordAuthenticationFilter` 作为锚点，确保 BotGuard/JWT 过滤器链可正常构建。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.257`
