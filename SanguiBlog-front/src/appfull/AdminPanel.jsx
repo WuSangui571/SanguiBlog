@@ -778,11 +778,30 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     useEffect(() => {
         loadLogs(1, size);
-    }, [loadLogs, size]);
+    }, [loadLogs]);
 
     const totalPages = Math.max(1, Math.ceil((total || 0) / size) || 1);
     const allSelected = logs.length > 0 && selectedIds.length === logs.length;
     const hasSelection = selectedIds.length > 0;
+    const paginationItems = useMemo(() => {
+        if (totalPages <= 7) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+        const items = [1];
+        const windowStart = Math.max(2, page - 1);
+        const windowEnd = Math.min(totalPages - 1, page + 1);
+        if (windowStart > 2) {
+            items.push('ellipsis-left');
+        }
+        for (let p = windowStart; p <= windowEnd; p += 1) {
+            items.push(p);
+        }
+        if (windowEnd < totalPages - 1) {
+            items.push('ellipsis-right');
+        }
+        items.push(totalPages);
+        return items;
+    }, [page, totalPages]);
 
     const handlePageChange = (target) => {
         const safe = Math.min(Math.max(target, 1), totalPages);
@@ -1036,7 +1055,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
                     <div className={`text-xs ${textMuted}`}>第 {page} / {totalPages} 页</div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-end gap-2 flex-wrap">
                         <button
                             type="button"
                             onClick={() => handlePageChange(page - 1)}
@@ -1045,6 +1064,33 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                         >
                             上一页
                         </button>
+                        {paginationItems.map((item) => {
+                            if (typeof item === 'string') {
+                                return (
+                                    <span key={item} className={`px-1 text-sm ${textMuted}`}>
+                                        ...
+                                    </span>
+                                );
+                            }
+                            const isActive = item === page;
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => handlePageChange(item)}
+                                    disabled={isActive}
+                                    className={[
+                                        'px-3 py-1 text-sm rounded-md border disabled:opacity-60',
+                                        isActive
+                                            ? (isDarkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black')
+                                            : (isDarkMode ? 'bg-gray-900 text-gray-100 border-gray-700 hover:bg-gray-800' : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50')
+                                    ].join(' ')}
+                                    aria-current={isActive ? 'page' : undefined}
+                                >
+                                    {item}
+                                </button>
+                            );
+                        })}
                         <button
                             type="button"
                             onClick={() => handlePageChange(page + 1)}
