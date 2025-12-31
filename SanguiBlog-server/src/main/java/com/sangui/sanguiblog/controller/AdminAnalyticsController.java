@@ -8,6 +8,7 @@ import com.sangui.sanguiblog.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -37,8 +40,19 @@ public class AdminAnalyticsController {
     @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW')")
     public ApiResponse<PageResponse<AdminAnalyticsSummaryDto.RecentVisit>> pageViews(
             @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "20") int size) {
-        return ApiResponse.ok(analyticsService.loadPageViews(page, size));
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "ip", required = false) String ip,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "loggedIn", required = false) Boolean loggedIn,
+            @RequestParam(value = "postId", required = false) Long postId,
+            @RequestParam(value = "start", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam(value = "end", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+        LocalDateTime startAt = start != null ? start.atStartOfDay() : null;
+        LocalDateTime endExclusive = end != null ? end.plusDays(1).atStartOfDay() : null;
+        AnalyticsService.AdminPageViewQuery query = new AnalyticsService.AdminPageViewQuery(
+                ip, keyword, loggedIn, postId, startAt, endExclusive
+        );
+        return ApiResponse.ok(analyticsService.loadPageViews(page, size, query));
     }
 
     @DeleteMapping("/page-views/me")

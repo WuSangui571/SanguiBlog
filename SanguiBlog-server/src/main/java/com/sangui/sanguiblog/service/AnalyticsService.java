@@ -20,6 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -238,15 +239,90 @@ public class AnalyticsService {
 
     @Transactional(readOnly = true)
     public PageResponse<AdminAnalyticsSummaryDto.RecentVisit> loadPageViews(int page, int size) {
+        return loadPageViews(page, size, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AdminAnalyticsSummaryDto.RecentVisit> loadPageViews(int page, int size, AdminPageViewQuery query) {
         int p = Math.max(page, 1) - 1;
         int s = Math.min(Math.max(size, 1), 200);
-        Page<AnalyticsPageView> result = analyticsPageViewRepository.findAll(
+        Specification<AnalyticsPageView> spec = buildAdminPageViewSpec(query);
+        Page<AnalyticsPageView> result = analyticsPageViewRepository.findAll(spec,
                 PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "viewedAt")));
         List<AdminAnalyticsSummaryDto.RecentVisit> records = result.getContent().stream()
                 .map(this::toRecentVisit)
                 .filter(Objects::nonNull)
                 .toList();
         return new PageResponse<>(records, result.getTotalElements(), result.getNumber() + 1, result.getSize());
+    }
+
+    private Specification<AnalyticsPageView> buildAdminPageViewSpec(AdminPageViewQuery query) {
+        if (query == null) {
+            return null;
+        }
+        return (root, cq, cb) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            jakarta.persistence.criteria.Join<Object, Object> postJoin = null;
+
+            String ip = StringUtils.hasText(query.viewerIp()) ? query.viewerIp().trim() : null;
+            if (StringUtils.hasText(ip)) {
+                predicates.add(cb.equal(root.get("viewerIp"), ip));
+            }
+
+            if (query.postId() != null && query.postId() > 0) {
+                postJoin = root.join("post", jakarta.persistence.criteria.JoinType.LEFT);
+                predicates.add(cb.equal(postJoin.get("id"), query.postId()));
+            }
+
+            if (query.loggedIn() != null) {
+                predicates.add(Boolean.TRUE.equals(query.loggedIn())
+                        ? cb.isNotNull(root.get("user"))
+                        : cb.isNull(root.get("user")));
+            }
+
+            if (query.startAt() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("viewedAt"), query.startAt()));
+            }
+            if (query.endAtExclusive() != null) {
+                predicates.add(cb.lessThan(root.get("viewedAt"), query.endAtExclusive()));
+            }
+
+            String keyword = StringUtils.hasText(query.keyword()) ? query.keyword().trim().toLowerCase(Locale.ROOT) : null;
+            if (StringUtils.hasText(keyword)) {
+                String like = "%" + keyword + "%";
+                if (postJoin == null) {
+                    postJoin = root.join("post", jakarta.persistence.criteria.JoinType.LEFT);
+                }
+
+                jakarta.persistence.criteria.Expression<String> pageTitle = cb.lower(cb.coalesce(root.get("pageTitle"), ""));
+                jakarta.persistence.criteria.Expression<String> referrerUrl = cb.lower(cb.coalesce(root.get("referrerUrl"), ""));
+                jakarta.persistence.criteria.Expression<String> geo = cb.lower(cb.coalesce(root.get("geoLocation"), ""));
+                jakarta.persistence.criteria.Expression<String> postTitle = cb.lower(cb.coalesce(postJoin.get("title"), ""));
+                jakarta.persistence.criteria.Expression<String> postSlug = cb.lower(cb.coalesce(postJoin.get("slug"), ""));
+
+                predicates.add(cb.or(
+                        cb.like(pageTitle, like),
+                        cb.like(referrerUrl, like),
+                        cb.like(geo, like),
+                        cb.like(postTitle, like),
+                        cb.like(postSlug, like)
+                ));
+            }
+
+            return predicates.isEmpty()
+                    ? cb.conjunction()
+                    : cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+    }
+
+    public record AdminPageViewQuery(
+            String viewerIp,
+            String keyword,
+            Boolean loggedIn,
+            Long postId,
+            LocalDateTime startAt,
+            LocalDateTime endAtExclusive
+    ) {
     }
 
     private AdminAnalyticsSummaryDto.RecentVisit toRecentVisit(AnalyticsPageView view) {

@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目构建中...</title>
+    <style>
+        /* --- 核心变量 (Themes) --- */
+        :root {
+            --bg-color: #2b2b2b;
+            --sidebar-bg: #313335;
+            --text-color: #a9b7c6;
+            --accent-color: #cc7832;
+            --gutter-color: #313335;
+            --status-bar-bg: #3c3f41;
+            --status-text: #bbb;
+            --font-family: 'JetBrains Mono', 'Consolas', monospace;
+            --danger-color: #e74c3c;
+            --success-color: #6a8759;
+        }
+
+        /* VS Code Theme */
+        body.theme-vscode {
+            --bg-color: #1e1e1e;
+            --sidebar-bg: #252526;
+            --text-color: #d4d4d4;
+            --accent-color: #569cd6;
+            --gutter-color: #1e1e1e;
+            --status-bar-bg: #007acc;
+            --status-text: #fff;
+        }
+
+        /* Terminal Theme */
+        body.theme-terminal {
+            --bg-color: #0c0c0c;
+            --sidebar-bg: #000;
+            --text-color: #0f0;
+            --accent-color: #0f0;
+            --gutter-color: #000;
+            --status-bar-bg: #000;
+            --status-text: #0f0;
+            --font-family: 'Courier New', monospace;
+        }
+
+        /* --- 基础布局 --- */
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: var(--font-family);
+            display: flex; height: 100vh; user-select: none;
+        }
+
+        /* --- 伪装层 (IDE UI) --- */
+        .ide-container {
+            display: flex; width: 100%; height: 100%; z-index: -1; position: absolute; top:0; left:0;
+        }
+        .sidebar {
+            width: 50px; background-color: var(--sidebar-bg); border-right: 1px solid #454545;
+            display: flex; flex-direction: column; align-items: center; padding-top: 10px;
+            color: #606366; font-size: 20px;
+        }
+        .main-editor {
+            flex: 1; display: flex; flex-direction: column;
+        }
+        .tab-bar {
+            height: 35px; background-color: var(--bg-color); border-bottom: 1px solid #454545;
+            display: flex; align-items: center; padding-left: 10px; font-size: 12px;
+        }
+        .code-area {
+            flex: 1; display: flex; position: relative; overflow: hidden;
+        }
+        .gutter {
+            width: 45px; background-color: var(--gutter-color); color: #606366; text-align: right;
+            padding: 10px 10px 0 0; box-sizing: border-box; border-right: 1px solid #454545;
+        }
+        .editor-content {
+            flex: 1; padding: 10px 0 0 15px; white-space: pre; overflow: hidden;
+            transition: background-color 0.2s ease, filter 0.2s ease;
+        }
+
+        /* 代码高亮 (适配多主题) */
+        .code-keyword { color: var(--accent-color); font-weight: bold; }
+        .code-annotation { color: #bbb529; }
+        .code-string { color: #6a8759; }
+        .code-comment { color: #808080; font-style: italic;}
+        .theme-terminal .code-keyword, .theme-terminal .code-annotation, .theme-terminal .code-string { color: #0f0; }
+
+        /* 光标 */
+        .cursor {
+            display: inline-block; width: 2px; height: 16px; background-color: #bbbbbb;
+            animation: blink 1s step-end infinite; vertical-align: text-bottom; margin-left: 1px;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* 背景特效 */
+        .editor-content.rush-mode-bg { background-color: rgba(255, 50, 50, 0.1); }
+        .editor-content.boss-mode-bg { background-color: rgba(128, 0, 128, 0.15); }
+        .editor-content.bullet-time-bg { background-color: rgba(0, 20, 0, 0.9); filter: contrast(1.2) brightness(1.2) hue-rotate(90deg); }
+        .editor-content.lag-mode-bg { background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 0, 0, 0.05) 3px); }
+
+        /* --- 游戏主容器 --- */
+        #game-container {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 10; width: 400px; height: 600px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            border-radius: 4px; overflow: hidden;
+            background: rgba(43, 43, 43, 0.95);
+            border: 1px solid #555;
+        }
+        body.theme-vscode #game-container { background: rgba(30, 30, 30, 0.95); }
+        body.theme-terminal #game-container { background: rgba(0, 0, 0, 0.95); border: 1px solid #0f0; box-shadow: 0 0 20px #0f0; }
+
+        canvas { display: block; }
+
+        /* --- UI Layers --- */
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0, 0, 0, 0.9); color: white; text-align: center; z-index: 30;
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+        }
+        .hidden { display: none !important; }
+        .version-tag { position: absolute; bottom: 10px; right: 15px; font-size: 12px; color: #606366; font-family: var(--font-family); }
+
+        /* --- 菜单与按钮 --- */
+        .menu-container { display: flex; flex-direction: column; gap: 8px; width: 220px; margin-top: 5px; }
+        button {
+            padding: 8px 0; font-size: 13px; color: white; border: none; border-radius: 4px;
+            cursor: pointer; transition: all 0.2s; width: 100%;
+            font-family: var(--font-family); font-weight: bold;
+            z-index: 50; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.3); text-align: center;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        .btn-easy { background-color: #6a8759; border-left: 4px solid #4e6e3e; }
+        .btn-normal { background-color: #6897bb; border-left: 4px solid #4e7ca2; }
+        .btn-hard { background-color: #cc7832; border-left: 4px solid #a55e24; }
+        
+        .btn-action { background-color: #313335; color: #bbb529; border: 1px solid #bbb529; }
+        .btn-action:hover { background-color: #bbb529; color: #2b2b2b; }
+        
+        .btn-readme { background-color: #546e7a; border-left: 4px solid #37474f; color: white; }
+        .btn-readme:hover { background-color: #607d8b; }
+
+        .btn-theme { background-color: transparent; border: 1px dashed var(--text-color); color: var(--text-color); opacity: 0.7; }
+        .btn-theme:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+        
+        .btn-danger { background-color: transparent; color: var(--danger-color); border: 1px solid var(--danger-color); margin-top: 15px; }
+        .btn-danger:hover { background-color: var(--danger-color); color: white; }
+
+        .btn-menu { background-color: #808080; width: auto; min-width: 120px; }
+
+        /* --- 皮肤选择 --- */
+        .skin-selector { display: flex; gap: 15px; margin: 10px 0; justify-content: center;}
+        
+        .skin-btn {
+            font-size: 28px; background: rgba(255,255,255,0.05); border: 1px solid #555;
+            cursor: pointer; padding: 8px; border-radius: 6px; z-index: 50; transition: all 0.2s;
+            position: relative; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center;
+        }
+        
+        .skin-btn.selected { border-color: var(--accent-color); background: rgba(255,255,255,0.1); transform: scale(1.1); box-shadow: 0 0 10px var(--accent-color); }
+        .skin-btn.locked { cursor: not-allowed; }
+        .skin-btn.locked::after { content: '🔒'; font-size: 12px; position: absolute; bottom: -2px; right: -2px; }
+        
+        .skin-emoji { transition: all 0.2s; }
+        .skin-btn.locked .skin-emoji { opacity: 0.3; filter: grayscale(1); }
+        
+        .skin-req { 
+            font-size: 11px; color: #fff; background: rgba(0,0,0,0.95); border: 1px solid #666;
+            padding: 5px 8px; border-radius: 4px;
+            position: absolute; bottom: 55px; left: 50%; transform: translateX(-50%); 
+            white-space: pre; text-align: center;
+            display: none; width: 120px; z-index: 100;
+            opacity: 1 !important; filter: none !important; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .skin-btn:hover .skin-req { display: block; }
+        .skin-req::after {
+            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+            border-width: 5px; border-style: solid; border-color: rgba(0,0,0,0.95) transparent transparent transparent;
+        }
+
+        /* --- 弹窗与警告 --- */
+        .notification-card {
+            position: absolute; bottom: 20px; right: -300px; width: 240px; background: rgba(40, 44, 52, 0.98);
+            border: 1px solid #555; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            padding: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 25; font-family: sans-serif;
+            transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto;
+        }
+        .notification-card.show { right: 10px; }
+        .notif-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #444; padding-bottom: 8px; }
+        .notif-icon { width: 30px; height: 30px; background: #e74c3c; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; }
+        .notif-info { flex: 1; text-align: left; }
+        .notif-title { font-size: 14px; font-weight: bold; color: #fff; }
+        .notif-subtitle { font-size: 10px; color: #aaa; }
+        .notif-body { font-size: 13px; color: #ddd; text-align: left; line-height: 1.4; font-weight: bold; }
+        .notif-actions { display: flex; gap: 10px; margin-top: 5px; }
+        .notif-btn { flex: 1; padding: 6px 0; border-radius: 4px; font-size: 12px; cursor: pointer; border: none; font-weight: bold; }
+        .notif-btn.decline { background: #c0392b; color: white; } .notif-btn.accept { background: #27ae60; color: white; }
+
+        /* --- 警告文本 --- */
+        #confuse-warning, #rush-warning, #boss-warning, #gc-warning, #lag-warning, #locked-warning, #event-warning { position: absolute; width: 100%; text-align: center; font-weight: bold; display: none; z-index: 15; pointer-events: none; font-family: sans-serif; }
+        #confuse-warning { top: 80px; font-size: 20px; color: #cc7832; animation: shake 0.5s infinite; }
+        #rush-warning { top: 40%; font-size: 32px; color: #ff6b6b; transform: rotate(-10deg); border: 3px dashed #ff6b6b; padding: 10px; background: rgba(0,0,0,0.8); }
+        #boss-warning { top: 35%; font-size: 40px; color: #a29bfe; text-shadow: 0 0 10px #6c5ce7; animation: pulse 1s infinite; }
+        #gc-warning { top: 45%; font-family: monospace; font-size: 20px; color: #6a8759; background: rgba(0,0,0,0.9); padding: 15px; border: 1px solid #6a8759; box-shadow: 0 0 20px #6a8759; width: 90%; left: 5%; box-sizing: border-box; }
+        #lag-warning { top: 15px; right: 10px; width: auto; font-family: monospace; font-size: 12px; color: #ff0000; background: rgba(0,0,0,0.8); padding: 5px 10px; border: 1px solid #ff0000; animation: flash 1s infinite; display: none; }
+        #locked-warning { top: 65%; font-size: 14px; color: #e74c3c; animation: shake 0.3s; }
+        #event-warning { top: 20%; font-size: 24px; color: #f1c40f; text-shadow: 0 0 5px #f39c12; animation: pulse 0.5s infinite; z-index: 40;}
+
+        /* --- 状态栏 --- */
+        .status-container { position: absolute; top: 0; left: 0; width: 100%; z-index: 20; background: var(--status-bar-bg); border-bottom: 1px solid #555; display: flex; flex-direction: column; }
+        .status-bar { display: flex; justify-content: center; gap: 5px; padding: 5px; }
+        .status-item { font-size: 12px; color: var(--status-text); background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 3px; display: flex; align-items: center; border: 1px solid #555; }
+        .key-hint { background: #555; color: #fff; border-radius: 2px; padding: 0 4px; margin-right: 5px; font-size: 10px; }
+        .shield-active-ui { color: #00d2d3 !important; border-color: #00d2d3 !important;}
+        .magnet-active-ui { color: #ff6b81 !important; border-color: #ff6b81 !important;}
+        .energy-bar-bg { width: 100%; height: 4px; background: #222; position: relative; }
+        #energy-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #cc7832, #ffc107); transition: width 0.1s linear; }
+        .bullet-time-active #energy-bar-fill { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        
+        #combo-display { margin-left: 5px; font-weight: bold; color: #aaa; transition: color 0.2s, transform 0.1s; }
+        .combo-active { color: #ff9f43 !important; transform: scale(1.1); }
+        .combo-max { color: #ff6b6b !important; text-shadow: 0 0 5px #ff6b6b; animation: pulse 0.5s infinite; }
+
+        /* --- 老板键 & Game Over --- */
+        #boss-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); color: var(--text-color); font-family: var(--font-family); z-index: 100; padding: 20px; box-sizing: border-box; font-size: 13px; overflow: hidden; display: none; text-align: left; }
+        .bsod-screen { background-color: #0078d7 !important; font-family: 'Segoe UI', sans-serif !important; align-items: flex-start !important; padding: 40px; box-sizing: border-box; text-align: left !important; }
+        .sad-face { font-size: 80px; margin-bottom: 20px; }
+        .bsod-text { font-size: 18px; margin-bottom: 20px; line-height: 1.4; font-weight: 300; }
+        .bsod-footer { display: flex; align-items: center; margin-bottom: 30px; }
+        .qr-placeholder { width: 80px; height: 80px; background: white; margin-right: 15px; display: flex; justify-content: center; align-items: center; color: #0078d7; font-size: 10px; font-weight: bold; }
+
+        /* --- 模态框通用 --- */
+        #global-leaderboard-modal, #readme-modal, #career-modal { align-items: center; padding-top: 20px; overflow-y: auto; }
+        .score-list li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #444; font-size: 13px; font-family: var(--font-family);}
+        .markdown-body { width: 85%; text-align: left; background: #2b2b2b; color: #a9b7c6; padding: 15px; border: 1px solid #606366; border-radius: 4px; font-family: var(--font-family); font-size: 13px; }
+        .markdown-body h3 { border-bottom: 1px solid #606366; padding-bottom: 5px; color: #cc7832; font-size: 16px; margin-top: 0; }
+        .key-tag { border: 1px solid #888; border-radius: 3px; padding: 0 4px; font-size: 11px; margin: 0 2px; display: inline-block; background: #3c3f41; color: #a9b7c6;}
+        .readme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .readme-item { margin-bottom: 5px; } .readme-icon { width: 20px; display: inline-block; text-align: center; }
+
+        /* --- 职业生涯样式 --- */
+        .career-stats { text-align: left; width: 85%; background: #313335; padding: 15px; border-radius: 4px; border: 1px solid #555; display: flex; flex-direction: column; gap: 5px;}
+        .career-title { font-size: 24px; color: #bbb529; text-align: center; margin-bottom: 10px; text-shadow: 0 0 10px rgba(187, 181, 41, 0.3); }
+        .career-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #444; font-size: 13px; }
+        .career-label { color: #808080; }
+        .career-value { color: #a9b7c6; font-weight: bold; }
+
+        /* --- 成就系统样式 (Badge System) --- */
+        #achievement-section { margin-top: 15px; border-top: 1px solid #555; padding-top: 10px; }
+        .badge-title { font-size: 14px; color: #6a8759; margin-bottom: 10px; font-weight: bold; }
+        .badge-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        
+        .badge {
+            width: 100%; aspect-ratio: 1; background: rgba(0,0,0,0.3); border: 1px solid #444; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: help;
+            position: relative; transition: all 0.2s; 
+        }
+        
+        .badge-icon { transition: all 0.2s; }
+        .badge:not(.unlocked) .badge-icon { opacity: 0.3; filter: grayscale(1); }
+        
+        .badge.unlocked { border-color: var(--accent-color); background: rgba(255,255,255,0.05); }
+        .badge.unlocked:hover { transform: scale(1.1); z-index: 10; background: rgba(255,255,255,0.1); }
+        
+        /* 成就 Tooltip */
+        .badge-tooltip {
+            position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.95); border: 1px solid #666; padding: 8px; border-radius: 4px;
+            width: 160px; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+            z-index: 200; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            visibility: hidden; 
+        }
+        .badge:hover .badge-tooltip { opacity: 1; visibility: visible; }
+        
+        /* Tooltip 内容样式 */
+        .badge-name { font-size: 12px; font-weight: bold; color: #fff; margin-bottom: 4px; display: block; }
+        .badge-desc { font-size: 10px; color: #aaa; margin-bottom: 4px; display: block; line-height: 1.2; }
+        .badge-date { font-size: 9px; color: #666; border-top: 1px solid #333; padding-top: 3px; display: block; }
+        
+        /* 未解锁状态下 Tooltip 的微调 */
+        .badge:not(.unlocked) .badge-name { color: #aaa; }
+        .badge:not(.unlocked) .badge-desc { color: #888; display: block; }
+        .badge:not(.unlocked) .badge-date { display: none; }
+
+        /* Animations */
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body class="theme-idea">
+
+    <div class="ide-container">
+        <div class="sidebar">
+            <div style="margin-bottom: 15px;">📂</div>
+            <div style="margin-bottom: 15px;">🔍</div>
+            <div style="margin-bottom: 15px;">🌿</div>
+        </div>
+        <div class="main-editor">
+            <div class="tab-bar">
+                <span style="color: var(--accent-color)">WorkSimulator.java</span>
+            </div>
+            <div class="code-area">
+                <div class="gutter" id="ide-gutter"></div>
+                <div class="editor-content" id="ide-editor"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="boss-overlay">
+        <div>/bin/java ...</div>
+        <div style="color: #6a8759">[INFO] Scanning for projects...</div>
+        <div style="color: #6a8759">[INFO] ------------------------------------------------------------------------</div>
+        <div style="color: #6a8759">[INFO] Building Corporate Slacking System v4.3</div>
+        <div style="color: #6a8759">[INFO] ------------------------------------------------------------------------</div>
+        <div id="boss-logs"></div>
+        <br>
+        <div style="border-top: 1px solid #555; padding-top: 5px;">
+             <span style="color: var(--accent-color)">Process finished with exit code 0</span>
+        </div>
+        <div style="position: absolute; bottom: 20px; opacity: 0.5; font-size: 12px; color: #888;">[Click to Resume]</div>
+    </div>
+
+    <div class="watermark-container"></div>
+
+    <div id="game-container">
+        <div id="confuse-warning">⚠️ 需求变更警告 (操作反向) ⚠️</div>
+        <div id="rush-warning">🔥 产品经理来了！快跑！ 🔥</div>
+        <div id="boss-warning">👾 严重线上事故 (BOSS) 👾</div>
+        <div id="gc-warning">[GC (System.gc()) 2048K->0K(512M), 0.05s]</div>
+        <div id="lag-warning">📶 NETWORK LAG: 460ms</div>
+        <div id="locked-warning">🚫 该皮肤未解锁 (需累积更多积分)</div>
+        <div id="event-warning"></div>
+
+        <div id="notification-popup" class="notification-card">
+            <div class="notif-header">
+                <div class="notif-icon">📞</div>
+                <div class="notif-info">
+                    <div class="notif-title" id="notif-title">导师</div>
+                    <div class="notif-subtitle">正在呼叫...</div>
+                </div>
+            </div>
+            <div class="notif-body" id="notif-message">来我办公室一趟...</div>
+            <div class="notif-actions">
+                <button class="notif-btn decline" onclick="closeNotification()">挂断</button>
+                <button class="notif-btn accept" onclick="closeNotification()">接听</button>
+            </div>
+        </div>
+
+        <div class="status-container">
+            <div class="status-bar">
+                <div class="status-item">
+                    🏆 <span id="score">0</span>
+                    <span id="combo-display"></span>
+                </div>
+                <div class="status-item" id="shield-status"><span class="key-hint">W</span>🛡️ <span id="shield-count">1/5</span></div>
+                <div class="status-item" id="magnet-status"><span class="key-hint">S</span>🧲 <span id="magnet-count">1/5</span></div>
+                <div class="status-item" style="margin-left:auto; font-size:11px; opacity:0.8; border:none; background:transparent;">🖱️: Boss Key</div>
+            </div>
+            <div class="energy-bar-bg">
+                <div id="energy-bar-fill"></div>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+        <div id="start-screen" class="ui-layer">
+            <h1 style="color:var(--accent-color); font-size: 26px;">public class <span style="color:var(--text-color)">摸鱼大作战</span></h1>
+            <p style="font-size:14px; color:var(--text-color); font-family: var(--font-family);">
+                <b style="color:var(--accent-color)">A D</b> 移动 | <b style="color:var(--accent-color)">W</b> 护盾 | <b style="color:var(--accent-color)">S</b> 磁铁<br>
+                <b style="color:#00ff00; font-weight:bold;">SPACE</b> 高并发模式 (子弹时间)
+            </p>
+            
+            <div class="skin-selector">
+                <div class="skin-btn selected" id="skin-0" data-req="0" onclick="selectSkin('🤪', this)">
+                    <span class="skin-emoji">🤪</span>
+                    <div class="skin-req">实习生<br><span style="color:#aaa">1🛡️ 1🧲 (默认)</span></div>
+                </div>
+                <div class="skin-btn locked" id="skin-1" data-req="2000" onclick="selectSkin('👴', this)">
+                    <span class="skin-emoji">👴</span>
+                    <div class="skin-req">老专家 (2k分)<br><span style="color:#6897bb">3🛡️ 1🧲 (防御)</span></div>
+                </div>
+                <div class="skin-btn locked" id="skin-2" data-req="10000" onclick="selectSkin('🤖', this)">
+                    <span class="skin-emoji">🤖</span>
+                    <div class="skin-req">AI Copilot (1w分)<br><span style="color:#6a8759">2🛡️ 4🧲 (资源)</span></div>
+                </div>
+                <div class="skin-btn locked" id="skin-3" data-req="30000" onclick="selectSkin('☕', this)">
+                    <span class="skin-emoji">☕</span>
+                    <div class="skin-req">架构师 (3w分)<br><span style="color:#cc7832">5🛡️ 5🧲 满能量</span></div>
+                </div>
+            </div>
+
+            <div class="menu-container">
+                <button onclick="startGame('easy')" class="btn-easy">摸鱼模式 (Easy)</button>
+                <button onclick="startGame('normal')" class="btn-normal">搬砖模式 (Normal)</button>
+                <button onclick="startGame('hard')" class="btn-hard">996模式 (Hard)</button>
+                
+                <div style="display:flex; gap:5px;">
+                    <button onclick="showGlobalLeaderboard()" class="btn-action">🏆 榜单</button>
+                    <button onclick="showCareer()" class="btn-action">📊 生涯</button>
+                </div>
+                
+                <button onclick="showReadme()" class="btn-readme">📄 README.md (v4.3)</button>
+                <button onclick="switchTheme()" class="btn-theme" id="theme-btn">🎨 主题: IntelliJ</button>
+            </div>
+            <div class="version-tag">v4.3 (Bugfix)</div>
+        </div>
+
+        <div id="game-over-screen" class="ui-layer bsod-screen hidden">
+            <div class="sad-face">:(</div>
+            <h2 style="margin: 0 0 20px 0;">Your PC ran into a problem and needs to restart.</h2>
+            <div class="bsod-text">
+                We're just collecting some error info, and then we'll restart for you.<br>
+                <br>
+                <span id="final-score" style="font-weight:bold;">0</span>% complete
+            </div>
+            <div class="bsod-footer">
+                <div class="qr-placeholder">QR Code</div>
+                <div class="bsod-small-text">Stop code: <span id="bsod-code-text" style="font-weight:bold;">CRITICAL_PROCESS_DIED</span></div>
+            </div>
+            <div style="margin-top: auto; width: 100%; display: flex; justify-content: flex-start; gap: 10px;">
+                <button onclick="restartSameDifficulty()" class="btn-menu" style="background: white; color:#0078d7; width:auto; padding: 8px 20px;">Restart</button>
+                <button onclick="showMenu()" class="btn-menu" style="border:1px solid white; background:transparent; width:auto; padding: 8px 20px;">Menu</button>
+            </div>
+        </div>
+
+        <div id="career-modal" class="ui-layer hidden">
+            <h2 style="color: #bbb529">@CareerStats (个人档案)</h2>
+            <div class="career-stats">
+                <div class="career-title" id="career-rank">实习生</div>
+                <div class="career-row"><span class="career-label">总积分 (Total Score):</span> <span class="career-value" id="c-total-score">0</span></div>
+                <div class="career-row"><span class="career-label">摸鱼时长 (Time Played):</span> <span class="career-value" id="c-time">0m</span></div>
+                <div class="career-row"><span class="career-label">消除Bug (Bugs Fixed):</span> <span class="career-value" id="c-bugs">0</span></div>
+                <div class="career-row"><span class="career-label">解决事故 (Bosses):</span> <span class="career-value" id="c-bosses">0</span></div>
+                <div class="career-row"><span class="career-label">最高记录 (High Score):</span> <span class="career-value" id="c-high">0</span></div>
+                
+                <div id="achievement-section">
+                    <div class="badge-title">@Achievements (徽章墙)</div>
+                    <div class="badge-grid" id="badge-grid">
+                        </div>
+                </div>
+            </div>
+            
+            <button onclick="clearCareerData()" class="btn-danger">sudo rm -rf /* (清除记录)</button>
+            <button onclick="closeCareer()" class="btn-menu" style="margin-top:20px;">return;</button>
+        </div>
+
+        <div id="global-leaderboard-modal" class="ui-layer hidden">
+            <h2 style="color: #bbb529">@HighScores (英雄榜)</h2>
+            <div style="width: 85%; text-align: left; max-height: 400px; overflow-y: auto; background: #313335; padding: 10px; border-radius: 4px; border:1px solid #555;">
+                <div style="margin-bottom: 15px;"><div style="color:#6a8759; font-weight:bold; border-bottom:1px solid #555;">// 摸鱼模式 (Easy)</div><ul class="score-list" id="lb-easy"></ul></div>
+                <div style="margin-bottom: 15px;"><div style="color:#6897bb; font-weight:bold; border-bottom:1px solid #555;">// 搬砖模式 (Normal)</div><ul class="score-list" id="lb-normal"></ul></div>
+                <div><div style="color:#cc7832; font-weight:bold; border-bottom:1px solid #555;">// 996模式 (Hard)</div><ul class="score-list" id="lb-hard"></ul></div>
+            </div>
+            <button onclick="closeGlobalLeaderboard()" class="btn-menu" style="margin-top:20px;">return;</button>
+        </div>
+
+        <div id="readme-modal" class="ui-layer hidden">
+            <div class="markdown-body">
+                <h3 style="color:#cc7832; border-bottom:1px solid #555; padding-bottom:5px;">README.md (v4.3)</h3>
+                <p><strong style="color:#6a8759">// 🎮 核心控制 (Controls)</strong><br>
+                <span class="key-tag">WASD</span> 移动角色<br>
+                <span class="key-tag">SPACE</span> 消耗能量开启子弹时间 (减速)<br>
+                <span class="key-tag">W</span> 消耗护盾 | <span class="key-tag">S</span> 消耗磁铁<br>
+                <span class="key-tag">🖱️点击背景</span> 紧急老板键 (伪装)</p>
+                <div class="readme-grid">
+                    <div>
+                        <strong style="color:#6897bb">// 🎁 增益 (Buffs)</strong>
+                        <div class="readme-item"><span class="readme-icon">☕</span> 咖啡: +分 +回能</div>
+                        <div class="readme-item"><span class="readme-icon">🛡️</span> 护盾: 无敌5s (上限5)</div>
+                        <div class="readme-item"><span class="readme-icon">🧲</span> 磁铁: 吸附5s (上限5)</div>
+                        <div class="readme-item"><span class="readme-icon">♻️</span> GC炸弹: 清全屏怪</div>
+                        <div class="readme-item"><span class="readme-icon">⚡</span> 擦弹: 贴身飞回能</div>
+                    </div>
+                    <div>
+                        <strong style="color:#cc7832">// ⚠️ 风险 (Hazards)</strong>
+                        <div class="readme-item"><span class="readme-icon">🐛</span> Bug: 碰到即死</div>
+                        <div class="readme-item"><span class="readme-icon">🔒</span> Deadlock: 不可穿越</div>
+                        <div class="readme-item"><span class="readme-icon">🌩️</span> 断网: 时间静止</div>
+                        <div class="readme-item"><span class="readme-icon">📺</span> 故障: 屏幕马赛克</div>
+                        <div class="readme-item"><span class="readme-icon">🔀</span> 重构: 敌人瞬移</div>
+                        <div class="readme-item"><span class="readme-icon">🍝</span> 面条: 蛇皮走位</div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeReadme()" class="btn-menu" style="margin-top:20px;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 伪装 IDE 内容 ---
+        const javaCodeLines = [
+            '<span class="code-keyword">package</span> com.sangui.moyu;', '', '<span class="code-keyword">import</span> org.springframework.boot.SpringApplication;', '<span class="code-keyword">import</span> org.springframework.web.bind.annotation.*;', '', '<span class="code-comment">// 核心摸鱼控制器</span>', '<span class="code-annotation">@RestController</span>', '<span class="code-keyword">public class</span> <span class="code-class">WorkSimulator</span> {', '', '    <span class="code-annotation">@Autowired</span>', '    <span class="code-keyword">private</span> BossDetector detector; <span class="code-comment">// 老板探测器</span>', '', '    <span class="code-keyword">private static final</span> <span class="code-keyword">int</span> MAX_EFFICIENCY = <span class="code-number">0</span>;', '', '    <span class="code-annotation">@GetMapping</span>(<span class="code-string">"/doWork"</span>)', '    <span class="code-keyword">public</span> String <span class="code-class">handleRequest</span>() {', '        <span class="code-keyword">if</span> (detector.isWatching()) {', '            <span class="code-keyword">return</span> <span class="code-string">"正在努力工作中..."</span>;', '        }', '        <span class="code-keyword">return</span> <span class="code-string">"开始摸鱼！"</span>;', '    }', '', '    <span class="code-keyword">public static void</span> <span class="code-class">main</span>(String[] args) {', '        System.out.println(<span class="code-string">"系统启动中..."</span>);', '        <span class="code-keyword">try</span> {', '            <span class="code-comment">// 模拟漫长的编译时间</span>', '            Thread.sleep(<span class="code-number">999999</span>);', '        } <span class="code-keyword">catch</span> (InterruptedException e) {', '            e.printStackTrace();', '        }', '        <span class="code-keyword">while</span> (<span class="code-keyword">true</span>) {', '            pretendToType();<span class="cursor"></span>', '        }', '    }', '}'
+        ];
+
+        function initFakeIDE() {
+            const gutter = document.getElementById('ide-gutter');
+            const editor = document.getElementById('ide-editor');
+            let gutterHTML = '', editorHTML = '';
+            for (let i = 0; i < javaCodeLines.length; i++) { gutterHTML += `${i + 1}<br>`; editorHTML += `${javaCodeLines[i]}<br>`; }
+            for(let j = javaCodeLines.length; j < 50; j++) { gutterHTML += `${j + 1}<br>`; editorHTML += `<br>`; }
+            gutter.innerHTML = gutterHTML; editor.innerHTML = editorHTML;
+        }
+        initFakeIDE();
+
+        const originalTitle = document.title;
+        const fakeTitles = ["正在编译...", "Jenkins - 构建 #1024", "Stack Overflow - 空指针异常", "需求文档_v12_最终版.docx"];
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden) document.title = fakeTitles[Math.floor(Math.random() * fakeTitles.length)];
+            else document.title = originalTitle;
+        });
+
+        // --- 2. 游戏变量 ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const comboDisplayEl = document.getElementById('combo-display'); 
+        const shieldCountEl = document.getElementById('shield-count');
+        const shieldStatusEl = document.getElementById('shield-status');
+        const magnetCountEl = document.getElementById('magnet-count');
+        const magnetStatusEl = document.getElementById('magnet-status');
+        const energyBarFill = document.getElementById('energy-bar-fill');
+        const finalScoreEl = document.getElementById('final-score');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const globalLeaderboardModal = document.getElementById('global-leaderboard-modal');
+        const readmeModal = document.getElementById('readme-modal');
+        const careerModal = document.getElementById('career-modal');
+        const bossOverlay = document.getElementById('boss-overlay');
+        const bossLogs = document.getElementById('boss-logs');
+        const ideEditorEl = document.getElementById('ide-editor');
+        const confuseWarningEl = document.getElementById('confuse-warning');
+        const rushWarningEl = document.getElementById('rush-warning');
+        const bossWarningEl = document.getElementById('boss-warning');
+        const gcWarningEl = document.getElementById('gc-warning');
+        const lagWarningEl = document.getElementById('lag-warning');
+        const lockedWarningEl = document.getElementById('locked-warning');
+        const eventWarningEl = document.getElementById('event-warning');
+        const notifPopupEl = document.getElementById('notification-popup');
+        const notifTitleEl = document.getElementById('notif-title');
+        const notifMsgEl = document.getElementById('notif-message');
+        const themeBtn = document.getElementById('theme-btn');
+
+        let gameLoopId;
+        let score = 0;
+        let frameCount = 0;
+        let isGameOver = false;
+        let isPaused = false; 
+        
+        let isConfused = false; let confuseTimer = 0;
+        let isRushMode = false; let rushTimer = 0;
+        let isBulletTime = false;
+        let isHighLatency = false; let latencyTimer = 0;
+
+        // --- 随机突发事件变量 ---
+        let eventTimer = 0;
+        let isNetworkDown = false;
+        let networkDownTimer = 0;
+        let isGlitchActive = false;
+        let glitchTimer = 0;
+        let damageEffectTimer = 0;
+
+        // --- KPI 连击系统变量 ---
+        let comboMultiplier = 1.0;
+        let comboTimer = 0;
+        const COMBO_MAX_TIME = 180; 
+        const MAX_COMBO_MULTIPLIER = 3.0;
+        
+        // --- 动态天气 (Matrix Code Rain) ---
+        const rainColumns = Math.floor(canvas.width / 14); 
+        const rainDrops = Array(rainColumns).fill(1);
+
+        const MAX_ENERGY = 100;
+        let grazeTextTimer = 0; let gcEffectTimer = 0;
+        let screenShake = 0;
+        let bossData = { active: false, x: 0, y: -200, w: 220, h: 100, speed: 1.5, defeatedCount: 0, shootTimer: 0 };
+        let bossSpawnInterval = 1800; 
+
+        // 弹窗
+        let notifTimer = 0; let isNotifActive = false;
+        const harassMessages = [{ name: "产品经理", msg: "需求微调，今晚能好？" }, { name: "导师", msg: "来办公室一趟" }, { name: "阿里云监控", msg: "CPU使用率超过 99%" }, { name: "钉钉", msg: "DING: 全员发版" }];
+
+        let selectedSkin = '🤪';
+        
+        // --- 4.0 平衡性常量 ---
+        const MAX_INVENTORY = 5;
+        const MAX_ITEM_DURATION = 600; // 10s Max
+        const ITEM_ADD_DURATION = 300; // 5s per item
+        
+        const skinConfig = {
+            '🤪': { shields: 1, magnets: 1, energy: 50 },
+            '👴': { shields: 3, magnets: 1, energy: 50 },
+            '🤖': { shields: 2, magnets: 4, energy: 50 },
+            '☕': { shields: 5, magnets: 5, energy: 100 }
+        };
+
+        const LOCAL_STORAGE_KEY = 'sangui_game_scores_v3_0';
+        const CAREER_STORAGE_KEY = 'sangui_career_v3_0';
+        const ACHIEVEMENT_STORAGE_KEY = 'sangui_achievements_v3_0';
+        const THEME_STORAGE_KEY = 'sangui_theme_v3_0';
+        const DEADLOCK_SPAWN_THRESHOLD = 800; 
+
+        const player = { x: 200, y: 540, size: 40, speed: 5, emoji: '🤪', dx: 0, vx: 0, shields: 1, magnets: 1, invincibleTimer: 0, magnetTimer: 0, energy: 50 };
+        let enemies = []; let bonuses = []; let particles = []; let projectiles = []; let specialItem = null; let terrains = []; 
+
+        // --- 3. 职业生涯 & 成就系统配置 ---
+        const themes = ['theme-idea', 'theme-vscode', 'theme-terminal'];
+        const themeNames = ['IntelliJ', 'VS Code', 'Terminal'];
+        let currentThemeIndex = 0;
+
+        const achievementConfig = [
+            { id: 'hello_world', icon: '👶', title: 'Hello World', desc: '完成第一次游戏' },
+            { id: 'script_kiddie', icon: '⌨️', title: 'Script Kiddie', desc: '单局达到 1,000 分' },
+            { id: 'senior_dev', icon: '💻', title: 'Senior Dev', desc: '单局达到 10,000 分' },
+            { id: 'turing_award', icon: '🏆', title: 'Turing Award', desc: '单局达到 100,000 分 (Very Hard!)' },
+            { id: 'full_stack', icon: '🥞', title: 'Full Stack', desc: '单局内集齐过所有道具 (盾/磁/咖啡/GC)' },
+            { id: 'catch_e', icon: '🛡️', title: 'Catch {e}', desc: '累计消耗 100 个护盾' },
+            { id: 'garbage_man', icon: '♻️', title: 'Garbage Man', desc: '累计清除 500 个 Bug' },
+            { id: 'legacy_code', icon: '🕰️', title: 'Legacy Code', desc: '累计摸鱼时长超过 5 小时' },
+            { id: 'not_found', icon: '🚫', title: '404 Not Found', desc: '在分数正好为 404 分时结束游戏' },
+            { id: 'sudo_user', icon: '☕', title: 'Sudo User', desc: '解锁最终角色“架构师”' }
+        ];
+
+        function loadTheme() {
+            const saved = localStorage.getItem(THEME_STORAGE_KEY);
+            if (saved !== null) currentThemeIndex = parseInt(saved);
+            applyTheme();
+        }
+        function switchTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            localStorage.setItem(THEME_STORAGE_KEY, currentThemeIndex);
+            applyTheme();
+        }
+        function applyTheme() {
+            document.body.className = themes[currentThemeIndex];
+            themeBtn.innerText = `🎨 主题: ${themeNames[currentThemeIndex]}`;
+        }
+        loadTheme();
+
+        function getCareerStats() {
+            let data = localStorage.getItem(CAREER_STORAGE_KEY);
+            return data ? JSON.parse(data) : { totalScore: 0, totalTime: 0, bugsFixed: 0, bossesDefeated: 0, highScore: 0, shieldsUsed: 0 };
+        }
+        
+        function getUnlockedAchievements() {
+            let data = localStorage.getItem(ACHIEVEMENT_STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        }
+
+        function updateCareerStats(sessionScore, sessionTime, bugs, bosses) {
+            let stats = getCareerStats();
+            stats.totalScore += sessionScore;
+            stats.totalTime += Math.floor(sessionTime / 60); 
+            stats.bugsFixed += bugs;
+            stats.bossesDefeated += bosses;
+            if (sessionScore > stats.highScore) stats.highScore = sessionScore;
+            localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(stats));
+        }
+        
+        // --- 核心成就检查逻辑 ---
+        function checkAchievements(currentScore, sessionShieldsUsed, sessionBugs, itemsCollected) {
+            const stats = getCareerStats(); 
+            const unlocked = getUnlockedAchievements();
+            let newUnlock = false;
+
+            const unlock = (id) => {
+                if (!unlocked[id]) {
+                    const now = new Date();
+                    unlocked[id] = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${now.getMinutes()}`;
+                    newUnlock = true;
+                    showNotification("成就解锁!", achievementConfig.find(a=>a.id===id).title, "normal");
+                }
+            };
+
+            unlock('hello_world');
+            if (currentScore >= 1000) unlock('script_kiddie');
+            if (currentScore >= 10000) unlock('senior_dev');
+            if (currentScore >= 100000) unlock('turing_award');
+            if (itemsCollected && itemsCollected.has('shield') && itemsCollected.has('magnet') && itemsCollected.has('coffee') && itemsCollected.has('gc')) {
+                unlock('full_stack');
+            }
+            if (!stats.shieldsUsed) stats.shieldsUsed = 0;
+            stats.shieldsUsed += sessionShieldsUsed;
+            if (stats.shieldsUsed >= 100) unlock('catch_e');
+            localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(stats));
+            if (stats.bugsFixed >= 500) unlock('garbage_man');
+            if (stats.totalTime >= 18000) unlock('legacy_code');
+            if (currentScore === 404) unlock('not_found');
+            if (stats.totalScore >= 30000) unlock('sudo_user');
+
+            if (newUnlock) {
+                localStorage.setItem(ACHIEVEMENT_STORAGE_KEY, JSON.stringify(unlocked));
+            }
+        }
+        
+        function checkSkinUnlocks() {
+            const stats = getCareerStats();
+            const skinBtns = document.querySelectorAll('.skin-btn');
+            skinBtns.forEach(btn => {
+                const req = parseInt(btn.dataset.req || "0");
+                if (stats.totalScore >= req) {
+                    btn.classList.remove('locked');
+                } else {
+                    btn.classList.add('locked');
+                }
+            });
+        }
+        checkSkinUnlocks();
+
+        function renderAchievements() {
+            const grid = document.getElementById('badge-grid');
+            grid.innerHTML = '';
+            const unlocked = getUnlockedAchievements();
+            
+            achievementConfig.forEach(ach => {
+                const isUnlocked = !!unlocked[ach.id];
+                const div = document.createElement('div');
+                div.className = `badge ${isUnlocked ? 'unlocked' : ''}`;
+                div.innerHTML = `
+                    <span class="badge-icon">${ach.icon}</span>
+                    <div class="badge-tooltip">
+                        <span class="badge-name">${ach.title}</span>
+                        <span class="badge-desc">${ach.desc}</span>
+                        <span class="badge-date">${isUnlocked ? unlocked[ach.id] : 'Locked'}</span>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function showCareer() {
+            let stats = getCareerStats();
+            document.getElementById('c-total-score').innerText = stats.totalScore.toLocaleString();
+            document.getElementById('c-time').innerText = (stats.totalTime / 3600).toFixed(1) + "h";
+            document.getElementById('c-bugs').innerText = stats.bugsFixed;
+            document.getElementById('c-bosses').innerText = stats.bossesDefeated;
+            document.getElementById('c-high').innerText = stats.highScore;
+            
+            let rank = "实习生 (Intern)";
+            if (stats.totalScore > 100000) rank = "摸鱼仙人 (God)";
+            else if (stats.totalScore > 50000) rank = "首席架构师 (CTO)";
+            else if (stats.totalScore > 20000) rank = "高级工程师 (Senior)";
+            else if (stats.totalScore > 5000) rank = "初级工程师 (Junior)";
+            
+            document.getElementById('career-rank').innerText = rank;
+            renderAchievements(); 
+            startScreen.classList.add('hidden'); careerModal.classList.remove('hidden');
+        }
+        
+        function closeCareer() { careerModal.classList.add('hidden'); startScreen.classList.remove('hidden'); }
+        
+        function clearCareerData() {
+            if(confirm("确定要执行 sudo rm -rf /* 吗？\n这将清除所有积分、成就和皮肤解锁进度！")) {
+                localStorage.removeItem(CAREER_STORAGE_KEY);
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                localStorage.removeItem(ACHIEVEMENT_STORAGE_KEY);
+                alert("系统已重置 (System Reset Successful).");
+                location.reload();
+            }
+        }
+
+        // --- 4. 输入处理 ---
+        let keys = {};
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver || isPaused) return;
+            keys[e.key.toLowerCase()] = true; keys[e.key] = true;
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') activateShield(ITEM_ADD_DURATION);
+            if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') activateMagnet(ITEM_ADD_DURATION);
+        });
+        document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; keys[e.key] = false; });
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.notif-btn') || e.target.tagName === 'BUTTON' || e.target.closest('.skin-btn')) return;
+            toggleBossKey();
+        });
+
+        function handleInput() {
+            let moveLeft = (keys['a'] || keys['arrowleft']);
+            let moveRight = (keys['d'] || keys['arrowright']);
+            if (keys[' '] && player.energy > 0) { isBulletTime = true; player.energy -= 0.5; } else { isBulletTime = false; }
+            if (isConfused) { let temp = moveLeft; moveLeft = moveRight; moveRight = temp; }
+            player.dx = 0;
+            let speedMod = 1.0;
+            for(let t of terrains) {
+                if(player.x < t.x + t.w && player.x + player.size > t.x && player.y < t.y + t.h && player.y + player.size > t.y) { speedMod = 0.5; break; }
+            }
+            if (isHighLatency) {
+                const acceleration = 0.5 * speedMod; const friction = 0.92; const maxSpeed = 8 * speedMod;
+                if (moveLeft) player.vx -= acceleration; if (moveRight) player.vx += acceleration;
+                if (!moveLeft && !moveRight) player.vx *= friction;
+                if (player.vx > maxSpeed) player.vx = maxSpeed; if (player.vx < -maxSpeed) player.vx = -maxSpeed;
+                player.dx = player.vx; 
+            } else {
+                player.vx = 0; let finalSpeed = player.speed * speedMod; player.dx = 0;
+                if (moveLeft) player.dx = -finalSpeed; if (moveRight) player.dx = finalSpeed;
+            }
+        }
+
+        // --- 5. 核心逻辑 ---
+        function toggleBossKey() {
+            if (isGameOver && bossOverlay.style.display !== 'block') return;
+            isPaused = !isPaused;
+            if (isPaused) { if(gameLoopId) cancelAnimationFrame(gameLoopId); bossOverlay.style.display = 'block'; document.title = "系统构建中..."; addBossLog(); } 
+            else { bossOverlay.style.display = 'none'; document.title = originalTitle; if (startScreen.classList.contains('hidden') && gameOverScreen.classList.contains('hidden') && globalLeaderboardModal.classList.contains('hidden') && careerModal.classList.contains('hidden')) loop(); }
+        }
+        function addBossLog() { if (!isPaused) return; const logs = ["[INFO] Compiling...", "[INFO] Tests run: 54...", "[INFO] Memory usage: 24M..."]; const logLine = document.createElement('div'); logLine.style.color = "#a9b7c6"; logLine.innerText = `${logs[Math.floor(Math.random() * logs.length)]}`; bossLogs.appendChild(logLine); if(bossLogs.childElementCount > 12) bossLogs.firstChild.remove(); setTimeout(addBossLog, 500 + Math.random() * 1000); }
+        function triggerShake(intensity) { screenShake = intensity; }
+        function createParticles(x, y, color, count = 10) { for(let i=0; i<count; i++) particles.push({ x: x, y: y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 30+Math.random()*20, color: color, char: Math.random()>0.5?'1':'0' }); }
+        
+        let sessionShieldsUsed = 0; 
+        
+        // v4.3 Fix: Always consume item on activation
+        function activateShield(duration) { 
+            if (player.shields <= 0) return; 
+            
+            player.shields--; 
+            sessionShieldsUsed++; 
+            
+            let newTime = player.invincibleTimer + duration; // Simply add time
+            player.invincibleTimer = Math.min(newTime, MAX_ITEM_DURATION); 
+            updateUI(); 
+        }
+
+        // v4.3 Fix: Always consume item on activation
+        function activateMagnet(duration) { 
+            if (player.magnets <= 0) return;
+            
+            player.magnets--; 
+            
+            let newTime = player.magnetTimer + duration; // Simply add time
+            player.magnetTimer = Math.min(newTime, MAX_ITEM_DURATION); 
+            updateUI(); 
+        }
+        
+        // --- 通知系统 ---
+        function showNotification(title, msg, type="normal") {
+            if (isPaused || isGameOver) return;
+            notifTitleEl.innerText = title;
+            notifMsgEl.innerText = msg;
+            
+            const icon = document.querySelector('.notif-icon');
+            if (type === "alert") { icon.style.background = "#e74c3c"; icon.innerText = "⚠️"; }
+            else { icon.style.background = "#3498db"; icon.innerText = "📞"; }
+            
+            notifPopupEl.classList.add('show'); 
+            setTimeout(() => { closeNotification(); }, 3000);
+        }
+        
+        function triggerNotification() { 
+            if (isNotifActive || isPaused || isGameOver) return; 
+            isNotifActive = true; 
+            const data = harassMessages[Math.floor(Math.random() * harassMessages.length)]; 
+            showNotification(data.name, data.msg, "normal");
+        }
+        
+        function closeNotification() { notifPopupEl.classList.remove('show'); notifTimer = 900 + Math.random() * 600; setTimeout(() => { isNotifActive = false; }, 500); }
+
+        // --- 随机突发事件系统 ---
+        function triggerRandomEvent() {
+            if (bossData.active || isGameOver || isPaused) return;
+            
+            const rand = Math.random();
+            if (rand < 0.33) {
+                isNetworkDown = true;
+                networkDownTimer = 120; // 2 seconds
+                showNotification("系统异常", "连接超时 (Connection Timeout)...", "alert");
+                eventWarningEl.innerText = "🌩️ 网络中断 (Time Frozen) 🌩️";
+                eventWarningEl.style.display = "block";
+            } else if (rand < 0.66) {
+                isGlitchActive = true;
+                glitchTimer = 180; // 3 seconds
+                showNotification("硬件警告", "GPU 驱动无响应...", "alert");
+            } else {
+                showNotification("Git Ops", "正在执行 git reset --hard...", "alert");
+                enemies.forEach(e => {
+                    e.y = Math.random() * (player.y - 100); 
+                    e.x = Math.random() * (canvas.width - e.size);
+                    createParticles(e.x, e.y, "#00ff00", 5);
+                });
+                bonuses.forEach(b => {
+                    b.y = Math.random() * (player.y - 100);
+                    b.x = Math.random() * (canvas.width - b.size);
+                });
+                triggerShake(15);
+            }
+        }
+
+        // --- 增加分数 & 连击处理 ---
+        function addScore(points) {
+            score += Math.floor(points * comboMultiplier);
+            comboTimer = COMBO_MAX_TIME;
+            if (comboMultiplier < MAX_COMBO_MULTIPLIER) {
+                comboMultiplier = parseFloat((comboMultiplier + 0.1).toFixed(1));
+            }
+            updateUI();
+        }
+        
+        // --- 绘制代码雨特效 ---
+        function drawCodeRain() {
+            if (score < 300) return; 
+            ctx.save();
+            if (score > 1000 || isRushMode) {
+                ctx.fillStyle = 'rgba(255, 50, 50, 0.15)'; 
+            } else {
+                ctx.fillStyle = 'rgba(0, 255, 70, 0.15)'; 
+            }
+            ctx.font = '12px monospace';
+            if (frameCount % 2 === 0) {
+                 for (let i = 0; i < rainDrops.length; i++) {
+                    const text = String.fromCharCode(0x30A0 + Math.random() * 96); 
+                    const x = i * 14;
+                    const y = rainDrops[i] * 14;
+                    ctx.fillText(text, x, y);
+                    if (y > canvas.height && Math.random() > 0.975) { rainDrops[i] = 0; }
+                    rainDrops[i]++;
+                }
+            } else {
+                for (let i = 0; i < rainDrops.length; i++) {
+                    const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+                    ctx.fillText(text, i * 14, rainDrops[i] * 14);
+                }
+            }
+            if ((score > 1500 || isRushMode) && Math.random() > 0.98) {
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.font = '20px Arial';
+                ctx.fillText(["ERROR", "FATAL", "502", "NULL"][Math.floor(Math.random()*4)], Math.random() * canvas.width, Math.random() * canvas.height);
+            }
+            ctx.restore();
+        }
+
+        function spawnEnemy() {
+            if (bossData.active || isNetworkDown) return; // 网络中断不生成
+            const config = difficultyConfig[currentDiffKey];
+            let rawSpd = config.baseSpeed + (score * config.speedMultiplier);
+            let cappedSpd = Math.min(rawSpd, config.maxSpeed);
+            
+            if (score > DEADLOCK_SPAWN_THRESHOLD && Math.random() < 0.2) {
+                const w = 120 + Math.random() * 60; const x = Math.random() * (canvas.width - w - 40);
+                let spd = cappedSpd + Math.random() * 1.5; 
+                if (isRushMode) spd *= config.rushSpeedMult;
+                enemies.push({ type: 'deadlock', x: x, y: -40, w: w, h: 40, speed: spd * 0.8, emoji: '🔒' });
+            } else if (Math.random() < 0.15) {
+                // New Enemy: Spaghetti Code
+                const size = 30; const x = Math.random() * (canvas.width - size);
+                let spd = cappedSpd + Math.random() * 1.2;
+                enemies.push({ type: 'spaghetti', x, y: -size, size, speed: spd, emoji: '🍝', startX: x });
+            } else {
+                const size = 30; const x = Math.random() * (canvas.width - size); 
+                let spd = cappedSpd + Math.random() * 1.5; 
+                if (isRushMode) spd *= config.rushSpeedMult;
+                enemies.push({ type: 'bug', x, y: -size, size, speed: spd, emoji: '🐛' });
+            }
+        }
+        
+        let sessionItemsCollected = new Set(); // Session Tracker for Full Stack
+        function spawnBonus() {
+            if (isNetworkDown) return;
+            const size = 30; const x = Math.random() * (canvas.width - size); const speed = isRushMode ? 5 : 3; const rand = Math.random(); let type, emoji;
+            let trapProb = currentDiffKey === 'easy' ? 0.25 : 0.35;
+            if (rand < 0.05) { type = 'gc'; emoji = '♻️'; } else if (rand < 0.12) { type = 'latency'; emoji = '📶'; } else if (rand < 0.22) { type = 'shield'; emoji = '🛡️'; } else if (rand < 0.32) { type = 'magnet'; emoji = '🧲'; } else if (rand < trapProb) { type = 'trap'; emoji = '📁'; } else { type = 'coffee'; emoji = '☕'; }
+            bonuses.push({ x, y: -size, size, speed, emoji, type });
+        }
+        function spawnSpecialItem() { if (specialItem || bossData.active || isNetworkDown) return; specialItem = { x: Math.random() > 0.5 ? 10 : canvas.width - 40, y: -50, size: 35, emoji: '💰', speed: 2, t: 0 }; }
+        function spawnTerrain() { if(terrains.length > 3 || isNetworkDown) return; const w = 100 + Math.random() * 100; const h = 50 + Math.random() * 50; terrains.push({ x: Math.random() * (canvas.width - w), y: -h, w, h, speed: 1 }); }
+        function triggerBossSpawn() { bossData.active = true; bossData.y = -bossData.h; bossData.x = (canvas.width - bossData.w) / 2; bossData.shootTimer = 0; bossWarningEl.style.display = 'block'; setTimeout(() => { bossWarningEl.style.display = 'none'; }, 2000); updateBackground(); triggerShake(10); }
+        function triggerRushMode() { if (isRushMode || bossData.active) return; isRushMode = true; rushTimer = 300; const texts = ["🔥 产品经理来了！快跑！ 🔥", "👴 导师来了！快跑！ 👴"]; rushWarningEl.innerText = texts[Math.floor(Math.random() * texts.length)]; rushWarningEl.style.display = 'block'; setTimeout(() => { rushWarningEl.style.display = 'none'; }, 2000); updateBackground(); }
+        function triggerGC() {
+            let clearedCount = 0; enemies = enemies.filter(e => { if (e.type === 'bug' || e.type === 'spaghetti') { clearedCount++; createParticles(e.x, e.y, '#00ff00', 5); return false; } return true; });
+            addScore(clearedCount * 50); 
+            gcEffectTimer = 60; gcWarningEl.style.display = 'block'; setTimeout(() => { gcWarningEl.style.display = 'none'; }, 1000); updateUI();
+            sessionBugsFixed += clearedCount; 
+        }
+        function triggerLatency() { isHighLatency = true; latencyTimer = 480; lagWarningEl.style.display = 'block'; updateBackground(); }
+        function distToSegment(p, v, w) { function sqr(x) { return x * x } function dist2(v, w) { return sqr(v.x - w.x) + sqr(v.y - w.y) } var l2 = dist2(v, w); if (l2 == 0) return dist2(p, v); var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2; t = Math.max(0, Math.min(1, t)); return Math.sqrt(dist2(p, { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) })); }
+        function checkGraze(entity) { const ex = entity.x + 15; const ey = entity.y + 15; const px = player.x + player.size/2; const py = player.y + player.size/2; const dist = Math.sqrt((ex-px)*(ex-px) + (ey-py)*(ey-py)); if (dist < 60 && dist > 35) { if(Math.random() < 0.3) { player.energy = Math.min(player.energy + 0.5, MAX_ENERGY); grazeTextTimer = 30; updateUI(); } } }
+
+        // Session Stats
+        let sessionBugsFixed = 0;
+        let sessionBossesDefeated = 0;
+
+        function update() {
+            if (isPaused) return; handleInput();
+            if (gcEffectTimer > 0) { gcEffectTimer--; if (frameCount % 5 === 0) createParticles(Math.random()*canvas.width, Math.random()*canvas.height, '#00ff00', 2); for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; if (p.life <= 0) particles.splice(i, 1); } frameCount++; return; }
+
+            const timeScale = isBulletTime ? 0.3 : 1.0;
+            if (player.invincibleTimer > 0) player.invincibleTimer--; 
+            if (player.magnetTimer > 0) player.magnetTimer--;
+            if (grazeTextTimer > 0) grazeTextTimer--;
+            if (damageEffectTimer > 0) damageEffectTimer--;
+            
+            // 连击逻辑
+            if (comboTimer > 0) {
+                comboTimer--;
+            } else {
+                if (comboMultiplier > 1.0) { comboMultiplier = 1.0; updateUI(); }
+            }
+
+            // 突发事件计时器
+            if (!bossData.active && score > 200) {
+                eventTimer--;
+                if (eventTimer <= 0) {
+                    triggerRandomEvent();
+                    eventTimer = 1200 + Math.random() * 1200; // 20-40 seconds
+                }
+            }
+            
+            // 处理断网事件 (Network Down)
+            if (isNetworkDown) {
+                networkDownTimer--;
+                if (networkDownTimer <= 0) {
+                    isNetworkDown = false;
+                    eventWarningEl.style.display = "none";
+                }
+                player.x += player.dx; if (player.x < 0) { player.x = 0; player.vx = 0; } if (player.x + player.size > canvas.width) { player.x = canvas.width - player.size; player.vx = 0; }
+                frameCount++;
+                return;
+            }
+            
+            // 处理显卡故障 (Glitch)
+            if (isGlitchActive) {
+                glitchTimer--;
+                if (glitchTimer <= 0) isGlitchActive = false;
+            }
+
+            if (isConfused) { confuseTimer--; if (confuseTimer <= 0) { isConfused = false; confuseWarningEl.style.display = 'none'; if(player.emoji === '😵') player.emoji = selectedSkin; } }
+            if (isRushMode) { rushTimer--; if (rushTimer <= 0) { isRushMode = false; updateBackground(); } }
+            if (isHighLatency) { latencyTimer--; if(latencyTimer <= 0) { isHighLatency = false; lagWarningEl.style.display = 'none'; updateBackground(); } }
+            
+            if (frameCount % 10 === 0) updateUI();
+            if (!isNotifActive) { notifTimer--; if (notifTimer <= 0) triggerNotification(); }
+
+            player.x += player.dx; if (player.x < 0) { player.x = 0; player.vx = 0; } if (player.x + player.size > canvas.width) { player.x = canvas.width - player.size; player.vx = 0; }
+            if (screenShake > 0) screenShake *= 0.9; if (screenShake < 0.5) screenShake = 0;
+
+            const config = difficultyConfig[currentDiffKey]; let baseRate = Math.max(15, config.baseSpawnRate - Math.floor(score * config.spawnMultiplier));
+            if (isRushMode) baseRate = currentDiffKey === 'hard' ? 8 : (currentDiffKey === 'easy' ? 20 : 12);
+            if (frameCount % Math.floor(baseRate / timeScale) === 0) spawnEnemy();
+            let bonusRate = isRushMode ? 80 : 150; if (frameCount % Math.floor(bonusRate / timeScale) === 0) spawnBonus();
+            if (frameCount % Math.floor(400 / timeScale) === 0) spawnTerrain(); 
+            if (score > 200 && Math.random() < 0.001 && !specialItem) spawnSpecialItem();
+            if (!bossData.active && frameCount > 0 && frameCount % bossSpawnInterval === 0) triggerBossSpawn();
+
+            for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx * timeScale; p.y += p.vy * timeScale; p.life--; if (p.life <= 0) particles.splice(i, 1); }
+            for (let i = terrains.length - 1; i >= 0; i--) { let t = terrains[i]; t.y += t.speed * timeScale; if(t.y > canvas.height) terrains.splice(i, 1); }
+
+            if (bossData.active) {
+                bossData.y += bossData.speed * timeScale;
+                if (player.x > bossData.x + bossData.w/2) bossData.x += 0.5 * timeScale; else bossData.x -= 0.5 * timeScale;
+                bossData.shootTimer += timeScale;
+                if (bossData.shootTimer > 60) { bossData.shootTimer = 0; projectiles.push({ x: bossData.x + bossData.w / 2, y: bossData.y + bossData.h, text: ["NullPtr", "500", "Timeout"][Math.floor(Math.random()*3)], vx: (Math.random() - 0.5) * 4, vy: 5 }); }
+                if (player.x < bossData.x + bossData.w && player.x + player.size > bossData.x && player.y < bossData.y + bossData.h && player.y + player.size > bossData.y) { if (player.invincibleTimer <= 0) gameOver(); }
+                if (bossData.y > canvas.height) { 
+                    bossData.active = false; bossData.defeatedCount++; 
+                    let bossScore = 100 * bossData.defeatedCount; 
+                    addScore(bossScore); 
+                    sessionBossesDefeated++;
+                    if (bossData.defeatedCount > 2) { let rewardDuration = Math.min(300 + ((bossData.defeatedCount - 2) * 60), MAX_BOSS_REWARD_TIME); if (Math.random() > 0.5) activateShield(rewardDuration); else activateMagnet(rewardDuration); } 
+                    createParticles(bossData.x + bossData.w/2, canvas.height, '#ff0000', 30); triggerShake(15); updateBackground(); updateUI(); 
+                }
+            }
+
+            for (let i = projectiles.length - 1; i >= 0; i--) { let p = projectiles[i]; p.x += p.vx * timeScale; p.y += p.vy * timeScale; checkGraze(p); if (player.x < p.x + 40 && player.x + player.size > p.x - 40 && player.y < p.y + 10 && player.y + player.size > p.y - 10) { if (player.invincibleTimer <= 0) gameOver(); else projectiles.splice(i, 1); } if (p.y > canvas.height) projectiles.splice(i, 1); }
+
+            enemies.forEach((enemy, index) => {
+                // Spaghetti movement
+                if (enemy.type === 'spaghetti') {
+                    enemy.y += enemy.speed * timeScale;
+                    enemy.x = enemy.startX + Math.sin(enemy.y * 0.05) * 50; // Sine wave motion
+                } else {
+                    enemy.y += enemy.speed * timeScale;
+                }
+
+                if (enemy.type === 'deadlock') {
+                    const ballR = 15; const pCenter = { x: player.x + player.size/2, y: player.y + player.size/2 }; const leftBall = { x: enemy.x + ballR, y: enemy.y + ballR }; const rightBall = { x: enemy.x + enemy.w - ballR, y: enemy.y + ballR };
+                    const distLeft = Math.sqrt((pCenter.x - leftBall.x)**2 + (pCenter.y - leftBall.y)**2); const distRight = Math.sqrt((pCenter.x - rightBall.x)**2 + (pCenter.y - rightBall.y)**2); const distLine = distToSegment(pCenter, leftBall, rightBall);
+                    if (distLeft < 30 || distRight < 30 || distLine < 25) { if (player.invincibleTimer <= 0) gameOver(); }
+                } else { 
+                    checkGraze(enemy); 
+                    // Hitbox check with smaller tolerance (Visual Polish)
+                    const hitboxPadding = 5;
+                    if (player.x + hitboxPadding < enemy.x + enemy.size && 
+                        player.x + player.size - hitboxPadding > enemy.x && 
+                        player.y + hitboxPadding < enemy.y + enemy.size && 
+                        player.y + player.size - hitboxPadding > enemy.y) { 
+                        if (player.invincibleTimer <= 0) {
+                            // Shield break logic
+                            if (player.shields > 0) {
+                                player.shields--;
+                                player.invincibleTimer = 60; // 1s iframe after hit
+                                damageEffectTimer = 10; // Visual flash
+                                updateUI();
+                                enemies.splice(index, 1); // Destroy enemy that hit shield
+                            } else {
+                                gameOver(); 
+                            }
+                        }
+                    } 
+                }
+                if (enemy.y > canvas.height) { enemies.splice(index, 1); addScore(1); if(score>0 && score%50===0) triggerRushMode(); updateUI(); } 
+            });
+
+            bonuses.forEach((bonus, index) => {
+                if (player.magnetTimer > 0 && (bonus.type === 'coffee' || bonus.type === 'trap' || bonus.type === 'gc' || bonus.type === 'latency')) { const dx = (player.x + player.size/2) - (bonus.x + bonus.size/2); const dy = (player.y + player.size/2) - (bonus.y + bonus.size/2); if (Math.sqrt(dx*dx + dy*dy) < 250) { bonus.x += dx * 0.15; bonus.y += dy * 0.15; } else { bonus.y += bonus.speed * timeScale; } } else { bonus.y += bonus.speed * timeScale; }
+                if (player.x < bonus.x + bonus.size && player.x + player.size > bonus.x && player.y < bonus.y + bonus.size && player.y + player.size > bonus.y) {
+                    bonuses.splice(index, 1); createParticles(bonus.x, bonus.y, '#ffffff', 5);
+                    
+                    // 4.0 Fix: Inventory Cap Logic
+                    if (bonus.type === 'coffee') { addScore(10); player.emoji = '😎'; player.energy = Math.min(player.energy + 20, MAX_ENERGY); } 
+                    else if (bonus.type === 'shield') { 
+                        if (player.shields < MAX_INVENTORY) { player.shields++; player.emoji = '🤖'; } 
+                        else { addScore(50); createParticles(player.x, player.y, '#ffd700', 5); } 
+                    } 
+                    else if (bonus.type === 'magnet') { 
+                        if (player.magnets < MAX_INVENTORY) { player.magnets++; player.emoji = '⚡'; } 
+                        else { addScore(50); createParticles(player.x, player.y, '#ffd700', 5); }
+                    } 
+                    else if (bonus.type === 'gc') { triggerGC(); }
+                    else if (bonus.type === 'latency') { triggerLatency(); }
+                    else if (bonus.type === 'trap') { isConfused = true; confuseTimer = 180; confuseWarningEl.style.display = 'block'; player.emoji = '😵';}
+                    
+                    // Track for Full Stack Achievement
+                    sessionItemsCollected.add(bonus.type);
+                    if (!isConfused) setTimeout(() => player.emoji = selectedSkin, 500); updateUI();
+                }
+                if (bonus.y > canvas.height) bonuses.splice(index, 1);
+            });
+            if (specialItem) {
+                specialItem.t += 0.05 * timeScale; specialItem.y += specialItem.speed * timeScale; specialItem.x += Math.sin(specialItem.t) * 2 * timeScale;
+                if (player.x < specialItem.x + specialItem.size && player.x + player.size > specialItem.x && player.y < specialItem.y + specialItem.size && player.y + player.size > specialItem.y) { addScore(500); player.energy = MAX_ENERGY; player.emoji = '🤑'; setTimeout(() => player.emoji = selectedSkin, 1000); createParticles(specialItem.x, specialItem.y, '#ffd700', 20); specialItem = null; updateUI(); } else if (specialItem.y > canvas.height) specialItem = null;
+            }
+            frameCount++;
+        }
+
+        function updateBackground() {
+            if (isBulletTime) ideEditorEl.className = 'editor-content bullet-time-bg';
+            else if (isHighLatency) ideEditorEl.className = 'editor-content lag-mode-bg';
+            else if (bossData.active) ideEditorEl.className = 'editor-content boss-mode-bg';
+            else if (isRushMode) ideEditorEl.className = 'editor-content rush-mode-bg';
+            else ideEditorEl.className = 'editor-content';
+        }
+
+        function draw() {
+            ctx.save(); ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (screenShake > 0) { const dx = (Math.random() - 0.5) * screenShake; const dy = (Math.random() - 0.5) * screenShake; ctx.translate(dx, dy); }
+            
+            drawCodeRain();
+
+            // 受击白屏闪烁效果 (New!)
+            if (damageEffectTimer > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${damageEffectTimer / 15})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            ctx.fillStyle = 'rgba(100, 100, 100, 0.3)'; terrains.forEach(t => { ctx.fillRect(t.x, t.y, t.w, t.h); ctx.fillStyle = 'rgba(150, 150, 150, 0.2)'; ctx.font = '10px Consolas'; ctx.fillText('// Legacy', t.x + 5, t.y + 15); ctx.fillStyle = 'rgba(100, 100, 100, 0.3)'; });
+            if (bossData.active) { ctx.save(); ctx.fillStyle = '#d63031'; ctx.beginPath(); ctx.moveTo(bossData.x + 20, bossData.y); ctx.lineTo(bossData.x + bossData.w - 20, bossData.y); ctx.lineTo(bossData.x + bossData.w, bossData.y + bossData.h); ctx.lineTo(bossData.x, bossData.y + bossData.h); ctx.closePath(); ctx.fill(); ctx.fillStyle = 'white'; ctx.font = '40px Arial'; ctx.fillText('👿', bossData.x + bossData.w/2 - 20, bossData.y + bossData.h/2 + 10); ctx.font = '12px Consolas'; ctx.fillText('Uncaught Exception', bossData.x + bossData.w/2 - 60, bossData.y + bossData.h - 10); ctx.restore(); }
+            ctx.fillStyle = '#ff6b6b'; ctx.font = 'bold 12px Consolas'; projectiles.forEach(p => ctx.fillText(p.text, p.x - 20, p.y));
+            
+            // Draw Player
+            ctx.font = `${player.size}px Arial`; ctx.fillText(player.emoji, player.x, player.y + player.size);
+            
+            // 绘制判定点 (New!)
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
+            ctx.beginPath();
+            ctx.arc(player.x + player.size/2, player.y + player.size/1.5, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (player.invincibleTimer > 0) drawEffect(0, 210, 211); if (player.magnetTimer > 0) drawEffect(255, 107, 129, player.invincibleTimer > 0 ? 10 : 0);
+            if (grazeTextTimer > 0) { ctx.save(); ctx.fillStyle = '#ffd700'; ctx.font = 'bold 14px Consolas'; ctx.fillText('Grazed!', player.x + 40, player.y); ctx.restore(); }
+            if (isConfused) ctx.fillText('💫', player.x + 10, player.y);
+            enemies.forEach(e => { if (e.type === 'deadlock') { ctx.save(); ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(e.x + 15, e.y + 15); ctx.lineTo(e.x + e.w - 15, e.y + 15); ctx.stroke(); ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(e.x + 15, e.y + 15); for(let i=0; i<10; i++) { ctx.lineTo(e.x + 15 + (i * (e.w-30)/10), e.y + 15 + (Math.random()-0.5)*10); } ctx.lineTo(e.x + e.w - 15, e.y + 15); ctx.stroke(); ctx.font = '30px Arial'; ctx.fillText('🔒', e.x, e.y + e.h); ctx.fillText('🔒', e.x + e.w - 30, e.y + e.h); ctx.restore(); } else { ctx.font = '30px Arial'; ctx.fillText(e.emoji, e.x, e.y + e.size); } });
+            ctx.font = '30px Arial'; bonuses.forEach(b => ctx.fillText(b.emoji, b.x, b.y + b.size));
+            if (specialItem) { ctx.font = `${specialItem.size}px Arial`; ctx.fillText(specialItem.emoji, specialItem.x, specialItem.y + specialItem.size); }
+            particles.forEach(p => { ctx.fillStyle = p.color; ctx.font = '10px Consolas'; ctx.globalAlpha = p.life / 30; ctx.fillText(p.char, p.x, p.y); ctx.globalAlpha = 1.0; });
+            
+            // --- 绘制故障马赛克 (Glitch Effect) ---
+            if (isGlitchActive) {
+                ctx.save();
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillStyle = `rgba(${Math.random()*255}, ${Math.random()*255}, ${Math.random()*255}, 0.5)`;
+                    ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 150, Math.random() * 50);
+                }
+                ctx.restore();
+            }
+
+            ctx.restore(); updateBackground();
+        }
+
+        function drawEffect(r, g, b, offset=0) { ctx.save(); ctx.beginPath(); ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.5 + Math.sin(frameCount * 0.1)*0.2})`; ctx.lineWidth = 3; ctx.arc(player.x + player.size/2, player.y + player.size/1.5, player.size * 0.8 + offset, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.1)`; ctx.fill(); ctx.restore(); }
+        
+        function updateUI() { 
+            scoreEl.innerText = score; 
+            
+            if (comboMultiplier > 1.0) {
+                comboDisplayEl.innerText = `x${comboMultiplier.toFixed(1)}`;
+                comboDisplayEl.style.opacity = 1;
+                comboDisplayEl.className = comboMultiplier >= MAX_COMBO_MULTIPLIER ? 'combo-max' : 'combo-active';
+            } else {
+                comboDisplayEl.innerText = '';
+                comboDisplayEl.style.opacity = 0;
+                comboDisplayEl.className = '';
+            }
+
+            // 4.1 UI Fix: Append timer to count
+            let shieldText = `<span class="key-hint">W</span>🛡️ ${player.shields}/${MAX_INVENTORY}`;
+            if (player.invincibleTimer > 0) {
+                shieldStatusEl.classList.add('shield-active-ui');
+                shieldText += ` <small>(${(player.invincibleTimer/60).toFixed(1)}s)</small>`;
+            } else {
+                shieldStatusEl.classList.remove('shield-active-ui');
+            }
+            shieldStatusEl.innerHTML = shieldText;
+
+            let magnetText = `<span class="key-hint">S</span>🧲 ${player.magnets}/${MAX_INVENTORY}`;
+            if (player.magnetTimer > 0) {
+                magnetStatusEl.classList.add('magnet-active-ui');
+                magnetText += ` <small>(${(player.magnetTimer/60).toFixed(1)}s)</small>`;
+            } else {
+                magnetStatusEl.classList.remove('magnet-active-ui');
+            }
+            magnetStatusEl.innerHTML = magnetText;
+            
+            energyBarFill.style.width = player.energy + "%"; 
+            if (isBulletTime) document.querySelector('.energy-bar-bg').classList.add('bullet-time-active'); else document.querySelector('.energy-bar-bg').classList.remove('bullet-time-active'); 
+        }
+        function loop() { if (isGameOver || isPaused) return; update(); draw(); gameLoopId = requestAnimationFrame(loop); }
+
+        const difficultyConfig = {
+            easy: { name: "摸鱼", baseSpeed: 0.5, maxSpeed: 6.0, speedMultiplier: 0.005, baseSpawnRate: 160, spawnMultiplier: 0.5, rushSpeedMult: 1.1 },
+            normal: { name: "搬砖", baseSpeed: 2.0, maxSpeed: 10.0, speedMultiplier: 0.01, baseSpawnRate: 120, spawnMultiplier: 1.0, rushSpeedMult: 1.5 },
+            hard: { name: "996", baseSpeed: 4.5, maxSpeed: 16.0, speedMultiplier: 0.02, baseSpawnRate: 80, spawnMultiplier: 1.5, rushSpeedMult: 1.8 }
+        };
+        let currentDiffKey = 'normal';
+
+        function startGame(difficulty) {
+            currentDiffKey = difficulty; score = 0; frameCount = 0; isGameOver = false; isPaused = false; 
+            isConfused = false; confuseTimer = 0; isRushMode = false; rushTimer = 0; isBulletTime = false; isHighLatency = false; latencyTimer = 0;
+            bossData.active = false; bossData.defeatedCount = 0; specialItem = null;
+            enemies = []; bonuses = []; particles = []; projectiles = []; terrains = [];
+            
+            // KPI Init
+            comboMultiplier = 1.0; comboTimer = 0;
+            
+            // Random Events Reset
+            eventTimer = 1200;
+            isNetworkDown = false;
+            isGlitchActive = false;
+            damageEffectTimer = 0;
+            
+            // Session Trackers Reset
+            rainDrops.fill(1);
+            sessionShieldsUsed = 0;
+            sessionItemsCollected = new Set();
+
+            const stats = skinConfig[selectedSkin] || skinConfig['🤪'];
+            player.x = canvas.width / 2; 
+            player.emoji = selectedSkin; 
+            player.shields = stats.shields; 
+            player.magnets = stats.magnets; 
+            player.energy = stats.energy; // 初始能量
+            player.invincibleTimer = 0; player.magnetTimer = 0; player.vx = 0;
+            
+            notifTimer = 500; sessionBugsFixed = 0; sessionBossesDefeated = 0;
+            startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); globalLeaderboardModal.classList.add('hidden'); readmeModal.classList.add('hidden'); careerModal.classList.add('hidden');
+            bossOverlay.style.display = 'none'; confuseWarningEl.style.display = 'none'; rushWarningEl.style.display = 'none'; bossWarningEl.style.display = 'none'; gcWarningEl.style.display = 'none'; lagWarningEl.style.display = 'none'; lockedWarningEl.style.display = 'none'; eventWarningEl.style.display = 'none'; notifPopupEl.classList.remove('show');
+            updateBackground(); updateUI(); loop();
+        }
+        function restartSameDifficulty() { startGame(currentDiffKey); }
+        function showMenu() { gameOverScreen.classList.add('hidden'); startScreen.classList.remove('hidden'); }
+        function saveScore(mode, score) { let data = localStorage.getItem(LOCAL_STORAGE_KEY) ? JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) : { easy: [], normal: [], hard: [] }; let scores = data[mode]; const now = new Date(); const dateStr = `${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`; scores.push({ score: score, date: dateStr }); scores.sort((a, b) => b.score - a.score); if (scores.length > 5) scores = scores.slice(0, 5); data[mode] = scores; localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data)); return scores.some(s => s.score === score && s.date === dateStr) && score > 0; }
+        function showGlobalLeaderboard() { const data = localStorage.getItem(LOCAL_STORAGE_KEY) ? JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) : { easy: [], normal: [], hard: [] }; const genHTML = (m) => data[m].length ? data[m].map((i,idx)=>`<li><span style="color:#808080">/*${idx+1}*/ ${i.date}</span><span style="color:#a9b7c6">${i.score}</span></li>`).join('') : '<li style="color:#777;">// 暂无记录</li>'; document.getElementById('lb-easy').innerHTML = genHTML('easy'); document.getElementById('lb-normal').innerHTML = genHTML('normal'); document.getElementById('lb-hard').innerHTML = genHTML('hard'); startScreen.classList.add('hidden'); globalLeaderboardModal.classList.remove('hidden'); }
+        function closeGlobalLeaderboard() { globalLeaderboardModal.classList.add('hidden'); startScreen.classList.remove('hidden'); }
+        function showReadme() { startScreen.classList.add('hidden'); readmeModal.classList.remove('hidden'); }
+        function closeReadme() { readmeModal.classList.add('hidden'); startScreen.classList.remove('hidden'); }
+        
+        function selectSkin(emoji, btn) { 
+            if (btn.classList.contains('locked')) {
+                lockedWarningEl.style.display = 'block';
+                setTimeout(() => { lockedWarningEl.style.display = 'none'; }, 1000);
+                return;
+            }
+            selectedSkin = emoji; 
+            document.querySelectorAll('.skin-btn').forEach(b => b.classList.remove('selected')); 
+            btn.classList.add('selected'); 
+        }
+        
+        function gameOver() {
+            isGameOver = true; cancelAnimationFrame(gameLoopId); 
+            const isNewRecord = saveScore(currentDiffKey, score);
+            updateCareerStats(score, frameCount, sessionBugsFixed, sessionBossesDefeated);
+            checkAchievements(score, sessionShieldsUsed, sessionBugsFixed, sessionItemsCollected); // 检查成就
+            checkSkinUnlocks();
+            finalScoreEl.innerText = score; triggerShake(20); 
+            const bsodComments = ["CRITICAL_PROCESS_DIED", "IRQL_NOT_LESS_OR_EQUAL", "PAGE_FAULT_IN_NONPAGED_AREA"]; document.getElementById('bsod-code-text').innerText = isNewRecord ? `NEW_RECORD_SET` : bsodComments[Math.floor(Math.random() * bsodComments.length)]; gameOverScreen.classList.remove('hidden'); 
+        }
+    </script>
+</body>
+</html>

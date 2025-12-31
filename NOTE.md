@@ -526,7 +526,7 @@ ole_permissions in bulk.
   * `geo_location`：默认通过 `GeoIpService` 调用 ipapi.co 反查；前端传入的 `geo`（本地时区）仅作兜底。
 * 管理端读取
   * GET `/api/admin/analytics/summary` 聚合 PV、UV、来源、热门文章、最近访问等指标，用于仪表盘。
-  * GET `/api/admin/analytics/page-views?page=&size=` 返回 `analytics_page_views` 分页结果（含 viewed_at/IP/Geo/userId/username/display_name/avatarUrl 等），供后台“访问日志”实时记录使用。
+  * GET `/api/admin/analytics/page-views?page=&size=` 返回 `analytics_page_views` 分页结果（含 viewed_at/IP/Geo/userId/username/display_name/avatarUrl 等），供后台“访问日志”实时记录使用；自 V2.1.253 起支持筛选参数：`ip`（精确匹配 viewer_ip）、`keyword`（模糊匹配 page_title/referrer_url/geo_location/post.title/post.slug）、`loggedIn`（true/false）、`postId`、`start`/`end`（yyyy-MM-dd，按 viewed_at 区间过滤，end 为包含当天）。
   * 自 V2.1.251 起，后台访问日志（`/admin/analytics`）分页区由仅“上一页/下一页”升级为“数字页码”按钮，可直接跳转到指定页；与“条数/页”联动，切换每页条数会自动回到第 1 页，避免页码越界。
   * DELETE `/api/admin/analytics/page-views/{id}` 仅 SUPER_ADMIN 可用；存在时删除 1 条访问日志并返回受影响行数，不存在则返回 0。
   * DELETE `/api/admin/analytics/page-views?ids=<id>&ids=<id>` 仅 SUPER_ADMIN 可用；支持批量删除，内部先统计命中条数（countByIdIn），再执行 deleteAllByIdInBatch，空列表或全未命中时返回 0。
@@ -633,6 +633,7 @@ ole_permissions in bulk.
 ## 6. 快速开始 (Quick Start)
 
 - 环境切换：在仓库根目录执行 `./scripts/switch-env.ps1 dev|prod`，会同时更新后端 `application.yaml` 与前端 `.env.local`。
+- 同步生产端游戏 uploads：在仓库根目录执行 `./scripts/sync-uploads.bat`，会将生产端 `REMOTE_DIR`（默认 `/home/sangui/uploads/games`）镜像到本地 `uploads/games`（只读生产端；冲突以生产端为准，本地会覆盖/删除差异文件）。
 
 ### 后端启动
 

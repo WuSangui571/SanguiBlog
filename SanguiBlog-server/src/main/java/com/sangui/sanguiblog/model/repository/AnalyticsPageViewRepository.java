@@ -6,13 +6,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.query.Param;
+import org.springframework.lang.Nullable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPageView, Long> {
+public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPageView, Long>, JpaSpecificationExecutor<AnalyticsPageView> {
 
     interface DailyViewAggregation {
         java.sql.Date getStatDate();
@@ -76,6 +79,10 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
 
     @EntityGraph(attributePaths = {"post", "user", "user.role"})
     Page<AnalyticsPageView> findAllByOrderByViewedAtDesc(Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"post", "user", "user.role"})
+    Page<AnalyticsPageView> findAll(@Nullable Specification<AnalyticsPageView> spec, Pageable pageable);
 
     long deleteByUser_Id(Long userId);
 

@@ -656,6 +656,15 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const copyToastTimer = useRef(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [deleting, setDeleting] = useState(false);
+    const [filtersDraft, setFiltersDraft] = useState({
+        keyword: '',
+        ip: '',
+        postId: '',
+        loggedIn: 'all',
+        start: '',
+        end: ''
+    });
+    const [filtersApplied, setFiltersApplied] = useState({});
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
@@ -754,11 +763,11 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         );
     };
 
-    const loadLogs = useCallback(async (targetPage = 1, targetSize = 20) => {
+    const loadLogs = useCallback(async (targetPage = 1, targetSize = 20, filters = {}) => {
         setLoading(true);
         setError('');
         try {
-            const res = await adminFetchPageViewLogs({ page: targetPage, size: targetSize });
+            const res = await adminFetchPageViewLogs({ page: targetPage, size: targetSize, ...(filters || {}) });
             const data = res.data || res;
             const records = data.records || [];
             setLogs(records);
@@ -776,9 +785,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         }
     }, []);
 
+    const initLoadedRef = useRef(false);
     useEffect(() => {
-        loadLogs(1, size);
-    }, [loadLogs]);
+        if (initLoadedRef.current) return;
+        initLoadedRef.current = true;
+        loadLogs(1, size, filtersApplied);
+    }, [loadLogs, size, filtersApplied]);
 
     const totalPages = Math.max(1, Math.ceil((total || 0) / size) || 1);
     const allSelected = logs.length > 0 && selectedIds.length === logs.length;
@@ -805,14 +817,47 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     const handlePageChange = (target) => {
         const safe = Math.min(Math.max(target, 1), totalPages);
-        loadLogs(safe, size);
+        loadLogs(safe, size, filtersApplied);
     };
 
     const handleSizeChange = (nextSize) => {
         const parsed = Number(nextSize);
         if (!parsed || parsed < 1) return;
-        loadLogs(1, parsed);
+        loadLogs(1, parsed, filtersApplied);
     };
+
+    const normalizeFilters = useCallback((draft = {}) => {
+        const keyword = typeof draft.keyword === 'string' ? draft.keyword.trim() : '';
+        const ip = typeof draft.ip === 'string' ? draft.ip.trim() : '';
+        const postIdRaw = typeof draft.postId === 'string' ? draft.postId.trim() : '';
+        const postId = postIdRaw ? Number(postIdRaw) : null;
+        const start = typeof draft.start === 'string' ? draft.start.trim() : '';
+        const end = typeof draft.end === 'string' ? draft.end.trim() : '';
+        const loggedInRaw = draft.loggedIn;
+        const loggedIn = loggedInRaw === 'true' ? true : (loggedInRaw === 'false' ? false : undefined);
+
+        const next = {};
+        if (keyword) next.keyword = keyword;
+        if (ip) next.ip = ip;
+        if (Number.isFinite(postId) && postId > 0) next.postId = postId;
+        if (loggedIn !== undefined) next.loggedIn = loggedIn;
+        if (start) next.start = start;
+        if (end) next.end = end;
+        return next;
+    }, []);
+
+    const applyFilters = useCallback(() => {
+        const next = normalizeFilters(filtersDraft);
+        setFiltersApplied(next);
+        loadLogs(1, size, next);
+    }, [filtersDraft, loadLogs, normalizeFilters, size]);
+
+    const resetFilters = useCallback(() => {
+        const clearedDraft = { keyword: '', ip: '', postId: '', loggedIn: 'all', start: '', end: '' };
+        setFiltersDraft(clearedDraft);
+        setFiltersApplied({});
+        loadLogs(1, size, {});
+    }, [loadLogs, size]);
 
     const handleClearLogs = async () => {
         if (!isSuperAdmin) return;
@@ -822,7 +867,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         try {
             await adminDeleteMyAnalyticsLogs();
             setActionMessage('已清理当前账户的访问日志。');
-            await loadLogs(1, size);
+            await loadLogs(1, size, filtersApplied);
             if (reload) reload();
         } catch (err) {
             setActionMessage(err.message || '清理失败，请稍后重试。');
@@ -860,7 +905,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             await adminDeletePageViewLog(id);
             setActionMessage('已删除 1 条访问日志。');
             const nextPage = logs.length === 1 && page > 1 ? page - 1 : page;
-            await loadLogs(nextPage, size);
+            await loadLogs(nextPage, size, filtersApplied);
             if (reload) reload();
         } catch (err) {
             setError(err.message || '删除失败，请稍后再试。');
@@ -879,7 +924,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             setActionMessage(`已删除 ${selectedIds.length} 条访问日志。`);
             const nextPage = selectedIds.length >= logs.length && page > 1 ? page - 1 : page;
             setSelectedIds([]);
-            await loadLogs(nextPage, size);
+            await loadLogs(nextPage, size, filtersApplied);
             if (reload) reload();
         } catch (err) {
             setError(err.message || '批量删除失败，请稍后再试。');
@@ -927,7 +972,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     </select>
                     <button
                         type="button"
-                        onClick={() => loadLogs(page, size)}
+                        onClick={() => loadLogs(page, size, filtersApplied)}
                         className={refreshButtonClass}
                     >
                         刷新
@@ -952,6 +997,118 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                             {clearing ? '清理中...' : '清理我的访问日志'}
                         </button>
                     )}
+                </div>
+            </div>
+
+            <div className={`${surface} ${border} rounded-2xl p-4 shadow-md`}>
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+                    <div className="md:col-span-2">
+                        <div className={`text-xs mb-1 ${textMuted}`}>关键词（标题/来源/地理/slug）</div>
+                        <input
+                            value={filtersDraft.keyword}
+                            onChange={(e) => setFiltersDraft((prev) => ({ ...prev, keyword: e.target.value }))}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') applyFilters();
+                            }}
+                            placeholder="例如：home(1/16)、google、上海、mybatis..."
+                            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
+                                : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
+                            }`}
+                        />
+                    </div>
+                    <div>
+                        <div className={`text-xs mb-1 ${textMuted}`}>访客 IP（精确匹配）</div>
+                        <input
+                            value={filtersDraft.ip}
+                            onChange={(e) => setFiltersDraft((prev) => ({ ...prev, ip: e.target.value }))}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') applyFilters();
+                            }}
+                            placeholder="例如：1.2.3.4"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
+                                : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
+                            }`}
+                        />
+                    </div>
+                    <div>
+                        <div className={`text-xs mb-1 ${textMuted}`}>文章 ID（可选）</div>
+                        <input
+                            type="number"
+                            inputMode="numeric"
+                            value={filtersDraft.postId}
+                            onChange={(e) => setFiltersDraft((prev) => ({ ...prev, postId: e.target.value }))}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') applyFilters();
+                            }}
+                            placeholder="例如：123"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
+                                : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
+                            }`}
+                        />
+                    </div>
+                    <div>
+                        <div className={`text-xs mb-1 ${textMuted}`}>用户状态</div>
+                        <select
+                            value={filtersDraft.loggedIn}
+                            onChange={(e) => setFiltersDraft((prev) => ({ ...prev, loggedIn: e.target.value }))}
+                            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
+                                : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
+                            }`}
+                        >
+                            <option value="all">全部</option>
+                            <option value="true">已登录</option>
+                            <option value="false">访客</option>
+                        </select>
+                    </div>
+                    <div className="md:col-span-1">
+                        <div className={`text-xs mb-1 ${textMuted}`}>起始日期</div>
+                        <input
+                            type="date"
+                            value={filtersDraft.start}
+                            onChange={(e) => setFiltersDraft((prev) => ({ ...prev, start: e.target.value }))}
+                            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
+                                : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
+                            }`}
+                        />
+                    </div>
+                    <div className="md:col-span-1">
+                        <div className={`text-xs mb-1 ${textMuted}`}>结束日期</div>
+                        <input
+                            type="date"
+                            value={filtersDraft.end}
+                            onChange={(e) => setFiltersDraft((prev) => ({ ...prev, end: e.target.value }))}
+                            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
+                                : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
+                            }`}
+                        />
+                    </div>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={applyFilters}
+                        disabled={loading}
+                        className={`px-4 py-2 text-sm font-bold rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-50 ${isDarkMode ? 'bg-[#FFD700] text-black' : 'bg-[#FFD700] text-black'}`}
+                    >
+                        查询
+                    </button>
+                    <button
+                        type="button"
+                        onClick={resetFilters}
+                        disabled={loading}
+                        className={`px-4 py-2 text-sm font-bold rounded-lg border disabled:opacity-50 ${isDarkMode ? 'bg-gray-900 text-gray-100 border-gray-700 hover:bg-gray-800' : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-50'}`}
+                    >
+                        重置
+                    </button>
+                    <div className={`text-xs ${textMuted}`}>
+                        提示：筛选条件仅影响列表；“条数/页”切换会自动回到第 1 页。
+                    </div>
                 </div>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Lights - Chaos Mode</title>
+    <style>
+        /* --- 1. 基础环境设置 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: #000000;
+            overflow: hidden;
+            font-family: 'Impact', 'Arial Black', sans-serif; /* 使用更粗犷的字体 */
+            height: 100vh;
+            width: 100vw;
+            perspective: 1000px; /* 增加3D透视感 */
+        }
+
+        /* --- 2. 交互层 (Canvas) --- */
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+            /* 画布本身自带对比度增强，让光更锐利 */
+            filter: contrast(1.5) brightness(1.1);
+        }
+
+        /* --- 3. 核心文字容器 --- */
+        .content {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+            width: 100%;
+            /* 混合模式：差值。这会让文字颜色根据背景粒子的颜色反转，极具赛博感 */
+            mix-blend-mode: exclusion; 
+        }
+
+        /* --- 4. “三桂博客” 狂野样式 --- */
+        h1 {
+            font-size: 8vw; /* 巨大字体 */
+            line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: -5px; /* 紧凑压迫感 */
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.1, 0.7, 1.0, 0.1);
+            
+            /* --- 状态 A: 若隐若现 (默认) --- */
+            color: transparent; /* 内部透明 */
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.15); /* 仅保留极细的微弱描边 */
+            filter: blur(4px); /* 默认模糊，看不清 */
+            opacity: 0.3;
+        }
+
+        /* 辅助文字 */
+        p {
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.2);
+            margin-top: 20px;
+            letter-spacing: 10px;
+            font-weight: 100;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* --- 5. 交互状态：光污染爆发 (Hover) --- */
+        .content:hover h1 {
+            /* 状态 B: 激活 */
+            color: #fff; /* 实心白 */
+            -webkit-text-stroke: 0;
+            filter: blur(0px); /* 清晰 */
+            opacity: 1;
+            transform: scale(1.05);
+            
+            /* 疯狂的“光污染”阴影：叠加多层高亮霓虹 */
+            text-shadow: 
+                0 0 10px #fff,
+                0 0 20px #ff00de,
+                0 0 40px #ff00de,
+                0 0 80px #ff00de,
+                0 0 120px #ff00de,
+                -10px 0 30px #00ffff, /* 青色撞色 */
+                10px 0 30px #ff0000;  /* 红色撞色 */
+
+            /* 触发抖动动画 */
+            animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+        }
+
+        .content:hover p {
+            opacity: 1;
+            text-shadow: 0 0 10px #00ffff;
+            animation: blink 0.5s infinite;
+        }
+
+        /* --- 6. 故障动画关键帧 (Glitch) --- */
+        @keyframes glitch-skew {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(-20deg); }
+            40% { transform: skew(20deg); }
+            60% { transform: skew(-5deg); }
+            80% { transform: skew(5deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        /* 伪元素：制作文字重影效果 */
+        h1::before, h1::after {
+            content: "三桂博客";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0; /* 默认隐藏 */
+            transition: opacity 0.1s;
+        }
+
+        .content:hover h1::before {
+            opacity: 0.8;
+            color: #0ff;
+            z-index: -1;
+            transform: translate(-5px, 0);
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+
+        .content:hover h1::after {
+            opacity: 0.8;
+            color: #f0f;
+            z-index: -2;
+            transform: translate(5px, 0);
+            animation: glitch-anim-2 2s infinite linear alternate-reverse;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="content">
+        <h1>三桂博客</h1>
+        <p>SYSTEM OVERLOAD</p>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- 核心修改：光污染模式 ---
+        // 'lighter' 意味着颜色重叠时会变亮，最终变成纯白。
+        // 这是制造霓虹光晕和爆炸感的关键。
+        ctx.globalCompositeOperation = 'lighter';
+
+        let width, height;
+        let particles = [];
+        let hue = 0;
+        
+        // 鼠标交互变量
+        const mouse = { x: undefined, y: undefined };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+            // 狂野模式：鼠标移动产生大量粒子
+            for(let i = 0; i < 5; i++){
+                particles.push(new Particle(mouse.x, mouse.y));
+            }
+        });
+        
+        // 自动喷射源：让画面始终保持躁动
+        setInterval(() => {
+            const rx = Math.random() * width;
+            const ry = Math.random() * height;
+            particles.push(new Particle(rx, ry));
+        }, 50);
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                // 狂野模式：粒子更大
+                this.size = Math.random() * 20 + 5;
+                // 狂野模式：速度更快，方向更随机
+                this.speedX = Math.random() * 8 - 4;
+                this.speedY = Math.random() * 8 - 4;
+                // 颜色更鲜艳，亮度(Lightness)调高
+                this.color = 'hsl(' + hue + ', 100%, 60%)'; 
+                this.life = 1; 
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                // 简单物理反弹，让粒子在屏幕内乱窜
+                if(this.x > width || this.x < 0) this.speedX *= -1;
+                if(this.y > height || this.y < 0) this.speedY *= -1;
+
+                this.life -= 0.01; 
+                this.size *= 0.95; // 快速缩小
+                
+                // 变色加速
+                hue += 0.5;
+            }
+
+            draw() {
+                if (this.size <= 0.5) return;
+                
+                ctx.beginPath();
+                // 绘制圆形
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // 绘制光晕环 (增加光污染感)
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, 0.1)`; // 外层淡淡的白光
+                ctx.fill();
+            }
+        }
+
+        function handleParticles() {
+            // 再次确保混合模式正确 (防止resize重置)
+            ctx.globalCompositeOperation = 'lighter';
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                // 连线逻辑
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // 只有距离很近才连线，形成闪电般的效果
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = particles[i].color;
+                        // 线条更粗
+                        ctx.lineWidth = particles[i].life * 2; 
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
+                }
+
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        function animate() {
+            // 拖尾背景：使用非常透明的黑色，让光痕停留更久
+            // 注意：因为用了 globalCompositeOperation = 'lighter'
+            // 我们需要临时切换回 source-over 来覆盖黑色背景，否则背景盖不住
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            handleParticles();
+            
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+    </script>
+</body>
+</html>
