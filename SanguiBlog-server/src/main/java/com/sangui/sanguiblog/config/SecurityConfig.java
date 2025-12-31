@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.config;
 
 import com.sangui.sanguiblog.security.JwtAuthenticationFilter;
+import com.sangui.sanguiblog.security.botguard.BotGuardFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.Customizer;
@@ -32,6 +33,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final BotGuardFilter botGuardFilter;
     private static final List<String> DEFAULT_CORS_ALLOWED_ORIGINS = List.of(
             "https://sangui.top",
             "https://www.sangui.top",
@@ -93,7 +95,8 @@ public class SecurityConfig {
                     headers.contentTypeOptions(Customizer.withDefaults());
                 })
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .addFilterBefore(botGuardFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -131,6 +134,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/captcha",
+                                "/api/guard/captcha",
+                                "/api/guard/verify",
                                 "/api/site/meta",
                                 "/api/categories/**",
                                 "/api/tags/**",
@@ -155,6 +160,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").authenticated()
                         .requestMatchers("/api/permissions/me").authenticated()
                         .anyRequest().authenticated())
+                .addFilterBefore(botGuardFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

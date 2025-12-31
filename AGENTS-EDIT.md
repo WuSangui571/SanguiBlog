@@ -2241,3 +2241,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.255 (2025-12-31)
 - **模块/页面**：修复 uploads 同步脚本在 Windows 下双击运行报错的问题：由于仓库 `.gitattributes` 强制文本使用 LF，导致 `.bat` 被 `cmd.exe` 解析异常；现改为 ASCII 的 `scripts/sync-uploads.bat` 作为包装器，核心逻辑迁移到 `scripts/sync-uploads.ps1`（PowerShell 处理 UTF-8 更稳），并在 `.gitattributes` 为 `*.bat/*.cmd` 单独指定 `eol=crlf`。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.255`
+
+## V2.1.256 (2025-12-31)
+- **模块/页面**：后端新增“BotGuard”反爬风控：在 Java Web 层统一采集请求基础信息并基于进程内短期内存状态做风险评分（不依赖 Redis）；按风险分执行放行/轻度延迟/高滥用路径验证码/短暂阻断，并提供“主动降分”机制减少 NAT 场景误伤；新增验证码接口 `/api/guard/captcha` 与 `/api/guard/verify` 用于完成短期验证并下发 `sg_guard` Cookie。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.256`
