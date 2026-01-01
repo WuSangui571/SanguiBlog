@@ -1,6 +1,6 @@
 ﻿server:
-  port: 8082
-#  port: 8080
+  port: 8080
+#  port: 8082
 
 spring:
   application:
@@ -58,8 +58,8 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
 
 storage:
-  base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
-#  base-path: ${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}
+  base-path: ${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}
+#  base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
 
 site:
   base-url: ${SITE_BASE_URL:https://www.sangui.top}
@@ -67,7 +67,7 @@ site:
   sitemap:
     cache-ttl-ms: ${SITE_SITEMAP_CACHE_TTL_MS:600000}
     refresh-delay-ms: ${SITE_SITEMAP_REFRESH_DELAY_MS:600000}
-  version: "V2.1.268"
+  version: "V2.1.269"
   asset-base-url: http://sangui.top/uploads
 #  asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
   hero:
