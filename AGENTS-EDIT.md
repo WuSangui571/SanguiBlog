@@ -2281,3 +2281,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.265 (2026-01-01)
 - **模块/页面**：新增 Google Search Console 验证 meta 标记：在前端首页入口 `SanguiBlog-front/index.html` 的 `<head>` 中添加 `google-site-verification`，用于保持站点所有权验证状态。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.265`
+
+## V2.1.266 (2026-01-01)
+- **模块/页面**：新增百度站长平台验证 meta 标记：在前端首页入口 `SanguiBlog-front/index.html` 的 `<head>` 中添加 `baidu-site-verification`，用于保持站点所有权验证状态。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.266`
