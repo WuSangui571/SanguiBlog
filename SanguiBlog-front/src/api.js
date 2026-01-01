@@ -50,6 +50,25 @@ const isTokenExpired = (token) => {
   return Date.now() >= expMs;
 };
 
+const INVALID_STORED_TOKEN_VALUES = new Set(["null", "undefined"]);
+
+const getStoredToken = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("sg_token");
+    if (!raw) return null;
+    const token = String(raw).trim();
+    if (!token) return null;
+    if (INVALID_STORED_TOKEN_VALUES.has(token)) {
+      localStorage.removeItem("sg_token");
+      return null;
+    }
+    return token;
+  } catch {
+    return null;
+  }
+};
+
 const notifyAuthExpired = (detail = {}) => {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("sg-auth-expired", { detail }));
@@ -63,8 +82,22 @@ const SILENT_AUTH_PATHS = [
 const shouldSilentAuthNotice = (path = "") =>
   SILENT_AUTH_PATHS.some((prefix) => path.startsWith(prefix));
 
+// 仅对“公开读取接口”在 401 时做一次无鉴权重试（GET-only），避免旧 token 影响访客首屏。
+const RETRY_NO_AUTH_ON_401_PATHS = [
+  "/site/",
+  "/site",
+  "/posts",
+  "/categories",
+  "/tags",
+  "/about",
+  "/comments",
+];
+
+const shouldRetryNoAuthOn401 = (path = "") =>
+  RETRY_NO_AUTH_ON_401_PATHS.some((prefix) => path.startsWith(prefix));
+
 const buildHeaders = () => {
-  const token = localStorage.getItem("sg_token");
+  const token = getStoredToken();
   const headers = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   return headers;
@@ -146,13 +179,19 @@ const buildAnalyticsReferrerHeaders = () => {
 };
 
 const request = async (path, options = {}) => {
-  const token = localStorage.getItem("sg_token");
+  const token = getStoredToken();
   if (isTokenExpired(token)) {
     localStorage.removeItem("sg_token");
     notifyAuthExpired({ reason: "token_expired", status: 401, message: "登录已过期" });
-    const expiredError = new Error("登录已过期，请重新登录");
-    expiredError.status = 401;
-    throw expiredError;
+
+    // 公开读取接口：即使 token 过期，也应该允许“以访客身份”继续请求，避免首屏报错需要手动刷新。
+    const method = String(options?.method || "GET").toUpperCase();
+    const canProceedAsGuest = method === "GET" && shouldRetryNoAuthOn401(path);
+    if (!canProceedAsGuest) {
+      const expiredError = new Error("登录已过期，请重新登录");
+      expiredError.status = 401;
+      throw expiredError;
+    }
   }
   const mergedHeaders = {
     ...buildHeaders(),
@@ -179,9 +218,23 @@ const request = async (path, options = {}) => {
     const error = new Error(message || res.statusText);
     error.status = res.status;
     if (payload) error.payload = payload;
-    if (res.status === 401 && !shouldSilentAuthNotice(path)) {
-      notifyAuthExpired({ reason: "unauthorized", status: 401, message });
-    } else if (res.status === 403 && !localStorage.getItem("sg_token")) {
+
+    // 关键修复：当本地残留旧 token（或非法值）导致公开接口首次访问 401 时，先清理 token 再通知会话失效，避免“第一次打开就提示登录过期”，并让后续请求可自愈。
+    if (res.status === 401) {
+      const hadToken = Boolean(token);
+      if (hadToken) {
+        localStorage.removeItem("sg_token");
+      }
+      if (!shouldSilentAuthNotice(path)) {
+        notifyAuthExpired({ reason: "unauthorized", status: 401, message });
+      }
+      // 对公开接口做一次无鉴权重试（GET-only 且本次请求携带过 token），避免用户手动刷新才能看到文章列表
+      const method = String(options?.method || "GET").toUpperCase();
+      const canRetry = method === "GET" && shouldRetryNoAuthOn401(path);
+      if (hadToken && canRetry && !options.__sgRetriedNoAuth) {
+        return request(path, { ...options, __sgRetriedNoAuth: true });
+      }
+    } else if (res.status === 403 && !getStoredToken()) {
       notifyAuthExpired({ reason: "forbidden_no_token", status: 403, message });
     }
     throw error;
