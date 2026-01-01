@@ -2297,3 +2297,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.269 (2026-01-01)
 - **模块/页面**：修复线上访问 `/sitemap.xml` 被 SPA 回退导致“自动跳回首页”的问题：补充 Nginx 精确匹配规则，将 `location = /sitemap.xml` 与 `location = /robots.txt` 优先反代到后端（放在 `try_files $uri /index.html` 前），确保 `https://www.sangui.top/sitemap.xml` / `https://sangui.top/sitemap.xml` 可直接返回 XML。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.269`
+
+## V2.1.270 (2026-01-01)
+- **模块/页面**：后台访问日志增强：后端对 `GET /sitemap.xml`（及 `/robots.txt`）的请求追加服务端 PV 记录（写入 `analytics_page_views`，`pageTitle = sitemap.xml/robots.txt`），便于超级管理员在 `/admin/analytics` 检索站点地图抓取行为；默认对同一 IP + 同一页面做 10 分钟限流，避免日志膨胀。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.270`

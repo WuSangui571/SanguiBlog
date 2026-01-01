@@ -22,6 +22,7 @@ public class SitemapController {
     @GetMapping(value = "/sitemap.xml", produces = "application/xml; charset=UTF-8")
     public ResponseEntity<byte[]> sitemap(HttpServletRequest request) {
         byte[] body = sitemapService.getSitemapXml(request);
+        sitemapService.recordSitemapAccess(request);
         return ResponseEntity.ok()
                 .contentType(new MediaType("application", "xml", StandardCharsets.UTF_8))
                 .cacheControl(CacheControl.maxAge(300, TimeUnit.SECONDS).cachePublic())
@@ -32,6 +33,7 @@ public class SitemapController {
     @GetMapping(value = "/robots.txt", produces = "text/plain; charset=UTF-8")
     public ResponseEntity<byte[]> robots(HttpServletRequest request) {
         byte[] body = sitemapService.getRobotsTxt(request);
+        sitemapService.recordRobotsAccess(request);
         return ResponseEntity.ok()
                 .contentType(new MediaType("text", "plain", StandardCharsets.UTF_8))
                 .cacheControl(CacheControl.maxAge(300, TimeUnit.SECONDS).cachePublic())
@@ -39,4 +41,3 @@ public class SitemapController {
                 .body(body);
     }
 }
-

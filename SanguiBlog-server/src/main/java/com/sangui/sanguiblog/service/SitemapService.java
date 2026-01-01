@@ -1,14 +1,21 @@
 package com.sangui.sanguiblog.service;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.model.repository.GamePageRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
+import com.sangui.sanguiblog.util.IpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,8 +33,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SitemapService {
 
+    private static final Logger log = LoggerFactory.getLogger(SitemapService.class);
+
+    /**
+     * 站点地图/robots 的访问日志限流：避免搜索引擎高频抓取导致 analytics_page_views 爆表。
+     * 统计口径：同一 IP + 同一页面（sitemap.xml/robots.txt）在 10 分钟内只写入 1 条访问日志。
+     */
+    private static final Duration SITEMAP_LOG_TTL = Duration.ofMinutes(10);
+    private static final Cache<String, Boolean> SITEMAP_LOG_LIMITER = Caffeine.newBuilder()
+            .expireAfterWrite(SITEMAP_LOG_TTL)
+            .maximumSize(200_000)
+            .build();
+
     private final PostRepository postRepository;
     private final GamePageRepository gamePageRepository;
+    private final AnalyticsService analyticsService;
 
     @Value("${site.base-url:https://www.sangui.top}")
     private String configuredBaseUrl;
@@ -68,6 +88,14 @@ public class SitemapService {
         sb.append("Allow: /\n");
         sb.append("Sitemap: ").append(baseUrl).append("/sitemap.xml\n");
         return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    public void recordSitemapAccess(HttpServletRequest request) {
+        recordSystemPageView(request, "sitemap.xml");
+    }
+
+    public void recordRobotsAccess(HttpServletRequest request) {
+        recordSystemPageView(request, "robots.txt");
     }
 
     @Scheduled(fixedDelayString = "${site.sitemap.refresh-delay-ms:600000}")
@@ -282,6 +310,28 @@ public class SitemapService {
             }
         }
         return out.toString();
+    }
+
+    private void recordSystemPageView(HttpServletRequest request, String pageTitle) {
+        if (request == null || !StringUtils.hasText(pageTitle)) {
+            return;
+        }
+        String ip = IpUtils.normalizeIp(IpUtils.resolveIp(request));
+        String key = pageTitle + "|" + ip;
+        if (SITEMAP_LOG_LIMITER.asMap().putIfAbsent(key, Boolean.TRUE) != null) {
+            return;
+        }
+
+        try {
+            PageViewRequest pv = new PageViewRequest();
+            pv.setPageTitle(pageTitle.trim());
+            pv.setReferrer(request.getHeader("Referer"));
+            String ua = request.getHeader("User-Agent");
+            analyticsService.recordPageView(pv, ip, ua, null);
+        } catch (Exception ex) {
+            SITEMAP_LOG_LIMITER.invalidate(key);
+            log.warn("记录 {} 访问日志失败（已忽略，不影响站点地图响应），ip={}", pageTitle, ip, ex);
+        }
     }
 
     private record SitemapSnapshot(long revision, long builtAtMs, String globalLastMod, List<SitemapItem> items) {
