@@ -2277,3 +2277,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.264 (2026-01-01)
 - **模块/页面**：新增必应站长工具（Bing Webmaster Tools）验证 meta 标记：在前端首页入口 `SanguiBlog-front/index.html` 的 `<head>` 中添加 `msvalidate.01`，用于保持站点所有权验证状态。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.264`
+
+## V2.1.265 (2026-01-01)
+- **模块/页面**：新增 Google Search Console 验证 meta 标记：在前端首页入口 `SanguiBlog-front/index.html` 的 `<head>` 中添加 `google-site-verification`，用于保持站点所有权验证状态。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.265`
