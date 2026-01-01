@@ -35,6 +35,7 @@ public class GamePageService {
 
     private final GamePageRepository gamePageRepository;
     private final StoragePathResolver storagePathResolver;
+    private final SitemapService sitemapService;
 
     public record CreateResult(GamePageAdminDto data, String message) {
     }
@@ -102,6 +103,7 @@ public class GamePageService {
         String filePath = storeHtmlFile(entity.getSlug(), file);
         entity.setFilePath(filePath);
         GamePage saved = gamePageRepository.save(entity);
+        sitemapService.markDirty();
         String message = "ok";
         if (slugResolution.renamedDueToConflict()) {
             message = "检测到同名游戏目录已存在，已自动改为 `" + slugResolution.slug() + "`（原计划目录为 `" + slugResolution.baseSlug() + "`），请避免重复上传同名 HTML。";
@@ -129,7 +131,9 @@ public class GamePageService {
         }
         entity.setUpdatedBy(operatorId);
         entity.setUpdatedAt(Instant.now());
-        return toAdminDto(gamePageRepository.save(entity));
+        GamePage saved = gamePageRepository.save(entity);
+        sitemapService.markDirty();
+        return toAdminDto(saved);
     }
 
     @Transactional
@@ -138,6 +142,7 @@ public class GamePageService {
                 .orElseThrow(() -> new NotFoundException("游戏页面不存在"));
         deleteFileQuietly(entity.getFilePath());
         gamePageRepository.delete(entity);
+        sitemapService.markDirty();
     }
 
     private GamePage.Status parseStatus(String status, GamePage.Status defaultStatus) {

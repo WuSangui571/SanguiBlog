@@ -71,6 +71,7 @@ public class PostService {
     private final PostAssetService postAssetService;
     private final AnalyticsService analyticsService;
     private final GeoIpService geoIpService;
+    private final SitemapService sitemapService;
 
     /**
      * 浏览量限流（每 IP + 每文章）：用于减少短时间重复刷新/StrictMode 双调用导致的重复记数，
@@ -266,11 +267,13 @@ public class PostService {
         }
 
         Post saved = postRepository.save(post);
+        sitemapService.markDirty();
         return toDetail(saved);
     }
 
     public void delete(Long id) {
         postRepository.deleteById(id);
+        sitemapService.markDirty();
     }
 
     @Transactional(readOnly = true)
@@ -383,7 +386,9 @@ public class PostService {
                     .collect(Collectors.toSet());
             post.setTags(tags);
         }
-        return toAdminDto(postRepository.save(post));
+        Post saved = postRepository.save(post);
+        sitemapService.markDirty();
+        return toAdminDto(saved);
     }
 
     private AdminPostDetailDto toAdminDetail(Post post) {

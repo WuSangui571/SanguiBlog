@@ -2289,3 +2289,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.267 (2026-01-01)
 - **模块/页面**：新增 360 站长平台验证 meta 标记：在前端首页入口 `SanguiBlog-front/index.html` 的 `<head>` 中添加 `360-site-verification`，用于保持站点所有权验证状态。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.267`
+
+## V2.1.268 (2026-01-01)
+- **模块/页面**：新增自动更新站点地图：后端提供 `GET /sitemap.xml`（XML）与 `GET /robots.txt`（文本），从数据库聚合已发布文章与已启用工具页生成站点地图，并通过缓存/变更标记/定时刷新自动更新，支持在主域名下直接访问 `https://www.sangui.top/sitemap.xml`（或 `https://sangui.top/sitemap.xml`）。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.268`

@@ -178,6 +178,9 @@ public class BotGuardEngine {
         if (path == null) {
             return true;
         }
+        if (Objects.equals(path, "/sitemap.xml") || Objects.equals(path, "/robots.txt")) {
+            return true;
+        }
         return path.startsWith("/api/auth/")
                 || path.startsWith("/api/guard/")
                 // 管理端接口本身已由 Spring Security 鉴权保护（未登录会 401/403），

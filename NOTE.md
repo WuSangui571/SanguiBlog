@@ -149,6 +149,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   `/admin/*`: 后台管理面板 (Dashboard, 编辑器等)
 
 *   **视图-路由联动**：前台导航通过 `setView()` 触发 `onViewChange`，统一由 `src/pages/viewNavigation.js` 维护视图到 URL 的映射，保证“归档/关于/工具/文章详情”等视图切换时 URL 同步更新，便于 SEO 与日志追踪；当处于 `/admin/*` 子路由时不会被强制拉回 `/admin`。
+*   **站点地图与 robots**：后端提供 `GET /sitemap.xml`（XML）与 `GET /robots.txt`（文本），用于搜索引擎抓取；`/sitemap.xml` 会从数据库聚合已发布文章（`/article/:id`）与已启用工具页（`/tools/:id`）并生成 URL 列表，且通过内存缓存 + 变更标记 + 定时刷新自动更新；`/robots.txt` 会指向 `Sitemap: https://<域名>/sitemap.xml` 并默认禁止抓取 `/admin`。
 *   **用户头像跳转**：前台导航点击用户头像时，若当前不在后台则进入 `/admin`，若已在后台则进入 `/admin/profile`，避免登录后直接跳过后台首页。
 
 *   **全局错误过滤 (`src/main.jsx`)**:

@@ -31,6 +31,14 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
 
         String getTagName();
     }
+
+    interface SitemapPostRow {
+        Long getId();
+
+        LocalDateTime getPublishedAt();
+
+        Instant getUpdatedAt();
+    }
     Optional<Post> findBySlugAndStatus(String slug, String status);
 
     Optional<Post> findBySlug(String slug);
@@ -96,6 +104,11 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
 
     @Query("select p.id as postId, t.name as tagName from Post p join p.tags t where p.id in :postIds")
     List<PostTagRow> findTagNamesByPostIds(@Param("postIds") List<Long> postIds);
+
+    @Query("select p.id as id, p.publishedAt as publishedAt, p.updatedAt as updatedAt from Post p "
+            + "where p.status = 'PUBLISHED' and p.publishedAt is not null "
+            + "order by p.publishedAt desc, p.createdAt desc")
+    List<SitemapPostRow> findPublishedForSitemap();
 
     @Query("select p from Post p where p.status = 'PUBLISHED' and p.publishedAt is not null "
             + "and p.category.id = :categoryId and p.id <> :postId "
