@@ -458,10 +458,11 @@ ole_permissions in bulk.
 
 *   **站点版本**：`application.yaml` 提供 `site.version`，后端会在 `/api/site/meta` 中返回该值；前端首页 Banner 直接读取该字段显示 `SANGUI BLOG // <version>`，统一版本号来源。
 
-*   **站长工具验证（Bing/Google/Baidu）**：
+*   **站长工具验证（Bing/Google/Baidu/360）**：
     *   必应站长工具（Bing Webmaster Tools）验证采用 `msvalidate.01` 的 HTML `<meta>` 标记。
     *   Google Search Console 验证采用 `google-site-verification` 的 HTML `<meta>` 标记。
     *   百度站长平台验证采用 `baidu-site-verification` 的 HTML `<meta>` 标记。
+    *   360 站长平台验证采用 `360-site-verification` 的 HTML `<meta>` 标记。
     *   以上验证标记统一放置于 `SanguiBlog-front/index.html` 的 `<head>` 中（位于首个 `<body>` 之前）。注意：即使验证成功后也需要长期保留对应 `<meta>` 标记，否则会失去“已验证”状态。
 
 *   **数据库与 JWT 凭证**：`spring.datasource.username/password` 会优先读取 `DB_USERNAME` / `DB_PASSWORD`，若未设置则兼容 Spring Boot 原生的 `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`；`jwt.secret` 亦支持 `JWT_SECRET` 或 `SPRING_JWT_SECRET`。仓库中不再保存明文，生产与本地环境需通过系统环境变量或额外的 `application-local.yaml`（自行创建并忽略）提供真实值。
