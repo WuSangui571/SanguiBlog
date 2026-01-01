@@ -64,6 +64,7 @@ yarn-error.log
 coverage/
 SanguiBlog-front/node_modules/
 SanguiBlog-front/dist/
+SanguiBlog-front/dist.zip
 SanguiBlog-front/.vite/
 SanguiBlog-front/.cache/
 SanguiBlog-front/.env.local
