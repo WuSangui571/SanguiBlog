@@ -1,136 +1,138 @@
-# SanguiBlog 部署指南
+# SanguiBlog 部署与开发指南
 
-SanguiBlog 是一个前后端分离的个人博客系统，后端使用 Spring Boot + MySQL，前端由 React + Vite 驱动。本指南面向部署与运维场景，帮助你从零搭建一套可在线访问的博客站点。
+SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发；更完整的技术手册请阅读根目录 `NOTE.md`。
 
----
+> 当前站点版本号：`V2.1.275`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
 
-## 1. 项目结构
+## 1. 目录索引
+
+- 发布说明：`release/V2.1.275.md`
+- 变更流水账：`AGENTS-EDIT.md`
+- 技术手册：`NOTE.md`
+
+## 2. 项目结构
 
 ```
-├─ SanguiBlog-server/      # Spring Boot 服务端（REST API、管理后台接口）
+├─ SanguiBlog-server/      # Spring Boot 服务端（REST API、鉴权、站点地图等）
 ├─ SanguiBlog-front/       # React 单页应用（访客端 + 管理端 UI）
-├─ uploads/                # 运行期上传目录（图片、附件、头像等）
-├─ sanguiblog_db.sql       # 完整建库脚本
-└─ README.md               # 当前部署指南
+├─ uploads/                # 默认上传目录（生产环境建议挂载到持久化存储）
+├─ release/                # Release Notes（例如 V2.1.249 / V2.1.275）
+├─ sanguiblog_db.sql       # 初始化建库脚本（表结构 + 基础数据）
+└─ README.md               # 本文档
 ```
 
----
-
-## 2. 环境准备
+## 3. 环境准备
 
 | 组件 | 版本建议 | 说明 |
 | --- | --- | --- |
-| JDK | 17 | 需启用 `JAVA_HOME` |
-| Maven | 3.9.x | 用于构建后端 |
-| Node.js | ≥ 18 (建议 20) | 配合 npm 或 pnpm 构建前端 |
-| MySQL | ≥ 8.0 | 使用 UTF8MB4 字符集 |
-| Git | 任意近期版本 | 用于拉取代码 |
+| JDK | 21 | 后端 `pom.xml` 指定 `java.version=21` |
+| Maven | 3.9.x | 构建/打包后端 |
+| Node.js | ≥ 18（建议 20） | 构建前端 |
+| MySQL | ≥ 8.0 | 建议 UTF8MB4 |
+| Git | 任意近期版本 | 拉取代码 |
 
-> Windows 和 Linux 均可部署。生产环境建议将 Node/Maven 安装在 CI 或构建机上，线上仅保留构建产物。
+> Windows / Linux 均可部署。生产环境建议：在 CI/构建机完成前后端构建，线上仅部署产物（后端 Jar + 前端 dist + 持久化 uploads）。
 
----
+## 4. 初始化数据库
 
-## 3. 初始化数据库
-
-1. 登录 MySQL：
-   ```bash
-   mysql -u root -p
-   ```
-2. 执行建库脚本（根据实际路径调整）：
+1. 创建数据库（示例）：
    ```sql
-   DROP DATABASE IF EXISTS sanguiblog_db;
    CREATE DATABASE sanguiblog_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-   USE sanguiblog_db;
-   SOURCE D:/02-WorkSpace/02-Java/SanguiBlog/sanguiblog_db.sql;
    ```
-3. 创建具有读写权限的业务账号，并在后端配置文件中填入用户名与密码。
-
----
-
-## 4. 配置并启动后端
-
-1. 复制 `src/main/resources/application-example.yml`（若存在）或在 `application.yml` 中补齐以下内容：
-   ```yaml
-   spring:
-     datasource:
-       url: jdbc:mysql://127.0.0.1:3306/sanguiblog_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-       username: <你的数据库用户>
-       password: <你的数据库密码>
-   uploads:
-     base-path: D:/02-WorkSpace/02-Java/SanguiBlog/uploads
-   ```
-2. 构建 Jar：
+2. 导入根目录 `sanguiblog_db.sql`：
    ```bash
-   cd SanguiBlog-server
-   mvn clean package -DskipTests
+   mysql -u root -p sanguiblog_db < sanguiblog_db.sql
    ```
-3. 启动：
-   ```bash
-   java -jar target/sanguiblog-server.jar
-   ```
-4. 默认服务端口见 `application.yml`（通常为 `8080`）。若需自定义，修改 `server.port` 后重启即可。
+3. 建议创建业务账号（读写权限），并在后端配置里配置用户名/密码（见下一节）。
 
----
+## 5. 后端配置与启动（SanguiBlog-server）
 
-## 5. 构建并部署前端
+后端配置文件：`SanguiBlog-server/src/main/resources/application.yaml`
 
-1. 在 `SanguiBlog-front/.env` 或 `.env.production` 中配置 API 地址：
-   ```
-   VITE_API_BASE=https://your-domain.com/api
-   VITE_ASSET_ORIGIN=https://your-cdn.com
-   ```
-2. 安装依赖并构建：
-   ```bash
-   cd SanguiBlog-front
-   npm install
-   npm run build
-   ```
-3. 将 `dist/` 目录上传至任意静态资源服务器（Nginx、OSS、Vercel 等）。Nginx 示例：
-   ```
-   server {
-     listen 80;
-     server_name blog.example.com;
-     root /var/www/sanguiblog/dist;
-     location / {
-       try_files $uri /index.html;
-     }
-     location /api/ {
-       proxy_pass http://127.0.0.1:8080/api/;
-     }
-   }
-   ```
-4. 若启用了 HTTPS，请同步更新后端允许的跨域源（`SecurityConfig` 或 `application.yml` 中的 CORS 配置）。
+### 5.1 必配项（建议用环境变量注入）
 
----
+- 数据库：`spring.datasource.url/username/password`
+  - 支持环境变量：`DB_USERNAME` / `DB_PASSWORD`（也兼容 Spring 标准变量）
+- JWT 密钥：`JWT_SECRET`（必填，未提供会直接启动失败）
+- 上传目录：`storage.base-path`
+  - 支持环境变量：`STORAGE_BASE_PATH`
 
-## 6. 本地开发 & 调试
+### 5.2 端口与跨域
 
-1. 打开两个终端：
-   - **后端**：`cd SanguiBlog-server && mvn spring-boot:run`
-   - **前端**：`cd SanguiBlog-front && npm run dev`
-2. 默认开发地址：
-   - 前端：http://localhost:5173
-   - 后端：http://localhost:8080
-3. 如果出现 CORS 报错，请在后端的跨域配置中加入 `http://localhost:5173` 与 `http://127.0.0.1:5173`。
+- 服务端口：`server.port`（仓库默认 `8080`）
+- CORS：`security.cors.allowed-origins`（开发端口 `5173/5174` 已在默认列表中）
 
----
+### 5.3 启动方式
 
-## 7. 静态资源与上传目录
+构建 Jar：
+```bash
+cd SanguiBlog-server
+mvn clean package -DskipTests
+```
+启动（Jar 名称以实际构建产物为准，通常类似 `SanguiBlog-server-0.0.1-SNAPSHOT.jar`）：
+```bash
+java -jar target/SanguiBlog-server-0.0.1-SNAPSHOT.jar
+```
 
-- 所有上传内容统一写入仓库根目录下的 `uploads/`。生产环境请将该目录挂载到持久化存储，并定期备份。
-- 前端引用资源（头像、文章图片）时，路径形如 `/uploads/<slug>/cover.png` 或 `/avatar/<filename>`，由后端静态映射提供。
-- 若部署到 CDN，可通过设置 `VITE_ASSET_ORIGIN` 让前端在构建时生成完整的 CDN URL。
+## 6. 前端构建与部署（SanguiBlog-front）
 
----
+前端 API 默认走同源 `/api`，生产环境通常无需额外配置。若你需要跨域/分域名部署，可在 `SanguiBlog-front/.env` 或 `.env.production` 设置：
 
-## 8. 常见问题排查
+```
+VITE_API_BASE=/api
+# 或：VITE_API_BASE=https://your-domain.com/api
+VITE_API_ORIGIN=https://your-domain.com
+VITE_ASSET_ORIGIN=https://your-domain.com
+```
+
+构建：
+```bash
+cd SanguiBlog-front
+npm install
+npm run build
+```
+构建产物在 `SanguiBlog-front/dist/`。
+
+## 7. Nginx 反代建议（含 sitemap/robots）
+
+如果你使用 SPA 回退（`try_files $uri /index.html`），务必让 `sitemap.xml/robots.txt` 优先走后端，否则会被回退到前端首页导致访问异常。
+
+可参考仓库示例：`fake-nginx-config/nginx.conf`，核心片段如下（按需调整域名/端口/目录）：
+
+```
+server {
+  root /var/www/sanguiblog/dist;
+  index index.html;
+
+  location = /sitemap.xml { proxy_pass http://127.0.0.1:8080/sitemap.xml; }
+  location = /robots.txt  { proxy_pass http://127.0.0.1:8080/robots.txt; }
+
+  location /api/ { proxy_pass http://127.0.0.1:8080/api/; }
+  location /uploads/ { alias /your/storage/uploads/; }
+
+  location / { try_files $uri /index.html; }
+}
+```
+
+## 8. sitemap/robots 说明（V2.1.275）
+
+- 站点地图：`GET /sitemap.xml`
+  - URL 超阈值时返回 `<sitemapindex>`，并通过 `GET /sitemap.xml?page=1..N` 分片拉取
+  - 支持 `ETag/If-None-Match` 命中返回 304
+- robots：`GET /robots.txt`
+  - 默认禁止抓取 `/admin` 与 `/api/`，并指向 `Sitemap: https://<域名>/sitemap.xml`
+
+阈值配置项：`site.sitemap.max-urls-per-file`（默认 45000，对应环境变量 `SITE_SITEMAP_MAX_URLS_PER_FILE`）。
+
+## 9. 常见问题排查
 
 | 现象 | 可能原因 | 解决方案 |
 | --- | --- | --- |
-| 前端接口 404 | Nginx 未做 `/api` 转发 | 按上方示例增加 `location /api` 并重载 Nginx |
-| 上传失败/找不到文件 | `uploads/` 目录无写权限或路径配置错误 | 赋予可写权限，确保 `uploads.base-path` 指向绝对路径 |
-| 登录后接口 401 | Token 失效或浏览器阻止三方 Cookie | 清理本地存储或确认后端允许的域名一致 |
-| 静态资源跨域 | CDN 域名未在后端 CORS 白名单 | 在后端配置中加入对应 `origin` |
+| 前端接口 404 | Nginx 未做 `/api/` 转发 | 增加 `location /api/` 并重载 Nginx |
+| `/sitemap.xml` 打开变首页 | `try_files` 先于 sitemap location | 添加 `location = /sitemap.xml` 与 `location = /robots.txt` 并放在 `try_files` 前 |
+| 上传失败/找不到文件 | `storage.base-path` 无写权限或 Nginx `/uploads/` 未映射 | 确保目录可写，配置 `alias` 或由后端静态映射提供 |
+| 服务启动失败提示 JWT_SECRET | 未设置 JWT 密钥 | 设置环境变量 `JWT_SECRET` 后再启动 |
+| 控制台出现 `content_script.js` 报错 | 浏览器扩展注入脚本噪声 | 无痕窗口/禁用扩展验证（通常与站点无关） |
 
-如需更多架构或接口说明，请查阅根目录下的 `NOTE.md`。
+更多架构与实现细节请查阅 `NOTE.md`。
 
