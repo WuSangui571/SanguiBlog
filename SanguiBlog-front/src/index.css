@@ -12,6 +12,28 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* 目录/抽屉等滚动区域的暗色滚动条：避免暗色模式下滚动条轨道仍为白色 */
+.sg-scrollbar {
+  scrollbar-width: thin; /* Firefox */
+}
+.sg-scrollbar-dark {
+  scrollbar-color: rgba(148, 163, 184, 0.65) rgba(17, 24, 39, 0.95); /* thumb track */
+}
+.sg-scrollbar-dark::-webkit-scrollbar {
+  width: 10px;
+}
+.sg-scrollbar-dark::-webkit-scrollbar-track {
+  background: rgba(17, 24, 39, 0.95);
+}
+.sg-scrollbar-dark::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.65);
+  border-radius: 999px;
+  border: 2px solid rgba(17, 24, 39, 0.95);
+}
+.sg-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.85);
+}
+
 /* 隐藏浏览器自带的密码可见图标，避免与自定义图标重复（Edge 等会注入） */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {

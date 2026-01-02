@@ -162,6 +162,12 @@ const ArticleDetail = ({
     const [tocLeft, setTocLeft] = useState(null);
     const [entryReady, setEntryReady] = useState(false);
     const commentJumpRef = useRef(null);
+    const tocScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar';
+    const tocIndentClass = useCallback((level) => {
+        if (level === 1) return 'text-sm pl-2';
+        if (level === 2) return 'text-sm pl-6 ml-1';
+        return 'text-xs pl-9 ml-2';
+    }, []);
     const handleImagePreview = useCallback((src) => {
         if (!src) return;
         setPreviewImage(src);
@@ -697,14 +703,14 @@ const ArticleDetail = ({
                             </button>
                         </div>
                         {!tocCollapsed && (
-                            <div className="mt-3 space-y-2 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2">
+                            <div className={`mt-3 space-y-2 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2 ${tocScrollbarClass}`}>
                                 {tocItems.map((item) => (
                                     <button
                                         key={`toc-${item.id}`}
                                         type="button"
                                         onClick={() => handleTocJump(item.id)}
                                         className={`w-full text-left py-1 font-bold transition-colors border-l-2 ${
-                                            item.level === 1 ? 'text-sm pl-2' : (item.level === 3 ? 'text-xs pl-5 ml-2' : 'text-sm pl-3')
+                                            tocIndentClass(item.level)
                                         } ${isDarkMode ? 'border-gray-600 text-gray-200 hover:text-white' : 'border-black/30 text-gray-700 hover:text-black'}`}
                                     >
                                         {item.text}
@@ -762,14 +768,14 @@ const ArticleDetail = ({
                                     <X size={14} />
                                 </button>
                             </div>
-                            <div className="p-4 space-y-3 overflow-y-auto overflow-x-hidden">
+                            <div className={`p-4 space-y-3 overflow-y-auto overflow-x-hidden ${tocScrollbarClass}`}>
                                 {tocItems.map((item) => (
                                     <button
                                         key={`toc-drawer-${item.id}`}
                                         type="button"
                                         onClick={() => handleTocJump(item.id)}
                                         className={`w-full text-left py-1 font-bold transition-colors border-l-2 ${
-                                            item.level === 1 ? 'text-sm pl-2' : (item.level === 3 ? 'text-xs pl-5 ml-2' : 'text-sm pl-3')
+                                            tocIndentClass(item.level)
                                         } ${isDarkMode ? 'border-gray-600 text-gray-200 hover:text-white' : 'border-black/30 text-gray-700 hover:text-black'}`}
                                     >
                                         {item.text}

@@ -2305,3 +2305,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.271 (2026-01-02)
 - **模块/页面**：站点地图能力增强：`/sitemap.xml` 在 URL 规模超出阈值时自动返回 `<sitemapindex>` 并通过 `page` 参数分片拉取（`/sitemap.xml?page=1..N`），同时 `/sitemap.xml` 与 `/robots.txt` 支持 `ETag/If-None-Match` 条件请求返回 304，降低搜索引擎重复抓取的带宽与 CPU 成本；新增配置 `site.sitemap.max-urls-per-file` 控制单文件最大 URL 数（默认 45000）；`/robots.txt` 默认禁止抓取 `/api/`，避免接口被误收录。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.271`
+
+## V2.1.272 (2026-01-02)
+- **模块/页面**：文章详情目录体验优化：目录浮层在一/二/三级标题之间增加可区分的缩进层级（提升结构感与扫读效率），并修复暗色模式下目录滚动条轨道背景仍为白色的问题（为目录滚动区域增加暗色滚动条样式）。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.272`
