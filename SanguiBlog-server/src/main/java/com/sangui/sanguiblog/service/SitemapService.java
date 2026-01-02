@@ -15,6 +15,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -58,36 +60,81 @@ public class SitemapService {
     @Value("${site.sitemap.cache-ttl-ms:600000}")
     private long cacheTtlMs;
 
+    @Value("${site.sitemap.max-urls-per-file:45000}")
+    private int maxUrlsPerFile;
+
     private final AtomicLong revision = new AtomicLong(1);
     private final ReentrantLock rebuildLock = new ReentrantLock();
 
     private final AtomicReference<SitemapSnapshot> snapshotRef = new AtomicReference<>();
-    private final ConcurrentHashMap<String, CachedXml> xmlCacheByBaseUrl = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CachedPayload> payloadCache = new ConcurrentHashMap<>();
 
     public void markDirty() {
         revision.incrementAndGet();
     }
 
-    public byte[] getSitemapXml(HttpServletRequest request) {
+    public SitemapResult getSitemapXml(HttpServletRequest request, Integer page) {
         String baseUrl = resolveBaseUrl(request);
         SitemapSnapshot snapshot = ensureSnapshotFresh();
-        CachedXml cached = xmlCacheByBaseUrl.get(baseUrl);
-        if (cached != null && cached.revision == snapshot.revision) {
-            return cached.xmlBytes;
+
+        int chunkSize = Math.max(1, maxUrlsPerFile);
+        int total = snapshot.items != null ? snapshot.items.size() : 0;
+        int pageCount = Math.max(1, (int) Math.ceil(total / (double) chunkSize));
+
+        Integer normalizedPage = null;
+        if (page != null) {
+            int p = page;
+            if (p < 1 || p > pageCount) {
+                return null;
+            }
+            normalizedPage = p;
         }
-        byte[] xml = buildXml(snapshot, baseUrl);
-        xmlCacheByBaseUrl.put(baseUrl, new CachedXml(snapshot.revision, xml));
-        return xml;
+
+        boolean shouldReturnIndex = normalizedPage == null && pageCount > 1;
+        long lastModifiedMs = resolveLastModifiedMs(snapshot);
+
+        if (shouldReturnIndex) {
+            String key = cacheKey(baseUrl, snapshot.revision, chunkSize, pageCount, Mode.INDEX, 0);
+            CachedPayload cached = payloadCache.get(key);
+            if (cached != null) {
+                return new SitemapResult(cached.body, cached.etag, lastModifiedMs);
+            }
+            byte[] xml = buildIndexXml(snapshot, baseUrl, pageCount);
+            CachedPayload built = new CachedPayload(xml, computeEtag(xml));
+            payloadCache.put(key, built);
+            return new SitemapResult(built.body, built.etag, lastModifiedMs);
+        }
+
+        int actualPage = normalizedPage != null ? normalizedPage : 1;
+        String key = cacheKey(baseUrl, snapshot.revision, chunkSize, pageCount, Mode.URLSET, actualPage);
+        CachedPayload cached = payloadCache.get(key);
+        if (cached != null) {
+            return new SitemapResult(cached.body, cached.etag, lastModifiedMs);
+        }
+        byte[] xml = buildUrlsetXml(snapshot, baseUrl, chunkSize, pageCount, actualPage);
+        CachedPayload built = new CachedPayload(xml, computeEtag(xml));
+        payloadCache.put(key, built);
+        return new SitemapResult(built.body, built.etag, lastModifiedMs);
     }
 
-    public byte[] getRobotsTxt(HttpServletRequest request) {
+    public RobotsResult getRobotsTxt(HttpServletRequest request) {
         String baseUrl = resolveBaseUrl(request);
+        String key = "robots|" + baseUrl;
+        CachedPayload cached = payloadCache.get(key);
+        if (cached != null) {
+            return new RobotsResult(cached.body, cached.etag);
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("User-agent: *\n");
         sb.append("Disallow: /admin\n");
+        sb.append("Disallow: /api/\n");
         sb.append("Allow: /\n");
         sb.append("Sitemap: ").append(baseUrl).append("/sitemap.xml\n");
-        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] body = sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        CachedPayload built = new CachedPayload(body, computeEtag(body));
+        payloadCache.put(key, built);
+        return new RobotsResult(built.body, built.etag);
     }
 
     public void recordSitemapAccess(HttpServletRequest request) {
@@ -128,7 +175,7 @@ public class SitemapService {
             }
             SitemapSnapshot rebuilt = rebuildSnapshot(latestRevision);
             snapshotRef.set(rebuilt);
-            xmlCacheByBaseUrl.clear();
+            payloadCache.clear();
             return rebuilt;
         } finally {
             rebuildLock.unlock();
@@ -186,12 +233,23 @@ public class SitemapService {
         return new SitemapSnapshot(newRevision, System.currentTimeMillis(), globalLastMod, items);
     }
 
-    private byte[] buildXml(SitemapSnapshot snapshot, String baseUrl) {
+    private byte[] buildUrlsetXml(SitemapSnapshot snapshot, String baseUrl, int chunkSize, int pageCount, int page) {
         String normalizedBase = normalizeBaseUrl(baseUrl);
         StringBuilder sb = new StringBuilder(32_768);
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
-        for (SitemapItem item : snapshot.items) {
+
+        int total = snapshot.items != null ? snapshot.items.size() : 0;
+        int start = 0;
+        int end = total;
+        if (pageCount > 1) {
+            int safePage = Math.max(1, page);
+            start = Math.min(total, (safePage - 1) * chunkSize);
+            end = Math.min(total, safePage * chunkSize);
+        }
+
+        for (int i = start; i < end; i++) {
+            SitemapItem item = snapshot.items.get(i);
             if (item == null || !StringUtils.hasText(item.path)) {
                 continue;
             }
@@ -211,6 +269,66 @@ public class SitemapService {
         }
         sb.append("</urlset>\n");
         return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private byte[] buildIndexXml(SitemapSnapshot snapshot, String baseUrl, int pageCount) {
+        String normalizedBase = normalizeBaseUrl(baseUrl);
+        StringBuilder sb = new StringBuilder(4096);
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+        String lastmod = StringUtils.hasText(snapshot.globalLastMod) ? snapshot.globalLastMod : today();
+        for (int i = 1; i <= Math.max(1, pageCount); i++) {
+            String loc = normalizedBase + "/sitemap.xml?page=" + i;
+            sb.append("  <sitemap>\n");
+            sb.append("    <loc>").append(escapeXml(loc)).append("</loc>\n");
+            sb.append("    <lastmod>").append(escapeXml(lastmod)).append("</lastmod>\n");
+            sb.append("  </sitemap>\n");
+        }
+        sb.append("</sitemapindex>\n");
+        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private long resolveLastModifiedMs(SitemapSnapshot snapshot) {
+        if (snapshot == null || !StringUtils.hasText(snapshot.globalLastMod)) {
+            return 0;
+        }
+        try {
+            LocalDate d = LocalDate.parse(snapshot.globalLastMod.trim());
+            return d.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    private String cacheKey(String baseUrl, long revision, int chunkSize, int pageCount, Mode mode, int page) {
+        return "sitemap|" + baseUrl + "|rev=" + revision + "|chunk=" + chunkSize + "|pages=" + pageCount + "|mode=" + mode + "|page=" + page;
+    }
+
+    private String computeEtag(byte[] bytes) {
+        if (bytes == null) {
+            return "\"\"";
+        }
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(bytes);
+            return "\"" + toHex(digest) + "\"";
+        } catch (NoSuchAlgorithmException e) {
+            return "\"" + Integer.toHexString(java.util.Arrays.hashCode(bytes)) + "\"";
+        }
+    }
+
+    private String toHex(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
+            return "";
+        }
+        char[] hex = "0123456789abcdef".toCharArray();
+        char[] out = new char[bytes.length * 2];
+        for (int i = 0; i < bytes.length; i++) {
+            int v = bytes[i] & 0xFF;
+            out[i * 2] = hex[v >>> 4];
+            out[i * 2 + 1] = hex[v & 0x0F];
+        }
+        return new String(out);
     }
 
     private String resolveBaseUrl(HttpServletRequest request) {
@@ -340,6 +458,17 @@ public class SitemapService {
     private record SitemapItem(String path, String lastmod, String changefreq, String priority) {
     }
 
-    private record CachedXml(long revision, byte[] xmlBytes) {
+    private record CachedPayload(byte[] body, String etag) {
+    }
+
+    public record SitemapResult(byte[] body, String etag, long lastModifiedMs) {
+    }
+
+    public record RobotsResult(byte[] body, String etag) {
+    }
+
+    private enum Mode {
+        URLSET,
+        INDEX
     }
 }

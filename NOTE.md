@@ -149,7 +149,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
     *   `/admin/*`: 后台管理面板 (Dashboard, 编辑器等)
 
 *   **视图-路由联动**：前台导航通过 `setView()` 触发 `onViewChange`，统一由 `src/pages/viewNavigation.js` 维护视图到 URL 的映射，保证“归档/关于/工具/文章详情”等视图切换时 URL 同步更新，便于 SEO 与日志追踪；当处于 `/admin/*` 子路由时不会被强制拉回 `/admin`。
-*   **站点地图与 robots**：后端提供 `GET /sitemap.xml`（XML）与 `GET /robots.txt`（文本），用于搜索引擎抓取；`/sitemap.xml` 会从数据库聚合已发布文章（`/article/:id`）与已启用工具页（`/tools/:id`）并生成 URL 列表，且通过内存缓存 + 变更标记 + 定时刷新自动更新；`/robots.txt` 会指向 `Sitemap: https://<域名>/sitemap.xml` 并默认禁止抓取 `/admin`。部署时若使用 Nginx 托管前端静态站点并启用 `try_files $uri /index.html`（SPA 回退），需在其前面显式添加 `location = /sitemap.xml` 与 `location = /robots.txt` 转发到后端，否则会被回退到前端首页导致“访问 /sitemap.xml 自动跳回 /”。
+*   **站点地图与 robots**：后端提供 `GET /sitemap.xml`（XML）与 `GET /robots.txt`（文本），用于搜索引擎抓取；`/sitemap.xml` 会从数据库聚合已发布文章（`/article/:id`）与已启用工具页（`/tools/:id`）并生成 URL 列表，且通过内存缓存 + 变更标记 + 定时刷新自动更新；当 URL 总数超过 `site.sitemap.max-urls-per-file`（默认 45000）时，`/sitemap.xml` 会返回 `<sitemapindex>` 索引，分片 sitemap 通过 `GET /sitemap.xml?page=1..N` 获取（同一路径仅使用 query 参数，部署层通常无需额外新增 Nginx location）。此外，`/sitemap.xml` 与 `/robots.txt` 均支持 `ETag/If-None-Match`，命中时返回 304 以降低爬虫反复抓取的带宽与 CPU 成本。`/robots.txt` 会指向 `Sitemap: https://<域名>/sitemap.xml`，并默认禁止抓取 `/admin` 与 `/api/`。部署时若使用 Nginx 托管前端静态站点并启用 `try_files $uri /index.html`（SPA 回退），需在其前面显式添加 `location = /sitemap.xml` 与 `location = /robots.txt` 转发到后端，否则会被回退到前端首页导致“访问 /sitemap.xml 自动跳回 /”。
 *   **用户头像跳转**：前台导航点击用户头像时，若当前不在后台则进入 `/admin`，若已在后台则进入 `/admin/profile`，避免登录后直接跳过后台首页。
 
 *   **全局错误过滤 (`src/main.jsx`)**:
@@ -522,6 +522,7 @@ ole_permissions in bulk.
   * 自 V2.1.27 起，工具中心：`/tools` 列表仍按原样打点（`/games` 兼容跳转），进入具体游戏（内置详情或外链打开）时会写入 `pageTitle = Game: <游戏名>`，`sourceLabel = 游戏详情-<游戏名>`，与其它页面日志格式一致，便于在后台访问日志中定位具体游戏。
   * 自 V2.1.186 起，关于页 `/about` 也会写入访问日志（`pageTitle = About`），与首页/归档/工具保持一致，便于在后台访问日志中统计与检索。
   * 自 V2.1.270 起，后端会将 `GET /sitemap.xml` 与 `GET /robots.txt` 的访问也写入 `analytics_page_views`（`pageTitle = sitemap.xml/robots.txt`），便于超级管理员在后台访问日志（`/admin/analytics`）检索爬虫/访客对站点地图的抓取行为；为避免搜索引擎高频抓取导致日志膨胀，默认对同一 IP + 同一页面做 10 分钟内存限流（10 分钟内最多记 1 条）。
+  * 自 V2.1.271 起，`/sitemap.xml` 支持当 URL 规模超出阈值时返回 `<sitemapindex>` 并通过 `page` 参数分片拉取（`/sitemap.xml?page=1..N`），同时 `/sitemap.xml` 与 `/robots.txt` 支持 `ETag/If-None-Match` 条件请求以返回 304，降低爬虫重复抓取成本。
   * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；同时使用 Caffeine（IP+post）做 10 分钟 TTL 限流 + 10 分钟数据库去重，避免刷量并降低短时间重复请求的 DB 压力。
   * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV；为解决 SPA 下 `document.referrer` 不可靠的问题，前端在请求文章详情 `GET /api/posts/{id}` 时会附带 `X-SG-Referrer`（外部来源或站内上一页 URL）与可选的 `X-SG-Source-Label`（站内跳转中文描述），后端据此写入正确来源。
   * 自 V2.1.223 起，访问不存在的文章（例如 `/article/999999` 或 `/article/xxxx`）会在前端明确展示 404；不再回退展示 `MOCK_POSTS[0]`（最新文章占位）导致的“标题/摘要像对、正文为空”的错觉。

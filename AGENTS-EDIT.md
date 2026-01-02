@@ -2301,3 +2301,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.270 (2026-01-01)
 - **模块/页面**：后台访问日志增强：后端对 `GET /sitemap.xml`（及 `/robots.txt`）的请求追加服务端 PV 记录（写入 `analytics_page_views`，`pageTitle = sitemap.xml/robots.txt`），便于超级管理员在 `/admin/analytics` 检索站点地图抓取行为；默认对同一 IP + 同一页面做 10 分钟限流，避免日志膨胀。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.270`
+
+## V2.1.271 (2026-01-02)
+- **模块/页面**：站点地图能力增强：`/sitemap.xml` 在 URL 规模超出阈值时自动返回 `<sitemapindex>` 并通过 `page` 参数分片拉取（`/sitemap.xml?page=1..N`），同时 `/sitemap.xml` 与 `/robots.txt` 支持 `ETag/If-None-Match` 条件请求返回 304，降低搜索引擎重复抓取的带宽与 CPU 成本；新增配置 `site.sitemap.max-urls-per-file` 控制单文件最大 URL 数（默认 45000）；`/robots.txt` 默认禁止抓取 `/api/`，避免接口被误收录。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.271`
