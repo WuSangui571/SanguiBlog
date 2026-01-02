@@ -482,7 +482,7 @@ ole_permissions in bulk.
 *   **静态资源域名**：`site.asset-base-url` 支持占位 `${ASSET_BASE_URL:http://localhost:${server.port}/uploads}`，后端 `/api/site/meta` 会把该值透传给前端，`buildAssetUrl` 优先使用该值；若未配置，则依次回落到 `VITE_ASSET_ORIGIN` → `VITE_API_BASE` 对应域名 → `window.location.origin` → `http://localhost:8080`。若 `asset-base-url` 本身带有路径（如 `https://cdn.example.com/uploads`），前端会自动去重重复的 `uploads/` 段，不会生成 `uploads/uploads/...`；当页面以 HTTPS 访问而传入的域名仍为 `http://` 时，会自动升级为 `https://` 后再生成资源 URL，从源头消除 Mixed Content 告警（前提是资源域名已支持 HTTPS）。
 *   **图片回退重试**：`ImageWithFallback` 在 `src` 发生变化时会自动重置错误状态，允许资源域名或登录态更新后重新请求真实图片，避免导航头像在首次加载失败后长期停留在默认占位。
 
-*   **文章图片预览**：文章详情页会为 Markdown/HTML 中的所有 `<img>` 元素注入 `cursor-zoom-in` 样式，并在点击时打开全屏遮罩预览，图片路径自动经过 `resolveAssetPath` 补全，关闭遮罩后恢复页面滚动。
+*   **文章图片预览**：文章详情页会为 Markdown/HTML 中的所有 `<img>` 元素注入 `cursor-zoom-in` 样式，并在点击时打开全屏遮罩预览，图片路径自动经过 `resolveAssetPath` 补全，关闭遮罩后恢复页面滚动；自 V2.1.274 起，预览支持鼠标滚轮缩放（以中心缩放）与放大后的拖拽平移，并移除右上角“关闭”按钮（再次点击图片/遮罩即可关闭）。
 
 
 

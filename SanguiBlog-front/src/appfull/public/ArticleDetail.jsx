@@ -156,6 +156,17 @@ const ArticleDetail = ({
     const { headerHeight } = useLayoutOffsets();
     const fixedTopOffset = headerHeight + 16;
     const [previewImage, setPreviewImage] = useState(null);
+    const [previewZoom, setPreviewZoom] = useState(1);
+    const [previewPan, setPreviewPan] = useState({ x: 0, y: 0 });
+    const previewPanRef = useRef({
+        active: false,
+        pointerId: null,
+        startX: 0,
+        startY: 0,
+        originX: 0,
+        originY: 0,
+        dragged: false
+    });
     const [tocItems, setTocItems] = useState([]);
     const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
     const [tocCollapsed, setTocCollapsed] = useState(false);
@@ -203,9 +214,21 @@ const ArticleDetail = ({
     }, [isDarkMode]);
     const handleImagePreview = useCallback((src) => {
         if (!src) return;
+        setPreviewZoom(1);
+        setPreviewPan({ x: 0, y: 0 });
+        previewPanRef.current.active = false;
+        previewPanRef.current.pointerId = null;
+        previewPanRef.current.dragged = false;
         setPreviewImage(src);
     }, []);
-    const closeImagePreview = useCallback(() => setPreviewImage(null), []);
+    const closeImagePreview = useCallback(() => {
+        setPreviewImage(null);
+        setPreviewZoom(1);
+        setPreviewPan({ x: 0, y: 0 });
+        previewPanRef.current.active = false;
+        previewPanRef.current.pointerId = null;
+        previewPanRef.current.dragged = false;
+    }, []);
     const scrollHomeAfterReturn = useCallback(() => {
         setTimeout(() => {
             const postsSection = document.getElementById('posts');
@@ -396,6 +419,74 @@ const ArticleDetail = ({
         window.scrollTo({ top: top > 0 ? top : 0, behavior: 'smooth' });
         setTocDrawerOpen(false);
     }, [fixedTopOffset]);
+
+    const clamp = useCallback((value, min, max) => Math.min(max, Math.max(min, value)), []);
+
+    const handlePreviewWheel = useCallback((event) => {
+        if (!previewImage) return;
+        event.preventDefault();
+        const delta = event.deltaY;
+        const step = event.ctrlKey ? 1.08 : 1.12;
+        const factor = delta < 0 ? step : (1 / step);
+        setPreviewZoom((prev) => {
+            const next = clamp(prev * factor, 1, 4);
+            if (next === 1) {
+                setPreviewPan({ x: 0, y: 0 });
+            }
+            return next;
+        });
+    }, [clamp, previewImage]);
+
+    const handlePreviewPointerDown = useCallback((event) => {
+        if (!previewImage) return;
+        if (previewZoom <= 1) return;
+        const el = event.currentTarget;
+        if (!el?.setPointerCapture) return;
+        try {
+            el.setPointerCapture(event.pointerId);
+        } catch (e) {
+            return;
+        }
+        previewPanRef.current.active = true;
+        previewPanRef.current.pointerId = event.pointerId;
+        previewPanRef.current.startX = event.clientX;
+        previewPanRef.current.startY = event.clientY;
+        previewPanRef.current.originX = previewPan.x;
+        previewPanRef.current.originY = previewPan.y;
+        previewPanRef.current.dragged = false;
+    }, [previewImage, previewPan.x, previewPan.y, previewZoom]);
+
+    const handlePreviewPointerMove = useCallback((event) => {
+        if (!previewPanRef.current.active) return;
+        if (previewPanRef.current.pointerId !== event.pointerId) return;
+        const dx = event.clientX - previewPanRef.current.startX;
+        const dy = event.clientY - previewPanRef.current.startY;
+        if (Math.abs(dx) + Math.abs(dy) > 4) {
+            previewPanRef.current.dragged = true;
+        }
+        setPreviewPan({
+            x: previewPanRef.current.originX + dx,
+            y: previewPanRef.current.originY + dy
+        });
+    }, []);
+
+    const handlePreviewPointerUp = useCallback((event) => {
+        if (previewPanRef.current.pointerId !== event.pointerId) return;
+        previewPanRef.current.active = false;
+        previewPanRef.current.pointerId = null;
+        setTimeout(() => {
+            previewPanRef.current.dragged = false;
+        }, 0);
+    }, []);
+
+    const handlePreviewImageClick = useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (previewPanRef.current.dragged) {
+            return;
+        }
+        closeImagePreview();
+    }, [closeImagePreview]);
 
     useEffect(() => {
         if (typeof document === 'undefined') return;
@@ -1051,23 +1142,28 @@ const ArticleDetail = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-6"
+                        className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-0"
                         onClick={closeImagePreview}
+                        onWheel={handlePreviewWheel}
                     >
                         <motion.img
                             src={previewImage}
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.8, opacity: 0 }}
-                            className="max-w-full max-h-full rounded-lg shadow-[8px_8px_0px_0px_#000] border-4 border-white cursor-zoom-out"
-                            onClick={closeImagePreview}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className={`max-w-[92vw] max-h-[92vh] rounded-lg shadow-[8px_8px_0px_0px_#000] border-4 border-white select-none ${previewZoom > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-out'}`}
+                            style={{
+                                transform: `translate(${previewPan.x}px, ${previewPan.y}px) scale(${previewZoom})`,
+                                transformOrigin: 'center center',
+                                willChange: 'transform'
+                            }}
+                            onClick={handlePreviewImageClick}
+                            onPointerDown={handlePreviewPointerDown}
+                            onPointerMove={handlePreviewPointerMove}
+                            onPointerUp={handlePreviewPointerUp}
+                            onPointerCancel={handlePreviewPointerUp}
+                            draggable={false}
                         />
-                        <button
-                            className="absolute top-6 right-6 text-white text-xl font-black border-2 border-white px-3 py-1"
-                            onClick={closeImagePreview}
-                        >
-                            关闭
-                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
