@@ -167,6 +167,11 @@ const ArticleDetail = ({
         originY: 0,
         dragged: false
     });
+    const [activeTocId, setActiveTocId] = useState(null);
+    const tocDesktopListRef = useRef(null);
+    const tocDrawerListRef = useRef(null);
+    const tocHeadingsRef = useRef([]);
+    const tocRafRef = useRef(0);
     const [tocItems, setTocItems] = useState([]);
     const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
     const [tocCollapsed, setTocCollapsed] = useState(false);
@@ -418,7 +423,108 @@ const ArticleDetail = ({
         const top = rect.top + window.pageYOffset - offset;
         window.scrollTo({ top: top > 0 ? top : 0, behavior: 'smooth' });
         setTocDrawerOpen(false);
+        setActiveTocId(targetId);
     }, [fixedTopOffset]);
+
+    const recomputeTocHeadings = useCallback(() => {
+        if (typeof document === 'undefined' || typeof window === 'undefined') return;
+        const list = (tocItems || [])
+            .map((i) => i?.id)
+            .filter(Boolean)
+            .map((id) => {
+                const el = document.getElementById(id);
+                if (!el) return null;
+                const rect = el.getBoundingClientRect();
+                const top = rect.top + window.pageYOffset;
+                return { id, top };
+            })
+            .filter(Boolean);
+        tocHeadingsRef.current = list;
+    }, [tocItems]);
+
+    const updateActiveTocFromScroll = useCallback(() => {
+        if (typeof window === 'undefined') return;
+        const headings = tocHeadingsRef.current || [];
+        if (!headings.length) {
+            recomputeTocHeadings();
+        }
+        const list = tocHeadingsRef.current || [];
+        if (!list.length) return;
+
+        const isAtBottom = window.pageYOffset + window.innerHeight >= (document.documentElement?.scrollHeight || document.body.scrollHeight) - 8;
+        if (isAtBottom) {
+            const last = list[list.length - 1];
+            if (last?.id && last.id !== activeTocId) setActiveTocId(last.id);
+            return;
+        }
+
+        const cursor = window.pageYOffset + fixedTopOffset + 24;
+        let current = list[0]?.id || null;
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].top <= cursor) {
+                current = list[i].id;
+            } else {
+                break;
+            }
+        }
+        if (current && current !== activeTocId) {
+            setActiveTocId(current);
+        }
+    }, [activeTocId, fixedTopOffset, recomputeTocHeadings]);
+
+    useEffect(() => {
+        if (!entryReady) return;
+        recomputeTocHeadings();
+        if (!activeTocId && tocItems && tocItems.length > 0) {
+            setActiveTocId(tocItems[0].id);
+        }
+        const t1 = setTimeout(recomputeTocHeadings, 600);
+        const t2 = setTimeout(recomputeTocHeadings, 1800);
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+        };
+    }, [entryReady, tocItems, activeTocId, recomputeTocHeadings]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!entryReady) return;
+
+        const schedule = () => {
+            if (tocRafRef.current) return;
+            tocRafRef.current = window.requestAnimationFrame(() => {
+                tocRafRef.current = 0;
+                updateActiveTocFromScroll();
+            });
+        };
+
+        window.addEventListener('scroll', schedule, { passive: true });
+        window.addEventListener('resize', schedule);
+        schedule();
+        return () => {
+            window.removeEventListener('scroll', schedule);
+            window.removeEventListener('resize', schedule);
+            if (tocRafRef.current) {
+                window.cancelAnimationFrame(tocRafRef.current);
+                tocRafRef.current = 0;
+            }
+        };
+    }, [entryReady, updateActiveTocFromScroll]);
+
+    useEffect(() => {
+        if (!activeTocId) return;
+        const escapeAttr = (value) => String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const selector = `[data-toc-id="${escapeAttr(activeTocId)}"]`;
+
+        if (!tocCollapsed && tocDesktopListRef.current) {
+            const el = tocDesktopListRef.current.querySelector(selector);
+            el?.scrollIntoView?.({ block: 'nearest' });
+        }
+        if (tocDrawerOpen && tocDrawerListRef.current) {
+            const el = tocDrawerListRef.current.querySelector(selector);
+            el?.scrollIntoView?.({ block: 'nearest' });
+        }
+    }, [activeTocId, tocCollapsed, tocDrawerOpen]);
 
     const clamp = useCallback((value, min, max) => Math.min(max, Math.max(min, value)), []);
 
@@ -827,22 +933,29 @@ const ArticleDetail = ({
                             </button>
                         </div>
                         {!tocCollapsed && (
-                            <div className={`mt-3 space-y-2 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2 ${tocScrollbarClass}`}>
-                                {tocItems.map((item) => (
-                                    <button
-                                        key={`toc-${item.id}`}
-                                        type="button"
-                                        onClick={() => handleTocJump(item.id)}
-                                        className={`w-full text-left py-1 transition-colors ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
-                                    >
-                                        <div className="flex items-start gap-2">
-                                            <TocTreeGutter level={item.level} />
-                                            <span className={`block flex-1 leading-snug ${tocTextClass(item.level)}`}>
-                                                {item.text}
-                                            </span>
-                                        </div>
-                                    </button>
-                                ))}
+                            <div ref={tocDesktopListRef} className={`mt-3 space-y-2 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2 ${tocScrollbarClass}`}>
+                                {tocItems.map((item) => {
+                                    const isActive = item.id === activeTocId;
+                                    const activeBg = isDarkMode ? 'bg-white/10' : 'bg-black/5';
+                                    const activeRing = isDarkMode ? 'ring-2 ring-white/15' : 'ring-2 ring-black/10';
+                                    return (
+                                        <button
+                                            key={`toc-${item.id}`}
+                                            type="button"
+                                            onClick={() => handleTocJump(item.id)}
+                                            data-toc-id={item.id}
+                                            aria-current={isActive ? 'location' : undefined}
+                                            className={`w-full text-left py-1 px-1 rounded-md transition-colors ${isActive ? `${activeBg} ${activeRing}` : ''} ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
+                                        >
+                                            <div className="flex items-start gap-2">
+                                                <TocTreeGutter level={item.level} />
+                                                <span className={`block flex-1 leading-snug ${tocTextClass(item.level)} ${isActive ? (isDarkMode ? 'text-white opacity-100' : 'text-black opacity-100') : ''}`}>
+                                                    {item.text}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -895,22 +1008,29 @@ const ArticleDetail = ({
                                     <X size={14} />
                                 </button>
                             </div>
-                            <div className={`p-4 space-y-3 overflow-y-auto overflow-x-hidden ${tocScrollbarClass}`}>
-                                {tocItems.map((item) => (
-                                    <button
-                                        key={`toc-drawer-${item.id}`}
-                                        type="button"
-                                        onClick={() => handleTocJump(item.id)}
-                                        className={`w-full text-left py-1 transition-colors ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
-                                    >
-                                        <div className="flex items-start gap-2">
-                                            <TocTreeGutter level={item.level} />
-                                            <span className={`block flex-1 leading-snug ${tocTextClass(item.level)}`}>
-                                                {item.text}
-                                            </span>
-                                        </div>
-                                    </button>
-                                ))}
+                            <div ref={tocDrawerListRef} className={`p-4 space-y-3 overflow-y-auto overflow-x-hidden ${tocScrollbarClass}`}>
+                                {tocItems.map((item) => {
+                                    const isActive = item.id === activeTocId;
+                                    const activeBg = isDarkMode ? 'bg-white/10' : 'bg-black/5';
+                                    const activeRing = isDarkMode ? 'ring-2 ring-white/15' : 'ring-2 ring-black/10';
+                                    return (
+                                        <button
+                                            key={`toc-drawer-${item.id}`}
+                                            type="button"
+                                            onClick={() => handleTocJump(item.id)}
+                                            data-toc-id={item.id}
+                                            aria-current={isActive ? 'location' : undefined}
+                                            className={`w-full text-left py-1 px-1 rounded-md transition-colors ${isActive ? `${activeBg} ${activeRing}` : ''} ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
+                                        >
+                                            <div className="flex items-start gap-2">
+                                                <TocTreeGutter level={item.level} />
+                                                <span className={`block flex-1 leading-snug ${tocTextClass(item.level)} ${isActive ? (isDarkMode ? 'text-white opacity-100' : 'text-black opacity-100') : ''}`}>
+                                                    {item.text}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </motion.div>
                     </motion.div>
