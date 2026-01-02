@@ -163,11 +163,44 @@ const ArticleDetail = ({
     const [entryReady, setEntryReady] = useState(false);
     const commentJumpRef = useRef(null);
     const tocScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar';
-    const tocIndentClass = useCallback((level) => {
-        if (level === 1) return 'text-sm pl-2';
-        if (level === 2) return 'text-sm pl-6 ml-1';
-        return 'text-xs pl-9 ml-2';
+    const tocTextClass = useCallback((level) => {
+        if (level === 1) return 'text-[12px] font-black';
+        if (level === 2) return 'text-[12px] font-bold opacity-95';
+        return 'text-[11px] font-semibold opacity-90';
     }, []);
+    const TocTreeGutter = useCallback(({ level }) => {
+        const trunk = isDarkMode ? 'bg-gray-600/80' : 'bg-black/20';
+        const branch = isDarkMode ? 'bg-gray-400/80' : 'bg-black/30';
+        const dot = isDarkMode ? 'bg-gray-200' : 'bg-black/50';
+        const x1 = 8;
+        const x2 = 20;
+        const x3 = 32;
+        const pivot = level === 1 ? x1 : (level === 2 ? x2 : x3);
+        const connectorFrom = level === 1 ? x1 : (level === 2 ? x2 : x3);
+        const connectorWidth = 12;
+
+        return (
+            <div className="relative w-10 shrink-0 pt-1">
+                {level >= 1 && (
+                    <span className={`absolute top-0 bottom-0 w-px ${trunk}`} style={{ left: x1 }} />
+                )}
+                {level >= 2 && (
+                    <span className={`absolute top-0 bottom-0 w-px ${trunk}`} style={{ left: x2 }} />
+                )}
+                {level >= 3 && (
+                    <span className={`absolute top-0 bottom-0 w-px ${trunk}`} style={{ left: x3 }} />
+                )}
+                <span
+                    className={`absolute h-px ${branch}`}
+                    style={{ left: connectorFrom, top: 12, width: connectorWidth }}
+                />
+                <span
+                    className={`absolute rounded-full ${dot}`}
+                    style={{ left: pivot - 2, top: 10, width: 5, height: 5 }}
+                />
+            </div>
+        );
+    }, [isDarkMode]);
     const handleImagePreview = useCallback((src) => {
         if (!src) return;
         setPreviewImage(src);
@@ -709,11 +742,14 @@ const ArticleDetail = ({
                                         key={`toc-${item.id}`}
                                         type="button"
                                         onClick={() => handleTocJump(item.id)}
-                                        className={`w-full text-left py-1 font-bold transition-colors border-l-2 ${
-                                            tocIndentClass(item.level)
-                                        } ${isDarkMode ? 'border-gray-600 text-gray-200 hover:text-white' : 'border-black/30 text-gray-700 hover:text-black'}`}
+                                        className={`w-full text-left py-1 transition-colors ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
                                     >
-                                        {item.text}
+                                        <div className="flex items-start gap-2">
+                                            <TocTreeGutter level={item.level} />
+                                            <span className={`block flex-1 leading-snug ${tocTextClass(item.level)}`}>
+                                                {item.text}
+                                            </span>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
@@ -774,11 +810,14 @@ const ArticleDetail = ({
                                         key={`toc-drawer-${item.id}`}
                                         type="button"
                                         onClick={() => handleTocJump(item.id)}
-                                        className={`w-full text-left py-1 font-bold transition-colors border-l-2 ${
-                                            tocIndentClass(item.level)
-                                        } ${isDarkMode ? 'border-gray-600 text-gray-200 hover:text-white' : 'border-black/30 text-gray-700 hover:text-black'}`}
+                                        className={`w-full text-left py-1 transition-colors ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
                                     >
-                                        {item.text}
+                                        <div className="flex items-start gap-2">
+                                            <TocTreeGutter level={item.level} />
+                                            <span className={`block flex-1 leading-snug ${tocTextClass(item.level)}`}>
+                                                {item.text}
+                                            </span>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
