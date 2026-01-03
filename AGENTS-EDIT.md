@@ -2343,3 +2343,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.280 (2026-01-03)
 - **模块/页面**：后台访问日志新增“页面类型”筛选维度：`GET /api/admin/analytics/page-views` 支持 `pageType=ARTICLE|SYSTEM|PAGE`，可分别查看文章访问、系统页面（robots/sitemap）与普通页面（非文章且非系统）；前端查询区新增下拉选择，并与“隐藏 robots/sitemap”开关做互斥兼容，避免筛选冲突。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.280`
+
+## V2.1.281 (2026-01-03)
+- **模块/页面**：访问日志防爆表策略：新增按日归档表 `analytics_page_view_daily_stats`，并提供定时归档与可选滚动清理能力（`analytics.page-views.archive/cleanup` 配置控制，默认不启用清理以避免线上突然丢明细）；归档用于沉淀历史 PV/UV 日聚合，清理用于限制 `analytics_page_views` 明细体量，降低长期查询成本。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.281`

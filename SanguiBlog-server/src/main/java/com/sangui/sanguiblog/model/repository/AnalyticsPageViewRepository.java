@@ -70,6 +70,42 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
             """, nativeQuery = true)
     List<DailyViewAggregation> aggregateDailyViews(@Param("start") LocalDateTime start);
 
+    @Query(value = """
+            SELECT DATE(viewed_at) AS stat_date,
+                   COUNT(*)        AS views,
+                   COUNT(DISTINCT CASE
+                       WHEN user_id IS NOT NULL THEN CONCAT('U#', user_id)
+                       ELSE CONCAT('G#', viewer_ip)
+                   END)            AS visitors
+            FROM analytics_page_views
+            WHERE viewed_at < :endExclusive
+            GROUP BY DATE(viewed_at)
+            ORDER BY stat_date
+            """, nativeQuery = true)
+    List<DailyViewAggregation> aggregateDailyViewsBefore(@Param("endExclusive") LocalDateTime endExclusive);
+
+    @Query(value = """
+            SELECT DATE(viewed_at) AS stat_date,
+                   COUNT(*)        AS views,
+                   COUNT(DISTINCT CASE
+                       WHEN user_id IS NOT NULL THEN CONCAT('U#', user_id)
+                       ELSE CONCAT('G#', viewer_ip)
+                   END)            AS visitors
+            FROM analytics_page_views
+            WHERE viewed_at >= :start AND viewed_at < :endExclusive
+            GROUP BY DATE(viewed_at)
+            ORDER BY stat_date
+            """, nativeQuery = true)
+    List<DailyViewAggregation> aggregateDailyViewsBetween(
+            @Param("start") LocalDateTime start,
+            @Param("endExclusive") LocalDateTime endExclusive
+    );
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query(value = "DELETE FROM analytics_page_views WHERE viewed_at < :endExclusive LIMIT :limit", nativeQuery = true)
+    int deleteBefore(@Param("endExclusive") LocalDateTime endExclusive, @Param("limit") int limit);
+
     @Query("SELECT apv.post.id AS postId, apv.post.title AS title, apv.post.slug AS slug, COUNT(apv) AS views "
             + "FROM AnalyticsPageView apv "
             + "WHERE apv.post IS NOT NULL AND apv.viewedAt >= :start "

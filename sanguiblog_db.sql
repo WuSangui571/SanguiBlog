@@ -260,6 +260,16 @@ CREATE TABLE analytics_traffic_sources (
     UNIQUE KEY uk_ats_date_source (stat_date, source_label)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- 访问日志按日归档（防爆表）：用于保存历史 PV/UV 的日聚合结果
+CREATE TABLE analytics_page_view_daily_stats (
+    stat_date   DATE NOT NULL,
+    views       BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    visitors    BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (stat_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- =============================
 -- 6. 系统广播 & 设置
 -- =============================
