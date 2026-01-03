@@ -790,6 +790,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const copyToastTimer = useRef(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [deleting, setDeleting] = useState(false);
+    const [hideRobotsAndSitemap, setHideRobotsAndSitemap] = useState(false);
     const [filtersDraft, setFiltersDraft] = useState({
         keyword: '',
         ip: '',
@@ -926,8 +927,24 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         loadLogs(1, size, filtersApplied);
     }, [loadLogs, size, filtersApplied]);
 
+    const visibleLogs = useMemo(() => {
+        if (!hideRobotsAndSitemap) return logs;
+        return (logs || []).filter((visit) => {
+            const raw = (visit?.title || '').trim().toLowerCase();
+            return raw !== 'robots.txt' && raw !== 'sitemap.xml';
+        });
+    }, [hideRobotsAndSitemap, logs]);
+
+    useEffect(() => {
+        if (!isSuperAdmin) return;
+        setSelectedIds((prev) => {
+            const visible = new Set((visibleLogs || []).map((item) => item?.id).filter(Boolean));
+            return (prev || []).filter((id) => visible.has(id));
+        });
+    }, [isSuperAdmin, visibleLogs]);
+
     const totalPages = Math.max(1, Math.ceil((total || 0) / size) || 1);
-    const allSelected = logs.length > 0 && selectedIds.length === logs.length;
+    const allSelected = visibleLogs.length > 0 && selectedIds.length === visibleLogs.length;
     const hasSelection = selectedIds.length > 0;
     const paginationItems = useMemo(() => {
         if (totalPages <= 7) {
@@ -990,6 +1007,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         const clearedDraft = { keyword: '', ip: '', postId: '', loggedIn: 'all', start: '', end: '' };
         setFiltersDraft(clearedDraft);
         setFiltersApplied({});
+        setHideRobotsAndSitemap(false);
         loadLogs(1, size, {});
     }, [loadLogs, size]);
 
@@ -1011,8 +1029,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     };
 
     const toggleSelectAll = () => {
-        if (!isSuperAdmin || !logs.length) return;
-        const allIds = logs.map((item) => item.id).filter(Boolean);
+        if (!isSuperAdmin || !visibleLogs.length) return;
+        const allIds = visibleLogs.map((item) => item.id).filter(Boolean);
         if (selectedIds.length === allIds.length) {
             setSelectedIds([]);
         } else {
@@ -1240,6 +1258,22 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     >
                         重置
                     </button>
+                    <button
+                        type="button"
+                        onClick={() => setHideRobotsAndSitemap((prev) => !prev)}
+                        className={`px-4 py-2 text-sm font-bold rounded-lg border transition-colors ${
+                            hideRobotsAndSitemap
+                                ? (isDarkMode
+                                    ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/40 hover:bg-indigo-500/30'
+                                    : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100')
+                                : (isDarkMode
+                                    ? 'bg-gray-900 text-gray-100 border-gray-700 hover:bg-gray-800'
+                                    : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-50')
+                        }`}
+                        title="仅过滤显示，不会删除数据；点击“重置”可恢复显示"
+                    >
+                        {hideRobotsAndSitemap ? '已隐藏 robots/sitemap（点击取消）' : '隐藏 robots/sitemap'}
+                    </button>
                     <div className={`text-xs ${textMuted}`}>
                         提示：筛选条件仅影响列表；“条数/页”切换会自动回到第 1 页。
                     </div>
@@ -1258,8 +1292,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
                 {loading ? (
                     <p className={`text-sm ${textMuted}`}>数据加载中...</p>
-                ) : logs.length === 0 ? (
-                    <p className={`text-sm ${textMuted}`}>暂无访问记录</p>
+                ) : visibleLogs.length === 0 ? (
+                    <p className={`text-sm ${textMuted}`}>
+                        {hideRobotsAndSitemap && logs.length > 0
+                            ? '本页记录已被过滤（robots.txt / sitemap.xml）'
+                            : '暂无访问记录'}
+                    </p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm">
@@ -1272,7 +1310,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                                 className="h-4 w-4"
                                                 checked={allSelected}
                                                 onChange={toggleSelectAll}
-                                                disabled={!logs.length}
+                                                disabled={!visibleLogs.length}
                                             />
                                         </th>
                                     )}
@@ -1286,7 +1324,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                 </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                                {logs.map((visit) => (
+                                {visibleLogs.map((visit) => (
                                     <tr key={visit.id} className="align-top">
                                         {isSuperAdmin && (
                                             <td className="px-4 py-3">
