@@ -248,37 +248,90 @@ const DashboardView = ({ isDarkMode }) => {
             setAggregatedLoading(true);
             setAggregatedError('');
             try {
-                // 拉取足够覆盖 60 天的访问日志
-                const res = await adminFetchPageViewLogs({ page: 1, size: 1500 });
-                const data = res.data || res;
-                const records = data.records || [];
-                const today = new Date();
-                const start = new Date(today);
-                start.setDate(today.getDate() - (trendRangeDays - 1));
-
                 const byDate = new Map();
-                records.forEach((item) => {
-                    const dateStr = (item.time || item.viewedAt || item.viewed_at || '').slice(0, 10);
-                    if (!dateStr) return;
-                    const dateObj = new Date(dateStr);
-                    if (Number.isNaN(dateObj.getTime()) || dateObj < start) return;
 
-                    const key = dateStr;
-                    const ip = item.ip || item.viewerIp || item.viewer_ip || '';
-                    const userId = item.userId ?? item.user_id ?? null;
-                    const identity = userId ? `U#${userId}` : (ip ? `G#${ip}` : `G#${item.id || dateStr}`);
+                const pad2 = (value) => String(value).padStart(2, '0');
+                const isDateKey = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
+                const parseDateKeyToUtcDate = (key) => {
+                    if (!isDateKey(key)) return null;
+                    const [y, m, d] = String(key).split('-').map((v) => Number(v));
+                    return new Date(Date.UTC(y, m - 1, d));
+                };
+                const dateKeyFromUtcDate = (utcDate) => {
+                    if (!(utcDate instanceof Date) || Number.isNaN(utcDate.getTime())) return '';
+                    const y = utcDate.getUTCFullYear();
+                    const m = pad2(utcDate.getUTCMonth() + 1);
+                    const d = pad2(utcDate.getUTCDate());
+                    return `${y}-${m}-${d}`;
+                };
+                const addDaysToDateKey = (key, days) => {
+                    const d = parseDateKeyToUtcDate(key);
+                    if (!d) return '';
+                    d.setUTCDate(d.getUTCDate() + Number(days || 0));
+                    return dateKeyFromUtcDate(d);
+                };
 
-                    const current = byDate.get(key) || { views: 0, visitors: new Set() };
-                    current.views += 1;
-                    current.visitors.add(identity);
-                    byDate.set(key, current);
-                });
+                // 后端对 page-views 的 size 有上限（服务端会 cap 到 200），因此这里用分页补齐目标天数窗口，避免跨月/跨年只聚合到最近少量记录。
+                const pageSize = 200;
+                const maxPages = Math.max(5, Math.min(50, trendRangeDays * 3));
+                let page = 1;
+                let endKey = '';
+                let startKey = '';
 
+                while (page <= maxPages) {
+                    const res = await adminFetchPageViewLogs({ page, size: pageSize });
+                    const data = res.data || res;
+                    const records = data.records || [];
+                    if (!Array.isArray(records) || records.length === 0) break;
+
+                    // 先确定窗口的结束日期（以服务端返回的日期为准）
+                    if (!endKey) {
+                        const candidate = records
+                            .map((item) => (item?.time || item?.viewedAt || item?.viewed_at || '').slice(0, 10))
+                            .filter((key) => isDateKey(key))
+                            .reduce((max, key) => (max && max > key ? max : key), '');
+                        endKey = candidate || '';
+                        startKey = endKey ? addDaysToDateKey(endKey, -(trendRangeDays - 1)) : '';
+                    }
+
+                    records.forEach((item) => {
+                        const dateStr = (item?.time || item?.viewedAt || item?.viewed_at || '').slice(0, 10);
+                        if (!isDateKey(dateStr)) return;
+                        if (startKey && dateStr < startKey) return;
+
+                        const ip = item?.ip || item?.viewerIp || item?.viewer_ip || '';
+                        const userId = item?.userId ?? item?.user_id ?? null;
+                        const identity = userId ? `U#${userId}` : (ip ? `G#${ip}` : `G#${item?.id || dateStr}`);
+
+                        const current = byDate.get(dateStr) || { views: 0, visitors: new Set() };
+                        current.views += 1;
+                        current.visitors.add(identity);
+                        byDate.set(dateStr, current);
+                    });
+
+                    const oldestKey = (records[records.length - 1]?.time
+                        || records[records.length - 1]?.viewedAt
+                        || records[records.length - 1]?.viewed_at
+                        || '').slice(0, 10);
+
+                    if (startKey && isDateKey(oldestKey) && oldestKey <= startKey) break;
+                    if (records.length < pageSize) break;
+                    page += 1;
+                }
+
+                if (!endKey) {
+                    const now = new Date();
+                    const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+                    endKey = dateKeyFromUtcDate(todayUtc);
+                    startKey = addDaysToDateKey(endKey, -(trendRangeDays - 1));
+                }
+
+                const startDateUtc = parseDateKeyToUtcDate(startKey);
                 const result = [];
                 for (let i = 0; i < trendRangeDays; i += 1) {
-                    const d = new Date(start);
-                    d.setDate(start.getDate() + i);
-                    const key = d.toISOString().slice(0, 10);
+                    const d = new Date(startDateUtc);
+                    d.setUTCDate(startDateUtc.getUTCDate() + i);
+                    const key = dateKeyFromUtcDate(d);
                     const entry = byDate.get(key);
                     result.push({
                         date: key,
