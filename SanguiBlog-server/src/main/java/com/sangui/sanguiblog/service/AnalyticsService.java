@@ -265,14 +265,16 @@ public class AnalyticsService {
             jakarta.persistence.criteria.Join<Object, Object> postJoin = null;
 
             // 访问日志“文章”列的真实展示值：优先 post.title，否则使用 page_title。
-            // 注意：此处的“机器页面”判定与筛选口径应以展示值为准，避免“看起来是 robots/sitemap 但筛不掉”的错觉。
+            // 为避免不同数据库/方言对 TRIM 的兼容差异导致误筛选，这里使用更稳妥的“分别对 post.title/page_title 做等值判断”的方式。
             postJoin = root.join("post", jakarta.persistence.criteria.JoinType.LEFT);
-            jakarta.persistence.criteria.Expression<String> displayTitle =
-                    cb.coalesce(postJoin.get("title"), root.get("pageTitle"));
-            jakarta.persistence.criteria.Expression<String> displayTitleLower =
-                    cb.lower(cb.trim(cb.coalesce(displayTitle, "")));
-
-            jakarta.persistence.criteria.Predicate isRobotTitle = displayTitleLower.in("sitemap.xml", "robots.txt");
+            jakarta.persistence.criteria.Expression<String> postTitleLower =
+                    cb.lower(cb.coalesce(postJoin.get("title"), ""));
+            jakarta.persistence.criteria.Expression<String> pageTitleLower =
+                    cb.lower(cb.coalesce(root.get("pageTitle"), ""));
+            jakarta.persistence.criteria.Predicate isRobotTitle = cb.or(
+                    postTitleLower.in("sitemap.xml", "robots.txt"),
+                    pageTitleLower.in("sitemap.xml", "robots.txt")
+            );
             jakarta.persistence.criteria.Predicate isArticle = cb.isNotNull(root.get("post"));
             jakarta.persistence.criteria.Predicate isRobotPage = isRobotTitle;
             jakarta.persistence.criteria.Predicate isNormalPage = cb.and(cb.not(isArticle), cb.not(isRobotTitle));
