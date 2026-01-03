@@ -368,7 +368,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   GET /api/admin/analytics/summary?days=<1|7|30|-1>&top=<5>&recent=<30> 聚合文章表(views_count/comments_count/status=PUBLISHED)、analytics_page_views（PV/UV/登录PV/14 日趋势）与 analytics_traffic_sources，并把“全部历史”请求映射为 days = -1/rangeDays = 0，返回新的 AdminAnalyticsSummaryDto。UV 去重优先使用 user_id，其次使用 viewer_ip。
 
-*   Dashboard 复用 AnalyticsSummaryContext，rangeDays 优先读取 overview.rangeDays；概览卡片统一展示：累计浏览、评论总数、区间 PV、区间 UV、文章总数、评论总数（实时 comments 表），reload(range) 触发 1/7/30/全部区间切换；其中“访客走势图”默认展示 summary.dailyTrends 的最近 N 天，若启用“访问日志聚合”（用于在前端再次按 userId/IP 去重），会分页拉取 `GET /api/admin/analytics/page-views`（后端 size 上限 200）直到覆盖目标天数窗口，避免跨月/跨年只聚合到最新少量记录。
+*   Dashboard 复用 AnalyticsSummaryContext，rangeDays 优先读取 overview.rangeDays；概览卡片统一展示：累计浏览、评论总数、区间 PV、区间 UV、文章总数、评论总数（实时 comments 表），reload(range) 触发 1/7/30/全部区间切换；其中“访客走势图”采用 PV 柱状 + UV 折线组合图，鼠标悬浮到对应日期会显示该日 PV/UV（Tooltip）；默认展示 summary.dailyTrends 的最近 N 天，若启用“访问日志聚合”（用于在前端再次按 userId/IP 去重），会分页拉取 `GET /api/admin/analytics/page-views`（后端 size 上限 200）直到覆盖目标天数窗口，避免跨月/跨年只聚合到最新少量记录。
 
 *   访问日志页（/admin/analytics）当前包含“概览 + 区间筛选”、“最近 14 天 PV/UV 折线”、“流量来源”和“实时访问日志”四块，热门文章/最新访问/紧急广播已下线；SUPER_ADMIN 可在表格中单条或勾选批量删除访问日志。
 

@@ -533,19 +533,25 @@ const DashboardView = ({ isDarkMode }) => {
 
 const TrendChart = ({ data, isDarkMode }) => {
     const textMuted = isDarkMode ? "text-gray-400" : "text-gray-500";
-    if (!data.length) {
-        return <p className={`mt-6 text-sm ${textMuted}`}>暂无趋势数据</p>;
-    }
+    const containerRef = useRef(null);
+    const [hoverIndex, setHoverIndex] = useState(null);
+    const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
+
     const gridColor = isDarkMode ? "#2e3445" : "#E5E7EB";
     const accentPv = "#FF0080";
     const accentUv = "#16A34A";
     const surfaceBg = isDarkMode ? "#0b1220" : "#f8fafc";
     const safeData = Array.isArray(data) ? data.filter(Boolean) : [];
 
+    if (!safeData.length) {
+        return <p className={`mt-6 text-sm ${textMuted}`}>暂无趋势数据</p>;
+    }
+
     const normalized = safeData.map((item, index) => ({
         views: Number(item?.views || 0),
         visitors: Number(item?.visitors || 0),
-        dateLabel: (item?.date || '').slice(5) || `D${index + 1}`
+        dateKey: (item?.date || '').slice(0, 10),
+        dateLabel: (item?.date || '').slice(5) || `D${index + 1}`,
     }));
 
     const maxValue = Math.max(...normalized.map((n) => Math.max(n.views, n.visitors)), 0);
@@ -564,46 +570,31 @@ const TrendChart = ({ data, isDarkMode }) => {
     const paddingX = 8;
     const chartHeight = 100 - paddingY * 2;
     const chartWidth = 100 - paddingX * 2;
-    const lastIndex = Math.max(normalized.length - 1, 1);
 
-    const projectX = (index) => paddingX + (index / lastIndex) * chartWidth;
+    const count = Math.max(normalized.length, 1);
+    const stepX = chartWidth / count;
+    const barWidth = Math.max(stepX * 0.66, 0.9);
+    const barOffset = (stepX - barWidth) / 2;
+    const baseline = 100 - paddingY;
+
     const projectY = (value) => {
         if (!hasNonZero) {
             // 避免全 0 时折线贴底不可见
-            return 100 - paddingY - chartHeight * 0.12;
+            return baseline - chartHeight * 0.12;
         }
-        return 100 - paddingY - (value / niceMax) * chartHeight;
+        return baseline - (value / niceMax) * chartHeight;
     };
 
-    const buildPoints = (key) =>
+    const buildLinePoints = (key) =>
         normalized
             .map((item, index) => {
-                const x = projectX(index);
+                const x = paddingX + index * stepX + stepX / 2;
                 const y = projectY(item[key]);
                 return `${x.toFixed(2)},${y.toFixed(2)}`;
             })
             .join(" ");
 
-    const pvPoints = buildPoints("views");
-    const uvPoints = buildPoints("visitors");
-    const baseline = 100 - paddingY;
-
-    const renderDots = (key, color) =>
-        normalized.map((item, index) => {
-            const x = projectX(index);
-            const y = projectY(item[key]);
-            return (
-                <circle
-                    key={`${key}-${index}`}
-                    cx={x}
-                    cy={y}
-                    r={1.4}
-                    fill={color}
-                    stroke={isDarkMode ? "#0f172a" : "#fff"}
-                    strokeWidth="0.6"
-                />
-            );
-        });
+    const uvPoints = buildLinePoints("visitors");
 
     const yTicks = 5;
     const yLabels = Array.from({ length: yTicks + 1 }, (_, idx) => {
@@ -612,8 +603,31 @@ const TrendChart = ({ data, isDarkMode }) => {
         return { v, y };
     });
 
+    const formatNumber = (value) => {
+        const n = Number(value || 0);
+        return Number.isFinite(n) ? n.toLocaleString() : "0";
+    };
+
+    const handleHoverMove = (index, e) => {
+        setHoverIndex(index);
+        const rect = containerRef.current?.getBoundingClientRect?.();
+        if (!rect) return;
+        setHoverPos({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        });
+    };
+
+    const handleHoverLeave = () => {
+        setHoverIndex(null);
+    };
+
+    const hoverItem = (hoverIndex !== null && hoverIndex >= 0 && hoverIndex < normalized.length)
+        ? normalized[hoverIndex]
+        : null;
+
     return (
-        <div className="mt-6">
+        <div className="mt-6" ref={containerRef}>
             <div className="relative">
                 <svg viewBox="0 0 100 100" className="w-full h-60" preserveAspectRatio="none">
                     <rect x="0" y="0" width="100" height="100" fill={surfaceBg} />
@@ -639,24 +653,28 @@ const TrendChart = ({ data, isDarkMode }) => {
                             </text>
                         </g>
                     ))}
-                    <polygon
-                        points={`${paddingX},${baseline} ${pvPoints} ${paddingX + chartWidth},${baseline}`}
-                        fill={`${accentPv}1a`}
-                        stroke="none"
-                    />
-                    <polygon
-                        points={`${paddingX},${baseline} ${uvPoints} ${paddingX + chartWidth},${baseline}`}
-                        fill={`${accentUv}1a`}
-                        stroke="none"
-                    />
-                    <polyline
-                        fill="none"
-                        stroke={accentPv}
-                        strokeWidth="2.4"
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        points={pvPoints}
-                    />
+
+                    {/* PV：柱状 */}
+                    {normalized.map((item, index) => {
+                        const barX = paddingX + index * stepX + barOffset;
+                        const barTop = projectY(item.views);
+                        const barHeight = Math.max(baseline - barTop, 0);
+                        const active = hoverIndex === index;
+                        return (
+                            <rect
+                                key={`pv-bar-${index}`}
+                                x={barX}
+                                y={barTop}
+                                width={barWidth}
+                                height={barHeight}
+                                rx="0.4"
+                                fill={accentPv}
+                                opacity={active ? 0.92 : (isDarkMode ? 0.55 : 0.42)}
+                            />
+                        );
+                    })}
+
+                    {/* UV：折线 */}
                     <polyline
                         fill="none"
                         stroke={accentUv}
@@ -665,23 +683,86 @@ const TrendChart = ({ data, isDarkMode }) => {
                         strokeLinecap="round"
                         points={uvPoints}
                     />
-                    {renderDots("views", accentPv)}
-                    {renderDots("visitors", accentUv)}
+                    {normalized.map((item, index) => {
+                        const x = paddingX + index * stepX + stepX / 2;
+                        const y = projectY(item.visitors);
+                        const active = hoverIndex === index;
+                        return (
+                            <circle
+                                key={`uv-dot-${index}`}
+                                cx={x}
+                                cy={y}
+                                r={active ? 2.1 : 1.45}
+                                fill={accentUv}
+                                stroke={isDarkMode ? "#0f172a" : "#fff"}
+                                strokeWidth="0.6"
+                            />
+                        );
+                    })}
+
+                    {/* Hover：命中区域（按天覆盖整列） */}
+                    {normalized.map((_, index) => {
+                        const hitX = paddingX + index * stepX;
+                        return (
+                            <rect
+                                key={`hit-${index}`}
+                                x={hitX}
+                                y={paddingY}
+                                width={stepX}
+                                height={chartHeight}
+                                fill="transparent"
+                                onMouseMove={(e) => handleHoverMove(index, e)}
+                                onMouseEnter={(e) => handleHoverMove(index, e)}
+                                onMouseLeave={handleHoverLeave}
+                            />
+                        );
+                    })}
+
+                    {/* Hover：竖向指示线 */}
+                    {hoverItem && (
+                        <line
+                            x1={paddingX + hoverIndex * stepX + stepX / 2}
+                            x2={paddingX + hoverIndex * stepX + stepX / 2}
+                            y1={paddingY}
+                            y2={baseline}
+                            stroke={isDarkMode ? "#94a3b8" : "#64748b"}
+                            strokeWidth="0.35"
+                            strokeDasharray="1.5 2.5"
+                            opacity={0.8}
+                            pointerEvents="none"
+                        />
+                    )}
                 </svg>
                 {!hasNonZero && (
                     <p className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-amber-600/80">
                         暂无有效访问，已展示占位折线
                     </p>
                 )}
+                {hoverItem && (
+                    <div
+                        className={`absolute z-10 pointer-events-none px-3 py-2 rounded-lg text-xs font-medium shadow-xl border ${
+                            isDarkMode
+                                ? "bg-gray-900 text-gray-100 border-gray-700"
+                                : "bg-white text-gray-900 border-gray-200"
+                        }`}
+                        style={{
+                            left: Math.max(10, Math.min(hoverPos.x + 12, 340)),
+                            top: Math.max(10, hoverPos.y - 44),
+                        }}
+                    >
+                        <div className="font-mono">{hoverItem.dateKey || hoverItem.dateLabel}</div>
+                        <div className="mt-0.5">PV：{formatNumber(hoverItem.views)}　UV：{formatNumber(hoverItem.visitors)}</div>
+                    </div>
+                )}
             </div>
             <div className="flex items-center gap-4 text-xs mt-4">
                 <span className="flex items-center gap-2 text-[#FF0080]">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF0080]" /> PV
+                    <span className="w-3 h-3 rounded-sm bg-[#FF0080]" /> PV（柱）
                 </span>
                 <span className="flex items-center gap-2 text-emerald-500">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> UV
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> UV（线）
                 </span>
-                <span className={`text-[11px] ${textMuted}`}>横轴：日期（MM-DD），自动拉伸</span>
+                <span className={`text-[11px] ${textMuted}`}>鼠标悬浮到某天即可查看 PV/UV</span>
             </div>
             <div className="flex flex-wrap justify-between text-[10px] uppercase tracking-widest text-gray-400 mt-2 gap-y-1">
                 {normalized.map((item, index) => (
