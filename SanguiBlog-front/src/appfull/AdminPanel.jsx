@@ -914,7 +914,9 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             const pageType = rawPageType && rawPageType !== 'all'
                 ? rawPageType.toUpperCase()
                 : undefined;
-            const effectiveExcludeSystemPages = pageType === 'SYSTEM' ? false : excludeSystemPages;
+            const effectiveExcludeSystemPages = (pageType === 'ROBOT' || pageType === 'SYSTEM')
+                ? false
+                : excludeSystemPages;
 
             const res = await adminFetchPageViewLogs({
                 page: targetPage,
@@ -1002,6 +1004,13 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         if (end) next.end = end;
         return next;
     }, []);
+
+    const applyFiltersFromDraft = useCallback((nextDraft) => {
+        setFiltersDraft(nextDraft);
+        const next = normalizeFilters(nextDraft);
+        setFiltersApplied(next);
+        loadLogs(1, size, next);
+    }, [loadLogs, normalizeFilters, size]);
 
     const applyFilters = useCallback(() => {
         const next = normalizeFilters(filtersDraft);
@@ -1212,11 +1221,11 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                         <select
                             value={filtersDraft.pageType}
                             onChange={(e) => {
-                                const next = e.target.value;
-                                setFiltersDraft((prev) => ({ ...prev, pageType: next }));
-                                if (String(next).toLowerCase() === 'system') {
+                                const nextValue = e.target.value;
+                                if (String(nextValue).toLowerCase() === 'robot') {
                                     setHideRobotsAndSitemap(false);
                                 }
+                                applyFiltersFromDraft({ ...filtersDraft, pageType: nextValue });
                             }}
                             className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
                                 ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
@@ -1226,14 +1235,17 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                             <option value="all">全部</option>
                             <option value="article">文章访问</option>
                             <option value="page">普通页面</option>
-                            <option value="system">系统页面（robots/sitemap）</option>
+                            <option value="robot">机器页面（robots/sitemap）</option>
                         </select>
                     </div>
                     <div>
                         <div className={`text-xs mb-1 ${textMuted}`}>用户状态</div>
                         <select
                             value={filtersDraft.loggedIn}
-                            onChange={(e) => setFiltersDraft((prev) => ({ ...prev, loggedIn: e.target.value }))}
+                            onChange={(e) => {
+                                const nextValue = e.target.value;
+                                applyFiltersFromDraft({ ...filtersDraft, loggedIn: nextValue });
+                            }}
                             className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
                                 ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
                                 : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
@@ -1290,7 +1302,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                         type="button"
                         onClick={() => {
                             const next = !hideRobotsAndSitemap;
-                            if (String(filtersDraft.pageType || '').toLowerCase() === 'system') {
+                            if (String(filtersDraft.pageType || '').toLowerCase() === 'robot') {
                                 setHideRobotsAndSitemap(false);
                                 loadLogs(1, size, filtersApplied, false);
                                 return;
@@ -1298,7 +1310,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                             setHideRobotsAndSitemap(next);
                             loadLogs(1, size, filtersApplied, next);
                         }}
-                        className={`px-4 py-2 text-sm font-bold rounded-lg border transition-colors ${
+                        disabled={String(filtersDraft.pageType || '').toLowerCase() === 'robot'}
+                        className={`px-4 py-2 text-sm font-bold rounded-lg border transition-colors disabled:opacity-50 ${
                             hideRobotsAndSitemap
                                 ? (isDarkMode
                                     ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/40 hover:bg-indigo-500/30'
@@ -1307,7 +1320,9 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                     ? 'bg-gray-900 text-gray-100 border-gray-700 hover:bg-gray-800'
                                     : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-50')
                         }`}
-                        title="仅过滤显示，不会删除数据；点击“重置”可恢复显示"
+                        title={String(filtersDraft.pageType || '').toLowerCase() === 'robot'
+                            ? '当前已选择“机器页面”，无需再隐藏 robots/sitemap；如需使用隐藏开关，请先切换页面类型为“全部/文章访问/普通页面”。'
+                            : '仅过滤显示，不会删除数据；点击“重置”可恢复显示'}
                     >
                         {hideRobotsAndSitemap ? '已隐藏 robots/sitemap（点击取消）' : '隐藏 robots/sitemap'}
                     </button>

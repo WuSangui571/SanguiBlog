@@ -2347,3 +2347,8 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.281 (2026-01-03)
 - **模块/页面**：访问日志防爆表策略：新增按日归档表 `analytics_page_view_daily_stats`，并提供定时归档与可选滚动清理能力（`analytics.page-views.archive/cleanup` 配置控制，默认不启用清理以避免线上突然丢明细）；归档用于沉淀历史 PV/UV 日聚合，清理用于限制 `analytics_page_views` 明细体量，降低长期查询成本。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.281`
+
+## V2.1.282 (2026-01-03)
+- **模块/页面**：修复后台访问日志筛选误差：将“隐藏 robots/sitemap”与“机器页面（robots/sitemap）”的判定口径统一为日志表“文章”列的展示值（`post.title` 优先，否则 `page_title`），仅当该列精确为 `robots.txt` 或 `sitemap.xml` 时才过滤/筛选，避免误筛选与漏筛选。
+- **模块/页面**：交互优化：访问日志查询区的下拉筛选（页面类型、用户状态）变更后自动按当前条件触发一次查询，无需再手动点击“查询”按钮。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.282`
