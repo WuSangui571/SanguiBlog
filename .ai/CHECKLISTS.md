@@ -36,7 +36,7 @@
 
 ## E. 留痕与交付
 - [ ] CHANGELOG_AI.md 已追加记录
-- [ ] 如涉及关键逻辑，PROJECT_MEMORY/NOTE 已更新
+- [ ] 如涉及关键逻辑，PROJECT_MEMORY.md 已更新
 - [ ] 回复中包含：修改摘要 + 风险点 + 验证方式 + Git提交建议
 
 ---

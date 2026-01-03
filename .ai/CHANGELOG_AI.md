@@ -5,6 +5,35 @@
 
 ---
 
+## [2026-01-03] 移除根目录旧提示词文件，统一使用 `.ai`
+- 背景/需求：你计划删除根目录 `AGENTS.md` / `NOTE.md` / `AGENTS-EDIT.md`，并要求仓库文档全面改为以 `.ai/README.md` 为唯一入口，消除所有导向旧文件的说明。
+- 修改类型：docs
+- 影响范围：AI 提示词 / 文档工作流 / 发布文档引用
+- 变更摘要：
+  1) 更新根目录 `README.md`，将“技术手册/变更日志/AI 入口”统一指向 `.ai/*`。
+  2) 更新 `release/V2.1.275.md`，将“逐版本明细”引用改为 `.ai/CHANGELOG_AI.md`。
+  3) 更新 `.ai/README.md` 与 `.ai/CHECKLISTS.md`，移除对根目录旧文件的依赖描述。
+  4) 删除根目录旧文件（见涉及文件），避免未来误读/误维护。
+- 涉及文件：
+  - `README.md`
+  - `release/V2.1.275.md`
+  - `.ai/README.md`
+  - `.ai/CHECKLISTS.md`
+  - `.ai/PROJECT_MEMORY.md`
+  - `AGENTS.md`（已删除）
+  - `NOTE.md`（已删除）
+  - `AGENTS-EDIT.md`（已删除）
+- 检索与复用策略：
+  - 检索关键词：`AGENTS.md` / `NOTE.md` / `AGENTS-EDIT.md` / `PROJECT_MEMORY` / `CHANGELOG_AI`
+  - 找到的旧实现：`README.md`、`release/V2.1.275.md`、`.ai/README.md` 等文件中存在对旧文档的引用
+  - 最终选择：统一改为引用 `.ai/*`，并删除旧文件，彻底消除导向
+- 风险点：
+  - 若外部工具/脚本仍硬编码读取 `NOTE.md` 或 `AGENTS-EDIT.md`，会出现“文件不存在”；需要改为读取 `.ai/PROJECT_MEMORY.md` / `.ai/CHANGELOG_AI.md`。
+- 验证方式：
+  - 人工检查：全仓库检索不再出现对 `AGENTS.md`/`NOTE.md`/`AGENTS-EDIT.md` 的导向引用（历史记录内容除外）。
+- 后续建议：
+  - 后续只维护 `.ai/*`，根目录不再新增/恢复同名提示词文件，避免分叉。
+
 ## [2026-01-03] 提示词系统迁移到 `.ai`
 - 背景/需求：将根目录旧提示词文档（`NOTE.md`/`AGENTS-EDIT.md`/`AGENTS.md`）迁移到新的 `.ai` 提示词系统，统一入口与工作流程，避免重复维护。
 - 修改类型：docs

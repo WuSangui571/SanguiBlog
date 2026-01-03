@@ -1,14 +1,15 @@
 # SanguiBlog 部署与开发指南
 
-SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发；更完整的技术手册请阅读根目录 `NOTE.md`。
+SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发；更完整的技术手册请阅读 `.ai/PROJECT_MEMORY.md`。
 
 > 当前站点版本号：`V2.1.275`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
 
 ## 1. 目录索引
 
 - 发布说明：`release/V2.1.275.md`
-- 变更流水账：`AGENTS-EDIT.md`
-- 技术手册：`NOTE.md`
+- AI 入口（提示词/流程）：`.ai/README.md`
+- AI 修改日志：`.ai/CHANGELOG_AI.md`
+- 技术手册 / 项目记忆：`.ai/PROJECT_MEMORY.md`
 
 ## 2. 项目结构
 
@@ -134,5 +135,5 @@ server {
 | 服务启动失败提示 JWT_SECRET | 未设置 JWT 密钥 | 设置环境变量 `JWT_SECRET` 后再启动 |
 | 控制台出现 `content_script.js` 报错 | 浏览器扩展注入脚本噪声 | 无痕窗口/禁用扩展验证（通常与站点无关） |
 
-更多架构与实现细节请查阅 `NOTE.md`。
+更多架构与实现细节请查阅 `.ai/PROJECT_MEMORY.md`。
 

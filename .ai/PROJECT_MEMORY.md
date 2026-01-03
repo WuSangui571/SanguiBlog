@@ -1,9 +1,9 @@
-﻿# PROJECT_MEMORY（迁移自 NOTE.md）
+﻿# PROJECT_MEMORY（迁移自原 NOTE.md）
 
-> 本文件由根目录 `NOTE.md` 迁移而来，用于 AI 长期记忆与开发手册。
+> 本文件由原根目录 `NOTE.md` 迁移而来，用于 AI 长期记忆与开发手册。
 > 迁移日期：2026-01-03
 > 新入口：`.ai/README.md`
-> 说明：为避免重复维护，根目录 `NOTE.md` 仅保留跳转说明；后续如需补充/更新技术要点，请直接修改本文件。
+> 说明：为避免重复维护，请以本文件为准；原根目录 `NOTE.md` 已停止使用（可能已被移除）。
 
 ---
 # SanguiBlog 技术手册 (Technical Manual)
@@ -770,4 +770,5 @@ npm run dev
 - 扫描范围：所有文章（任意状态）的 Markdown/HTML 与封面字段 coverImage，以及关于页的 Markdown/HTML 中引用的 `/uploads/posts/**` 与 `/uploads/covers/**` 资源；头像目录不在清理范围内。
 
 - 删除前需二次确认；删除后会尝试清理空目录，作用于 `uploads/posts/` 与 `uploads/covers/` 下的图片扩展名文件。
+
 

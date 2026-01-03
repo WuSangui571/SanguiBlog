@@ -7,7 +7,7 @@
 
 ## 0. 最高优先级规则（必须遵守）
 
-1) 本文件为本仓库 AI 工作入口；仓库根目录 `AGENTS.md` 仅作为入口跳转/兜底规则，需与本文件保持一致。
+1) 本文件为本仓库 AI 工作入口；根目录旧提示词文件（`AGENTS.md` / `NOTE.md` / `AGENTS-EDIT.md`）已停止使用或已移除，一律以 `.ai/*` 为准。
 2) 在动手编码前，必须阅读：
    - `.ai/PROJECT_MEMORY.md`
    - `.ai/CHANGELOG_AI.md`
