@@ -287,6 +287,14 @@ public class AnalyticsService {
                 predicates.add(cb.lessThan(root.get("viewedAt"), query.endAtExclusive()));
             }
 
+            if (Boolean.TRUE.equals(query.excludeSystemPages())) {
+                jakarta.persistence.criteria.Expression<String> pageTitleLower =
+                        cb.lower(cb.coalesce(root.get("pageTitle"), ""));
+                jakarta.persistence.criteria.Predicate isSystemTitle = pageTitleLower.in("sitemap.xml", "robots.txt");
+                jakarta.persistence.criteria.Predicate isSystemPage = cb.and(cb.isNull(root.get("post")), isSystemTitle);
+                predicates.add(cb.not(isSystemPage));
+            }
+
             String keyword = StringUtils.hasText(query.keyword()) ? query.keyword().trim().toLowerCase(Locale.ROOT) : null;
             if (StringUtils.hasText(keyword)) {
                 String like = "%" + keyword + "%";
@@ -321,7 +329,8 @@ public class AnalyticsService {
             Boolean loggedIn,
             Long postId,
             LocalDateTime startAt,
-            LocalDateTime endAtExclusive
+            LocalDateTime endAtExclusive,
+            Boolean excludeSystemPages
     ) {
     }
 

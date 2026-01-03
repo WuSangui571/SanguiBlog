@@ -45,12 +45,13 @@ public class AdminAnalyticsController {
             @RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "loggedIn", required = false) Boolean loggedIn,
             @RequestParam(value = "postId", required = false) Long postId,
+            @RequestParam(value = "excludeSystemPages", required = false) Boolean excludeSystemPages,
             @RequestParam(value = "start", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam(value = "end", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
         LocalDateTime startAt = start != null ? start.atStartOfDay() : null;
         LocalDateTime endExclusive = end != null ? end.plusDays(1).atStartOfDay() : null;
         AnalyticsService.AdminPageViewQuery query = new AnalyticsService.AdminPageViewQuery(
-                ip, keyword, loggedIn, postId, startAt, endExclusive
+                ip, keyword, loggedIn, postId, startAt, endExclusive, excludeSystemPages
         );
         return ApiResponse.ok(analyticsService.loadPageViews(page, size, query));
     }

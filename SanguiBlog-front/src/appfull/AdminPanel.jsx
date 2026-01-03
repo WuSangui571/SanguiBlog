@@ -898,11 +898,19 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         );
     };
 
-    const loadLogs = useCallback(async (targetPage = 1, targetSize = 20, filters = {}) => {
+    const loadLogs = useCallback(async (targetPage = 1, targetSize = 20, filters = {}, excludeSystemPagesOverride) => {
         setLoading(true);
         setError('');
         try {
-            const res = await adminFetchPageViewLogs({ page: targetPage, size: targetSize, ...(filters || {}) });
+            const excludeSystemPages = typeof excludeSystemPagesOverride === 'boolean'
+                ? excludeSystemPagesOverride
+                : hideRobotsAndSitemap === true;
+            const res = await adminFetchPageViewLogs({
+                page: targetPage,
+                size: targetSize,
+                ...(filters || {}),
+                excludeSystemPages,
+            });
             const data = res.data || res;
             const records = data.records || [];
             setLogs(records);
@@ -918,7 +926,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [hideRobotsAndSitemap]);
 
     const initLoadedRef = useRef(false);
     useEffect(() => {
@@ -927,24 +935,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         loadLogs(1, size, filtersApplied);
     }, [loadLogs, size, filtersApplied]);
 
-    const visibleLogs = useMemo(() => {
-        if (!hideRobotsAndSitemap) return logs;
-        return (logs || []).filter((visit) => {
-            const raw = (visit?.title || '').trim().toLowerCase();
-            return raw !== 'robots.txt' && raw !== 'sitemap.xml';
-        });
-    }, [hideRobotsAndSitemap, logs]);
-
-    useEffect(() => {
-        if (!isSuperAdmin) return;
-        setSelectedIds((prev) => {
-            const visible = new Set((visibleLogs || []).map((item) => item?.id).filter(Boolean));
-            return (prev || []).filter((id) => visible.has(id));
-        });
-    }, [isSuperAdmin, visibleLogs]);
-
     const totalPages = Math.max(1, Math.ceil((total || 0) / size) || 1);
-    const allSelected = visibleLogs.length > 0 && selectedIds.length === visibleLogs.length;
+    const allSelected = logs.length > 0 && selectedIds.length === logs.length;
     const hasSelection = selectedIds.length > 0;
     const paginationItems = useMemo(() => {
         if (totalPages <= 7) {
@@ -1008,7 +1000,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         setFiltersDraft(clearedDraft);
         setFiltersApplied({});
         setHideRobotsAndSitemap(false);
-        loadLogs(1, size, {});
+        loadLogs(1, size, {}, false);
     }, [loadLogs, size]);
 
     const handleClearLogs = async () => {
@@ -1029,8 +1021,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     };
 
     const toggleSelectAll = () => {
-        if (!isSuperAdmin || !visibleLogs.length) return;
-        const allIds = visibleLogs.map((item) => item.id).filter(Boolean);
+        if (!isSuperAdmin || !logs.length) return;
+        const allIds = logs.map((item) => item.id).filter(Boolean);
         if (selectedIds.length === allIds.length) {
             setSelectedIds([]);
         } else {
@@ -1260,7 +1252,11 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     </button>
                     <button
                         type="button"
-                        onClick={() => setHideRobotsAndSitemap((prev) => !prev)}
+                        onClick={() => {
+                            const next = !hideRobotsAndSitemap;
+                            setHideRobotsAndSitemap(next);
+                            loadLogs(1, size, filtersApplied, next);
+                        }}
                         className={`px-4 py-2 text-sm font-bold rounded-lg border transition-colors ${
                             hideRobotsAndSitemap
                                 ? (isDarkMode
@@ -1292,12 +1288,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
                 {loading ? (
                     <p className={`text-sm ${textMuted}`}>数据加载中...</p>
-                ) : visibleLogs.length === 0 ? (
-                    <p className={`text-sm ${textMuted}`}>
-                        {hideRobotsAndSitemap && logs.length > 0
-                            ? '本页记录已被过滤（robots.txt / sitemap.xml）'
-                            : '暂无访问记录'}
-                    </p>
+                ) : logs.length === 0 ? (
+                    <p className={`text-sm ${textMuted}`}>暂无访问记录</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm">
@@ -1310,7 +1302,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                                 className="h-4 w-4"
                                                 checked={allSelected}
                                                 onChange={toggleSelectAll}
-                                                disabled={!visibleLogs.length}
+                                                disabled={!logs.length}
                                             />
                                         </th>
                                     )}
@@ -1324,7 +1316,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                 </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
-                                {visibleLogs.map((visit) => (
+                                {logs.map((visit) => (
                                     <tr key={visit.id} className="align-top">
                                         {isSuperAdmin && (
                                             <td className="px-4 py-3">

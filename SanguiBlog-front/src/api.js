@@ -605,6 +605,7 @@ export const adminFetchPageViewLogs = (params = {}) => {
   if (params.loggedIn === true) search.append("loggedIn", "true");
   if (params.loggedIn === false) search.append("loggedIn", "false");
   if (params.postId) search.append("postId", params.postId);
+  if (params.excludeSystemPages === true) search.append("excludeSystemPages", "true");
   if (params.start) search.append("start", params.start);
   if (params.end) search.append("end", params.end);
   const query = search.toString() ? `?${search.toString()}` : "";

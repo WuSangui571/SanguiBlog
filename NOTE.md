@@ -372,7 +372,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   访问日志页（/admin/analytics）当前包含“概览 + 区间筛选”、“最近 14 天 PV/UV 折线”、“流量来源”和“实时访问日志”四块，热门文章/最新访问/紧急广播已下线；SUPER_ADMIN 可在表格中单条或勾选批量删除访问日志。
 
-*   访问日志列表的“隐藏 robots/sitemap”仅为前端展示层过滤：当记录的 `title` 为 `robots.txt` 或 `sitemap.xml` 时可一键隐藏，以减少搜索引擎/爬虫抓取噪音；点击“重置”会同时清空查询条件并取消该隐藏开关。
+*   访问日志列表的“隐藏 robots/sitemap”采用服务端分页过滤：前端会在 `GET /api/admin/analytics/page-views` 附加 `excludeSystemPages=true`，由后端排除 `title=robots.txt/sitemap.xml` 且 `postId` 为空的系统页面记录，以减少搜索引擎/爬虫抓取噪音并保证分页/total 准确；点击“重置”会同时清空查询条件并取消该隐藏开关。
 
 *   AnalyticsService.recordPageView 负责写入 analytics_page_views 并同步流量来源：PV 端使用 Caffeine（IP+post）做 10 分钟 TTL 内存限流，并配合 10 分钟数据库去重（重启/缓存淘汰时兜底确保不重复计数）；SUPER_ADMIN 仅当 pageTitle/referrer 含 admin 时跳过；若前端埋点失败，PostService.incrementViews 会即时构造 PageViewRequest 再兜底写入。自 V1.3.96 起，DELETE `/api/admin/analytics/page-views/me` 会先删除 user_id=本人 的日志，再依据这些记录包含的全部 viewer_ip 清理 user_id 为空且 IP 命中的访客日志，从而把登录前的自访数据一并抹掉（多 IP 会逐一匹配）。V1.3.110 起新增单条/批量删除接口，只对 SUPER_ADMIN 开放。
 
