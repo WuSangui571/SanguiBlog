@@ -275,8 +275,9 @@ public class AnalyticsService {
                     postTitleLower.in("sitemap.xml", "robots.txt"),
                     pageTitleLower.in("sitemap.xml", "robots.txt")
             );
-            // 文章访问：以“能 join 到真实 Post”为准（避免历史脏数据 post_id=0/悬空外键导致误判为文章访问）
-            jakarta.persistence.criteria.Predicate isArticle = cb.isNotNull(postJoin.get("id"));
+            // 文章访问：以 analytics_page_views.post_id 是否为空为准（最直观且稳定的口径）
+            // 说明：这里刻意不依赖 join 后的 Post.id，以避免某些环境/历史数据下 join 口径差异导致筛选反向。
+            jakarta.persistence.criteria.Predicate isArticle = cb.isNotNull(root.get("postId"));
             jakarta.persistence.criteria.Predicate isRobotPage = isRobotTitle;
             jakarta.persistence.criteria.Predicate isNormalPage = cb.and(cb.not(isArticle), cb.not(isRobotTitle));
 
@@ -286,7 +287,7 @@ public class AnalyticsService {
             }
 
             if (query.postId() != null && query.postId() > 0) {
-                predicates.add(cb.equal(postJoin.get("id"), query.postId()));
+                predicates.add(cb.equal(root.get("postId"), query.postId()));
             }
 
             if (query.loggedIn() != null) {

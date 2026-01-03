@@ -23,6 +23,9 @@ public class AnalyticsPageView {
     @ToString.Exclude
     private Post post;
 
+    @Column(name = "post_id", insertable = false, updatable = false)
+    private Long postId;
+
     @Column(name = "page_title", length = 255)
     private String pageTitle;
 

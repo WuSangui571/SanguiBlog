@@ -374,7 +374,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   访问日志列表的“隐藏 robots/sitemap”采用服务端分页过滤：前端会在 `GET /api/admin/analytics/page-views` 附加 `excludeSystemPages=true`，后端会以列表“文章”列的展示值为准（`post.title` 优先，否则 `page_title`），仅当该列精确为 `robots.txt` 或 `sitemap.xml` 时才过滤，以减少搜索引擎/爬虫抓取噪音并保证分页/total 准确；点击“重置”会同时清空查询条件并取消该隐藏开关。
 
-*   访问日志支持“页面类型”筛选：`pageType=ARTICLE|ROBOT|PAGE` 分别对应文章访问（以可关联到真实 Post 为准，避免历史脏数据 `post_id=0/悬空外键` 误判）、机器页面（列表“文章”列精确为 `robots.txt/sitemap.xml`）与普通页面（非文章且非机器页面）。其中当选择 `ROBOT` 时，前端会自动关闭 `excludeSystemPages` 以避免互斥冲突导致结果为空（后端也兼容 `SYSTEM/BOT` 作为 `ROBOT` 的别名）。
+*   访问日志支持“页面类型”筛选：`pageType=ARTICLE|ROBOT|PAGE` 分别对应文章访问（以 `analytics_page_views.post_id` 是否为空为准，最直观且稳定）、机器页面（列表“文章”列精确为 `robots.txt/sitemap.xml`）与普通页面（非文章且非机器页面）。其中当选择 `ROBOT` 时，前端会自动关闭 `excludeSystemPages` 以避免互斥冲突导致结果为空（后端也兼容 `SYSTEM/BOT` 作为 `ROBOT` 的别名）。
 
 *   访问日志防爆表（增长控制）：后端提供按日归档表 `analytics_page_view_daily_stats` 用于沉淀历史 PV/UV 日聚合，配套定时任务 `AnalyticsPageViewArchiveService`（配置项：`analytics.page-views.archive.*` / `analytics.page-views.cleanup.*`）。默认仅归档“昨日”以避免每天全表扫描；若开启清理（滚动窗口），会在删除旧明细前先归档（可选全量回填 `cleanup.backfill-all=true`），然后分批删除 `analytics_page_views` 中早于 `retention-days` 的记录，防止表无限增长导致排序/区间筛选/统计越来越慢。由于 `spring.jpa.hibernate.ddl-auto=none`，新增表需手动执行 `scripts/migrate_add_analytics_page_view_daily_stats.sql`。
 
