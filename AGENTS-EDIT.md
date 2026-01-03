@@ -2339,3 +2339,7 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.279 (2026-01-03)
 - **模块/页面**：优化后台访问日志“隐藏 robots/sitemap”为服务端分页过滤：`GET /api/admin/analytics/page-views` 新增 `excludeSystemPages=true`，在后端排除 `title=robots.txt/sitemap.xml` 且 `postId` 为空的系统页面记录，确保列表分页与 total 统计准确；前端开关改为传参请求，重置会取消该过滤。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.279`
+
+## V2.1.280 (2026-01-03)
+- **模块/页面**：后台访问日志新增“页面类型”筛选维度：`GET /api/admin/analytics/page-views` 支持 `pageType=ARTICLE|SYSTEM|PAGE`，可分别查看文章访问、系统页面（robots/sitemap）与普通页面（非文章且非系统）；前端查询区新增下拉选择，并与“隐藏 robots/sitemap”开关做互斥兼容，避免筛选冲突。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.280`

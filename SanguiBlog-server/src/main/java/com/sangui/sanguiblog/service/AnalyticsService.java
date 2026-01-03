@@ -264,6 +264,13 @@ public class AnalyticsService {
             List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
             jakarta.persistence.criteria.Join<Object, Object> postJoin = null;
 
+            jakarta.persistence.criteria.Expression<String> pageTitleLower =
+                    cb.lower(cb.coalesce(root.get("pageTitle"), ""));
+            jakarta.persistence.criteria.Predicate isSystemTitle = pageTitleLower.in("sitemap.xml", "robots.txt");
+            jakarta.persistence.criteria.Predicate isArticle = cb.isNotNull(root.get("post"));
+            jakarta.persistence.criteria.Predicate isSystemPage = cb.and(cb.isNull(root.get("post")), isSystemTitle);
+            jakarta.persistence.criteria.Predicate isNormalPage = cb.and(cb.isNull(root.get("post")), cb.not(isSystemTitle));
+
             String ip = StringUtils.hasText(query.viewerIp()) ? query.viewerIp().trim() : null;
             if (StringUtils.hasText(ip)) {
                 predicates.add(cb.equal(root.get("viewerIp"), ip));
@@ -287,11 +294,18 @@ public class AnalyticsService {
                 predicates.add(cb.lessThan(root.get("viewedAt"), query.endAtExclusive()));
             }
 
+            String pageType = StringUtils.hasText(query.pageType()) ? query.pageType().trim().toUpperCase(Locale.ROOT) : null;
+            if (StringUtils.hasText(pageType)) {
+                switch (pageType) {
+                    case "ARTICLE" -> predicates.add(isArticle);
+                    case "SYSTEM" -> predicates.add(isSystemPage);
+                    case "PAGE" -> predicates.add(isNormalPage);
+                    default -> {
+                    }
+                }
+            }
+
             if (Boolean.TRUE.equals(query.excludeSystemPages())) {
-                jakarta.persistence.criteria.Expression<String> pageTitleLower =
-                        cb.lower(cb.coalesce(root.get("pageTitle"), ""));
-                jakarta.persistence.criteria.Predicate isSystemTitle = pageTitleLower.in("sitemap.xml", "robots.txt");
-                jakarta.persistence.criteria.Predicate isSystemPage = cb.and(cb.isNull(root.get("post")), isSystemTitle);
                 predicates.add(cb.not(isSystemPage));
             }
 
@@ -331,6 +345,8 @@ public class AnalyticsService {
             LocalDateTime startAt,
             LocalDateTime endAtExclusive,
             Boolean excludeSystemPages
+            ,
+            String pageType
     ) {
     }
 

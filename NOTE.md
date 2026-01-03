@@ -374,6 +374,8 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 *   访问日志列表的“隐藏 robots/sitemap”采用服务端分页过滤：前端会在 `GET /api/admin/analytics/page-views` 附加 `excludeSystemPages=true`，由后端排除 `title=robots.txt/sitemap.xml` 且 `postId` 为空的系统页面记录，以减少搜索引擎/爬虫抓取噪音并保证分页/total 准确；点击“重置”会同时清空查询条件并取消该隐藏开关。
 
+*   访问日志支持“页面类型”筛选：`pageType=ARTICLE|SYSTEM|PAGE` 分别对应文章访问（`postId` 非空）、系统页面（`robots.txt/sitemap.xml` 且 `postId` 为空）与普通页面（`postId` 为空且非系统）。其中当选择 `SYSTEM` 时，前端会自动关闭 `excludeSystemPages` 以避免互斥冲突导致结果为空。
+
 *   AnalyticsService.recordPageView 负责写入 analytics_page_views 并同步流量来源：PV 端使用 Caffeine（IP+post）做 10 分钟 TTL 内存限流，并配合 10 分钟数据库去重（重启/缓存淘汰时兜底确保不重复计数）；SUPER_ADMIN 仅当 pageTitle/referrer 含 admin 时跳过；若前端埋点失败，PostService.incrementViews 会即时构造 PageViewRequest 再兜底写入。自 V1.3.96 起，DELETE `/api/admin/analytics/page-views/me` 会先删除 user_id=本人 的日志，再依据这些记录包含的全部 viewer_ip 清理 user_id 为空且 IP 命中的访客日志，从而把登录前的自访数据一并抹掉（多 IP 会逐一匹配）。V1.3.110 起新增单条/批量删除接口，只对 SUPER_ADMIN 开放。
 
 

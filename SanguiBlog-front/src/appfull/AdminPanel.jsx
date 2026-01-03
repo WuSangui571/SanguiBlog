@@ -795,6 +795,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         keyword: '',
         ip: '',
         postId: '',
+        pageType: 'all',
         loggedIn: 'all',
         start: '',
         end: ''
@@ -905,11 +906,22 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             const excludeSystemPages = typeof excludeSystemPagesOverride === 'boolean'
                 ? excludeSystemPagesOverride
                 : hideRobotsAndSitemap === true;
+
+            const normalizedFilters = (filters || {});
+            const rawPageType = typeof normalizedFilters.pageType === 'string'
+                ? normalizedFilters.pageType.trim().toLowerCase()
+                : '';
+            const pageType = rawPageType && rawPageType !== 'all'
+                ? rawPageType.toUpperCase()
+                : undefined;
+            const effectiveExcludeSystemPages = pageType === 'SYSTEM' ? false : excludeSystemPages;
+
             const res = await adminFetchPageViewLogs({
                 page: targetPage,
                 size: targetSize,
-                ...(filters || {}),
-                excludeSystemPages,
+                ...normalizedFilters,
+                pageType,
+                excludeSystemPages: effectiveExcludeSystemPages,
             });
             const data = res.data || res;
             const records = data.records || [];
@@ -976,6 +988,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         const postId = postIdRaw ? Number(postIdRaw) : null;
         const start = typeof draft.start === 'string' ? draft.start.trim() : '';
         const end = typeof draft.end === 'string' ? draft.end.trim() : '';
+        const pageTypeRaw = typeof draft.pageType === 'string' ? draft.pageType.trim() : '';
         const loggedInRaw = draft.loggedIn;
         const loggedIn = loggedInRaw === 'true' ? true : (loggedInRaw === 'false' ? false : undefined);
 
@@ -983,6 +996,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         if (keyword) next.keyword = keyword;
         if (ip) next.ip = ip;
         if (Number.isFinite(postId) && postId > 0) next.postId = postId;
+        if (pageTypeRaw && pageTypeRaw !== 'all') next.pageType = pageTypeRaw;
         if (loggedIn !== undefined) next.loggedIn = loggedIn;
         if (start) next.start = start;
         if (end) next.end = end;
@@ -996,7 +1010,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     }, [filtersDraft, loadLogs, normalizeFilters, size]);
 
     const resetFilters = useCallback(() => {
-        const clearedDraft = { keyword: '', ip: '', postId: '', loggedIn: 'all', start: '', end: '' };
+        const clearedDraft = { keyword: '', ip: '', postId: '', pageType: 'all', loggedIn: 'all', start: '', end: '' };
         setFiltersDraft(clearedDraft);
         setFiltersApplied({});
         setHideRobotsAndSitemap(false);
@@ -1145,7 +1159,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
             </div>
 
             <div className={`${surface} ${border} rounded-2xl p-4 shadow-md`}>
-                <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-8 gap-3">
                     <div className="md:col-span-2">
                         <div className={`text-xs mb-1 ${textMuted}`}>关键词（标题/来源/地理/slug）</div>
                         <input
@@ -1192,6 +1206,28 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                 : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
                             }`}
                         />
+                    </div>
+                    <div>
+                        <div className={`text-xs mb-1 ${textMuted}`}>页面类型</div>
+                        <select
+                            value={filtersDraft.pageType}
+                            onChange={(e) => {
+                                const next = e.target.value;
+                                setFiltersDraft((prev) => ({ ...prev, pageType: next }));
+                                if (String(next).toLowerCase() === 'system') {
+                                    setHideRobotsAndSitemap(false);
+                                }
+                            }}
+                            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
+                                : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
+                            }`}
+                        >
+                            <option value="all">全部</option>
+                            <option value="article">文章访问</option>
+                            <option value="page">普通页面</option>
+                            <option value="system">系统页面（robots/sitemap）</option>
+                        </select>
                     </div>
                     <div>
                         <div className={`text-xs mb-1 ${textMuted}`}>用户状态</div>
@@ -1254,6 +1290,11 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                         type="button"
                         onClick={() => {
                             const next = !hideRobotsAndSitemap;
+                            if (String(filtersDraft.pageType || '').toLowerCase() === 'system') {
+                                setHideRobotsAndSitemap(false);
+                                loadLogs(1, size, filtersApplied, false);
+                                return;
+                            }
                             setHideRobotsAndSitemap(next);
                             loadLogs(1, size, filtersApplied, next);
                         }}
