@@ -5,6 +5,25 @@
 
 ---
 
+## [2026-01-04] 修复后台访问日志“来源”字段显示 URL 编码串（%E6%...）
+- 背景/需求：修复“上一篇/下一篇”跳转的 header 字符集问题后，文章跳转产生的访问日志里“来源”字段出现 `%E6%9D%A5...` 这类 URL 编码串，影响可读性。
+- 修改类型：fix
+- 影响范围：访问日志写入（后端 AnalyticsService）/ 后台访问日志 UI 展示（前端 AdminPanel）
+- 变更摘要：
+  1) 后端在写入/统计来源前对 `referrer/sourceLabel` 做 URL decode 兜底，避免落库为编码串。
+  2) 前端后台日志列表对历史数据做 decode 展示兜底，避免旧记录仍显示编码串。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+- 检索与复用策略：
+  - 检索关键词：`referrer_url` / `resolveReferrerDisplayLabel` / `sourceLabel` / `%[0-9A-F]{2}` / `renderReferrer`
+  - 找到的旧实现：`AnalyticsService.resolveReferrerDisplayLabel` 直接使用 request 字段；`AdminPanel` 直接展示 referrer 文本
+  - 最终选择：复用现有链路，在“写入前 decode + 展示时 decode”双兜底修复
+- 风险点：
+  - 对确实包含 `%xx` 的普通文本可能被 decode；已限定为“看起来像 URL 编码”的模式并捕获异常，影响可控。
+- 验证方式：
+  - 人工验证：切换上一篇/下一篇后打开 `/admin/analytics`，新日志“来源”应为可读中文/可点击外链（不再显示 `%E6%...`）。
+
 ## [2026-01-04] 文章页渲染一致性与可访问性增强（HTML 兜底样式 + Esc 关闭预览/目录）
 - 背景/需求：按“建议清单”执行文章页第 1/5 条：减少 Markdown 渲染与 HTML 兜底渲染的视觉差异，并补齐图片预览/移动端目录抽屉的键盘可用性。
 - 修改类型：fix

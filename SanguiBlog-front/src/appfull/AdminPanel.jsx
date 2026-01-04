@@ -823,18 +823,29 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     const renderReferrer = (referrer) => {
         if (!referrer) return '未知来源';
-        if (/^(https?:)?\/\//i.test(referrer)) {
-            let label = referrer;
+        const decodeIfEncoded = (value) => {
+            if (!value || typeof value !== 'string') return value;
+            if (!/%[0-9a-fA-F]{2}/.test(value)) return value;
             try {
-                const parsed = new URL(referrer);
+                return decodeURIComponent(value);
+            } catch {
+                return value;
+            }
+        };
+
+        const normalized = decodeIfEncoded(referrer);
+        if (/^(https?:)?\/\//i.test(normalized)) {
+            let label = normalized;
+            try {
+                const parsed = new URL(normalized);
                 label = `外部链接：${parsed.hostname}`;
             } catch {
-                label = referrer;
+                label = normalized;
             }
-            return <a className="text-indigo-500 hover:underline" href={referrer} target="_blank"
+            return <a className="text-indigo-500 hover:underline" href={normalized} target="_blank"
                 rel="noopener noreferrer">{label}</a>;
         }
-        return referrer;
+        return normalized;
     };
 
     const normalizeVisitorAvatarPath = (rawValue) => {

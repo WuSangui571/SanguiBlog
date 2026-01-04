@@ -26,6 +26,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -54,8 +56,30 @@ public class AnalyticsService {
     private final AnalyticsTrafficSourceRepository analyticsTrafficSourceRepository;
     private final GeoIpService geoIpService;
 
+    private String decodePercentEncodedValue(String value) {
+        if (!StringUtils.hasText(value)) {
+            return value;
+        }
+        // 兜底：前端可能对来源字段做了 URL-encode（encodeURIComponent）以规避浏览器 header 的字符集限制。
+        // 这里 decode 后再参与“来源展示/来源统计”，避免后台日志出现 %E6%... 乱码。
+        if (!value.contains("%")) {
+            return value;
+        }
+        try {
+            return URLDecoder.decode(value, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
+            return value;
+        }
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId) {
+        if (request == null) {
+            request = new PageViewRequest();
+        }
+        request.setReferrer(decodePercentEncodedValue(request.getReferrer()));
+        request.setSourceLabel(decodePercentEncodedValue(request.getSourceLabel()));
+
         User viewer = null;
         if (userId != null) {
             viewer = userRepository.findById(userId).orElse(null);
