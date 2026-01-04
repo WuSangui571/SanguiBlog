@@ -20,6 +20,15 @@ html {
 /* 文章页：正文行内 code 与正文同字号（避免 typography 默认让 code 偏小） */
 .sg-article-markdown :not(pre) > code {
   font-size: inherit !important;
+  @apply px-1 py-0.5 rounded font-mono;
+}
+
+/* 文章页：统一 Markdown/HTML 兜底的行内 code 配色（跟 ArticleDetail 的 inlineCodeBg 保持一致） */
+.sg-article-markdown.prose-invert :not(pre) > code {
+  @apply bg-gray-800 text-pink-200;
+}
+.sg-article-markdown:not(.prose-invert) :not(pre) > code {
+  @apply bg-gray-100 text-pink-600;
 }
 
 /* 文章页摘要（引用块）：行内 code 同样应继承摘要字号 */

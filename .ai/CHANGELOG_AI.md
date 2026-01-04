@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-01-04] 文章页渲染一致性与可访问性增强（HTML 兜底样式 + Esc 关闭预览/目录）
+- 背景/需求：按“建议清单”执行文章页第 1/5 条：减少 Markdown 渲染与 HTML 兜底渲染的视觉差异，并补齐图片预览/移动端目录抽屉的键盘可用性。
+- 修改类型：fix
+- 影响范围：文章详情页 `/article/:id`（前端渲染与样式）
+- 变更摘要：
+  1) 统一 `.sg-article-markdown` 下行内 `code` 的 padding/字体/配色：Markdown 与 HTML 兜底输出一致。
+  2) 图片预览支持 `Esc` 关闭，并在打开时聚焦遮罩、关闭时恢复焦点，避免键盘焦点逃逸。
+  3) 移动端目录抽屉支持 `Esc` 关闭，打开时聚焦“关闭”按钮、关闭时恢复焦点，并补充必要的 `aria-label`。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/index.css`
+- 检索与复用策略：
+  - 检索关键词：`dangerouslySetInnerHTML` / `safeHtml` / `prose-invert` / `previewImage` / `tocDrawerOpen`
+  - 找到的旧实现：文章页 `sg-article-markdown` 容器、图片预览层、移动端目录抽屉
+  - 最终选择：复用现有结构，追加最小的 CSS 规则与键盘事件监听（不新增模块/不引入依赖）
+- 风险点：
+  - CSS 覆盖可能影响文章页个别自定义样式；已用 `.sg-article-markdown` 范围限定，且仅针对行内 `code`。
+- 验证方式：
+  - 人工验证：同一篇文章在 `contentMd` 与 `contentHtml` 路径下行内 code 外观一致；图片预览与目录抽屉均可 `Esc` 关闭，且焦点不会跑丢。
+
 ## [2026-01-04] 修复文章页 Markdown 行内代码标题字号、摘要 Markdown 渲染与前后篇跳转偶发 fetch 报错
 - 背景/需求：文章详情页（`/article/:id`）存在 3 个问题：1) 标题中的 `` `xxx` `` 行内代码被渲染成与正文同级的偏小字号；2) 点击“上一篇/下一篇”偶发跳转失败，报 `String contains non ISO-8859-1 code point`，刷新后恢复；3) 摘要区 `` `xxx` `` 无法按 Markdown 渲染。
 - 修改类型：fix

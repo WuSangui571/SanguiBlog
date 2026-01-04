@@ -158,6 +158,8 @@ const ArticleDetail = ({
     const [previewImage, setPreviewImage] = useState(null);
     const [previewZoom, setPreviewZoom] = useState(1);
     const [previewPan, setPreviewPan] = useState({ x: 0, y: 0 });
+    const previewOverlayRef = useRef(null);
+    const previewRestoreFocusRef = useRef(null);
     const previewPanRef = useRef({
         active: false,
         pointerId: null,
@@ -174,6 +176,8 @@ const ArticleDetail = ({
     const tocRafRef = useRef(0);
     const [tocItems, setTocItems] = useState([]);
     const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
+    const tocDrawerCloseBtnRef = useRef(null);
+    const tocDrawerRestoreFocusRef = useRef(null);
     const [tocCollapsed, setTocCollapsed] = useState(false);
     const [tocLeft, setTocLeft] = useState(null);
     const [entryReady, setEntryReady] = useState(false);
@@ -737,6 +741,64 @@ const ArticleDetail = ({
         };
     }, [previewImage]);
     useEffect(() => {
+        if (!previewImage) return;
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+        previewRestoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+        const focusOverlay = () => {
+            previewOverlayRef.current?.focus?.();
+        };
+        const t = window.setTimeout(focusOverlay, 0);
+
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeImagePreview();
+                return;
+            }
+            // 预览层没有可交互控件：保持焦点在遮罩，避免 Tab 逃逸到页面底下
+            if (event.key === 'Tab') {
+                event.preventDefault();
+                focusOverlay();
+            }
+        };
+        window.addEventListener('keydown', onKeyDown, true);
+        return () => {
+            window.clearTimeout(t);
+            window.removeEventListener('keydown', onKeyDown, true);
+            const el = previewRestoreFocusRef.current;
+            previewRestoreFocusRef.current = null;
+            el?.focus?.();
+        };
+    }, [previewImage, closeImagePreview]);
+    useEffect(() => {
+        if (!tocDrawerOpen) return;
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+        tocDrawerRestoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+        const focusClose = () => {
+            tocDrawerCloseBtnRef.current?.focus?.();
+        };
+        const t = window.setTimeout(focusClose, 0);
+
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setTocDrawerOpen(false);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown, true);
+        return () => {
+            window.clearTimeout(t);
+            window.removeEventListener('keydown', onKeyDown, true);
+            const el = tocDrawerRestoreFocusRef.current;
+            tocDrawerRestoreFocusRef.current = null;
+            el?.focus?.();
+        };
+    }, [tocDrawerOpen]);
+    useEffect(() => {
         setTocDrawerOpen(false);
     }, [id]);
     useEffect(() => {
@@ -971,6 +1033,7 @@ const ArticleDetail = ({
                 <button
                     type="button"
                     onClick={() => setTocDrawerOpen(true)}
+                    aria-label="打开目录"
                     className={`md:hidden fixed bottom-24 right-4 z-[60] px-4 py-2 border-2 border-black font-black shadow-[4px_4px_0px_0px_#000] inline-flex items-center gap-2 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
                 >
                     <List size={16} />
@@ -985,6 +1048,9 @@ const ArticleDetail = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="文章目录"
                     >
                         <motion.div
                             className="absolute inset-0 bg-black/50"
@@ -1008,6 +1074,8 @@ const ArticleDetail = ({
                                 <button
                                     type="button"
                                     onClick={() => setTocDrawerOpen(false)}
+                                    aria-label="关闭目录"
+                                    ref={tocDrawerCloseBtnRef}
                                     className={`p-2 border-2 border-black ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
                                 >
                                     <X size={14} />
@@ -1278,6 +1346,11 @@ const ArticleDetail = ({
                         className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-0"
                         onClick={closeImagePreview}
                         onWheel={handlePreviewWheel}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="图片预览"
+                        tabIndex={-1}
+                        ref={previewOverlayRef}
                     >
                         <motion.img
                             src={previewImage}
