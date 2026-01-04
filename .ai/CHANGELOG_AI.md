@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-01-04] 修复文章页 Markdown 行内代码标题字号、摘要 Markdown 渲染与前后篇跳转偶发 fetch 报错
+- 背景/需求：文章详情页（`/article/:id`）存在 3 个问题：1) 标题中的 `` `xxx` `` 行内代码被渲染成与正文同级的偏小字号；2) 点击“上一篇/下一篇”偶发跳转失败，报 `String contains non ISO-8859-1 code point`，刷新后恢复；3) 摘要区 `` `xxx` `` 无法按 Markdown 渲染。
+- 修改类型：fix
+- 影响范围：前台文章详情页渲染 / 前端埋点请求头 / 后端文章详情接口
+- 变更摘要：
+  1) 为文章页标题内的 `code` 强制继承标题字号，避免被 `text-sm` 缩小。
+  2) 摘要区改为 `ReactMarkdown` 渲染（支持行内代码/高亮等），并抑制额外段落 margin。
+  3) 前端对 `X-SG-Referrer` / `X-SG-Source-Label` 统一 `encodeURIComponent`，后端 `PostController` 兜底 decode，避免浏览器 fetch header 的 ISO-8859-1 限制导致跳转报错。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/PostController.java`
+- 检索与复用策略：
+  - 检索关键词：`/article/:id`、`ArticleDetail`、`post.excerpt`、`text-sm`、`inlineCodeBg`、`X-SG-Source-Label`、`buildAnalyticsReferrerHeaders`
+  - 找到的旧实现：文章页 Markdown 渲染与自定义 `code` 渲染器、文章详情请求头埋点逻辑、后端 `PostController` 对应 Header 入参
+  - 最终选择：复用并最小改动原有渲染/埋点链路（不新增接口/不新增模块）
+- 风险点：
+  - Header 编码/解码链路变更：若存在第三方客户端直连接口并依赖原始 header 值展示，可能看到被编码的字符串；后端已做 decode 兜底，影响应可控。
+- 验证方式：
+  - 人工验证：标题中 `` `xxx` `` 与标题字号一致；摘要内 `` `xxx` `` 正常渲染为红色行内代码；点击上一篇/下一篇不再出现 fetch header 报错。
+
 ## [2026-01-03] 移除根目录旧提示词文件，统一使用 `.ai`
 - 背景/需求：你计划删除根目录 `AGENTS.md` / `NOTE.md` / `AGENTS-EDIT.md`，并要求仓库文档全面改为以 `.ai/README.md` 为唯一入口，消除所有导向旧文件的说明。
 - 修改类型：docs

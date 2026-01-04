@@ -116,6 +116,19 @@ const safeTrim = (value, maxLen) => {
   return v.length > maxLen ? v.slice(0, maxLen) : v;
 };
 
+// fetch Header value 必须是 ISO-8859-1（ByteString），否则会抛：
+// Failed to read the 'headers' property from 'RequestInit': String contains non ISO-8859-1 code point.
+// 为了保留中文来源文案，同时兼容浏览器限制，这里统一做 URL-encode，后端再 decode 还原。
+const encodeHeaderValue = (value, maxLen) => {
+  const trimmed = safeTrim(value, maxLen);
+  if (!trimmed) return "";
+  try {
+    return encodeURIComponent(trimmed);
+  } catch {
+    return "";
+  }
+};
+
 const takeSpaPrevUrl = () => {
   if (typeof window === "undefined") return "";
   try {
@@ -152,7 +165,7 @@ const buildAnalyticsReferrerHeaders = () => {
 
   const prevUrl = takeSpaPrevUrl();
   const docReferrer = document.referrer || "";
-  const referrer = safeTrim(prevUrl || docReferrer, 900);
+  const referrer = encodeHeaderValue(prevUrl || docReferrer, 900);
 
   const headers = {};
   if (referrer) {
@@ -165,7 +178,7 @@ const buildAnalyticsReferrerHeaders = () => {
       const parsed = new URL(prevUrl);
       const currentOrigin = window.location?.origin || "";
       if (currentOrigin && parsed.origin === currentOrigin) {
-        const label = safeTrim(classifyInternalSourceLabel(parsed.pathname), 200);
+        const label = encodeHeaderValue(classifyInternalSourceLabel(parsed.pathname), 200);
         if (label) {
           headers[ANALYTICS_SOURCE_LABEL_HEADER] = label;
         }

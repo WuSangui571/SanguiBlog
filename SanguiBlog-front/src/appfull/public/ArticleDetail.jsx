@@ -550,7 +550,7 @@ const ArticleDetail = ({
         if (!el?.setPointerCapture) return;
         try {
             el.setPointerCapture(event.pointerId);
-        } catch (e) {
+        } catch {
             return;
         }
         previewPanRef.current.active = true;
@@ -716,6 +716,11 @@ const ArticleDetail = ({
             );
         },
     }), [handleImagePreview, inlineCodeBg, resolveAssetPath, createHeading, handleAnchorClick]);
+
+    const excerptMarkdownComponents = useMemo(() => ({
+        ...markdownComponents,
+        p: ({ children }) => <p className="m-0">{children}</p>,
+    }), [markdownComponents]);
 
     const handleCommentSubmit = (payload) => {
         onSubmitComment && onSubmitComment(payload);
@@ -1136,7 +1141,7 @@ const ArticleDetail = ({
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
                                         e.target.onerror = null;
-                                        e.target.src = MOCK_USER.avatar;
+                                        e.target.src = DEFAULT_AVATAR;
                                     }}
                                 />
                             </div>
@@ -1182,10 +1187,18 @@ const ArticleDetail = ({
                         </div>
                     </div>
 
-                    <article className={proseClass} ref={articleContentRef}>
+                    <article className={`${proseClass} sg-article-markdown`} ref={articleContentRef}>
                         <div
-                            className={`p-6 border-l-8 border-[#FFD700] font-serif italic text-xl mb-8 ${quoteBg} ${quoteText}`}>
-                            {post.excerpt}
+                            className={`sg-article-excerpt p-6 border-l-8 border-[#FFD700] font-serif italic text-xl mb-8 ${quoteBg} ${quoteText}`}>
+                            {post.excerpt ? (
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm, remarkHighlight]}
+                                    rehypePlugins={[[rehypeSanitize, SG_REHYPE_SANITIZE_SCHEMA]]}
+                                    components={excerptMarkdownComponents}
+                                >
+                                    {post.excerpt}
+                                </ReactMarkdown>
+                            ) : null}
                         </div>
                         {shouldRenderMarkdown ? (
                             <ReactMarkdown

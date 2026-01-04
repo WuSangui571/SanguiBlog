@@ -12,6 +12,16 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* 文章页：标题中的行内 code 应继承标题字号（避免被 text-sm 缩小） */
+.sg-article-markdown :is(h1, h2, h3, h4, h5, h6) code {
+  font-size: inherit !important;
+}
+
+/* 文章页摘要（引用块）：行内 code 同样应继承摘要字号 */
+.sg-article-excerpt code {
+  font-size: inherit !important;
+}
+
 /* 目录/抽屉等滚动区域的暗色滚动条：避免暗色模式下滚动条轨道仍为白色 */
 .sg-scrollbar {
   scrollbar-width: thin; /* Firefox */

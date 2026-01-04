@@ -15,6 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.util.StringUtils;
+
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -22,6 +26,22 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostService postService;
+
+    private static String decodeHeaderValue(String value) {
+        if (!StringUtils.hasText(value)) {
+            return value;
+        }
+        // 前端对 X-SG-* 头做了 encodeURIComponent，以避免浏览器 fetch 的 ISO-8859-1 限制；
+        // 这里做一次兜底 decode（非编码值将原样返回）。
+        if (!value.contains("%")) {
+            return value;
+        }
+        try {
+            return URLDecoder.decode(value, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
+            return value;
+        }
+    }
 
     @GetMapping
     public ApiResponse<PageResponse<PostSummaryDto>> list(
@@ -56,7 +76,9 @@ public class PostController {
         String ip = IpUtils.resolveIp(request);
         String userAgent = request.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
-        return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId, analyticsReferrer, analyticsSourceLabel));
+        String decodedReferrer = decodeHeaderValue(analyticsReferrer);
+        String decodedSourceLabel = decodeHeaderValue(analyticsSourceLabel);
+        return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId, decodedReferrer, decodedSourceLabel));
     }
 
     @GetMapping("/{id}/neighbors")
@@ -73,7 +95,9 @@ public class PostController {
         String ip = IpUtils.resolveIp(request);
         String userAgent = request.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
-        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip, userAgent, userId, analyticsReferrer, analyticsSourceLabel));
+        String decodedReferrer = decodeHeaderValue(analyticsReferrer);
+        String decodedSourceLabel = decodeHeaderValue(analyticsSourceLabel);
+        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip, userAgent, userId, decodedReferrer, decodedSourceLabel));
     }
 
     @PostMapping
