@@ -76,6 +76,17 @@ import {
     extractHexFromBgClass
 } from "./shared.js";
 
+const decodeMaybeUrlEncoded = (value) => {
+    if (!value || typeof value !== 'string') return value;
+    // 仅在看起来像 URL 编码串时才 decode，避免误伤包含 % 的普通文本
+    if (!/%[0-9a-fA-F]{2}/.test(value)) return value;
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
+};
+
 const formatBgClassFromHex = (hex) => {
     if (!hex) return DEFAULT_THEME_COLOR;
     const normalized = hex.startsWith('#') ? hex.toUpperCase() : `#${hex.toUpperCase()}`;
@@ -512,7 +523,7 @@ const DashboardView = ({ isDarkMode }) => {
                             {trafficSources.map((source, index) => (
                                 <div key={`${source.label}-${index}`}>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span>{source.label}</span>
+                                        <span>{decodeMaybeUrlEncoded(source.label)}</span>
                                         <span className="font-semibold">{Math.round(source.value * 10) / 10}%</span>
                                     </div>
                                     <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
@@ -823,17 +834,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     const renderReferrer = (referrer) => {
         if (!referrer) return '未知来源';
-        const decodeIfEncoded = (value) => {
-            if (!value || typeof value !== 'string') return value;
-            if (!/%[0-9a-fA-F]{2}/.test(value)) return value;
-            try {
-                return decodeURIComponent(value);
-            } catch {
-                return value;
-            }
-        };
-
-        const normalized = decodeIfEncoded(referrer);
+        const normalized = decodeMaybeUrlEncoded(referrer);
         if (/^(https?:)?\/\//i.test(normalized)) {
             let label = normalized;
             try {

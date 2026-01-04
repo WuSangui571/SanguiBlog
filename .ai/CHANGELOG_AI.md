@@ -5,6 +5,25 @@
 
 ---
 
+## [2026-01-04] 修复访问日志“页面类型-文章访问”筛选取反，并补齐流量来源 label 解码兜底
+- 背景/需求：后台 `/admin/analytics` 的“页面类型=文章访问”筛选结果变成“普通+机器”的反向集合；同时仪表盘“流量来源统计”可能仍显示历史 `%E6%...` 编码串。
+- 修改类型：fix
+- 影响范围：后台访问日志查询（后端）/ 仪表盘流量来源展示（前端）
+- 变更摘要：
+  1) 后端 `isArticle` 判定加入 `post.id` join 兜底，避免某些环境下仅用 `postId` 判定导致“文章访问筛选取反”。
+  2) 前端仪表盘“流量来源”对 `source.label` 做 decode 展示兜底，兼容历史数据。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+- 检索与复用策略：
+  - 检索关键词：`pageType` / `ARTICLE` / `postId` / `join(\"post\")` / `trafficSources` / `%[0-9A-F]{2}`
+  - 找到的旧实现：`AnalyticsService.buildAdminPageViewSpec` 的 pageType switch；`AdminPanel` 仪表盘流量来源直接展示 label
+  - 最终选择：复用原有筛选结构，补充判定兜底与展示 decode（不新增接口/不新增模块）
+- 风险点：
+  - join 判定与 postId 判定不一致时，可能将“悬空 post_id”也视为文章访问；但更符合“按 post_id 判定”的直觉口径。
+- 验证方式：
+  - 人工验证：选择“文章访问”仅返回文章访问日志；仪表盘来源 label 不再出现 `%E6%...`。
+
 ## [2026-01-04] 修复后台访问日志“来源”字段显示 URL 编码串（%E6%...）
 - 背景/需求：修复“上一篇/下一篇”跳转的 header 字符集问题后，文章跳转产生的访问日志里“来源”字段出现 `%E6%9D%A5...` 这类 URL 编码串，影响可读性。
 - 修改类型：fix

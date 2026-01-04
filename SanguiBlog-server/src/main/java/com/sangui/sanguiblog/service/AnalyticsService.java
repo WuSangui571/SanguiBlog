@@ -299,9 +299,13 @@ public class AnalyticsService {
                     postTitleLower.in("sitemap.xml", "robots.txt"),
                     pageTitleLower.in("sitemap.xml", "robots.txt")
             );
-            // 文章访问：以 analytics_page_views.post_id 是否为空为准（最直观且稳定的口径）
-            // 说明：这里刻意不依赖 join 后的 Post.id，以避免某些环境/历史数据下 join 口径差异导致筛选反向。
-            jakarta.persistence.criteria.Predicate isArticle = cb.isNotNull(root.get("postId"));
+            // 文章访问：正常情况下以 analytics_page_views.post_id 是否为空为准。
+            // 兼容性兜底：部分环境可能出现“只 join 能判定 post 存在，但 postId 判定异常”的情况；
+            // 这里用 (postId != null) OR (join 后 post.id != null) 双口径，避免“文章访问筛选取反”。
+            jakarta.persistence.criteria.Predicate isArticle = cb.or(
+                    cb.isNotNull(root.get("postId")),
+                    cb.isNotNull(postJoin.get("id"))
+            );
             jakarta.persistence.criteria.Predicate isRobotPage = isRobotTitle;
             jakarta.persistence.criteria.Predicate isNormalPage = cb.and(cb.not(isArticle), cb.not(isRobotTitle));
 
