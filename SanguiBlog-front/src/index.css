@@ -17,6 +17,11 @@ html {
   font-size: inherit !important;
 }
 
+/* 文章页：正文行内 code 与正文同字号（避免 typography 默认让 code 偏小） */
+.sg-article-markdown :not(pre) > code {
+  font-size: inherit !important;
+}
+
 /* 文章页摘要（引用块）：行内 code 同样应继承摘要字号 */
 .sg-article-excerpt code {
   font-size: inherit !important;

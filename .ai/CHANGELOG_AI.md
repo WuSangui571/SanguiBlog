@@ -11,12 +11,14 @@
 - 影响范围：前台文章详情页渲染 / 前端埋点请求头 / 后端文章详情接口
 - 变更摘要：
   1) 为文章页标题内的 `code` 强制继承标题字号，避免被 `text-sm` 缩小。
+  1.1) 补充修复：正文行内 `code` 与正文同字号（Markdown 与 HTML 兜底路径一致），避免正文中 `` `xxx` `` 仍偏小。
   2) 摘要区改为 `ReactMarkdown` 渲染（支持行内代码/高亮等），并抑制额外段落 margin。
   3) 前端对 `X-SG-Referrer` / `X-SG-Source-Label` 统一 `encodeURIComponent`，后端 `PostController` 兜底 decode，避免浏览器 fetch header 的 ISO-8859-1 限制导致跳转报错。
 - 涉及文件：
   - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
   - `SanguiBlog-front/src/api.js`
   - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/PostController.java`
+  - `SanguiBlog-front/src/index.css`
 - 检索与复用策略：
   - 检索关键词：`/article/:id`、`ArticleDetail`、`post.excerpt`、`text-sm`、`inlineCodeBg`、`X-SG-Source-Label`、`buildAnalyticsReferrerHeaders`
   - 找到的旧实现：文章页 Markdown 渲染与自定义 `code` 渲染器、文章详情请求头埋点逻辑、后端 `PostController` 对应 Header 入参

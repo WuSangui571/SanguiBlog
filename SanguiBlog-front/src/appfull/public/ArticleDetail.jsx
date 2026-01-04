@@ -668,7 +668,7 @@ const ArticleDetail = ({
                                     return (
                                         <code
                                             key={i}
-                                            className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+                                            className={`px-1 py-0.5 rounded font-mono text-[inherit] ${inlineCodeBg}`}
                                             {...props}
                                         >
                                             {part}
@@ -682,7 +682,7 @@ const ArticleDetail = ({
                 }
                 return (
                     <code
-                        className={`px-1 py-0.5 rounded font-mono text-sm ${inlineCodeBg}`}
+                        className={`px-1 py-0.5 rounded font-mono text-[inherit] ${inlineCodeBg}`}
                         {...props}
                     >
                         {textContent}
