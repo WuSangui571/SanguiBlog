@@ -5,6 +5,30 @@
 
 ---
 
+## [2026-01-04] 更新 Git 忽略规则与发布文档（V2.1.285）
+- 背景/需求：你准备发布 `V2.1.285`，需要补齐 release 文档；同时希望确认并适配仓库的 `.gitignore` / `.gitattributes`，减少误提交构建产物/本地文件的风险。
+- 修改类型：docs / chore
+- 影响范围：仓库 Git 配置 / 发布文档 / 根目录 README 引用
+- 变更摘要：
+  1) 调整根目录 `.gitignore`：补充忽略 `temp/`，并用 `uploads/** + !uploads/.gitkeep` 保留上传目录占位；对 `.env` 模板文件做白名单保留（example/sample/template）。
+  2) 调整根目录 `.gitattributes`：补充 `*.sql` 强制 LF，减少跨平台换行差异。
+  3) 新增发布说明：`release/V2.1.285.md`。
+  4) 更新根目录 `README.md`：版本号与 release 链接指向 `V2.1.285`。
+- 涉及文件：
+  - `.gitignore`
+  - `.gitattributes`
+  - `uploads/.gitkeep`
+  - `release/V2.1.285.md`
+  - `README.md`
+- 检索与复用策略：
+  - 检索关键词：`.gitignore` / `.gitattributes` / `release/V2.1.275.md` / `site.version` / `temp` / `uploads`
+  - 找到的旧实现：`release/V2.1.275.md`（发布说明格式）、`README.md`（release 引用）、`application.yaml`（版本号来源）
+  - 最终选择：复用既有 release 文档结构与版本号来源说明，最小化调整 ignore/attributes 规则
+- 风险点：
+  - `.gitignore` 的 `.env` 白名单仅保留模板文件名；若团队使用其它命名（如 `.env.prod.example`），需按实际补充。
+- 验证方式：
+  - 人工检查：`uploads/.gitkeep` 可提交；`temp/` 不再出现在未跟踪列表；`README.md` 与 `release/` 目录引用一致。
+
 ## [2026-01-04] 修复访问日志“页面类型-文章访问”筛选取反，并补齐流量来源 label 解码兜底
 - 背景/需求：后台 `/admin/analytics` 的“页面类型=文章访问”筛选结果变成“普通+机器”的反向集合；同时仪表盘“流量来源统计”可能仍显示历史 `%E6%...` 编码串。
 - 修改类型：fix

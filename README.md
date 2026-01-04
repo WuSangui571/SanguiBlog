@@ -2,11 +2,11 @@
 
 SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发；更完整的技术手册请阅读 `.ai/PROJECT_MEMORY.md`。
 
-> 当前站点版本号：`V2.1.275`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
+> 当前站点版本号：`V2.1.285`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
 
 ## 1. 目录索引
 
-- 发布说明：`release/V2.1.275.md`
+- 发布说明：`release/V2.1.285.md`
 - AI 入口（提示词/流程）：`.ai/README.md`
 - AI 修改日志：`.ai/CHANGELOG_AI.md`
 - 技术手册 / 项目记忆：`.ai/PROJECT_MEMORY.md`
@@ -17,7 +17,7 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 ├─ SanguiBlog-server/      # Spring Boot 服务端（REST API、鉴权、站点地图等）
 ├─ SanguiBlog-front/       # React 单页应用（访客端 + 管理端 UI）
 ├─ uploads/                # 默认上传目录（生产环境建议挂载到持久化存储）
-├─ release/                # Release Notes（例如 V2.1.249 / V2.1.275）
+├─ release/                # Release Notes（例如 V2.1.249 / V2.1.285）
 ├─ sanguiblog_db.sql       # 初始化建库脚本（表结构 + 基础数据）
 └─ README.md               # 本文档
 ```
@@ -115,7 +115,7 @@ server {
 }
 ```
 
-## 8. sitemap/robots 说明（V2.1.275）
+## 8. sitemap/robots 说明（V2.1.275+）
 
 - 站点地图：`GET /sitemap.xml`
   - URL 超阈值时返回 `<sitemapindex>`，并通过 `GET /sitemap.xml?page=1..N` 分片拉取

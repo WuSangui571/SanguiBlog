@@ -26,10 +26,12 @@ log/
 scripts/.tmp/
 
 # Uploaded files (your blog's image uploads, markdown uploads etc)
-uploads/
+uploads/**
+!uploads/.gitkeep
 static/uploads/
 public/uploads/
 resources/static/uploads/
+temp/
 
 # Operating system files
 .DS_Store
@@ -78,11 +80,21 @@ SanguiBlog-front/yarn-error.log*
 # ======================
 .env
 .env.*
+!.env.example
+!.env.sample
+!.env.template
 application-local.yml
-application-dev.yml
 SanguiBlog-server/.env
 SanguiBlog-server/.env.*
 SanguiBlog-server/target/
+SanguiBlog-server/src/main/resources/application-local.yml
+SanguiBlog-server/src/main/resources/application-local.yaml
+SanguiBlog-front/.env.example
+SanguiBlog-front/.env.sample
+SanguiBlog-front/.env.template
+SanguiBlog-server/.env.example
+SanguiBlog-server/.env.sample
+SanguiBlog-server/.env.template
 
 # ======================
 # Misc
@@ -100,10 +112,3 @@ SanguiBlog-server/target/
 *.bak
 *.swp
 *.swo
-
-# =====================================
-# Git keep exceptions
-# (keep directories but ignore contents)
-# =====================================
-!src/main/resources/
-!src/main/java/
