@@ -722,7 +722,7 @@ const Navigation = ({
                         <div className="p-4 space-y-3 max-h-[calc(92vh-64px)] overflow-y-auto">
                             <div className={`flex items-center gap-3 p-4 border-2 border-black rounded-none shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                                 <div className={`w-11 h-11 rounded-full border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
-                                    {backgroundEnabled ? <Sun size={18} /> : <Moon size={18} />}
+                                    {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
                                 </div>
                                 <div className="flex-1 space-y-1">
                                     <div className="font-black text-sm">彩蛋背景</div>
