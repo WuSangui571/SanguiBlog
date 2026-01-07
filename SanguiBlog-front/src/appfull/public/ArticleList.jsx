@@ -928,7 +928,7 @@ const ArticleList = ({
                                         setAppliedKeyword('');
                                         setActiveTag('all');
                                         scrollToPostsTop();
-                                    }}>RESET FILTERS</PopButton>
+                                    }}>重置筛选</PopButton>
                                 </div>
                             ))}
                         </div>
