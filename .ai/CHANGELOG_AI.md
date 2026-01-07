@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-01-07] 增加版本号更新规则与脚本
+- 背景/需求：要求 AI 判断是否需要小/大版本更新，并提供统一版本号更新流程与脚本，确保首页与文档同步。
+- 修改类型：docs / chore
+- 影响范围：AI 规则 / 版本更新流程 / README / 脚本
+- 变更摘要：
+  1) `.ai/README.md` 新增“版本号规则（永久）”。
+  2) 新增 `scripts/bump-version.ps1`，统一更新 `site.version`、HomeView 默认值、README 与 Release 文件。
+  3) README 新增“版本号更新（脚本）”说明并修复乱码段落。
+- 涉及文件：
+  - `.ai/README.md`
+  - `scripts/bump-version.ps1`
+  - `README.md`
+- 检索与复用策略：
+  - 检索关键词：`site.version` / `HomeView` / `release/` / `README`
+  - 找到的旧实现：`application.yaml` 版本号与 README 当前版本行
+  - 最终选择：新增脚本统一更新入口
+- 风险点：
+  - 若指定版本跨越第一位会被脚本拒绝（需用户明确要求）。
+- 验证方式：
+  - 手动：执行脚本后检查 `site.version`、首页版本展示与 README release 链接同步。
+
 ## [2026-01-07] 修复 README 乱码（后端配置段落重写）
 - 背景/需求：README 的后端配置段落出现乱码，需要恢复为可读中文。
 - 修改类型：docs

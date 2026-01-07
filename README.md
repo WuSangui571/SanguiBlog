@@ -11,6 +11,28 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 - AI 修改日志：`.ai/CHANGELOG_AI.md`
 - 技术手册 / 项目记忆：`.ai/PROJECT_MEMORY.md`
 
+## 1.1 版本号更新（脚本）
+
+版本号统一由后端 `site.version` 提供，首页会显示为 `SANGUI BLOG // <version>`。
+推荐使用脚本统一更新（会同步更新 README / HomeView / Release 文件）：
+
+```powershell
+# 小版本（第三位 +1）
+./scripts/bump-version.ps1 -Bump patch
+
+# 大版本（第二位 +1，第三位置 0）
+./scripts/bump-version.ps1 -Bump minor
+
+# 指定版本（禁止修改第一位）
+./scripts/bump-version.ps1 -Version V2.1.286
+```
+
+脚本会更新：
+- `SanguiBlog-server/src/main/resources/application.yaml` 的 `site.version`
+- `SanguiBlog-front/src/appfull/public/HomeView.jsx` 的默认版本回退值
+- `README.md` 当前版本号与 release 链接
+- `release/<version>.md`（若不存在会生成模板）
+
 ## 2. 项目结构
 
 ```
