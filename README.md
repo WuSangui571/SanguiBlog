@@ -46,14 +46,14 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
    ```
 3. 建议创建业务账号（读写权限），并在后端配置里配置用户名/密码（见下一节）。
 
-## 5. ????????SanguiBlog-server?
-???????
-- ??????? Git??`SanguiBlog-server/src/main/resources/application.yaml`
-- ???????? Git??`SanguiBlog-server/src/main/resources/application-local.yaml`
+## 5. 后端配置与启动（SanguiBlog-server）
+后端配置文件：
+- 通用配置（提交 Git）：`SanguiBlog-server/src/main/resources/application.yaml`
+- 私有配置（不提交 Git）：`SanguiBlog-server/src/main/resources/application-local.yaml`
 
-`application.yaml` ??? `spring.config.import` ?? `application-local.yaml`????????/JWT/????????
+`application.yaml` 已通过 `spring.config.import` 引入 `application-local.yaml`，用于加载数据库/JWT/站点等私有配置。
 
-`application-local.yaml` ?????????????
+`application-local.yaml` 示例（请按实际环境修改）：
 ```yaml
 spring:
   datasource:
@@ -81,29 +81,19 @@ site:
   asset-base-url: https://www.sangui.top/uploads
 ```
 
-### 5.1 ???????? application-local.yaml ?????????
+### 5.1 必配项（建议写入 application-local.yaml 或用环境变量注入）
 
-- ????`spring.datasource.url/username/password`??? `application-local.yaml` ??????
-  - ???????`SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`???? `DB_URL` / `DB_USERNAME` / `DB_PASSWORD`?
-- JWT ???`jwt.secret`??? `application-local.yaml` ????? `JWT_SECRET`?
-- ?????`storage.base-path`??? `application-local.yaml` ????? `STORAGE_BASE_PATH`?
+- 数据库：`spring.datasource.url/username/password`（写入 `application-local.yaml` 或环境变量）
+  - 兼容环境变量：`SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`（也可用 `DB_URL` / `DB_USERNAME` / `DB_PASSWORD`）
+- JWT 密钥：`jwt.secret`（写入 `application-local.yaml` 或环境变量 `JWT_SECRET`）
+- 上传目录：`storage.base-path`（写入 `application-local.yaml` 或环境变量 `STORAGE_BASE_PATH`）
 
-### 5.2 ?????
+### 5.2 端口与跨域
 
-- ?????`server.port`????? `8080`?
-- CORS?`security.cors.allowed-origins`??? `application-local.yaml` ????? `SECURITY_CORS_ALLOWED_ORIGINS`?
+- 服务端口：`server.port`（仓库默认 `8080`）
+- CORS：`security.cors.allowed-origins`（写入 `application-local.yaml` 或环境变量 `SECURITY_CORS_ALLOWED_ORIGINS`）
 
 ### 5.3 启动方式
-
-构建 Jar：
-```bash
-cd SanguiBlog-server
-mvn clean package -DskipTests
-```
-启动（Jar 名称以实际构建产物为准，通常类似 `SanguiBlog-server-0.0.1-SNAPSHOT.jar`）：
-```bash
-java -jar target/SanguiBlog-server-0.0.1-SNAPSHOT.jar
-```
 
 ## 6. 前端构建与部署（SanguiBlog-front）
 
