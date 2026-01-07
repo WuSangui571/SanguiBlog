@@ -3,17 +3,14 @@
 #  port: 8082
 
 spring:
+  config:
+    import: "optional:classpath:application-local.yaml"
   application:
     name: SanguiBlog-server
   servlet:
     multipart:
       max-file-size: 60MB
       max-request-size: 60MB
-  datasource:
-    url: jdbc:mysql://123.56.244.121:3306/sanguiblog_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
-    username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
-    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
-    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: none
@@ -24,24 +21,8 @@ spring:
     default-property-inclusion: non_null
 
 jwt:
-  secret: ${JWT_SECRET:${SPRING_JWT_SECRET:?JWT_SECRET (or SPRING_JWT_SECRET) is required}}
-#  secret: change-me-sangui-super-secret-256-bit-key
   expiration-minutes: 180
   issuer: sangui-blog
-
-security:
-  cors:
-    allowed-origins: >
-      https://sangui.top,
-      https://www.sangui.top,
-      http://localhost:5173,
-      http://127.0.0.1:5173,
-      http://localhost:5174,
-      http://127.0.0.1:5174,
-      http://localhost:8082,
-      http://127.0.0.1:8082,
-      http://localhost:3000,
-      http://127.0.0.1:3000
 
 springdoc:
   swagger-ui:
@@ -57,20 +38,12 @@ logging:
     org.hibernate.SQL: WARN
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
 
-storage:
-  base-path: ${STORAGE_BASE_PATH:D:\02-WorkSpace\02-Java\SanguiBlog\uploads}
-#  base-path: ${STORAGE_BASE_PATH:/home/sangui/uploads}
-
 site:
-  base-url: ${SITE_BASE_URL:https://www.sangui.top}
-  allowed-hosts: ${SITE_ALLOWED_HOSTS:sangui.top,www.sangui.top}
   sitemap:
     cache-ttl-ms: ${SITE_SITEMAP_CACHE_TTL_MS:600000}
     refresh-delay-ms: ${SITE_SITEMAP_REFRESH_DELAY_MS:600000}
     max-urls-per-file: ${SITE_SITEMAP_MAX_URLS_PER_FILE:45000}
   version: "V2.1.285"
-  asset-base-url: http://sangui.top/uploads
-#  asset-base-url: ${ASSET_BASE_URL:http://localhost:${server.port}/uploads}
   hero:
     tagline: 我是三桂，在这里把问题想清楚，把代码写简单。
   home:

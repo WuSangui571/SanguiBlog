@@ -46,22 +46,52 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
    ```
 3. 建议创建业务账号（读写权限），并在后端配置里配置用户名/密码（见下一节）。
 
-## 5. 后端配置与启动（SanguiBlog-server）
+## 5. ????????SanguiBlog-server?
+???????
+- ??????? Git??`SanguiBlog-server/src/main/resources/application.yaml`
+- ???????? Git??`SanguiBlog-server/src/main/resources/application-local.yaml`
 
-后端配置文件：`SanguiBlog-server/src/main/resources/application.yaml`
+`application.yaml` ??? `spring.config.import` ?? `application-local.yaml`????????/JWT/????????
 
-### 5.1 必配项（建议用环境变量注入）
+`application-local.yaml` ?????????????
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/sanguiblog_db?useSSL=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
+    username: your_db_user
+    password: your_db_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
-- 数据库：`spring.datasource.url/username/password`
-  - 支持环境变量：`DB_USERNAME` / `DB_PASSWORD`（也兼容 Spring 标准变量）
-- JWT 密钥：`JWT_SECRET`（必填，未提供会直接启动失败）
-- 上传目录：`storage.base-path`
-  - 支持环境变量：`STORAGE_BASE_PATH`
+jwt:
+  secret: your_jwt_secret
 
-### 5.2 端口与跨域
+storage:
+  base-path: /path/to/uploads
 
-- 服务端口：`server.port`（仓库默认 `8080`）
-- CORS：`security.cors.allowed-origins`（开发端口 `5173/5174` 已在默认列表中）
+security:
+  cors:
+    allowed-origins: >
+      https://sangui.top,
+      https://www.sangui.top,
+      http://localhost:5173
+
+site:
+  base-url: https://www.sangui.top
+  allowed-hosts: sangui.top,www.sangui.top
+  asset-base-url: https://www.sangui.top/uploads
+```
+
+### 5.1 ???????? application-local.yaml ?????????
+
+- ????`spring.datasource.url/username/password`??? `application-local.yaml` ??????
+  - ???????`SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`???? `DB_URL` / `DB_USERNAME` / `DB_PASSWORD`?
+- JWT ???`jwt.secret`??? `application-local.yaml` ????? `JWT_SECRET`?
+- ?????`storage.base-path`??? `application-local.yaml` ????? `STORAGE_BASE_PATH`?
+
+### 5.2 ?????
+
+- ?????`server.port`????? `8080`?
+- CORS?`security.cors.allowed-origins`??? `application-local.yaml` ????? `SECURITY_CORS_ALLOWED_ORIGINS`?
 
 ### 5.3 启动方式
 

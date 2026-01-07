@@ -5,6 +5,48 @@
 
 ---
 
+## [2026-01-07] 更新环境切换脚本以适配私有配置与数据库切换
+- 背景/需求：需要在切换环境时使用新的 `application-local.yaml` 私有配置，并调整数据库地址（dev 使用远程、prod 使用本地），同时保持端口/Storage/AssetBase/ApiBase 的切换逻辑。
+- 修改类型：fix / docs
+- 影响范围：环境切换脚本 / 文档
+- 变更摘要：
+  1) `scripts/switch-env.ps1` 改为更新 `application-local.yaml`（dbUrl/storage/asset-base-url）并继续更新 `application.yaml` 的端口与前端 `VITE_API_BASE`。
+  2) `ChangeEnv.md` 更新为新的切换流程与手工配置说明。
+  3) `README.md` 补充并纠正后端私有配置说明。
+- 涉及文件：
+  - `scripts/switch-env.ps1`
+  - `ChangeEnv.md`
+  - `README.md`
+- 检索与复用策略：
+  - 检索关键词：`switch-env.ps1` / `application-local.yaml` / `VITE_API_BASE` / `asset-base-url` / `storage.base-path`
+  - 找到的旧实现：旧脚本直接改 `application.yaml` 与 `.env.local`
+  - 最终选择：复用原脚本结构，分离到 `application-local.yaml`
+- 风险点：
+  - 若 `application-local.yaml` 未创建且未设置环境变量，后端将无法启动。
+- 验证方式：
+  - 手动：执行 `./scripts/switch-env.ps1 dev|prod`，检查 `application.yaml` 端口、`application-local.yaml` dbUrl/Storage/AssetBase、`.env.local` ApiBase 是否切换。
+
+## [2026-01-07] 拆分私有配置到 application-local.yaml 并移除公网默认数据库
+- 背景/需求：数据库配置默认指向公网 IP 且 useSSL=false，并回退 root/空密码，存在明文传输与弱口令风险；需要将可配置项迁移到私有配置文件并禁止提交。
+- 修改类型：fix / docs
+- 影响范围：后端配置 / 项目文档
+- 变更摘要：
+  1) `application.yaml` 引入 `application-local.yaml`，并移除数据库/JWT/站点等私有配置的默认值。
+  2) 新增 `application-local.yaml`（gitignore）承载用户私有配置示例。
+  3) 更新 `README.md`：说明新配置文件位置、示例格式与环境变量替代方式。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-server/src/main/resources/application-local.yaml`
+  - `README.md`
+- 检索与复用策略：
+  - 检索关键词：`application.yaml` / `datasource` / `jwt.secret` / `asset-base-url`
+  - 找到的旧实现：`application.yaml` 直接包含公网 DB 与 HTTP 资源域名默认值
+  - 最终选择：使用 Spring `spring.config.import` 方式引入私有配置文件
+- 风险点：
+  - 未创建 `application-local.yaml` 且未设置环境变量时，后端将无法启动。
+- 验证方式：
+  - 手动：本地创建 `application-local.yaml` 后启动服务，确认可正常读取数据库与 JWT 配置。
+
 ## [2026-01-07] 修复文章标签无法清空的问题（/api/posts）
 - 背景/需求：后台创建/更新文章走 `/api/posts`，当传空 `tagIds` 时后端不会清空标签，导致标签残留。
 - 修改类型：fix
