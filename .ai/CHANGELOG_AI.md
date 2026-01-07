@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-01-07] 修复后端测试依赖外部数据库导致构建失败
+- 背景/需求：Maven 构建时执行单测，`@SpringBootTest` 连接真实 MySQL 失败（Connection refused）。
+- 修改类型：fix
+- 影响范围：后端测试配置
+- 变更摘要：
+  1) 新增 H2 测试依赖，并使用 `application-test.yaml` 作为测试数据源。
+  2) 测试类启用 `test` profile，避免依赖外部数据库。
+- 涉及文件：
+  - `SanguiBlog-server/pom.xml`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/SanguiBlogServerApplicationTests.java`
+  - `SanguiBlog-server/src/test/resources/application-test.yaml`
+- 检索与复用策略：
+  - 检索关键词：`@SpringBootTest` / `application-test` / `pom.xml` / `h2`
+  - 找到的旧实现：测试使用默认配置直连 MySQL
+  - 最终选择：测试 profile + H2 内存库
+- 风险点：
+  - 测试数据源与生产 MySQL 行为可能存在少量差异（已有 MySQL 模式参数降低差异）。
+- 验证方式：
+  - 手动：`mvn test` 或 `mvn package` 不再因数据库连接失败而中断。
+
 ## [2026-01-07] 小版本号更新至 V2.1.286
 - 背景/需求：用户要求更新小版本号，并要求由 AI 判断后续是否需要更新版本。
 - 修改类型：chore
