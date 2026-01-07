@@ -56,7 +56,7 @@ import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-reac
                             )}
 
                             <span
-                                className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>{item.label}</span>
+                                className={`text-[12px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>{item.label}</span>
                         </div>
                     ))}
                 </div>
