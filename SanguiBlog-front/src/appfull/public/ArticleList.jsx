@@ -668,7 +668,7 @@ const ArticleList = ({
                                 </div>
                                 <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
                                     <div
-                                        className={`flex items-center gap-2 flex-1 px-3 py-2 border-2 border-black rounded-none shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+                                        className={`flex items-center gap-2 flex-1 min-w-0 px-3 py-2 border-2 border-black rounded-none shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
                                         <Search size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
                                         <input
                                             type="text"
@@ -682,7 +682,7 @@ const ArticleList = ({
                                                 }
                                             }}
                                             placeholder="输入关键词后按回车搜索（标题/摘要模糊匹配）"
-                                            className={`w-full bg-transparent outline-none text-sm font-semibold placeholder:font-normal placeholder:text-gray-400 ${isDarkMode ? 'text-white' : 'text-black'}`}
+                                            className={`flex-1 min-w-0 bg-transparent outline-none text-sm font-semibold placeholder:font-normal placeholder:text-gray-400 ${isDarkMode ? 'text-white' : 'text-black'}`}
                                         />
                                         {keyword && (
                                             <button
@@ -693,7 +693,7 @@ const ArticleList = ({
                                                     setCurrentPage(1);
                                                     scrollToPostsTop();
                                                 }}
-                                                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-none border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-white text-black hover:-translate-y-0.5' : 'bg-black text-white hover:bg-[#FF0080]'}`}
+                                                className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-bold px-2 py-1 rounded-none border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-white text-black hover:-translate-y-0.5' : 'bg-black text-white hover:bg-[#FF0080]'}`}
                                             >
                                                 <X size={14} /> 清空
                                             </button>
