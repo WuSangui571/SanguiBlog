@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-01-07] 小版本号更新至 V2.1.286
+- 背景/需求：用户要求更新小版本号，并要求由 AI 判断后续是否需要更新版本。
+- 修改类型：chore
+- 影响范围：版本号与发布文档
+- 变更摘要：
+  1) 版本号从 `V2.1.285` 更新为 `V2.1.286`。
+  2) 同步更新 README 与首页版本回退值，并生成 `release/V2.1.286.md` 模板。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `README.md`
+  - `release/V2.1.286.md`
+- 检索与复用策略：
+  - 检索关键词：`site.version` / `HomeView` / `release/`
+  - 找到的旧实现：`scripts/bump-version.ps1` 统一更新流程
+  - 最终选择：复用脚本自动同步版本号
+- 风险点：
+  - 无
+- 验证方式：
+  - 手动：启动后首页 Banner 显示 `V2.1.286`，README 与 release 文件名同步更新。
+
 ## [2026-01-07] 增加版本号更新规则与脚本
 - 背景/需求：要求 AI 判断是否需要小/大版本更新，并提供统一版本号更新流程与脚本，确保首页与文档同步。
 - 修改类型：docs / chore

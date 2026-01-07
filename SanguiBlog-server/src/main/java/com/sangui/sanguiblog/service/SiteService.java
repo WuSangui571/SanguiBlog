@@ -63,7 +63,7 @@ public class SiteService {
         private String siteAssetBaseUrl;
         @Value("${site.hero.tagline:我是三桂，在这里把问题想清楚，把代码写简单。}")
         private String heroTagline;
-        @Value("${site.home.signature-quote:别急，先把问题想清楚。}")
+        @Value("${site.home.signature-quote:阻挡你的不是别人，而是你自己。}")
         private String homeSignatureQuote;
 
         public SiteMetaDto meta() {

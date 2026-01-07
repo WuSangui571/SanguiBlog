@@ -166,7 +166,7 @@ export const MOCK_USER = {
     id: 1,
     username: "三桂",
     title: "Fullstack Developer",
-    bio: "个人学习记录｜三桂醒着就行，慢慢努力中；灯还亮着，就不算困。",
+    bio: "个人学习记录  |  三桂醒着就行，沉住气慢慢努力；只要灯还亮着，就还不算困。Stay sober, keep striving. As long as the light burns, I will not drift into the dark.",
     avatar: DEFAULT_AVATAR,
     role: "SUPER_ADMIN",
     social: {
@@ -208,7 +208,7 @@ export const DEFAULT_PAGE_SIZE = 5;
 export const PAGE_SIZE_OPTIONS = [5, 10, 20];
 export const PAGE_SIZE_STORAGE_KEY = 'sangui_home_page_size';
 export const DEFAULT_HERO_TAGLINE = '我是三桂，在这里把问题想清楚，把代码写简单。';
-export const DEFAULT_HOME_QUOTE = '别急，先把问题想清楚。';
+export const DEFAULT_HOME_QUOTE = '阻挡你的不是别人，而是你自己。';
 export const TAG_PREVIEW_COUNT = 9;
 export const SPIN_WARNINGS = [
     '慢点慢点，我的小脑壳有点晕～',
