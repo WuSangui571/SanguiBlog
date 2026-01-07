@@ -735,7 +735,7 @@ const Navigation = ({
                                     aria-label="切换彩蛋背景"
                                 >
                                     <span
-                                        className={`absolute top-1 left-1 w-7 h-7 rounded-full border-2 border-black bg-white shadow-[2px_2px_0px_0px_#000] transition-transform ${backgroundEnabled ? 'translate-x-6' : 'translate-x-0'}`}
+                                        className={`absolute top-1/2 left-1 w-7 h-7 -translate-y-1/2 rounded-full border-2 border-black bg-white shadow-[2px_2px_0px_0px_#000] transition-transform ${backgroundEnabled ? 'translate-x-6' : 'translate-x-0'}`}
                                     />
                                     <span className="absolute inset-y-0 right-2 flex items-center text-[10px] font-black uppercase">
                                         {backgroundEnabled ? 'ON' : 'OFF'}
