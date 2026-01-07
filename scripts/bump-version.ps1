@@ -1,7 +1,8 @@
 ﻿param(
     [string]$Version,
     [ValidateSet("patch", "minor")]
-    [string]$Bump
+    [string]$Bump,
+    [switch]$CreateRelease
 )
 
 if ([string]::IsNullOrWhiteSpace($Version) -and [string]::IsNullOrWhiteSpace($Bump)) {
@@ -85,39 +86,49 @@ if ($newVersion -eq $currentVersion) {
 }
 
 # Update application.yaml
-Replace-Regex -Path $serverFile -Pattern 'version:\s*"?V\d+\.\d+\.\d+"?' -Replacement "version: \"$newVersion\"" | Out-Null
+$serverUpdated = Replace-Regex -Path $serverFile -Pattern 'version:\s*"?V\d+\.\d+\.\d+"?' -Replacement "version: `"$newVersion`""
+if (-not $serverUpdated) {
+    Replace-Regex -Path $serverFile -Pattern '^(\\s*version:\\s*).*$' -Replacement ('$1' + '"' + $newVersion + '"') | Out-Null
+}
 
 # Update HomeView fallback
 Replace-Regex -Path $homeViewFile -Pattern "const siteVersion = meta\?\.version \|\| 'V\d+\.\d+\.\d+';" -Replacement "const siteVersion = meta?.version || '$newVersion';" | Out-Null
 
-# Update README current version and release link
+# Update README current version (release link only when requested)
 $readmeText = Get-Content -Path $readmeFile -Raw -Encoding UTF8
 $readmeText = [regex]::Replace($readmeText, '(当前站点版本号：`)(V\d+\.\d+\.\d+)(`)', ('$1' + $newVersion + '$3'))
-$readmeText = [regex]::Replace($readmeText, "release/V\d+\.\d+\.\d+\.md", "release/$newVersion.md")
+if ($CreateRelease) {
+    $readmeText = [regex]::Replace($readmeText, "release/V\d+\.\d+\.\d+\.md", "release/$newVersion.md")
+}
 Set-Content -Path $readmeFile -Value $readmeText -Encoding UTF8
 
-# Ensure release note exists
-if (-not (Test-Path $releaseDir)) {
-    New-Item -ItemType Directory -Path $releaseDir | Out-Null
-}
-$releaseFile = Join-Path $releaseDir "$newVersion.md"
-if (-not (Test-Path $releaseFile)) {
-    $date = (Get-Date).ToString('yyyy-MM-dd')
-    $template = @(
-        "# SanguiBlog $newVersion 发布说明",
-        "",
-        "> **版本性质**：增量更新（相对 `$currentVersion`）",
-        "> **发布日期**：$date",
-        "",
-        "## 变更摘要",
-        "- TODO",
-        "",
-        "## 兼容性与升级注意事项",
-        "- TODO"
-    )
-    Set-Content -Path $releaseFile -Value $template -Encoding UTF8
+if ($CreateRelease) {
+    if (-not (Test-Path $releaseDir)) {
+        New-Item -ItemType Directory -Path $releaseDir | Out-Null
+    }
+    $releaseFile = Join-Path $releaseDir "$newVersion.md"
+    if (-not (Test-Path $releaseFile)) {
+        $date = (Get-Date).ToString('yyyy-MM-dd')
+        $template = @(
+            "# SanguiBlog $newVersion ????",
+            "",
+            "> **????**???????? `$currentVersion`?",
+            "> **????**?$date",
+            "",
+            "## ????",
+            "- TODO",
+            "",
+            "## ??????????",
+            "- TODO"
+        )
+        Set-Content -Path $releaseFile -Value $template -Encoding UTF8
+    }
 }
 
 Write-Host "Version updated: $currentVersion -> $newVersion" -ForegroundColor Green
 Write-Host "Updated: application.yaml, HomeView.jsx, README.md"
-Write-Host "Release note: $releaseFile"
+if ($CreateRelease) {
+    Write-Host "Release note: $releaseFile"
+} else {
+    Write-Host "Release note: skipped (use -CreateRelease to generate)"
+}

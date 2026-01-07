@@ -1,4 +1,4 @@
-# AI Entry Point（必须先读）
+﻿# AI Entry Point（必须先读）
 
 你是本项目的高级软件工程师、系统设计师与代码架构师。
 你可以用英文进行内部推理，但所有输出必须为 UTF-8 简体中文，禁止乱码。
@@ -50,3 +50,6 @@ H. 更新日志：按 `.ai/CHANGELOG_AI.md` 追加记录；必要时更新 `.ai/
 9) CHANGELOG_AI 追加内容示例
 10) PROJECT_MEMORY 更新建议（如有）
 11) Git 提交建议（feat|fix|refactor|docs: 中文描述）
+
+
+补充规则：release 文档仅在用户明确要求时生成/更新，版本脚本默认不创建 release 文档。

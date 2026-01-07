@@ -2802,5 +2802,8 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.287 (2026-01-07)
 - **模块/页面**：修复首页版本号显示异常（`site.version` 误为反斜杠导致 Banner 显示 `SANGUI BLOG // \`），恢复为可用版本号并同步 README 当前版本。
 - **脚本**：修复 `scripts/bump-version.ps1` 对 README 版本行的正则替换，确保版本号更新脚本可用。
+- **脚本/规范**：版本更新脚本默认不再自动生成 release 文档；发布说明仅在用户明确要求时生成（通过 `-CreateRelease` 开关）。
+- **规范/文档**：为 `.ai/README.md` 添加 UTF-8 BOM，提升 Windows 下识别 UTF-8 的稳定性，避免显示乱码。
+- **规范/文档**：修复 `.ai/README.md` 末尾新增规则的乱码内容，确保文本可读。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.287`
 

@@ -14,7 +14,7 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 ## 1.1 版本号更新（脚本）
 
 版本号统一由后端 `site.version` 提供，首页会显示为 `SANGUI BLOG // <version>`。
-推荐使用脚本统一更新（会同步更新 README / HomeView / Release 文件）：
+推荐使用脚本统一更新（默认仅更新 README / HomeView；发布说明按需生成）：
 
 ```powershell
 # 小版本（第三位 +1）
@@ -25,13 +25,18 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 
 # 指定版本（禁止修改第一位）
 ./scripts/bump-version.ps1 -Version V2.1.286
+
+# 需要生成发布说明时再显式添加
+./scripts/bump-version.ps1 -Bump patch -CreateRelease
 ```
 
 脚本会更新：
 - `SanguiBlog-server/src/main/resources/application.yaml` 的 `site.version`
 - `SanguiBlog-front/src/appfull/public/HomeView.jsx` 的默认版本回退值
-- `README.md` 当前版本号与 release 链接
-- `release/<version>.md`（若不存在会生成模板）
+- `README.md` 当前版本号（仅在 `-CreateRelease` 时更新 release 链接）
+- `release/<version>.md`（仅当使用 `-CreateRelease` 时生成模板）
+
+> 发布说明仅在你明确要求时生成；未加 `-CreateRelease` 时不会自动创建 release 文档。
 
 ## 2. 项目结构
 
