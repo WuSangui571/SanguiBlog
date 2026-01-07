@@ -2,11 +2,11 @@
 
 SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发；更完整的技术手册请阅读 `.ai/PROJECT_MEMORY.md`。
 
-> 当前站点版本号：`V2.1.285`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
+> 当前站点版本号：`V2.1.287`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
 
 ## 1. 目录索引
 
-- 发布说明：`release/V2.1.286.md`
+- 发布说明：`release/V2.1.287.md`
 - AI 入口（提示词/流程）：`.ai/README.md`
 - AI 修改日志：`.ai/CHANGELOG_AI.md`
 - 技术手册 / 项目记忆：`.ai/PROJECT_MEMORY.md`
@@ -178,5 +178,6 @@ server {
 | 控制台出现 `content_script.js` 报错 | 浏览器扩展注入脚本噪声 | 无痕窗口/禁用扩展验证（通常与站点无关） |
 
 更多架构与实现细节请查阅 `.ai/PROJECT_MEMORY.md`。
+
 
 

@@ -92,7 +92,7 @@ Replace-Regex -Path $homeViewFile -Pattern "const siteVersion = meta\?\.version 
 
 # Update README current version and release link
 $readmeText = Get-Content -Path $readmeFile -Raw -Encoding UTF8
-$readmeText = [regex]::Replace($readmeText, "(当前站点版本号：`)(V\d+\.\d+\.\d+)(`)", "`$1$newVersion`$3")
+$readmeText = [regex]::Replace($readmeText, '(当前站点版本号：`)(V\d+\.\d+\.\d+)(`)', ('$1' + $newVersion + '$3'))
 $readmeText = [regex]::Replace($readmeText, "release/V\d+\.\d+\.\d+\.md", "release/$newVersion.md")
 Set-Content -Path $readmeFile -Value $readmeText -Encoding UTF8
 

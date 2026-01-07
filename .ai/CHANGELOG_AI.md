@@ -2799,3 +2799,8 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 - **模块/页面**：修复后台访问日志（`/admin/analytics`）“页面类型-文章访问”筛选反向：文章访问判定改为直接基于 `analytics_page_views.post_id` 是否为空，避免 join 口径/历史数据差异导致筛选结果变成“普通页面+机器页面”的反向集合。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.285`
 
+## V2.1.287 (2026-01-07)
+- **模块/页面**：修复首页版本号显示异常（`site.version` 误为反斜杠导致 Banner 显示 `SANGUI BLOG // \`），恢复为可用版本号并同步 README 当前版本。
+- **脚本**：修复 `scripts/bump-version.ps1` 对 README 版本行的正则替换，确保版本号更新脚本可用。
+- **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.287`
+
