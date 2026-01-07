@@ -258,12 +258,16 @@ public class PostService {
             post.setViewsCount(0L);
         }
 
-        if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
-            Set<Tag> tags = request.getTagIds().stream()
-                    .map(id -> tagRepository.findById(id)
-                            .orElseThrow(() -> new NotFoundException("标签不存在: " + id)))
-                    .collect(Collectors.toSet());
-            post.setTags(tags);
+        if (request.getTagIds() != null) {
+            if (request.getTagIds().isEmpty()) {
+                post.setTags(new LinkedHashSet<>());
+            } else {
+                Set<Tag> tags = request.getTagIds().stream()
+                        .map(id -> tagRepository.findById(id)
+                                .orElseThrow(() -> new NotFoundException("????? " + id)))
+                        .collect(Collectors.toSet());
+                post.setTags(tags);
+            }
         }
 
         Post saved = postRepository.save(post);

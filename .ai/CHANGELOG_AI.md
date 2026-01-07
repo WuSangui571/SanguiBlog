@@ -5,6 +5,23 @@
 
 ---
 
+## [2026-01-07] 修复文章标签无法清空的问题（/api/posts）
+- 背景/需求：后台创建/更新文章走 `/api/posts`，当传空 `tagIds` 时后端不会清空标签，导致标签残留。
+- 修改类型：fix
+- 影响范围：文章创建/更新（后端）
+- 变更摘要：
+  1) `SavePostRequest.tagIds` 传空数组时，显式清空文章标签集合。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostService.java`
+- 检索与复用策略：
+  - 检索关键词：`tagIds` / `saveOrUpdate` / `createPost` / `updatePost`
+  - 找到的旧实现：`PostService.saveOrUpdate` 仅在 `tagIds` 非空时写入标签
+  - 最终选择：复用现有保存流程，补充“空数组即清空”分支
+- 风险点：
+  - 前端若传空数组，将清空标签（符合“清空标签”的预期）。
+- 验证方式：
+  - 手动：编辑文章取消所有标签并保存，后台应返回标签为空。
+
 ## [2026-01-07] 修复彩蛋背景开关圆点垂直居中
 - 背景/需求：设置面板“彩蛋背景”开关的圆点在滑动槽内偏下，需要回到垂直居中。
 - 修改类型：fix
