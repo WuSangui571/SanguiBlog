@@ -544,7 +544,7 @@ const DashboardView = ({ isDarkMode }) => {
 
 const TrendChart = ({ data, isDarkMode }) => {
     const textMuted = isDarkMode ? "text-gray-400" : "text-gray-500";
-    const containerRef = useRef(null);
+    const chartRef = useRef(null);
     const tooltipRef = useRef(null);
     const [hoverIndex, setHoverIndex] = useState(null);
     const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
@@ -585,10 +585,11 @@ const TrendChart = ({ data, isDarkMode }) => {
     })();
     const hasNonZero = maxValue > 0;
     const paddingY = 10;
-    const paddingX = 12;
+    const paddingLeft = 12;
+    const paddingRight = 6;
     const viewBoxWidth = viewport.viewBoxWidth || 100;
     const chartHeight = 100 - paddingY * 2;
-    const chartWidth = viewBoxWidth - paddingX * 2;
+    const chartWidth = viewBoxWidth - paddingLeft - paddingRight;
 
     const count = Math.max(normalized.length, 1);
     const stepX = chartWidth / count;
@@ -607,7 +608,7 @@ const TrendChart = ({ data, isDarkMode }) => {
     const buildLinePoints = (key) =>
         normalized
             .map((item, index) => {
-                const x = paddingX + index * stepX + stepX / 2;
+                const x = paddingLeft + index * stepX + stepX / 2;
                 const y = projectY(item[key]);
                 return `${x.toFixed(2)},${y.toFixed(2)}`;
             })
@@ -628,7 +629,7 @@ const TrendChart = ({ data, isDarkMode }) => {
     };
 
     const computeViewport = useCallback(() => {
-        const rect = containerRef.current?.getBoundingClientRect?.();
+        const rect = chartRef.current?.getBoundingClientRect?.();
         if (!rect) return;
         const ratio = rect.height ? rect.width / rect.height : 1;
         const vbw = Math.max(1, ratio * 100);
@@ -652,9 +653,9 @@ const TrendChart = ({ data, isDarkMode }) => {
         if (typeof window === 'undefined') return;
         computeViewport();
         let resizeObserver;
-        if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+        if (typeof ResizeObserver !== 'undefined' && chartRef.current) {
             resizeObserver = new ResizeObserver(() => computeViewport());
-            resizeObserver.observe(containerRef.current);
+            resizeObserver.observe(chartRef.current);
         } else {
             window.addEventListener('resize', computeViewport);
         }
@@ -669,7 +670,7 @@ const TrendChart = ({ data, isDarkMode }) => {
 
     const handleHoverMove = (index, e) => {
         setHoverIndex(index);
-        const rect = containerRef.current?.getBoundingClientRect?.();
+        const rect = chartRef.current?.getBoundingClientRect?.();
         if (!rect) return;
         setHoverPos({
             x: e.clientX - rect.left,
@@ -692,7 +693,7 @@ const TrendChart = ({ data, isDarkMode }) => {
     }, [hoverItem, hoverIndex, isDarkMode]);
 
     const hoverAnchor = hoverItem
-        ? (paddingX + hoverIndex * stepX + stepX / 2)
+        ? (paddingLeft + hoverIndex * stepX + stepX / 2)
         : 0;
     const anchorPx = viewport.contentW
         ? viewport.offsetX + (hoverAnchor / viewBoxWidth) * viewport.contentW
@@ -726,15 +727,15 @@ const TrendChart = ({ data, isDarkMode }) => {
     }
 
     return (
-        <div className="mt-6" ref={containerRef}>
-            <div className="relative">
+        <div className="mt-6">
+            <div className="relative" ref={chartRef}>
                 <svg viewBox={`0 0 ${viewBoxWidth} 100`} className="w-full h-60" preserveAspectRatio="xMidYMid meet">
                     <rect x="0" y="0" width={viewBoxWidth} height="100" fill={surfaceBg} />
                     {yLabels.map((tick, idx) => (
                         <g key={`grid-${idx}`}>
                             <line
-                                x1={paddingX}
-                                x2={paddingX + chartWidth}
+                                x1={paddingLeft}
+                                x2={paddingLeft + chartWidth}
                                 y1={tick.y}
                                 y2={tick.y}
                                 stroke={gridColor}
@@ -742,7 +743,7 @@ const TrendChart = ({ data, isDarkMode }) => {
                                 strokeDasharray="1.5 2.5"
                             />
                             <text
-                                x={paddingX - 3}
+                                x={paddingLeft - 3}
                                 y={tick.y + 2.5}
                                 fontSize="4"
                                 textAnchor="end"
@@ -755,7 +756,7 @@ const TrendChart = ({ data, isDarkMode }) => {
 
                     {/* PV：柱状 */}
                     {normalized.map((item, index) => {
-                        const barX = paddingX + index * stepX + barOffset;
+                        const barX = paddingLeft + index * stepX + barOffset;
                         const barTop = projectY(item.views);
                         const barHeight = Math.max(baseline - barTop, 0);
                         const active = hoverIndex === index;
@@ -783,7 +784,7 @@ const TrendChart = ({ data, isDarkMode }) => {
                         points={uvPoints}
                     />
                     {normalized.map((item, index) => {
-                        const x = paddingX + index * stepX + stepX / 2;
+                        const x = paddingLeft + index * stepX + stepX / 2;
                         const y = projectY(item.visitors);
                         const active = hoverIndex === index;
                         return (
@@ -801,7 +802,7 @@ const TrendChart = ({ data, isDarkMode }) => {
 
                     {/* Hover：命中区域（按天覆盖整列） */}
                     {normalized.map((_, index) => {
-                        const hitX = paddingX + index * stepX;
+                        const hitX = paddingLeft + index * stepX;
                         return (
                             <rect
                                 key={`hit-${index}`}
@@ -820,8 +821,8 @@ const TrendChart = ({ data, isDarkMode }) => {
                     {/* Hover：竖向指示线 */}
                     {hoverItem && (
                         <line
-                            x1={paddingX + hoverIndex * stepX + stepX / 2}
-                            x2={paddingX + hoverIndex * stepX + stepX / 2}
+                            x1={paddingLeft + hoverIndex * stepX + stepX / 2}
+                            x2={paddingLeft + hoverIndex * stepX + stepX / 2}
                             y1={paddingY}
                             y2={baseline}
                             stroke={isDarkMode ? "#94a3b8" : "#64748b"}
@@ -866,7 +867,7 @@ const TrendChart = ({ data, isDarkMode }) => {
             </div>
             <div className="relative mt-2 h-4 text-[10px] uppercase tracking-widest text-gray-400">
                 {normalized.map((item, index) => {
-                    const x = paddingX + index * stepX + stepX / 2;
+                    const x = paddingLeft + index * stepX + stepX / 2;
                     const leftPx = viewport.contentW
                         ? viewport.offsetX + (x / viewBoxWidth) * viewport.contentW
                         : null;
