@@ -814,9 +814,39 @@ const ArticleDetail = ({
             nextLeft = Math.max(margin, Math.min(nextLeft, maxLeft));
             setTocLeft(nextLeft);
         };
-        updatePosition();
-        window.addEventListener('resize', updatePosition);
-        return () => window.removeEventListener('resize', updatePosition);
+        const mediaQuery = window.matchMedia ? window.matchMedia('(min-width: 1280px)') : null;
+        const handleViewportChange = () => {
+            if (mediaQuery && !mediaQuery.matches) {
+                setTocLeft(null);
+                return;
+            }
+            updatePosition();
+        };
+        handleViewportChange();
+        window.addEventListener('resize', handleViewportChange);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', handleViewportChange);
+        }
+        if (mediaQuery) {
+            if (mediaQuery.addEventListener) {
+                mediaQuery.addEventListener('change', handleViewportChange);
+            } else if (mediaQuery.addListener) {
+                mediaQuery.addListener(handleViewportChange);
+            }
+        }
+        return () => {
+            window.removeEventListener('resize', handleViewportChange);
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', handleViewportChange);
+            }
+            if (mediaQuery) {
+                if (mediaQuery.removeEventListener) {
+                    mediaQuery.removeEventListener('change', handleViewportChange);
+                } else if (mediaQuery.removeListener) {
+                    mediaQuery.removeListener(handleViewportChange);
+                }
+            }
+        };
     }, [entryReady, fixedTopOffset, tocItems.length]);
 
     const handleShare = () => {

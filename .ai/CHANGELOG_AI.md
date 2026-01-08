@@ -5,6 +5,23 @@
 
 ---
 
+## [2026-01-08] 修复文章页目录在移动端切换后位移
+- 背景/需求：文章页在切换开发者工具移动端预览后回到桌面端，目录组件出现位移。
+- 修改类型：fix
+- 影响范围：文章详情页目录定位（前端）
+- 变更摘要：
+  1) 目录定位监听 `matchMedia` 与 `visualViewport` 变化，移动端时重置定位，回到桌面端时重新计算。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+- 检索与复用策略：
+  - 检索关键词：`tocLeft` / `commentJumpRef` / `目录`
+  - 找到的旧实现：仅监听 window resize 的 tocLeft 计算
+  - 最终选择：复用现有定位逻辑，补充视口变化监听
+- 风险点：
+  - 无
+- 验证方式：
+  - 手动：打开文章页 → 切换移动端 → 回到桌面端，目录位置保持正常。
+
 ## [2026-01-08] 修复页面 Meta 设置回调的时序错误
 - 背景/需求：`/admin` 报错 “Cannot access 'applyDocumentMeta' before initialization”。
 - 修改类型：fix
