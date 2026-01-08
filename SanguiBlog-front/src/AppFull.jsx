@@ -192,6 +192,22 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(homePageSize));
     }, [homePageSize]);
 
+    const applyDocumentMeta = useCallback((title, description) => {
+        if (typeof document === 'undefined') return;
+        if (title) {
+            document.title = title;
+        }
+        if (typeof description === 'string') {
+            let tag = document.querySelector('meta[name="description"]');
+            if (!tag) {
+                tag = document.createElement('meta');
+                tag.setAttribute('name', 'description');
+                document.head.appendChild(tag);
+            }
+            tag.setAttribute('content', description);
+        }
+    }, []);
+
     useEffect(() => {
         const brand = meta?.footer?.brand || '三桂博客';
         const defaultDesc = meta?.heroTagline || meta?.homeQuote || '';
@@ -236,22 +252,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         }
         return false;
     }); // Persisted dark mode state
-
-    const applyDocumentMeta = useCallback((title, description) => {
-        if (typeof document === 'undefined') return;
-        if (title) {
-            document.title = title;
-        }
-        if (typeof description === 'string') {
-            let tag = document.querySelector('meta[name="description"]');
-            if (!tag) {
-                tag = document.createElement('meta');
-                tag.setAttribute('name', 'description');
-                document.head.appendChild(tag);
-            }
-            tag.setAttribute('content', description);
-        }
-    }, []);
     const [themeBlast, setThemeBlast] = useState({
         active: false,
         x: 0,

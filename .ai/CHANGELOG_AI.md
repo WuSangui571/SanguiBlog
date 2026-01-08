@@ -5,6 +5,23 @@
 
 ---
 
+## [2026-01-08] 修复页面 Meta 设置回调的时序错误
+- 背景/需求：`/admin` 报错 “Cannot access 'applyDocumentMeta' before initialization”。
+- 修改类型：fix
+- 影响范围：前端页面 Meta 设置逻辑
+- 变更摘要：
+  1) 调整 `applyDocumentMeta` 定义位置，确保在使用前初始化。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+- 检索与复用策略：
+  - 检索关键词：`applyDocumentMeta` / `document.title`
+  - 找到的旧实现：`AppFull.jsx` 中 useEffect 先于回调定义
+  - 最终选择：仅调整定义顺序，保持逻辑不变
+- 风险点：
+  - 无
+- 验证方式：
+  - 手动：进入 `/admin` 或其它页面，无报错、标题正常更新。
+
 ## [2026-01-08] 后端生成 metaTitle/metaDescription 并前端应用页面标题
 - 背景/需求：需要后端生成页面 Meta 字段并在前端动态设置标题/描述，缓解标题与描述重复问题。
 - 修改类型：feat
