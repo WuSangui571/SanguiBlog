@@ -729,7 +729,7 @@ const TrendChart = ({ data, isDarkMode }) => {
         <div className="mt-6" ref={containerRef}>
             <div className="relative">
                 <svg viewBox={`0 0 ${viewBoxWidth} 100`} className="w-full h-60" preserveAspectRatio="xMidYMid meet">
-                    <rect x="0" y="0" width="100" height="100" fill={surfaceBg} />
+                    <rect x="0" y="0" width={viewBoxWidth} height="100" fill={surfaceBg} />
                     {yLabels.map((tick, idx) => (
                         <g key={`grid-${idx}`}>
                             <line
