@@ -816,12 +816,19 @@ const TrendChart = ({ data, isDarkMode }) => {
                 </span>
                 <span className={`text-[11px] ${textMuted}`}>鼠标悬浮到某天即可查看 PV/UV</span>
             </div>
-            <div className="flex flex-wrap justify-between text-[10px] uppercase tracking-widest text-gray-400 mt-2 gap-y-1">
-                {normalized.map((item, index) => (
-                    <span key={`${item.dateLabel}-${index}`} className="text-center min-w-[32px]">
-                        {item.dateLabel}
-                    </span>
-                ))}
+            <div className="relative mt-2 h-4 text-[10px] uppercase tracking-widest text-gray-400">
+                {normalized.map((item, index) => {
+                    const x = paddingX + index * stepX + stepX / 2;
+                    return (
+                        <span
+                            key={`${item.dateLabel}-${index}`}
+                            className="absolute -translate-x-1/2 text-center pointer-events-none"
+                            style={{ left: `${x.toFixed(2)}%` }}
+                        >
+                            {item.dateLabel}
+                        </span>
+                    );
+                })}
             </div>
         </div>
     );
