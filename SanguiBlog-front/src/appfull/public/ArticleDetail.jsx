@@ -174,6 +174,7 @@ const ArticleDetail = ({
     const tocDrawerListRef = useRef(null);
     const tocHeadingsRef = useRef([]);
     const tocRafRef = useRef(0);
+    const tocPositionTimersRef = useRef([]);
     const [tocItems, setTocItems] = useState([]);
     const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
     const tocDrawerCloseBtnRef = useRef(null);
@@ -805,6 +806,13 @@ const ArticleDetail = ({
         if (!entryReady || typeof window === 'undefined') return;
         const tocWidth = 256;
         const margin = 16;
+        const scheduleTimers = (fn) => {
+            tocPositionTimersRef.current.forEach((timer) => clearTimeout(timer));
+            tocPositionTimersRef.current = [];
+            tocPositionTimersRef.current.push(setTimeout(fn, 0));
+            tocPositionTimersRef.current.push(setTimeout(fn, 120));
+            tocPositionTimersRef.current.push(setTimeout(fn, 320));
+        };
         const updatePosition = () => {
             const target = commentJumpRef.current;
             if (!target) return;
@@ -820,7 +828,7 @@ const ArticleDetail = ({
                 setTocLeft(null);
                 return;
             }
-            updatePosition();
+            scheduleTimers(updatePosition);
         };
         handleViewportChange();
         window.addEventListener('resize', handleViewportChange);
@@ -846,6 +854,8 @@ const ArticleDetail = ({
                     mediaQuery.removeListener(handleViewportChange);
                 }
             }
+            tocPositionTimersRef.current.forEach((timer) => clearTimeout(timer));
+            tocPositionTimersRef.current = [];
         };
     }, [entryReady, fixedTopOffset, tocItems.length]);
 

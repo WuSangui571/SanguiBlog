@@ -11,6 +11,7 @@
 - 影响范围：文章详情页目录定位（前端）
 - 变更摘要：
   1) 目录定位监听 `matchMedia` 与 `visualViewport` 变化，移动端时重置定位，回到桌面端时重新计算。
+  2) 额外使用延迟多次重算，避免 DevTools 切换导致的布局未稳定。
 - 涉及文件：
   - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
 - 检索与复用策略：
