@@ -544,7 +544,7 @@ const DashboardView = ({ isDarkMode }) => {
 
 const TrendChart = ({ data, isDarkMode }) => {
     const textMuted = isDarkMode ? "text-gray-400" : "text-gray-500";
-    const chartRef = useRef(null);
+    const chartWrapperRef = useRef(null);
     const tooltipRef = useRef(null);
     const [hoverIndex, setHoverIndex] = useState(null);
     const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
@@ -629,48 +629,51 @@ const TrendChart = ({ data, isDarkMode }) => {
     };
 
     const computeViewport = useCallback(() => {
-        const rect = chartRef.current?.getBoundingClientRect?.();
-        if (!rect) return;
-        const ratio = rect.height ? rect.width / rect.height : 1;
+        const rect = chartWrapperRef.current?.getBoundingClientRect?.();
+        if (!rect || rect.width === 0 || rect.height === 0) return;
+        const ratio = rect.width / rect.height;
         const vbw = Math.max(1, ratio * 100);
-        const scale = rect.height ? rect.height / 100 : 1;
-        const contentW = vbw * scale;
-        const contentH = 100 * scale;
-        const offsetX = (rect.width - contentW) / 2;
-        const offsetY = (rect.height - contentH) / 2;
         setViewport({
             width: rect.width,
             height: rect.height,
-            contentW,
-            contentH,
-            offsetX,
-            offsetY,
+            contentW: rect.width,
+            contentH: rect.height,
+            offsetX: 0,
+            offsetY: 0,
             viewBoxWidth: vbw
         });
     }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        computeViewport();
+        const schedule = () => computeViewport();
+        const raf = window.requestAnimationFrame(schedule);
+        const t1 = window.setTimeout(schedule, 0);
+        const t2 = window.setTimeout(schedule, 120);
+        const t3 = window.setTimeout(schedule, 320);
         let resizeObserver;
-        if (typeof ResizeObserver !== 'undefined' && chartRef.current) {
+        if (typeof ResizeObserver !== 'undefined' && chartWrapperRef.current) {
             resizeObserver = new ResizeObserver(() => computeViewport());
-            resizeObserver.observe(chartRef.current);
+            resizeObserver.observe(chartWrapperRef.current);
         } else {
             window.addEventListener('resize', computeViewport);
         }
         return () => {
+            window.cancelAnimationFrame(raf);
+            window.clearTimeout(t1);
+            window.clearTimeout(t2);
+            window.clearTimeout(t3);
             if (resizeObserver) {
                 resizeObserver.disconnect();
             } else {
                 window.removeEventListener('resize', computeViewport);
             }
         };
-    }, [computeViewport]);
+    }, [computeViewport, safeData.length]);
 
     const handleHoverMove = (index, e) => {
         setHoverIndex(index);
-        const rect = chartRef.current?.getBoundingClientRect?.();
+        const rect = chartWrapperRef.current?.getBoundingClientRect?.();
         if (!rect) return;
         setHoverPos({
             x: e.clientX - rect.left,
@@ -696,7 +699,7 @@ const TrendChart = ({ data, isDarkMode }) => {
         ? (paddingLeft + hoverIndex * stepX + stepX / 2)
         : 0;
     const anchorPx = viewport.contentW
-        ? viewport.offsetX + (hoverAnchor / viewBoxWidth) * viewport.contentW
+        ? (hoverAnchor / viewBoxWidth) * viewport.contentW
         : hoverPos.x;
     const tooltipPadding = 8;
     const tooltipLeft = (() => {
@@ -728,7 +731,7 @@ const TrendChart = ({ data, isDarkMode }) => {
 
     return (
         <div className="mt-6">
-            <div className="relative" ref={chartRef}>
+            <div className="relative" ref={chartWrapperRef}>
                 <svg viewBox={`0 0 ${viewBoxWidth} 100`} className="w-full h-60" preserveAspectRatio="xMidYMid meet">
                     <rect x="0" y="0" width={viewBoxWidth} height="100" fill={surfaceBg} />
                     {yLabels.map((tick, idx) => (
@@ -869,7 +872,7 @@ const TrendChart = ({ data, isDarkMode }) => {
                 {normalized.map((item, index) => {
                     const x = paddingLeft + index * stepX + stepX / 2;
                     const leftPx = viewport.contentW
-                        ? viewport.offsetX + (x / viewBoxWidth) * viewport.contentW
+                        ? (x / viewBoxWidth) * viewport.contentW
                         : null;
                     return (
                         <span
