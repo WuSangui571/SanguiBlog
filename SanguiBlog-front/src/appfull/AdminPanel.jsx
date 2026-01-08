@@ -545,8 +545,11 @@ const DashboardView = ({ isDarkMode }) => {
 const TrendChart = ({ data, isDarkMode }) => {
     const textMuted = isDarkMode ? "text-gray-400" : "text-gray-500";
     const containerRef = useRef(null);
+    const tooltipRef = useRef(null);
     const [hoverIndex, setHoverIndex] = useState(null);
     const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
+    const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+    const [tooltipSize, setTooltipSize] = useState({ width: 0, height: 0 });
 
     const gridColor = isDarkMode ? "#2e3445" : "#E5E7EB";
     const accentPv = "#FF0080";
@@ -623,6 +626,7 @@ const TrendChart = ({ data, isDarkMode }) => {
         setHoverIndex(index);
         const rect = containerRef.current?.getBoundingClientRect?.();
         if (!rect) return;
+        setContainerSize({ width: rect.width, height: rect.height });
         setHoverPos({
             x: e.clientX - rect.left,
             y: e.clientY - rect.top,
@@ -636,6 +640,42 @@ const TrendChart = ({ data, isDarkMode }) => {
     const hoverItem = (hoverIndex !== null && hoverIndex >= 0 && hoverIndex < normalized.length)
         ? normalized[hoverIndex]
         : null;
+
+    useEffect(() => {
+        if (!hoverItem || !tooltipRef.current) return;
+        const rect = tooltipRef.current.getBoundingClientRect();
+        setTooltipSize({ width: rect.width, height: rect.height });
+    }, [hoverItem, hoverIndex, isDarkMode]);
+
+    const hoverAnchor = hoverItem
+        ? (paddingX + hoverIndex * stepX + stepX / 2)
+        : 0;
+    const anchorPx = containerSize.width
+        ? (hoverAnchor / 100) * containerSize.width
+        : hoverPos.x;
+    const tooltipPadding = 8;
+    const tooltipLeft = (() => {
+        if (!hoverItem) return 0;
+        const width = tooltipSize.width || 0;
+        if (!containerSize.width || width <= 0) {
+            return Math.max(tooltipPadding, hoverPos.x + 12);
+        }
+        const minX = tooltipPadding;
+        const maxX = Math.max(minX, containerSize.width - width - tooltipPadding);
+        const target = anchorPx - width / 2;
+        return Math.min(Math.max(target, minX), maxX);
+    })();
+    const tooltipTop = (() => {
+        if (!hoverItem) return 0;
+        const height = tooltipSize.height || 0;
+        const target = height > 0 ? (hoverPos.y - height - 12) : (hoverPos.y - 44);
+        if (!containerSize.height || height <= 0) {
+            return Math.max(tooltipPadding, target);
+        }
+        const minY = tooltipPadding;
+        const maxY = Math.max(minY, containerSize.height - height - tooltipPadding);
+        return Math.min(Math.max(target, minY), maxY);
+    })();
 
     return (
         <div className="mt-6" ref={containerRef}>
@@ -751,14 +791,15 @@ const TrendChart = ({ data, isDarkMode }) => {
                 )}
                 {hoverItem && (
                     <div
+                        ref={tooltipRef}
                         className={`absolute z-10 pointer-events-none px-3 py-2 rounded-lg text-xs font-medium shadow-xl border ${
                             isDarkMode
                                 ? "bg-gray-900 text-gray-100 border-gray-700"
                                 : "bg-white text-gray-900 border-gray-200"
                         }`}
                         style={{
-                            left: Math.max(10, Math.min(hoverPos.x + 12, 340)),
-                            top: Math.max(10, hoverPos.y - 44),
+                            left: tooltipLeft,
+                            top: tooltipTop,
                         }}
                     >
                         <div className="font-mono">{hoverItem.dateKey || hoverItem.dateLabel}</div>
