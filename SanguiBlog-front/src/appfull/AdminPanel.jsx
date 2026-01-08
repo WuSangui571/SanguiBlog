@@ -557,10 +557,6 @@ const TrendChart = ({ data, isDarkMode }) => {
     const surfaceBg = isDarkMode ? "#0b1220" : "#f8fafc";
     const safeData = Array.isArray(data) ? data.filter(Boolean) : [];
 
-    if (!safeData.length) {
-        return <p className={`mt-6 text-sm ${textMuted}`}>暂无趋势数据</p>;
-    }
-
     const normalized = safeData.map((item, index) => ({
         views: Number(item?.views || 0),
         visitors: Number(item?.visitors || 0),
@@ -676,6 +672,10 @@ const TrendChart = ({ data, isDarkMode }) => {
         const maxY = Math.max(minY, containerSize.height - height - tooltipPadding);
         return Math.min(Math.max(target, minY), maxY);
     })();
+
+    if (!safeData.length) {
+        return <p className={`mt-6 text-sm ${textMuted}`}>暂无趋势数据</p>;
+    }
 
     return (
         <div className="mt-6" ref={containerRef}>
