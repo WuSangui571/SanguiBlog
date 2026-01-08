@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-01-08] 后端生成 metaTitle/metaDescription 并前端应用页面标题
+- 背景/需求：需要后端生成页面 Meta 字段并在前端动态设置标题/描述，缓解标题与描述重复问题。
+- 修改类型：feat
+- 影响范围：文章详情接口与前端页面标题
+- 变更摘要：
+  1) `PostDetailDto` 新增 `metaTitle` 字段；后端生成 `metaTitle/metaDescription`（标题/分类/站点品牌 + 摘要/正文兜底）。
+  2) 前端根据当前视图动态设置 `document.title` 与 `meta description`，文章页优先使用后端返回的 meta 字段。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/PostDetailDto.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostService.java`
+  - `SanguiBlog-front/src/AppFull.jsx`
+- 检索与复用策略：
+  - 检索关键词：`PostDetailDto` / `excerpt` / `contentHtml` / `document.title`
+  - 找到的旧实现：文章详情已有摘要/内容，前端未设置 title/description
+  - 最终选择：复用详情生成流程追加 meta 字段，前端统一设置页面标题
+- 风险点：
+  - SPA 动态 meta 对部分爬虫仍不稳定（如需更稳建议 SSR/预渲染）。
+- 验证方式：
+  - 手动：访问文章页与列表页，浏览器标题与 meta description 更新正确。
+
 ## [2026-01-08] 后端新增文章详情 metaDescription 生成字段
 - 背景/需求：需要由后端生成页面 Meta 描述，便于前端设置更完整的 SEO 元信息。
 - 修改类型：feat

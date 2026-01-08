@@ -191,12 +191,67 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         if (typeof window === 'undefined') return;
         window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(homePageSize));
     }, [homePageSize]);
+
+    useEffect(() => {
+        const brand = meta?.footer?.brand || '三桂博客';
+        const defaultDesc = meta?.heroTagline || meta?.homeQuote || '';
+        let title = brand;
+        let description = defaultDesc;
+
+        if (view === 'home') {
+            title = brand;
+        } else if (view === 'archive') {
+            title = `归档｜${brand}`;
+        } else if (view === 'games') {
+            title = `工具｜${brand}`;
+        } else if (view === 'game') {
+            const currentGame = gameDetail || gameList.find((item) => item?.id === gameId);
+            if (currentGame?.title) {
+                title = `工具：${currentGame.title}｜${brand}`;
+                if (currentGame.description) {
+                    description = currentGame.description;
+                }
+            } else {
+                title = `工具｜${brand}`;
+            }
+        } else if (view === 'about') {
+            title = `关于｜${brand}`;
+        } else if (view === 'login') {
+            title = `登录｜${brand}`;
+        } else if (view === 'admin') {
+            title = `后台管理｜${brand}`;
+        } else if (view === 'article') {
+            const articleTitle = article?.summary?.title;
+            title = article?.metaTitle || (articleTitle ? `${articleTitle}｜${brand}` : brand);
+            description = article?.metaDescription
+                || article?.summary?.excerpt
+                || defaultDesc;
+        }
+
+        applyDocumentMeta(title, description || '');
+    }, [view, meta, article, gameDetail, gameId, gameList, applyDocumentMeta]);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sangui-theme') === 'dark';
         }
         return false;
     }); // Persisted dark mode state
+
+    const applyDocumentMeta = useCallback((title, description) => {
+        if (typeof document === 'undefined') return;
+        if (title) {
+            document.title = title;
+        }
+        if (typeof description === 'string') {
+            let tag = document.querySelector('meta[name="description"]');
+            if (!tag) {
+                tag = document.createElement('meta');
+                tag.setAttribute('name', 'description');
+                document.head.appendChild(tag);
+            }
+            tag.setAttribute('content', description);
+        }
+    }, []);
     const [themeBlast, setThemeBlast] = useState({
         active: false,
         x: 0,

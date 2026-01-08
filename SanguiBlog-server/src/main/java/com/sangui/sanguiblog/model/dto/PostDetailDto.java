@@ -11,5 +11,6 @@ public class PostDetailDto {
     private String contentHtml;
     private Long wordCount;
     private String readingTime;
+    private String metaTitle;
     private String metaDescription;
 }

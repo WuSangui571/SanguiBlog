@@ -33,6 +33,7 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -62,6 +63,9 @@ public class PostService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final int META_DESCRIPTION_MAX = 160;
+
+    @Value("${site.footer.brand:三桂博客}")
+    private String siteBrand;
 
     private final PostRepository postRepository;
     private final TagRepository tagRepository;
@@ -681,6 +685,7 @@ public class PostService {
         }
 
         String metaDescription = buildMetaDescription(post, plainText);
+        String metaTitle = buildMetaTitle(post);
 
         return PostDetailDto.builder()
                 .summary(toSummary(post))
@@ -688,6 +693,7 @@ public class PostService {
                 .contentHtml(htmlContent)
                 .wordCount(wordCount)
                 .readingTime(readingTime)
+                .metaTitle(metaTitle)
                 .metaDescription(metaDescription)
                 .build();
     }
@@ -730,6 +736,24 @@ public class PostService {
             return truncateMeta(plainText.trim(), META_DESCRIPTION_MAX);
         }
         return StringUtils.hasText(post.getTitle()) ? post.getTitle().trim() : "";
+    }
+
+    private String buildMetaTitle(Post post) {
+        if (post == null) {
+            return "";
+        }
+        List<String> parts = new ArrayList<>();
+        if (StringUtils.hasText(post.getTitle())) {
+            parts.add(post.getTitle().trim());
+        }
+        String categoryName = post.getCategory() != null ? post.getCategory().getName() : null;
+        if (StringUtils.hasText(categoryName)) {
+            parts.add(categoryName.trim());
+        }
+        if (StringUtils.hasText(siteBrand)) {
+            parts.add(siteBrand.trim());
+        }
+        return String.join("｜", parts);
     }
 
     private String truncateMeta(String text, int max) {
