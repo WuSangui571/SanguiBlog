@@ -248,10 +248,40 @@ const DashboardView = ({ isDarkMode }) => {
         { label: "30天", value: 30 },
         { label: "全部", value: -1 },
     ];
+    const scrollBarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar';
 
     const [aggregatedTrends, setAggregatedTrends] = useState([]);
     const [aggregatedLoading, setAggregatedLoading] = useState(false);
     const [aggregatedError, setAggregatedError] = useState('');
+    const trendCardRef = useRef(null);
+    const [trendCardHeight, setTrendCardHeight] = useState(0);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const target = trendCardRef.current;
+        if (!target) return;
+        const updateHeight = () => {
+            const rect = target.getBoundingClientRect();
+            if (rect?.height) {
+                setTrendCardHeight(Math.round(rect.height));
+            }
+        };
+        updateHeight();
+        let resizeObserver;
+        if (typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(() => updateHeight());
+            resizeObserver.observe(target);
+        } else {
+            window.addEventListener('resize', updateHeight);
+        }
+        return () => {
+            if (resizeObserver) {
+                resizeObserver.disconnect();
+            } else {
+                window.removeEventListener('resize', updateHeight);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -489,7 +519,7 @@ const DashboardView = ({ isDarkMode }) => {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div className={`xl:col-span-2 ${surface} ${border} rounded-2xl p-6 shadow-xl`}>
+                <div ref={trendCardRef} className={`xl:col-span-2 ${surface} ${border} rounded-2xl p-6 shadow-xl`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <h3 className={`text-xl font-bold ${textPrimary}`}>访客走势图</h3>
@@ -513,27 +543,32 @@ const DashboardView = ({ isDarkMode }) => {
                         </div>
                     </div>
                 </div>
-                <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
+                <div
+                    className={`${surface} ${border} rounded-2xl p-6 shadow-xl flex flex-col`}
+                    style={trendCardHeight ? { height: `${trendCardHeight}px` } : undefined}
+                >
                     <h3 className={`text-xl font-bold ${textPrimary}`}>流量来源</h3>
                     <p className={`text-xs ${textMuted} mb-4`}>analytics_traffic_sources 实时占比</p>
                     {trafficSources.length === 0 ? (
                         <p className={`text-sm ${textMuted}`}>暂无流量来源统计</p>
                     ) : (
-                        <div className="space-y-3">
-                            {trafficSources.map((source, index) => (
-                                <div key={`${source.label}-${index}`}>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span>{decodeMaybeUrlEncoded(source.label)}</span>
-                                        <span className="font-semibold">{Math.round(source.value * 10) / 10}%</span>
+                        <div className={`flex-1 min-h-0 overflow-y-auto pr-1 ${scrollBarClass}`}>
+                            <div className="space-y-3">
+                                {trafficSources.map((source, index) => (
+                                    <div key={`${source.label}-${index}`}>
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span>{decodeMaybeUrlEncoded(source.label)}</span>
+                                            <span className="font-semibold">{Math.round(source.value * 10) / 10}%</span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                                            <div
+                                                className="h-full rounded-full bg-gradient-to-r from-[#FF0080] to-[#6366F1]"
+                                                style={{ width: `${Math.min(source.value, 100)}%` }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                        <div
-                                            className="h-full rounded-full bg-gradient-to-r from-[#FF0080] to-[#6366F1]"
-                                            style={{ width: `${Math.min(source.value, 100)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
