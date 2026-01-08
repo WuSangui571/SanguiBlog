@@ -548,7 +548,15 @@ const TrendChart = ({ data, isDarkMode }) => {
     const tooltipRef = useRef(null);
     const [hoverIndex, setHoverIndex] = useState(null);
     const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
-    const [viewport, setViewport] = useState({ width: 0, height: 0, contentW: 0, contentH: 0, offsetX: 0, offsetY: 0 });
+    const [viewport, setViewport] = useState({
+        width: 0,
+        height: 0,
+        contentW: 0,
+        contentH: 0,
+        offsetX: 0,
+        offsetY: 0,
+        viewBoxWidth: 100
+    });
     const [tooltipSize, setTooltipSize] = useState({ width: 0, height: 0 });
 
     const gridColor = isDarkMode ? "#2e3445" : "#E5E7EB";
@@ -578,8 +586,9 @@ const TrendChart = ({ data, isDarkMode }) => {
     const hasNonZero = maxValue > 0;
     const paddingY = 10;
     const paddingX = 12;
+    const viewBoxWidth = viewport.viewBoxWidth || 100;
     const chartHeight = 100 - paddingY * 2;
-    const chartWidth = 100 - paddingX * 2;
+    const chartWidth = viewBoxWidth - paddingX * 2;
 
     const count = Math.max(normalized.length, 1);
     const stepX = chartWidth / count;
@@ -621,8 +630,10 @@ const TrendChart = ({ data, isDarkMode }) => {
     const computeViewport = useCallback(() => {
         const rect = containerRef.current?.getBoundingClientRect?.();
         if (!rect) return;
-        const scale = Math.min(rect.width / 100, rect.height / 100);
-        const contentW = 100 * scale;
+        const ratio = rect.height ? rect.width / rect.height : 1;
+        const vbw = Math.max(1, ratio * 100);
+        const scale = rect.height ? rect.height / 100 : 1;
+        const contentW = vbw * scale;
         const contentH = 100 * scale;
         const offsetX = (rect.width - contentW) / 2;
         const offsetY = (rect.height - contentH) / 2;
@@ -632,7 +643,8 @@ const TrendChart = ({ data, isDarkMode }) => {
             contentW,
             contentH,
             offsetX,
-            offsetY
+            offsetY,
+            viewBoxWidth: vbw
         });
     }, []);
 
@@ -683,7 +695,7 @@ const TrendChart = ({ data, isDarkMode }) => {
         ? (paddingX + hoverIndex * stepX + stepX / 2)
         : 0;
     const anchorPx = viewport.contentW
-        ? viewport.offsetX + (hoverAnchor / 100) * viewport.contentW
+        ? viewport.offsetX + (hoverAnchor / viewBoxWidth) * viewport.contentW
         : hoverPos.x;
     const tooltipPadding = 8;
     const tooltipLeft = (() => {
@@ -716,7 +728,7 @@ const TrendChart = ({ data, isDarkMode }) => {
     return (
         <div className="mt-6" ref={containerRef}>
             <div className="relative">
-                <svg viewBox="0 0 100 100" className="w-full h-60" preserveAspectRatio="xMidYMid meet">
+                <svg viewBox={`0 0 ${viewBoxWidth} 100`} className="w-full h-60" preserveAspectRatio="xMidYMid meet">
                     <rect x="0" y="0" width="100" height="100" fill={surfaceBg} />
                     {yLabels.map((tick, idx) => (
                         <g key={`grid-${idx}`}>
@@ -856,7 +868,7 @@ const TrendChart = ({ data, isDarkMode }) => {
                 {normalized.map((item, index) => {
                     const x = paddingX + index * stepX + stepX / 2;
                     const leftPx = viewport.contentW
-                        ? viewport.offsetX + (x / 100) * viewport.contentW
+                        ? viewport.offsetX + (x / viewBoxWidth) * viewport.contentW
                         : null;
                     return (
                         <span
