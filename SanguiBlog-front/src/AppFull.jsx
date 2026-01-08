@@ -1208,7 +1208,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 return <LoginView setView={setView} setUser={setUser} isDarkMode={isDarkMode} doLogin={doLogin} />;
             case 'admin':
                 if (!user) {
-                    return <div className="p-20 text-center text-lg font-bold">请先登录后再访问管理后台</div>;
+                    return (
+                        <div className={`p-20 text-center text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                            请先登录后再访问管理后台
+                        </div>
+                    );
                 }
                 return <AdminPanel setView={setView} notification={notification} setNotification={setNotification}
                     user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} loadGameList={loadGameList} />;

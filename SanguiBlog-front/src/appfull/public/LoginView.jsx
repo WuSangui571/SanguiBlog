@@ -5,6 +5,8 @@ import { THEME, MOCK_USER } from "../shared.js";
 import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const usernameComposingRef = React.useRef(false);
+    const passwordComposingRef = React.useRef(false);
     const [showPassword, setShowPassword] = useState(false);
     const [captchaRequired, setCaptchaRequired] = useState(false);
     const [captchaImage, setCaptchaImage] = useState("");
@@ -15,12 +17,36 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const sanitizeAscii = (value) => {
+    const normalizeAscii = (value) => {
         if (!value) return "";
-        return [...value].filter((ch) => {
+        const normalized = [];
+        for (const ch of value) {
             const code = ch.charCodeAt(0);
-            return code >= 32 && code <= 126; // 可打印 ASCII
-        }).join("");
+            if (code === 0x3000) {
+                normalized.push(' ');
+                continue;
+            }
+            if (code >= 0xFF01 && code <= 0xFF5E) {
+                normalized.push(String.fromCharCode(code - 0xFEE0));
+                continue;
+            }
+            if (code >= 32 && code <= 126) {
+                normalized.push(ch);
+            }
+        }
+        return normalized.join("");
+    };
+
+    const hasInvalidAscii = (value) => {
+        if (!value) return false;
+        for (const ch of value) {
+            const code = ch.charCodeAt(0);
+            if (code === 0x3000) continue;
+            if (code >= 0xFF01 && code <= 0xFF5E) continue;
+            if (code >= 32 && code <= 126) continue;
+            return true;
+        }
+        return false;
     };
 
     const loadCaptcha = async (force = false) => {
@@ -101,6 +127,7 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-100' : 'text-gray-800';
     const inputBg = isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black';
+    const cancelBtnClass = isDarkMode ? 'text-gray-100 border-gray-300 hover:bg-gray-800/60' : 'text-black';
 
     return (
         <div className={`h-screen flex items-center justify-center ${bg} ${text}`}>
@@ -113,11 +140,30 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
                             className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
                             pattern="[ -~]*"
                             autoComplete="username"
+                            inputMode="text"
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            spellCheck={false}
                             value={username}
                             onChange={(e) => {
-                                const safe = sanitizeAscii(e.target.value);
+                                const raw = e.target.value;
+                                if (usernameComposingRef.current) {
+                                    setUsername(raw);
+                                    return;
+                                }
+                                const safe = normalizeAscii(raw);
                                 setUsername(safe);
-                                if (safe !== e.target.value) setError("用户名仅支持英文、数字与常见符号。");
+                                if (hasInvalidAscii(raw)) setError("用户名仅支持英文、数字与常见符号。");
+                            }}
+                            onCompositionStart={() => {
+                                usernameComposingRef.current = true;
+                            }}
+                            onCompositionEnd={(e) => {
+                                usernameComposingRef.current = false;
+                                const raw = e.target.value;
+                                const safe = normalizeAscii(raw);
+                                setUsername(safe);
+                                if (hasInvalidAscii(raw)) setError("用户名仅支持英文、数字与常见符号。");
                             }}
                             placeholder="请输入用户名"
                         />
@@ -130,11 +176,30 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
                                 type={showPassword ? "text" : "password"}
                                 pattern="[ -~]*"
                                 autoComplete="current-password"
+                                inputMode="text"
+                                autoCapitalize="none"
+                                autoCorrect="off"
+                                spellCheck={false}
                                 value={password}
                                 onChange={(e) => {
-                                    const safe = sanitizeAscii(e.target.value);
+                                    const raw = e.target.value;
+                                    if (passwordComposingRef.current) {
+                                        setPassword(raw);
+                                        return;
+                                    }
+                                    const safe = normalizeAscii(raw);
                                     setPassword(safe);
-                                    if (safe !== e.target.value) setError("密码仅支持英文、数字与常见符号。");
+                                    if (hasInvalidAscii(raw)) setError("密码仅支持英文、数字与常见符号。");
+                                }}
+                                onCompositionStart={() => {
+                                    passwordComposingRef.current = true;
+                                }}
+                                onCompositionEnd={(e) => {
+                                    passwordComposingRef.current = false;
+                                    const raw = e.target.value;
+                                    const safe = normalizeAscii(raw);
+                                    setPassword(safe);
+                                    if (hasInvalidAscii(raw)) setError("密码仅支持英文、数字与常见符号。");
                                 }}
                                 placeholder="请输入密码"
                             />
@@ -193,7 +258,7 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
                                     className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
                                     autoComplete="one-time-code"
                                     value={captchaInput}
-                                    onChange={(e) => setCaptchaInput(sanitizeAscii(e.target.value).slice(0, 4))}
+                                    onChange={(e) => setCaptchaInput(normalizeAscii(e.target.value).slice(0, 4))}
                                     placeholder="请输入验证码"
                                 />
                             </div>
@@ -213,7 +278,7 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
                             variant="ghost"
                             type="button"
                             onClick={() => setView('home')}
-                            className="min-w-[90px] justify-center whitespace-nowrap px-4 py-2 text-sm"
+                            className={`min-w-[90px] justify-center whitespace-nowrap px-4 py-2 text-sm ${cancelBtnClass}`}
                         >
                             取消
                         </PopButton>
