@@ -5,6 +5,25 @@
 
 ---
 
+## [2026-01-08] 后端新增文章详情 metaDescription 生成字段
+- 背景/需求：需要由后端生成页面 Meta 描述，便于前端设置更完整的 SEO 元信息。
+- 修改类型：feat
+- 影响范围：文章详情接口 DTO（后端）
+- 变更摘要：
+  1) `PostDetailDto` 新增 `metaDescription` 字段。
+  2) `PostService.toDetail` 自动生成 meta 描述：优先 excerpt，其次正文纯文本，最后回退标题。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/PostDetailDto.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostService.java`
+- 检索与复用策略：
+  - 检索关键词：`PostDetailDto` / `excerpt` / `contentHtml` / `meta`
+  - 找到的旧实现：文章详情 DTO 已包含 `summary/contentHtml`，但无 meta 生成
+  - 最终选择：复用现有详情生成流程，新增字段并在服务层生成
+- 风险点：
+  - meta 描述长度截断为 160 字，若需更短/更长可再调整
+- 验证方式：
+  - 手动：调用 `/api/posts/{id}` 或 `/api/posts/slug/{slug}`，返回中包含 `metaDescription` 且非空。
+
 ## [2026-01-08] 发布稳定版 Release 文档（V2.1.287）
 - 背景/需求：用户要求发布稳定版本并生成最新 Release 文档。
 - 修改类型：docs

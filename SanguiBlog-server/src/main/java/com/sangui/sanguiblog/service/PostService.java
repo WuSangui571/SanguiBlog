@@ -61,6 +61,7 @@ public class PostService {
     private static final Logger log = LoggerFactory.getLogger(PostService.class);
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final int META_DESCRIPTION_MAX = 160;
 
     private final PostRepository postRepository;
     private final TagRepository tagRepository;
@@ -670,12 +671,16 @@ public class PostService {
 
         long wordCount = 0;
         String readingTime = "1 分钟";
+        String plainText = "";
         if (htmlContent != null) {
-            String plainText = htmlContent.replaceAll("<[^>]*>", "").replaceAll("\\s+", "");
-            wordCount = plainText.length();
+            plainText = extractPlainText(htmlContent);
+            String compact = plainText.replaceAll("\\s+", "");
+            wordCount = compact.length();
             long minutes = Math.max(1, wordCount / 250);
             readingTime = minutes + " 分钟";
         }
+
+        String metaDescription = buildMetaDescription(post, plainText);
 
         return PostDetailDto.builder()
                 .summary(toSummary(post))
@@ -683,6 +688,7 @@ public class PostService {
                 .contentHtml(htmlContent)
                 .wordCount(wordCount)
                 .readingTime(readingTime)
+                .metaDescription(metaDescription)
                 .build();
     }
 
@@ -710,6 +716,45 @@ public class PostService {
                                 .build())
                         .toList())
                 .build();
+    }
+
+    private String buildMetaDescription(Post post, String plainText) {
+        if (post == null) {
+            return "";
+        }
+        String excerpt = post.getExcerpt();
+        if (StringUtils.hasText(excerpt)) {
+            return truncateMeta(excerpt.trim(), META_DESCRIPTION_MAX);
+        }
+        if (StringUtils.hasText(plainText)) {
+            return truncateMeta(plainText.trim(), META_DESCRIPTION_MAX);
+        }
+        return StringUtils.hasText(post.getTitle()) ? post.getTitle().trim() : "";
+    }
+
+    private String truncateMeta(String text, int max) {
+        if (!StringUtils.hasText(text)) {
+            return "";
+        }
+        String normalized = text.replaceAll("\\s+", " ").trim();
+        if (normalized.length() <= max) {
+            return normalized;
+        }
+        return normalized.substring(0, max);
+    }
+
+    private String extractPlainText(String html) {
+        if (!StringUtils.hasText(html)) {
+            return "";
+        }
+        String text = html.replaceAll("<[^>]*>", " ");
+        text = text.replace("&nbsp;", " ")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&#39;", "'");
+        return text.replaceAll("\\s+", " ").trim();
     }
 
     private String normalizeCoverPath(String coverImage) {
