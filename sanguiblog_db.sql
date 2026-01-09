@@ -311,6 +311,7 @@ INSERT INTO roles (id, code, name, description) VALUES
   (3, 'USER',        '用户',       '普通注册用户');
 
 -- 用户（包含前端 MOCK_USER）
+-- 默认初始密码：Sangui@123（请登录后立即修改）
 INSERT INTO users
 (id, username, display_name, email, password_hash, title, bio, avatar_url,
  github_url, wechat_qr_url, role_id, last_login_at, status)
@@ -319,7 +320,7 @@ VALUES
  'sangui',
  '三桂 SanGui',
  'sangui@example.com',
- NULL,
+ '$2a$10$QdizlT8ZvrYACG8Fd1coVuGcN6O6XPRSuoYn2acfj8rS9whGFv0J.',
  'Fullstack Developer',
  '用代码构建现实，用逻辑解构虚无。',
  'sangui.jpg',
@@ -329,9 +330,9 @@ VALUES
  '2025-11-21 10:00:00',
  'ACTIVE');
 
-INSERT INTO users (username, display_name, email, role_id, status) VALUES
-('admin_user1',  'AdminUser1',  'admin1@example.com',  2, 'ACTIVE'),
-('editor_user2', 'EditorUser2', 'editor2@example.com', 3, 'ACTIVE');
+INSERT INTO users (username, display_name, email, password_hash, role_id, status) VALUES
+('admin_user1',  'AdminUser1',  'admin1@example.com',  '$2a$10$QdizlT8ZvrYACG8Fd1coVuGcN6O6XPRSuoYn2acfj8rS9whGFv0J.', 2, 'ACTIVE'),
+('editor_user2', 'EditorUser2', 'editor2@example.com', '$2a$10$QdizlT8ZvrYACG8Fd1coVuGcN6O6XPRSuoYn2acfj8rS9whGFv0J.', 3, 'ACTIVE');
 
 -- 分类（顶级）
 INSERT INTO categories (id, name, slug, parent_id, description, sort_order) VALUES
