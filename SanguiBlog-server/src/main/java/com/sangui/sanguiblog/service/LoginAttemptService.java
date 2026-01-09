@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class LoginAttemptService {
@@ -29,18 +30,21 @@ public class LoginAttemptService {
     private static final Duration CAPTCHA_IP_WINDOW = Duration.ofMinutes(1);
     private static final int LOGIN_IP_LIMIT = 30;
     private static final Duration LOGIN_IP_WINDOW = Duration.ofMinutes(10);
+    private static final Duration CLEANUP_INTERVAL = Duration.ofMinutes(5);
 
     private final Map<String, Attempt> attempts = new ConcurrentHashMap<>(); // key: ip
     private final Map<String, CaptchaHolder> captchaCache = new ConcurrentHashMap<>(); // key: ip|ua
     private final Map<String, RateBucket> captchaRate = new ConcurrentHashMap<>(); // key: ip
     private final Map<String, RateBucket> loginRate = new ConcurrentHashMap<>(); // key: ip
+    private final AtomicLong lastCleanupAtMs = new AtomicLong(0);
     private final SecureRandom random = new SecureRandom();
     private static final char[] CHAR_POOL = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
 
     public void onFailure(String ip) {
         if (!StringUtils.hasText(ip)) return;
-        Attempt attempt = attempts.computeIfAbsent(ip, k -> new Attempt());
         Instant now = Instant.now();
+        maybeCleanup(now);
+        Attempt attempt = attempts.computeIfAbsent(ip, k -> new Attempt());
         if (attempt.lastFailAt != null && Duration.between(attempt.lastFailAt, now).compareTo(FAIL_WINDOW) > 0) {
             attempt.failCount = 0;
         }
@@ -57,6 +61,7 @@ public class LoginAttemptService {
         Attempt attempt = attempts.get(ip);
         if (attempt == null) return false;
         Instant now = Instant.now();
+        maybeCleanup(now);
         boolean inWindow = attempt.lastFailAt != null && Duration.between(attempt.lastFailAt, now).compareTo(FAIL_WINDOW) <= 0;
         boolean hitThreshold = attempt.failCount >= FAIL_THRESHOLD && inWindow;
         boolean captchaValid = attempt.captchaCode != null && attempt.captchaExpireAt != null && attempt.captchaExpireAt.isAfter(now);
@@ -91,6 +96,7 @@ public class LoginAttemptService {
         String ua = userAgent != null ? userAgent : "";
         String cacheKey = ip + "|" + ua;
         Instant now = Instant.now();
+        maybeCleanup(now);
 
         // 速率限制
         ensureWithinRate(captchaRate, ip, CAPTCHA_IP_LIMIT, CAPTCHA_IP_WINDOW);
@@ -176,8 +182,9 @@ public class LoginAttemptService {
 
     private void ensureWithinRate(Map<String, RateBucket> buckets, String key, int limit, Duration window) {
         if (!StringUtils.hasText(key)) return;
+        Instant now = Instant.now();
+        maybeCleanup(now);
         buckets.compute(key, (k, bucket) -> {
-            Instant now = Instant.now();
             if (bucket == null || Duration.between(bucket.windowStart, now).compareTo(window) > 0) {
                 return new RateBucket(1, now);
             }
@@ -186,6 +193,48 @@ public class LoginAttemptService {
             }
             bucket.count += 1;
             return bucket;
+        });
+    }
+
+    private void maybeCleanup(Instant now) {
+        long nowMs = now.toEpochMilli();
+        long last = lastCleanupAtMs.get();
+        if (nowMs - last < CLEANUP_INTERVAL.toMillis()) {
+            return;
+        }
+        if (!lastCleanupAtMs.compareAndSet(last, nowMs)) {
+            return;
+        }
+
+        attempts.entrySet().removeIf(entry -> {
+            Attempt attempt = entry.getValue();
+            if (attempt == null) return true;
+            Instant lastFail = attempt.lastFailAt;
+            Instant captchaExpire = attempt.captchaExpireAt;
+            boolean captchaExpired = captchaExpire == null || captchaExpire.isBefore(now);
+            if (lastFail == null) {
+                return captchaExpired;
+            }
+            boolean failExpired = Duration.between(lastFail, now).compareTo(FAIL_WINDOW) > 0;
+            return failExpired && captchaExpired;
+        });
+
+        captchaCache.entrySet().removeIf(entry -> {
+            CaptchaHolder holder = entry.getValue();
+            if (holder == null) return true;
+            Instant generatedAt = holder.generatedAt();
+            return generatedAt == null || Duration.between(generatedAt, now).compareTo(CAPTCHA_CACHE) > 0;
+        });
+
+        cleanupRateBuckets(captchaRate, now, CAPTCHA_IP_WINDOW);
+        cleanupRateBuckets(loginRate, now, LOGIN_IP_WINDOW);
+    }
+
+    private void cleanupRateBuckets(Map<String, RateBucket> buckets, Instant now, Duration window) {
+        buckets.entrySet().removeIf(entry -> {
+            RateBucket bucket = entry.getValue();
+            if (bucket == null || bucket.windowStart == null) return true;
+            return Duration.between(bucket.windowStart, now).compareTo(window) > 0;
         });
     }
 

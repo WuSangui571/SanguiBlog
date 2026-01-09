@@ -5,6 +5,24 @@
 
 ---
 
+## [2026-01-09] 登录风控缓存加入过期清理
+- 背景/需求：登录风控使用内存 Map 存储 IP 记录，未清理可能导致内存增长。
+- 修改类型：fix
+- 影响范围：登录风控内存缓存
+- 变更摘要：
+  1) 增加定期清理逻辑，按窗口与 TTL 移除过期 attempts/captchaCache/限流桶。
+  2) 通过原子时间戳控制清理频率，避免每次请求全量遍历。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/LoginAttemptService.java`
+- 检索与复用策略：
+  - 检索关键词：`LoginAttemptService` / `ConcurrentHashMap` / `captchaRate`
+  - 找到的旧实现：登录风控仅累积写入无清理
+  - 最终选择：复用现有 Map 结构，新增轻量级过期清理
+- 风险点：
+  - 清理为周期性遍历，超大 Map 时可能产生瞬时 CPU 峰值（已限制为 5 分钟触发一次）。
+- 验证方式：
+  - 手动：持续触发登录失败后等待窗口过期，观察内存/Map 规模回落。
+
 ## [2026-01-09] 补齐初始化用户密码哈希
 - 背景/需求：初始化脚本默认用户无密码，导致新环境无法登录。
 - 修改类型：fix
