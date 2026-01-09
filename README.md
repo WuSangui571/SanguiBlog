@@ -1,42 +1,15 @@
 ﻿# SanguiBlog 部署与开发指南
 
-SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发；更完整的技术手册请阅读 `.ai/PROJECT_MEMORY.md`。
+SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发，提供从环境准备到上线的最小可用流程与常见问题排查。
 
 > 当前站点版本号：`V2.1.287`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
 
 ## 1. 目录索引
 
 - 发布说明：`release/V2.1.287.md`
-- AI 入口（提示词/流程）：`.ai/README.md`
-- AI 修改日志：`.ai/CHANGELOG_AI.md`
-- 技术手册 / 项目记忆：`.ai/PROJECT_MEMORY.md`
-
-## 1.1 版本号更新（脚本）
-
-版本号统一由后端 `site.version` 提供，首页会显示为 `SANGUI BLOG // <version>`。
-推荐使用脚本统一更新（默认仅更新 README / HomeView；发布说明按需生成）：
-
-```powershell
-# 小版本（第三位 +1）
-./scripts/bump-version.ps1 -Bump patch
-
-# 大版本（第二位 +1，第三位置 0）
-./scripts/bump-version.ps1 -Bump minor
-
-# 指定版本（禁止修改第一位）
-./scripts/bump-version.ps1 -Version V2.1.286
-
-# 需要生成发布说明时再显式添加
-./scripts/bump-version.ps1 -Bump patch -CreateRelease
-```
-
-脚本会更新：
-- `SanguiBlog-server/src/main/resources/application.yaml` 的 `site.version`
-- `SanguiBlog-front/src/appfull/public/HomeView.jsx` 的默认版本回退值
-- `README.md` 当前版本号（仅在 `-CreateRelease` 时更新 release 链接）
-- `release/<version>.md`（仅当使用 `-CreateRelease` 时生成模板）
-
-> 发布说明仅在你明确要求时生成；未加 `-CreateRelease` 时不会自动创建 release 文档。
+- Nginx 反代示例：`fake-nginx-config/nginx.conf`
+- 环境切换说明：`ChangeEnv.md`
+- 数据库初始化脚本：`sanguiblog_db.sql`
 
 ## 2. 项目结构
 
@@ -122,6 +95,19 @@ site:
 
 ### 5.3 启动方式
 
+开发模式（本地调试）：
+```bash
+cd SanguiBlog-server
+mvn spring-boot:run
+```
+
+生产模式（构建 Jar 后运行）：
+```bash
+cd SanguiBlog-server
+mvn -DskipTests package
+java -jar target/SanguiBlog-server-*.jar
+```
+
 ## 6. 前端构建与部署（SanguiBlog-front）
 
 前端 API 默认走同源 `/api`，生产环境通常无需额外配置。若你需要跨域/分域名部署，可在 `SanguiBlog-front/.env` 或 `.env.production` 设置：
@@ -140,6 +126,14 @@ npm install
 npm run build
 ```
 构建产物在 `SanguiBlog-front/dist/`。
+
+本地开发（可选）：
+```bash
+cd SanguiBlog-front
+npm install
+npm run dev
+```
+默认开发地址：`http://localhost:5173`。
 
 ## 7. Nginx 反代建议（含 sitemap/robots）
 
@@ -182,7 +176,7 @@ server {
 | 服务启动失败提示 JWT_SECRET | 未设置 JWT 密钥 | 设置环境变量 `JWT_SECRET` 后再启动 |
 | 控制台出现 `content_script.js` 报错 | 浏览器扩展注入脚本噪声 | 无痕窗口/禁用扩展验证（通常与站点无关） |
 
-更多架构与实现细节请查阅 `.ai/PROJECT_MEMORY.md`。
+如需了解更深入的实现细节，可参考仓库内的历史发布说明与源码注释。
 
 
 
