@@ -84,8 +84,16 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
         setRemainingAttempts(null);
         const nameLen = username.length;
         const passLen = password.length;
+        if (nameLen === 0) {
+            setError("请输入用户名");
+            return;
+        }
         if (nameLen < 3 || nameLen > 32) {
             setError("用户名长度需在 3-32 之间");
+            return;
+        }
+        if (passLen === 0) {
+            setError("请输入密码");
             return;
         }
         if (passLen < 6 || passLen > 64) {
@@ -116,8 +124,9 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
             if (typeof remain === 'number') {
                 setRemainingAttempts(remain);
             }
-            if (needCaptcha) {
-                await loadCaptcha();
+            if (needCaptcha || captchaRequired) {
+                setCaptchaInput("");
+                await loadCaptcha(true);
             }
         } finally {
             setLoading(false);
