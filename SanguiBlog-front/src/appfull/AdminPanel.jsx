@@ -64,7 +64,7 @@ import {
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
     ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail, Megaphone,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
-    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy
+    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy, Calendar
 } from 'lucide-react';
 import {
     THEME,
@@ -950,6 +950,8 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         end: ''
     });
     const [filtersApplied, setFiltersApplied] = useState({});
+    const startDateInputRef = useRef(null);
+    const endDateInputRef = useRef(null);
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
@@ -1159,6 +1161,17 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         const normalized = normalizeDateFilterValue(rawValue);
         return normalized ? normalized.replace(/-/g, '/') : '';
     }, [normalizeDateFilterValue]);
+
+    const openNativeDatePicker = useCallback((inputRef) => {
+        const input = inputRef?.current;
+        if (!input) return;
+        if (typeof input.showPicker === 'function') {
+            input.showPicker();
+            return;
+        }
+        input.focus();
+        input.click();
+    }, []);
 
     const normalizeFilters = useCallback((draft = {}) => {
         const keyword = typeof draft.keyword === 'string' ? draft.keyword.trim() : '';
@@ -1435,36 +1448,56 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     </div>
                     <div className="md:col-span-1">
                         <div className={`text-xs mb-1 ${textMuted}`}>起始日期</div>
-                        <div className="relative w-full md:ml-auto md:max-w-[172px]">
+                        <div className="relative w-full md:ml-auto md:max-w-[168px]">
                             <input
+                                ref={startDateInputRef}
                                 type="date"
+                                tabIndex={-1}
+                                aria-hidden="true"
                                 value={normalizeDateFilterValue(filtersDraft.start)}
                                 onChange={(e) => setFiltersDraft((prev) => ({ ...prev, start: e.target.value }))}
-                                className={`sg-date-input-native w-full px-3 py-2 pr-9 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
-                                    ? 'bg-gray-900/60 border-gray-700 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
-                                    : 'bg-white border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
-                                }`}
+                                className="sg-date-input-picker"
                             />
-                            <div className={`pointer-events-none absolute inset-y-0 left-3 right-9 flex items-center text-sm ${filtersDraft.start ? (isDarkMode ? 'text-gray-100' : 'text-gray-900') : 'text-gray-400'}`}>
-                                {formatDateFilterDisplay(filtersDraft.start) || 'yyyy/mm/dd'}
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => openNativeDatePicker(startDateInputRef)}
+                                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                    ? 'bg-gray-900/60 border-gray-700 text-gray-100 hover:border-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-500/30'
+                                    : 'bg-white border-gray-200 text-gray-900 hover:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-200/80'
+                                }`}
+                            >
+                                <span className={`min-w-0 truncate text-left ${filtersDraft.start ? '' : 'text-gray-400'}`}>
+                                    {formatDateFilterDisplay(filtersDraft.start) || 'yyyy/mm/dd'}
+                                </span>
+                                <Calendar size={16} className="shrink-0" />
+                            </button>
                         </div>
                     </div>
                     <div className="md:col-span-1">
                         <div className={`text-xs mb-1 ${textMuted}`}>结束日期</div>
-                        <div className="relative w-full md:ml-auto md:max-w-[172px]">
+                        <div className="relative w-full md:ml-auto md:max-w-[168px]">
                             <input
+                                ref={endDateInputRef}
                                 type="date"
+                                tabIndex={-1}
+                                aria-hidden="true"
                                 value={normalizeDateFilterValue(filtersDraft.end)}
                                 onChange={(e) => setFiltersDraft((prev) => ({ ...prev, end: e.target.value }))}
-                                className={`sg-date-input-native w-full px-3 py-2 pr-9 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
-                                    ? 'bg-gray-900/60 border-gray-700 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
-                                    : 'bg-white border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
-                                }`}
+                                className="sg-date-input-picker"
                             />
-                            <div className={`pointer-events-none absolute inset-y-0 left-3 right-9 flex items-center text-sm ${filtersDraft.end ? (isDarkMode ? 'text-gray-100' : 'text-gray-900') : 'text-gray-400'}`}>
-                                {formatDateFilterDisplay(filtersDraft.end) || 'yyyy/mm/dd'}
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => openNativeDatePicker(endDateInputRef)}
+                                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                    ? 'bg-gray-900/60 border-gray-700 text-gray-100 hover:border-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-500/30'
+                                    : 'bg-white border-gray-200 text-gray-900 hover:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-200/80'
+                                }`}
+                            >
+                                <span className={`min-w-0 truncate text-left ${filtersDraft.end ? '' : 'text-gray-400'}`}>
+                                    {formatDateFilterDisplay(filtersDraft.end) || 'yyyy/mm/dd'}
+                                </span>
+                                <Calendar size={16} className="shrink-0" />
+                            </button>
                         </div>
                     </div>
                 </div>
