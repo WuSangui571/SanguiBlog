@@ -67,3 +67,21 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   visibility: hidden;
   display: none;
 }
+
+/* 后台访问日志日期筛选：保留原生日历图标/选择器，但隐藏浏览器本地化日期文案，改由前端覆盖显示 yyyy/mm/dd */
+.sg-date-input-native {
+  color: transparent;
+  caret-color: transparent;
+}
+.sg-date-input-native::-webkit-datetime-edit,
+.sg-date-input-native::-webkit-datetime-edit-fields-wrapper,
+.sg-date-input-native::-webkit-datetime-edit-text,
+.sg-date-input-native::-webkit-datetime-edit-month-field,
+.sg-date-input-native::-webkit-datetime-edit-day-field,
+.sg-date-input-native::-webkit-datetime-edit-year-field {
+  color: transparent;
+}
+.sg-date-input-native::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+}
