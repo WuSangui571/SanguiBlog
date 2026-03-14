@@ -278,13 +278,34 @@ const ArticleList = ({
     const totalPages = Math.max(1, Math.ceil((Number(postsPage?.total ?? 0) || 0) / pageSize));
     // 筛选/分页触发加载时，隐藏旧文章卡片，避免“加载中卡片 + 旧卡片堆叠”的视觉别扭
     const displayPosts = postsLoading ? [] : sourcePosts;
+    const goToPage = useCallback((page) => {
+        const targetPage = Math.min(totalPages, Math.max(1, Number(page) || 1));
+        if (targetPage === currentPage) return;
+        setCurrentPage(targetPage);
+        if (onQueryChange) {
+            onQueryChange(buildQueryParams({ page: targetPage }));
+        }
+        scrollToPostsTop();
+    }, [buildQueryParams, currentPage, onQueryChange, scrollToPostsTop, totalPages]);
+
     const paginationItems = useMemo(() => {
-        if (totalPages <= 7) {
+        const numericWindow = 8;
+        if (totalPages <= numericWindow + 2) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
         }
-        const pages = [1];
-        const windowStart = Math.max(2, currentPage - 1);
-        const windowEnd = Math.min(totalPages - 1, currentPage + 1);
+
+        let windowStart = Math.max(1, currentPage - Math.floor(numericWindow / 2));
+        let windowEnd = windowStart + numericWindow - 1;
+
+        if (windowEnd > totalPages) {
+            windowEnd = totalPages;
+            windowStart = Math.max(1, windowEnd - numericWindow + 1);
+        }
+
+        const pages = [];
+        if (windowStart > 1) {
+            pages.push(1);
+        }
         if (windowStart > 2) {
             pages.push('ellipsis-left');
         }
@@ -294,7 +315,9 @@ const ArticleList = ({
         if (windowEnd < totalPages - 1) {
             pages.push('ellipsis-right');
         }
-        pages.push(totalPages);
+        if (windowEnd < totalPages) {
+            pages.push(totalPages);
+        }
         return pages;
     }, [currentPage, totalPages]);
 
@@ -935,6 +958,23 @@ const ArticleList = ({
 
                         {!postsLoading && !postsError && totalPages > 1 && (
                             <div className="mt-12 flex flex-wrap justify-center items-center gap-2">
+                                {[
+                                    { key: 'first', label: '首页', target: 1, disabled: currentPage <= 1, wide: true },
+                                    { key: 'prev', label: '上一页', target: currentPage - 1, disabled: currentPage <= 1, wide: true }
+                                ].map((control) => (
+                                    <button
+                                        key={control.key}
+                                        type="button"
+                                        disabled={control.disabled}
+                                        onClick={() => goToPage(control.target)}
+                                        className={`h-10 ${control.wide ? 'px-4 min-w-[72px]' : 'w-10'} border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000] ${control.disabled
+                                            ? (isDarkMode ? 'bg-gray-900 text-gray-500 cursor-not-allowed shadow-none' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none')
+                                            : (isDarkMode ? 'bg-gray-700 text-white hover:bg-[#6366F1] hover:text-white' : 'bg-white text-black hover:bg-[#6366F1] hover:text-white')
+                                        }`}
+                                    >
+                                        {control.label}
+                                    </button>
+                                ))}
                                 {paginationItems.map((item, idx) => {
                                     if (typeof item === 'string') {
                                         return (
@@ -956,13 +996,8 @@ const ArticleList = ({
                                     return (
                                         <button
                                             key={item}
-                                            onClick={() => {
-                                                setCurrentPage(item);
-                                                if (onQueryChange) {
-                                                    onQueryChange(buildQueryParams({ page: item }));
-                                                }
-                                                scrollToPostsTop();
-                                            }}
+                                            type="button"
+                                            onClick={() => goToPage(item)}
                                             className={`w-10 h-10 border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000]
                           ${isActive ? 'bg-black text-white -translate-y-1 shadow-[6px_6px_0px_0px_#FF0080]' : `${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#6366F1] hover:text-white`}
                         `}
@@ -971,6 +1006,23 @@ const ArticleList = ({
                                         </button>
                                     );
                                 })}
+                                {[
+                                    { key: 'next', label: '下一页', target: currentPage + 1, disabled: currentPage >= totalPages, wide: true },
+                                    { key: 'last', label: '末页', target: totalPages, disabled: currentPage >= totalPages, wide: true }
+                                ].map((control) => (
+                                    <button
+                                        key={control.key}
+                                        type="button"
+                                        disabled={control.disabled}
+                                        onClick={() => goToPage(control.target)}
+                                        className={`h-10 ${control.wide ? 'px-4 min-w-[72px]' : 'w-10'} border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000] ${control.disabled
+                                            ? (isDarkMode ? 'bg-gray-900 text-gray-500 cursor-not-allowed shadow-none' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none')
+                                            : (isDarkMode ? 'bg-gray-700 text-white hover:bg-[#6366F1] hover:text-white' : 'bg-white text-black hover:bg-[#6366F1] hover:text-white')
+                                        }`}
+                                    >
+                                        {control.label}
+                                    </button>
+                                ))}
                             </div>
                         )}
 
