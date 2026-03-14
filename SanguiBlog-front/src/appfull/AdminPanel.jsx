@@ -950,6 +950,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         end: ''
     });
     const [filtersApplied, setFiltersApplied] = useState({});
+    const [dateInputFocus, setDateInputFocus] = useState({ start: false, end: false });
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
@@ -1172,9 +1173,15 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         const clearedDraft = { keyword: '', ip: '', postId: '', pageType: 'all', loggedIn: 'all', start: '', end: '' };
         setFiltersDraft(clearedDraft);
         setFiltersApplied({});
+        setDateInputFocus({ start: false, end: false });
         setHideRobotsAndSitemap(false);
         loadLogs(1, size, {}, false);
     }, [loadLogs, size]);
+
+    const getDateInputType = useCallback((field, value) => {
+        if (dateInputFocus[field]) return 'date';
+        return value ? 'date' : 'text';
+    }, [dateInputFocus]);
 
     const handleClearLogs = async () => {
         if (!isSuperAdmin) return;
@@ -1409,9 +1416,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     <div className="md:col-span-1">
                         <div className={`text-xs mb-1 ${textMuted}`}>起始日期</div>
                         <input
-                            type="date"
+                            type={getDateInputType('start', filtersDraft.start)}
                             value={filtersDraft.start}
                             onChange={(e) => setFiltersDraft((prev) => ({ ...prev, start: e.target.value }))}
+                            onFocus={() => setDateInputFocus((prev) => ({ ...prev, start: true }))}
+                            onBlur={() => setDateInputFocus((prev) => ({ ...prev, start: Boolean(filtersDraft.start) }))}
+                            placeholder="yyyy/mm/dd"
                             className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
                                 ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
                                 : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
@@ -1421,9 +1431,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     <div className="md:col-span-1">
                         <div className={`text-xs mb-1 ${textMuted}`}>结束日期</div>
                         <input
-                            type="date"
+                            type={getDateInputType('end', filtersDraft.end)}
                             value={filtersDraft.end}
                             onChange={(e) => setFiltersDraft((prev) => ({ ...prev, end: e.target.value }))}
+                            onFocus={() => setDateInputFocus((prev) => ({ ...prev, end: true }))}
+                            onBlur={() => setDateInputFocus((prev) => ({ ...prev, end: Boolean(filtersDraft.end) }))}
+                            placeholder="yyyy/mm/dd"
                             className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
                                 ? 'bg-gray-900/60 border-gray-700 text-gray-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
                                 : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
