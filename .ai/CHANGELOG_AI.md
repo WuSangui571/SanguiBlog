@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-03-14] 更新首页站点版本号到 V2.1.288
+- 背景/需求：用户要求将当前项目版本号从 `V2.1.287` 更新到 `V2.1.288`，且不生成/更新 release 文档，仅同步首页版本展示。
+- 修改类型：chore
+- 影响范围：首页 Banner 版本展示、后端站点元信息
+- 变更摘要：
+  1) 后端 `site.version` 从 `V2.1.287` 更新为 `V2.1.288`。
+  2) 首页 `HomeView` 的前端兜底版本同步更新为 `V2.1.288`。
+  3) 按用户要求，不更新 README，不生成 release 文档。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+- 检索与复用策略：
+  - 检索关键词：`site.version` / `V2.1.287` / `HomeView` / `meta?.version`
+  - 找到的旧实现：首页 Banner 统一读取后端 `site.version`，前端保留 `HomeView` 兜底版本
+  - 最终选择：仅修改首页相关版本来源，不运行版本脚本，避免额外改动 README / release
+- 风险点：
+  - README 中当前版本号仍停留在 `V2.1.287`，这是按用户“只改首页版本信息”的要求保留的差异。
+- 验证方式：
+  - 手动：启动后首页 Banner 显示 `SANGUI BLOG // V2.1.288`；后端 `/api/site/meta` 返回 `version=V2.1.288`。
+
 ## [2026-03-14] 扩展首页文章列表分页按钮窗口
 - 背景/需求：首页文章列表底部分页在总页数较多时仅显示 `1 / 2 / ... / 19` 这类极简结构，用户希望参考搜索引擎的分页方式，展示更长的数字窗口，并保留“首页/末页”按钮。
 - 修改类型：fix
