@@ -289,7 +289,7 @@ const ArticleList = ({
     }, [buildQueryParams, currentPage, onQueryChange, scrollToPostsTop, totalPages]);
 
     const paginationItems = useMemo(() => {
-        const numericWindow = 8;
+        const numericWindow = 6;
         if (totalPages <= numericWindow + 2) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
         }
