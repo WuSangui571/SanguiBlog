@@ -1435,34 +1435,34 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     </div>
                     <div className="md:col-span-1">
                         <div className={`text-xs mb-1 ${textMuted}`}>起始日期</div>
-                        <div className="relative">
+                        <div className="relative w-full md:ml-auto md:max-w-[172px]">
                             <input
                                 type="date"
                                 value={normalizeDateFilterValue(filtersDraft.start)}
                                 onChange={(e) => setFiltersDraft((prev) => ({ ...prev, start: e.target.value }))}
-                                className={`sg-date-input-native w-full px-3 py-2 pr-11 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                className={`sg-date-input-native w-full px-3 py-2 pr-9 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
                                     ? 'bg-gray-900/60 border-gray-700 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
                                     : 'bg-white border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
                                 }`}
                             />
-                            <div className={`pointer-events-none absolute inset-y-0 left-3 right-11 flex items-center text-sm ${filtersDraft.start ? (isDarkMode ? 'text-gray-100' : 'text-gray-900') : 'text-gray-400'}`}>
+                            <div className={`pointer-events-none absolute inset-y-0 left-3 right-9 flex items-center text-sm ${filtersDraft.start ? (isDarkMode ? 'text-gray-100' : 'text-gray-900') : 'text-gray-400'}`}>
                                 {formatDateFilterDisplay(filtersDraft.start) || 'yyyy/mm/dd'}
                             </div>
                         </div>
                     </div>
                     <div className="md:col-span-1">
                         <div className={`text-xs mb-1 ${textMuted}`}>结束日期</div>
-                        <div className="relative">
+                        <div className="relative w-full md:ml-auto md:max-w-[172px]">
                             <input
                                 type="date"
                                 value={normalizeDateFilterValue(filtersDraft.end)}
                                 onChange={(e) => setFiltersDraft((prev) => ({ ...prev, end: e.target.value }))}
-                                className={`sg-date-input-native w-full px-3 py-2 pr-11 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
+                                className={`sg-date-input-native w-full px-3 py-2 pr-9 rounded-lg border text-sm outline-none transition-colors ${isDarkMode
                                     ? 'bg-gray-900/60 border-gray-700 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30'
                                     : 'bg-white border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/80'
                                 }`}
                             />
-                            <div className={`pointer-events-none absolute inset-y-0 left-3 right-11 flex items-center text-sm ${filtersDraft.end ? (isDarkMode ? 'text-gray-100' : 'text-gray-900') : 'text-gray-400'}`}>
+                            <div className={`pointer-events-none absolute inset-y-0 left-3 right-9 flex items-center text-sm ${filtersDraft.end ? (isDarkMode ? 'text-gray-100' : 'text-gray-900') : 'text-gray-400'}`}>
                                 {formatDateFilterDisplay(filtersDraft.end) || 'yyyy/mm/dd'}
                             </div>
                         </div>
