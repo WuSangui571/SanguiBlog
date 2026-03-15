@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-03-15] 首页站点版本号更新到 V2.1.289，并校正 README 过时版本说明
+- 背景/需求：用户要求将项目版本号从 `V2.1.288` 更新到 `V2.1.289`，不生成 release 文档，只需同步首页版本展示；同时检查根目录 `README.md` 是否存在过时内容，并在必要范围内更新。
+- 修改类型：chore
+- 影响范围：首页版本展示、后端站点元信息、根目录 README
+- 变更摘要：
+  1) 后端 `site.version` 从 `V2.1.288` 更新为 `V2.1.289`。
+  2) 首页 `HomeView` 的前端兜底版本同步更新为 `V2.1.289`。
+  3) `README.md` 中过时的当前版本号从 `V2.1.287` 更新为 `V2.1.289`。
+  4) `README.md` 中“发布说明：release/V2.1.287.md”改为更准确的目录说明，避免在未新增 release 文档时误导为当前版本已有对应发布说明。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `README.md`
+- 检索与复用策略：
+  - 检索关键词：`V2.1.288` / `site.version` / `meta?.version` / `README` / `V2.1.287`
+  - 找到的旧实现：首页版本统一读取后端 `site.version`，前端 `HomeView` 保留兜底版本；README 仍停留在旧版本说明
+  - 最终选择：仅同步首页版本来源与 README 中明确过时的版本描述，不创建 release 文档
+- 风险点：
+  - README 中发布说明仍引用仓库现有最新文档 `V2.1.287`，这是按“不要生成 release 文档”的要求保留的现状说明。
+- 验证方式：
+  - 静态：检索 `V2.1.288` 已不再出现在首页版本来源文件中。
+  - 手动：首页 Banner 应显示 `SANGUI BLOG // V2.1.289`；`README.md` 当前版本说明同步为 `V2.1.289`。
+
 ## [2026-03-15] 发布文章页按 Markdown 图片检测动态显示“插入图片”按钮
 - 背景/需求：用户要求后台发布文章页（`/admin/create-post`）中的 Markdown 正文操作区默认只显示“上传 .md”；“插入图片”按钮先隐藏，仅在上传 Markdown 后检测到正文存在图片时才显示；若未检测到图片则保持隐藏。
 - 修改类型：fix
