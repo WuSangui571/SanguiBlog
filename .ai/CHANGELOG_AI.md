@@ -5,6 +5,30 @@
 
 ---
 
+## [2026-03-15] 发布文章页按 Markdown 图片检测动态显示“插入图片”按钮
+- 背景/需求：用户要求后台发布文章页（`/admin/create-post`）中的 Markdown 正文操作区默认只显示“上传 .md”；“插入图片”按钮先隐藏，仅在上传 Markdown 后检测到正文存在图片时才显示；若未检测到图片则保持隐藏。
+- 修改类型：fix
+- 影响范围：后台发布文章页（仅 `create-post`）Markdown 编辑区按钮显示逻辑
+- 变更摘要：
+  1) 新增 `shouldShowInlineImageUpload(imageCount)` 纯函数，用于收口“是否显示插入图片按钮”的判定规则。
+  2) `CreatePostView` 新增 `showInlineImageUpload` 状态，默认 `false`，上传 `.md` 后根据 `countImagesInContent(body)` 结果切换可见性。
+  3) 发布成功和“清空表单”时会重置该状态，确保下一篇文章重新回到“默认只显示上传 .md”。
+  4) 编辑文章页现有“插入图片”按钮逻辑保持不变，避免扩大影响面。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/createPostInlineImageVisibility.js`
+  - `SanguiBlog-front/src/appfull/createPostInlineImageVisibility.test.js`
+- 检索与复用策略：
+  - 检索关键词：`CreatePostView` / `上传 .md` / `插入图片` / `countImagesInContent` / `handleMarkdownUpload`
+  - 找到的旧实现：发布文章页已在上传 Markdown 时统计 `imageCount` 并写入提示文案；按钮始终显示
+  - 最终选择：复用已有 `countImagesInContent` 检测结果，不新增接口，不重复实现图片检测
+- 风险点：
+  - 该规则只绑定在“上传 Markdown 文件”路径；如果管理员完全手写 Markdown，不会自动显示“插入图片”，这与本次需求“点击上传 md 后再判断”一致。
+- 验证方式：
+  - 静态：执行 `node SanguiBlog-front/src/appfull/createPostInlineImageVisibility.test.js` 通过。
+  - 构建：执行 `npm run build` 通过。
+  - 手动：进入 `/admin/create-post`，初始仅见“上传 .md”；上传含图片 Markdown 后出现“插入图片”；上传不含图片 Markdown 时不出现。
+
 ## [2026-03-15] 移除首页文章列表分页中的首页与末页按钮
 - 背景/需求：用户希望首页文章卡片底部分页区去掉最左侧“首页”和最右侧“末页”按钮，因为数字页码本身已经会展示首末页，继续保留两个按钮显得重复。
 - 修改类型：fix

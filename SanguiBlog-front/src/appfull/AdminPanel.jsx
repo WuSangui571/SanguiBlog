@@ -75,6 +75,7 @@ import {
     countImagesInContent,
     extractHexFromBgClass
 } from "./shared.js";
+import { shouldShowInlineImageUpload } from "./createPostInlineImageVisibility.js";
 
 const decodeMaybeUrlEncoded = (value) => {
     if (!value || typeof value !== 'string') return value;
@@ -1730,6 +1731,7 @@ const CreatePostView = ({ isDarkMode }) => {
     const [publishBanner, setPublishBanner] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
+    const [showInlineImageUpload, setShowInlineImageUpload] = useState(false);
     const markdownFileInputRef = useRef(null);
     const markdownEditorRef = useRef(null);
     const inlineImageInputRef = useRef(null);
@@ -1946,6 +1948,7 @@ const CreatePostView = ({ isDarkMode }) => {
             const imageCount = countImagesInContent(body);
             applyMdContent(body);
             setMarkdownFileName(file.name);
+            setShowInlineImageUpload(shouldShowInlineImageUpload(imageCount));
 
             const baseMsg = summary ? `已解析摘要并加载 ${file.name}` : "未识别摘要格式，请手动填写摘要";
             const imageMsg = `📷 本文检测到 ${imageCount} 张图片`;
@@ -2044,6 +2047,7 @@ const CreatePostView = ({ isDarkMode }) => {
             setAssetsFolder("");
             setMarkdownMessage("");
             setImageUploadMessage("");
+            setShowInlineImageUpload(false);
             setCoverImage("");
             setCoverPreview("");
             setThemeColor(DEFAULT_THEME_COLOR);
@@ -2066,6 +2070,7 @@ const CreatePostView = ({ isDarkMode }) => {
         setMarkdownFileName("");
         setMarkdownMessage("");
         setImageUploadMessage("");
+        setShowInlineImageUpload(false);
         setCoverImage("");
         setCoverPreview("");
         setAssetsFolder("");
@@ -2139,7 +2144,7 @@ const CreatePostView = ({ isDarkMode }) => {
                             className="flex flex-col gap-3 border-b pb-3 md:flex-row md:items-center md:justify-between">
                             <div>
                                 <h3 className={`font-semibold ${text}`}>Markdown 正文</h3>
-                                <p className="text-xs text-gray-500">上传 .md、粘贴内容，或在当前光标处插入图片</p>
+                                <p className="text-xs text-gray-500">先上传 .md；若检测到文中存在图片，再显示“插入图片”按钮</p>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <button
@@ -2149,14 +2154,16 @@ const CreatePostView = ({ isDarkMode }) => {
                                 >
                                     <Upload size={16} /> 上传 .md
                                 </button>
-                                <button
-                                    type="button"
-                                    disabled={uploadingImages}
-                                    className={`text-sm flex items-center gap-1 ${uploadingImages ? 'text-gray-400 cursor-not-allowed' : 'text-pink-500 hover:text-pink-400'}`}
-                                    onClick={() => inlineImageInputRef.current?.click()}
-                                >
-                                    <ImagePlus size={16} /> {uploadingImages ? "插图上传中..." : "插入图片"}
-                                </button>
+                                {showInlineImageUpload && (
+                                    <button
+                                        type="button"
+                                        disabled={uploadingImages}
+                                        className={`text-sm flex items-center gap-1 ${uploadingImages ? 'text-gray-400 cursor-not-allowed' : 'text-pink-500 hover:text-pink-400'}`}
+                                        onClick={() => inlineImageInputRef.current?.click()}
+                                    >
+                                        <ImagePlus size={16} /> {uploadingImages ? "插图上传中..." : "插入图片"}
+                                    </button>
+                                )}
                             </div>
                             <input
                                 type="file"
