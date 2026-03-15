@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-03-15] 首页文章卡片摘要支持悬停查看完整内容
+- 背景/需求：用户希望首页文章卡片在摘要被 `line-clamp` 截断时，鼠标悬停能看到该文章的完整摘要，且优先细化到摘要区域本身，避免必须点进文章才看到完整内容。
+- 修改类型：fix
+- 影响范围：首页文章列表卡片摘要交互
+- 变更摘要：
+  1) 为首页文章卡片新增摘要 tooltip 文案生成函数，统一规整换行与多余空白，避免 tooltip 中出现过长空行或异常缩进。
+  2) `ArticleList` 的摘要段落新增 hover 提示层，仅在鼠标悬停摘要区域时显示完整摘要，不影响整卡点击跳转。
+  3) 同时给摘要段落补充浏览器原生 `title` 作为兜底，保证在自定义浮层不可见的场景下仍能查看完整摘要。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.js`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
+- 检索与复用策略：
+  - 检索关键词：`excerpt` / `ArticleList` / `tooltip` / `title=` / `summary`
+  - 找到的旧实现：首页卡片摘要集中在 `ArticleList.jsx`；现有 tooltip 交互可参考 `StatsStrip.jsx`；摘要数据来源继续复用后端 `PostSummaryDto.excerpt`
+  - 最终选择：复用现有首页卡片与摘要字段，在摘要段落原位增强 hover 展示，不新增接口、不新增卡片组件
+- 风险点：
+  - 自定义 tooltip 依赖 hover，移动端不会触发；但本次需求明确针对鼠标悬停，移动端保留原行为。
+  - `ArticleList.jsx` 存在历史遗留 eslint 问题（Hooks 顺序/未使用变量），本次未顺手重构，避免扩大改动面。
+- 验证方式：
+  - 静态：执行 `node SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js` 通过，确认 tooltip 文案规整函数可用。
+  - 手动：首页将鼠标移到文章卡片摘要区域，可看到完整摘要浮层；摘要为空时不展示 tooltip。
+
 ## [2026-03-14] 更新首页站点版本号到 V2.1.288
 - 背景/需求：用户要求将当前项目版本号从 `V2.1.287` 更新到 `V2.1.288`，且不生成/更新 release 文档，仅同步首页版本展示。
 - 修改类型：chore

@@ -4,6 +4,7 @@ import PopButton from "../../components/common/PopButton.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
 import StatsStrip from "./StatsStrip.jsx";
+import { getArticleExcerptTooltip } from "./articleExcerptTooltip.js";
 import { buildAssetUrl } from "../../utils/asset.js";
 import sanitizeHtml from "../../utils/sanitize.js";
 import {
@@ -762,6 +763,7 @@ const ArticleList = ({
                                     const tags = Array.isArray(post.tags) ? post.tags : [];
                                     const accentColor = extractHexFromBgClass(post.color, '#6366F1');
                                     const isNewPost = isPostNew(post.date);
+                                    const excerptTooltip = getArticleExcerptTooltip(post.excerpt);
                                     return (
                                         <motion.div
                                             key={post.id}
@@ -893,18 +895,29 @@ const ArticleList = ({
                                                                 </motion.span>
                                                             )}
                                                         </div>
-                                                        <p
-                                                            className={`text-base md:text-lg font-medium border-l-4 border-gray-300 pl-4 pr-2 ${subText}`}
-                                                            style={{
-                                                                minHeight: '4.5em',
-                                                                display: '-webkit-box',
-                                                                WebkitLineClamp: 3,
-                                                                WebkitBoxOrient: 'vertical',
-                                                                overflow: 'hidden'
-                                                            }}
-                                                        >
-                                                            {post.excerpt}
-                                                        </p>
+                                                        <div className="relative mt-0 group/excerpt">
+                                                            <p
+                                                                title={excerptTooltip || undefined}
+                                                                aria-label={excerptTooltip ? `文章摘要：${excerptTooltip}` : undefined}
+                                                                className={`text-base md:text-lg font-medium border-l-4 border-gray-300 pl-4 pr-2 ${subText} ${excerptTooltip ? 'cursor-help' : ''}`}
+                                                                style={{
+                                                                    minHeight: '4.5em',
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 3,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                    overflow: 'hidden'
+                                                                }}
+                                                            >
+                                                                {post.excerpt}
+                                                            </p>
+                                                            {excerptTooltip && (
+                                                                <div className="pointer-events-none absolute left-0 right-0 top-full z-30 mt-3 opacity-0 translate-y-1 transition-all duration-200 group-hover/excerpt:opacity-100 group-hover/excerpt:translate-y-0">
+                                                                    <div className={`relative border-2 border-black p-3 text-sm font-medium leading-6 shadow-[4px_4px_0px_0px_#000] whitespace-normal break-words ${isDarkMode ? 'bg-[#111827] text-gray-100' : 'bg-[#FFF7E8] text-black'}`}>
+                                                                        {excerptTooltip}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
 
                                                         <div className="mt-auto pt-4">
                                                             <div
