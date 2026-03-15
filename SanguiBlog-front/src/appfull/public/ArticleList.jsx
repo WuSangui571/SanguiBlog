@@ -897,7 +897,6 @@ const ArticleList = ({
                                                         </div>
                                                         <div className="relative mt-0 group/excerpt">
                                                             <p
-                                                                title={excerptTooltip || undefined}
                                                                 aria-label={excerptTooltip ? `文章摘要：${excerptTooltip}` : undefined}
                                                                 className={`text-base md:text-lg font-medium border-l-4 border-gray-300 pl-4 pr-2 ${subText} ${excerptTooltip ? 'cursor-help' : ''}`}
                                                                 style={{
