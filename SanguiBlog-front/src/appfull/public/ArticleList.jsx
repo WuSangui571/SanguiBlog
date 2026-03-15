@@ -971,7 +971,6 @@ const ArticleList = ({
                         {!postsLoading && !postsError && totalPages > 1 && (
                             <div className="mt-12 flex flex-wrap justify-center items-center gap-2">
                                 {[
-                                    { key: 'first', label: '首页', target: 1, disabled: currentPage <= 1, wide: true },
                                     { key: 'prev', label: '上一页', target: currentPage - 1, disabled: currentPage <= 1, wide: true }
                                 ].map((control) => (
                                     <button
@@ -1019,8 +1018,7 @@ const ArticleList = ({
                                     );
                                 })}
                                 {[
-                                    { key: 'next', label: '下一页', target: currentPage + 1, disabled: currentPage >= totalPages, wide: true },
-                                    { key: 'last', label: '末页', target: totalPages, disabled: currentPage >= totalPages, wide: true }
+                                    { key: 'next', label: '下一页', target: currentPage + 1, disabled: currentPage >= totalPages, wide: true }
                                 ].map((control) => (
                                     <button
                                         key={control.key}
