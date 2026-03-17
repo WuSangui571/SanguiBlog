@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, SendHorizontal, X } from 'lucide-react';
 import { sendAiChat } from '../../api.js';
+import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 
 function createAssistantMessage(content) {
@@ -21,6 +22,7 @@ function createUserMessage(content) {
 }
 
 export default function AiAssistantWidget({ isDarkMode, config }) {
+    const { headerHeight } = useLayoutOffsets();
     const assistantConfig = useMemo(() => resolveAiAssistantConfig(config), [config]);
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState('');
@@ -128,11 +130,12 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                             role="dialog"
                             aria-modal="true"
                             aria-label={assistantConfig.title}
-                            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 16, scale: 0.96 }}
+                            initial={{ opacity: 0, x: 32 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 32 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                            className={`fixed z-[83] right-4 bottom-24 md:right-6 md:bottom-6 w-[min(400px,calc(100vw-24px))] border-2 border-black rounded-[24px] overflow-hidden ${shellClass}`}
+                            className={`fixed z-[83] left-0 right-0 md:left-auto md:w-[460px] border-t-2 border-black md:border-l-2 md:border-r-0 md:border-b-0 rounded-none overflow-hidden flex flex-col ${shellClass}`}
+                            style={{ top: headerHeight, bottom: 0 }}
                         >
                             <div className={`border-b-2 border-black px-4 py-4 ${panelAccentClass}`}>
                                 <div className="flex items-start justify-between gap-4">
@@ -161,7 +164,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
 
                             <div
                                 ref={viewportRef}
-                                className={`sg-scrollbar max-h-[46vh] min-h-[240px] overflow-y-auto px-4 py-4 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'}`}
+                                className={`sg-scrollbar flex-1 min-h-0 overflow-y-auto px-4 py-4 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'}`}
                                 style={{ overscrollBehavior: 'contain' }}
                             >
                                 {messages.length === 0 ? (
