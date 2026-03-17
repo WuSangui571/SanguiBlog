@@ -3,7 +3,7 @@ export const DEFAULT_AI_ASSISTANT_CONFIG = {
     title: '三桂博客AI助理',
     welcomeMessage: '你好，我是三桂博客AI助理',
     inputPlaceholder: '请输入你的问题...',
-    pendingReply: '三桂正在思考，请稍候...',
+    pendingReply: '...',
     logoPath: '/static/ai/assistant-logo.png'
 };
 

@@ -260,6 +260,116 @@ export const sendAiChat = (message, sessionId) => request("/ai/chat", {
   method: "POST",
   body: JSON.stringify({ message, sessionId }),
 });
+
+const parseSseBlocks = (buffer, onEvent) => {
+  const parts = buffer.split(/\r?\n\r?\n/);
+  const rest = parts.pop() ?? "";
+
+  parts.forEach((block) => {
+    if (!block.trim()) return;
+    let event = "message";
+    const dataLines = [];
+
+    block.split(/\r?\n/).forEach((line) => {
+      if (line.startsWith("event:")) {
+        event = line.slice(6).trim();
+      } else if (line.startsWith("data:")) {
+        dataLines.push(line.slice(5).trimStart());
+      }
+    });
+
+    if (!dataLines.length) return;
+
+    const rawData = dataLines.join("\n");
+    let data = rawData;
+    try {
+      data = JSON.parse(rawData);
+    } catch {
+      // keep raw text
+    }
+
+    onEvent(event, data);
+  });
+
+  return rest;
+};
+
+export const streamAiChat = async ({ message, sessionId, onChunk, onComplete, onError }) => {
+  const token = getStoredToken();
+  if (isTokenExpired(token)) {
+    localStorage.removeItem("sg_token");
+    notifyAuthExpired({ reason: "token_expired", status: 401, message: "登录已过期" });
+    const expiredError = new Error("登录已过期，请重新登录");
+    expiredError.status = 401;
+    throw expiredError;
+  }
+
+  const res = await fetch(`${API_BASE}/ai/chat/stream`, {
+    method: "POST",
+    headers: {
+      ...buildHeaders(),
+      Accept: "text/event-stream",
+    },
+    body: JSON.stringify({ message, sessionId }),
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    let payload = null;
+    let errorMessage = txt || res.statusText;
+    if (txt) {
+      try {
+        payload = JSON.parse(txt);
+        if (payload && typeof payload === "object") {
+          errorMessage = payload.message || payload.msg || errorMessage;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    const error = new Error(errorMessage || res.statusText);
+    error.status = res.status;
+    if (payload) error.payload = payload;
+    throw error;
+  }
+
+  if (!res.body) {
+    throw new Error("当前浏览器不支持流式响应");
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+    buffer = parseSseBlocks(buffer, (event, data) => {
+      if (event === "chunk") {
+        onChunk?.(data?.text || "");
+      } else if (event === "complete") {
+        onComplete?.(data);
+      } else if (event === "error") {
+        onError?.(data?.message || "AI服务调用失败，请稍后再试");
+      }
+    });
+
+    if (done) {
+      if (buffer.trim()) {
+        parseSseBlocks(`${buffer}\n\n`, (event, data) => {
+          if (event === "chunk") {
+            onChunk?.(data?.text || "");
+          } else if (event === "complete") {
+            onComplete?.(data);
+          } else if (event === "error") {
+            onError?.(data?.message || "AI服务调用失败，请稍后再试");
+          }
+        });
+      }
+      break;
+    }
+  }
+};
 export const fetchAiChatSessions = () => request("/ai/sessions");
 export const createAiChatSession = () =>
   request("/ai/sessions", {

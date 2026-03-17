@@ -17,6 +17,11 @@ assert.equal(
     '/static/ai/assistant-logo.png'
 );
 
+assert.equal(
+    DEFAULT_AI_ASSISTANT_CONFIG.pendingReply,
+    '...'
+);
+
 assert.deepEqual(
     resolveAiAssistantConfig(),
     DEFAULT_AI_ASSISTANT_CONFIG

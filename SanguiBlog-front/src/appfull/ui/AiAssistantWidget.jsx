@@ -5,7 +5,7 @@ import {
     createAiChatSession,
     fetchAiChatMessages,
     fetchAiChatSessions,
-    sendAiChat
+    streamAiChat
 } from '../../api.js';
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
@@ -204,15 +204,32 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
             ]);
             setDraft('');
 
-            const response = await sendAiChat(content, sessionId);
-            const reply = response?.data?.reply?.trim() || '抱歉，我这次没有生成有效回复。';
-
-            setMessages((prev) => prev.map((message) => (
-                message.id === pendingId
-                    ? { ...message, content: reply }
-                    : message
-            )));
-
+            let streamedReply = '';
+            await streamAiChat({
+                message: content,
+                sessionId,
+                onChunk: (chunk) => {
+                    if (!chunk) return;
+                    streamedReply += chunk;
+                    setMessages((prev) => prev.map((message) => (
+                        message.id === pendingId
+                            ? { ...message, content: streamedReply }
+                            : message
+                    )));
+                },
+                onComplete: (payload) => {
+                    const reply = payload?.reply?.trim() || streamedReply.trim() || '抱歉，我这次没有生成有效回复。';
+                    streamedReply = reply;
+                    setMessages((prev) => prev.map((message) => (
+                        message.id === pendingId
+                            ? { ...message, content: reply }
+                            : message
+                    )));
+                },
+                onError: (message) => {
+                    throw new Error(message || 'AI 服务暂时不可用，请稍后再试。');
+                }
+            });
             await loadSessions();
         } catch (error) {
             const fallback = error?.message?.trim() || 'AI 服务暂时不可用，请稍后再试。';

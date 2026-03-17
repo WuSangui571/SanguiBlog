@@ -26,11 +26,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.Disposable;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -128,6 +132,78 @@ public class AiChatService {
         }
     }
 
+    public SseEmitter streamChat(Long userId, Long sessionId, String message) {
+        AiChatSession session = findOwnedSession(userId, sessionId);
+        String userMessage = message == null ? "" : message.trim();
+        if (!StringUtils.hasText(userMessage)) {
+            throw new IllegalArgumentException("消息不能为空");
+        }
+
+        List<Message> promptMessages = new ArrayList<>();
+        promptMessages.add(new SystemMessage(aiAssistantSettingService.systemPrompt()));
+        promptMessages.addAll(loadContextMessages(session.getId()));
+        promptMessages.add(new UserMessage(userMessage));
+
+        Instant userMessageAt = Instant.now();
+        if (DEFAULT_SESSION_TITLE.equals(session.getTitle())) {
+            session.setTitle(buildSessionTitle(userMessage));
+        }
+        session.setLastMessagePreview(trimToLength(userMessage, 500));
+        session.setUpdatedAt(userMessageAt);
+        aiChatSessionRepository.save(session);
+        aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, userMessageAt));
+
+        SseEmitter emitter = new SseEmitter(0L);
+        StringBuilder replyBuilder = new StringBuilder();
+
+        Disposable subscription = chatModel.stream(new Prompt(promptMessages)).subscribe(
+                response -> {
+                    String chunk = extractChunk(response);
+                    if (!StringUtils.hasText(chunk)) {
+                        return;
+                    }
+                    replyBuilder.append(chunk);
+                    sendSseEvent(emitter, "chunk", Map.of("text", chunk));
+                },
+                error -> {
+                    log.error("调用通义千问流式聊天接口失败", error);
+                    sendSseEvent(emitter, "error", Map.of("message", "AI服务调用失败，请稍后再试"));
+                    emitter.complete();
+                },
+                () -> {
+                    String reply = replyBuilder.toString().trim();
+                    if (!StringUtils.hasText(reply)) {
+                        sendSseEvent(emitter, "error", Map.of("message", "AI服务未返回有效内容，请稍后再试"));
+                        emitter.complete();
+                        return;
+                    }
+
+                    Instant assistantMessageAt = Instant.now();
+                    aiChatMessageRepository.save(buildMessage(session, "assistant", reply, configuredModel, assistantMessageAt));
+                    session.setLastMessagePreview(trimToLength(reply, 500));
+                    session.setUpdatedAt(assistantMessageAt);
+                    aiChatSessionRepository.save(session);
+
+                    sendSseEvent(emitter, "complete", Map.of(
+                            "reply", reply,
+                            "sessionId", session.getId(),
+                            "model", configuredModel,
+                            "mode", "DATABASE_SESSION_HISTORY"
+                    ));
+                    emitter.complete();
+                }
+        );
+
+        emitter.onCompletion(subscription::dispose);
+        emitter.onTimeout(() -> {
+            subscription.dispose();
+            emitter.complete();
+        });
+        emitter.onError(error -> subscription.dispose());
+
+        return emitter;
+    }
+
     private User findUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户未登录或不存在"));
@@ -157,6 +233,14 @@ public class AiChatService {
             case "user" -> new UserMessage(message.getContent());
             default -> new UserMessage(message.getContent());
         };
+    }
+
+    private String extractChunk(ChatResponse response) {
+        if (response == null || response.getResult() == null || response.getResult().getOutput() == null) {
+            return "";
+        }
+        String text = response.getResult().getOutput().getText();
+        return text == null ? "" : text;
     }
 
     private AiChatMessage buildMessage(AiChatSession session, String role, String content, String modelName, Instant createdAt) {
@@ -197,5 +281,13 @@ public class AiChatService {
         }
         String trimmed = value.trim();
         return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength);
+    }
+
+    private void sendSseEvent(SseEmitter emitter, String eventName, Object data) {
+        try {
+            emitter.send(SseEmitter.event().name(eventName).data(data));
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "流式响应发送失败", ex);
+        }
     }
 }

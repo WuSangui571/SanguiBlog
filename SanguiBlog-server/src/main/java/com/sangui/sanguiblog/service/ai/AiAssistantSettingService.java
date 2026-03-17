@@ -14,7 +14,7 @@ public class AiAssistantSettingService {
     public static final String DEFAULT_TITLE = "三桂博客AI助理";
     public static final String DEFAULT_WELCOME_MESSAGE = "你好，我是三桂博客AI助理";
     public static final String DEFAULT_INPUT_PLACEHOLDER = "请输入你的问题...";
-    public static final String DEFAULT_PENDING_REPLY = "三桂正在思考，请稍候...";
+    public static final String DEFAULT_PENDING_REPLY = "...";
     public static final String DEFAULT_SYSTEM_PROMPT = """
             你是三桂博客的站内 AI 助理，名字叫三桂。
             你的回答面向博客访客，风格简洁、直接、专业。

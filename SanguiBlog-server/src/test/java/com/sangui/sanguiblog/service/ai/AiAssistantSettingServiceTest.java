@@ -26,6 +26,7 @@ class AiAssistantSettingServiceTest {
         assertEquals("三桂博客AI助理", service.siteConfig().getTitle());
         assertEquals("你好，我是三桂博客AI助理", service.siteConfig().getWelcomeMessage());
         assertEquals("请输入你的问题...", service.siteConfig().getInputPlaceholder());
+        assertEquals("...", service.siteConfig().getPendingReply());
         assertEquals(AiAssistantSettingService.DEFAULT_SYSTEM_PROMPT, service.systemPrompt());
     }
 
