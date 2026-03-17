@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, SendHorizontal, X } from 'lucide-react';
+import { sendAiChat } from '../../api.js';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 
 function createAssistantMessage(content) {
@@ -23,6 +24,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
     const assistantConfig = useMemo(() => resolveAiAssistantConfig(config), [config]);
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState('');
+    const [isSending, setIsSending] = useState(false);
     const [messages, setMessages] = useState(() => [
         createAssistantMessage(assistantConfig.welcomeMessage)
     ]);
@@ -75,18 +77,44 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         };
     }, [isOpen]);
 
-    const sendDisabled = !draft.trim();
+    const sendDisabled = !draft.trim() || isSending;
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         const content = draft.trim();
-        if (!content) return;
+        if (!content || isSending) return;
+
+        const pendingId = `assistant-pending-${Date.now()}`;
         setMessages((prev) => [
             ...prev,
             createUserMessage(content),
-            createAssistantMessage(assistantConfig.pendingReply)
+            {
+                id: pendingId,
+                role: 'assistant',
+                content: assistantConfig.pendingReply
+            }
         ]);
         setDraft('');
+
+        setIsSending(true);
+        try {
+            const response = await sendAiChat(content);
+            const reply = response?.data?.reply?.trim() || '抱歉，我这次没有生成有效回复。';
+            setMessages((prev) => prev.map((message) => (
+                message.id === pendingId
+                    ? { ...message, content: reply }
+                    : message
+            )));
+        } catch (error) {
+            const fallback = error?.message?.trim() || 'AI 服务暂时不可用，请稍后再试。';
+            setMessages((prev) => prev.map((message) => (
+                message.id === pendingId
+                    ? { ...message, content: fallback }
+                    : message
+            )));
+        } finally {
+            setIsSending(false);
+        }
     };
 
     const shellClass = isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black';

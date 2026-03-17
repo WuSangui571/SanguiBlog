@@ -13,6 +13,7 @@ import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.SystemBroadcastRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
+import com.sangui.sanguiblog.service.ai.AiAssistantSettingService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ public class SiteService {
         private final SystemBroadcastRepository systemBroadcastRepository;
         private final UserRepository userRepository;
         private final AuthService authService;
+        private final AiAssistantSettingService aiAssistantSettingService;
         @Value("${site.footer.year:2025}")
         private int footerYear;
         @Value("${site.footer.brand:三桂博客}")
@@ -164,6 +166,7 @@ public class SiteService {
                                 .homeQuote(homeSignatureQuote)
                                 .assetBaseUrl(resolveAssetBaseUrl())
                                 .version(siteVersion)
+                                .aiAssistant(aiAssistantSettingService.siteConfig())
                                 .build();
         }
 

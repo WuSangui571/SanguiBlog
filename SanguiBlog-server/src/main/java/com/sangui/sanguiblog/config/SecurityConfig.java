@@ -136,6 +136,7 @@ public class SecurityConfig {
                                 "/robots.txt",
                                 "/api/auth/login",
                                 "/api/auth/captcha",
+                                "/api/ai/chat",
                                 "/api/guard/captcha",
                                 "/api/guard/verify",
                                 "/api/site/meta",

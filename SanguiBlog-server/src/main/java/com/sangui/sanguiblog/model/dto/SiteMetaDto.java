@@ -18,6 +18,7 @@ public class SiteMetaDto {
     private String homeQuote;
     private String assetBaseUrl;
     private String version;
+    private AiAssistantDto aiAssistant;
 
     @Data
     @Builder
@@ -65,5 +66,15 @@ public class SiteMetaDto {
         private String icpLink;
         private String poweredBy;
         private String copyrightText;
+    }
+
+    @Data
+    @Builder
+    public static class AiAssistantDto {
+        private String assistantName;
+        private String title;
+        private String welcomeMessage;
+        private String inputPlaceholder;
+        private String pendingReply;
     }
 }

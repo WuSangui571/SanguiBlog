@@ -3,7 +3,7 @@ export const DEFAULT_AI_ASSISTANT_CONFIG = {
     title: '三桂博客 AI 助手',
     welcomeMessage: '你好，我是三桂博客的AI智能助手三桂，有什么可以帮助您的吗？',
     inputPlaceholder: '请输入你的问题...',
-    pendingReply: '当前仅开放前端入口，知识库问答功能正在接入中。'
+    pendingReply: '三桂正在思考，请稍候...'
 };
 
 const pickTrimmed = (value) => {

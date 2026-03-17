@@ -5,6 +5,46 @@
 
 ---
 
+## [2026-03-17] 接入通义千问后端聊天接口并打通前端真实调用
+- 背景/需求：用户要求正式接入 `Spring AI + Spring AI Alibaba + 通义千问 API`，先实现最小可用的后端聊天能力；环境变量中的 API Key 由用户后续注入。现阶段不做 RAG，但要为后续知识库增强保留结构。
+- 修改类型：feat
+- 影响范围：后端 AI 聊天接口、站点 AI 元信息、前端 AI 助手真实请求链路、依赖管理
+- 变更摘要：
+  1) 后端新增 `spring-ai` 与 `spring-ai-alibaba-dashscope` 依赖，接入通义千问聊天模型。
+  2) 新增 `POST /api/ai/chat` 接口，当前采用单轮非流式 `LLM_ONLY` 模式，返回 `reply/model/mode/references` 结构，后续可平滑扩展到 RAG。
+  3) 新增 `AiAssistantSettingService`，复用 `site_settings` 读取 `ai.chat.*` 配置，统一管理助手标题、欢迎语、输入占位符、思考提示与系统提示词。
+  4) `/api/site/meta` 新增 `aiAssistant` 字段，前端可直接消费后端返回的 AI 展示配置。
+  5) 前端 AI 助手从固定占位回复切换为真实调用 `/api/ai/chat`，发送消息后显示“思考中”占位并在响应返回后替换为真实回复。
+- 涉及文件：
+  - `SanguiBlog-server/pom.xml`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/SecurityConfig.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AiChatController.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiChatRequest.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiChatResponse.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/SiteMetaDto.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SiteService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingServiceTest.java`
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.js`
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.test.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `.ai/PROJECT_MEMORY.md`
+- 检索与复用策略：
+  - 检索关键词：`SiteSettingRepository` / `ApiResponse` / `SecurityConfig` / `meta?.aiAssistant` / `ChatClient`
+  - 找到的旧实现：站点元信息由 `/api/site/meta` 统一返回；配置存储已具备 `site_settings`；前端 AI 助手已预留 `meta.aiAssistant` 覆盖点
+  - 最终选择：复用 `site_settings` 作为 AI 展示/提示词配置源，复用 `ApiResponse` 与 `GlobalExceptionHandler` 作为统一响应规范，不新增数据库表
+- 风险点：
+  - 当前依赖通义千问 API Key；未注入 `SPRING_AI_DASHSCOPE_API_KEY` 或 `AI_DASHSCOPE_API_KEY` 时，聊天接口不可用。
+  - 当前仍是 `LLM_ONLY`，不会基于站内文章事实做引用回答；后续接 RAG 时可复用当前 `references` 空数组与 `mode` 字段。
+- 验证方式：
+  - 后端测试：执行 `mvn -q -Dtest=AiAssistantSettingServiceTest test` 通过。
+  - 后端编译：执行 `mvn -q -DskipTests compile` 通过。
+  - 前端测试：执行 `node src/appfull/aiAssistantConfig.test.js` 通过。
+  - 前端构建：执行 `npm run build` 通过。
+
 ## [2026-03-17] 统一 AI 输入框与发送按钮盒模型尺寸
 - 背景/需求：上一轮虽已改善 AI 输入区，但用户仍反馈底部输入框与发送按钮观感不统一，怀疑是图标导致发送按钮被撑大；需要进一步把二者的外框尺寸完全统一。
 - 修改类型：fix
