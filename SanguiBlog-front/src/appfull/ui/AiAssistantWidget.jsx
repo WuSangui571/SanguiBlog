@@ -233,7 +233,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
 
     const handleTextareaKeyDown = async (event) => {
         if (event.key !== 'Enter') return;
-        if (event.altKey) return;
+        if (event.altKey || event.shiftKey) return;
         if (event.nativeEvent?.isComposing) return;
         event.preventDefault();
         await sendCurrentDraft();
