@@ -167,8 +167,19 @@ public class AiChatService {
                 },
                 error -> {
                     log.error("调用通义千问流式聊天接口失败", error);
-                    sendSseEvent(emitter, "error", Map.of("message", "AI服务调用失败，请稍后再试"));
-                    emitter.complete();
+                    try {
+                        String reply = callSyncReply(promptMessages);
+                        if (!StringUtils.hasText(reply)) {
+                            sendSseEvent(emitter, "error", Map.of("message", "AI服务调用失败，请稍后再试"));
+                            emitter.complete();
+                            return;
+                        }
+                        completeAssistantReply(emitter, session, reply);
+                    } catch (Exception fallbackError) {
+                        log.error("流式失败后回退同步聊天也失败", fallbackError);
+                        sendSseEvent(emitter, "error", Map.of("message", "AI服务调用失败，请稍后再试"));
+                        emitter.complete();
+                    }
                 },
                 () -> {
                     String reply = replyBuilder.toString().trim();
@@ -178,19 +189,7 @@ public class AiChatService {
                         return;
                     }
 
-                    Instant assistantMessageAt = Instant.now();
-                    aiChatMessageRepository.save(buildMessage(session, "assistant", reply, configuredModel, assistantMessageAt));
-                    session.setLastMessagePreview(trimToLength(reply, 500));
-                    session.setUpdatedAt(assistantMessageAt);
-                    aiChatSessionRepository.save(session);
-
-                    sendSseEvent(emitter, "complete", Map.of(
-                            "reply", reply,
-                            "sessionId", session.getId(),
-                            "model", configuredModel,
-                            "mode", "DATABASE_SESSION_HISTORY"
-                    ));
-                    emitter.complete();
+                    completeAssistantReply(emitter, session, reply);
                 }
         );
 
@@ -243,6 +242,15 @@ public class AiChatService {
         return text == null ? "" : text;
     }
 
+    private String callSyncReply(List<Message> promptMessages) {
+        ChatResponse response = chatModel.call(new Prompt(promptMessages));
+        if (response == null || response.getResult() == null || response.getResult().getOutput() == null) {
+            return "";
+        }
+        String text = response.getResult().getOutput().getText();
+        return text == null ? "" : text.trim();
+    }
+
     private AiChatMessage buildMessage(AiChatSession session, String role, String content, String modelName, Instant createdAt) {
         AiChatMessage message = new AiChatMessage();
         message.setSession(session);
@@ -289,5 +297,21 @@ public class AiChatService {
         } catch (IOException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "流式响应发送失败", ex);
         }
+    }
+
+    private void completeAssistantReply(SseEmitter emitter, AiChatSession session, String reply) {
+        Instant assistantMessageAt = Instant.now();
+        aiChatMessageRepository.save(buildMessage(session, "assistant", reply, configuredModel, assistantMessageAt));
+        session.setLastMessagePreview(trimToLength(reply, 500));
+        session.setUpdatedAt(assistantMessageAt);
+        aiChatSessionRepository.save(session);
+
+        sendSseEvent(emitter, "complete", Map.of(
+                "reply", reply,
+                "sessionId", session.getId(),
+                "model", configuredModel,
+                "mode", "DATABASE_SESSION_HISTORY"
+        ));
+        emitter.complete();
     }
 }
