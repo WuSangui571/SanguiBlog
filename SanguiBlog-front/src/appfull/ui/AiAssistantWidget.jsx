@@ -97,7 +97,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
     }, [isOpen]);
 
     useEffect(() => {
-        if (!isOpen || sessionsLoaded || sessionsLoading) {
+        if (!isOpen || sessionsLoaded) {
             return;
         }
 
@@ -124,7 +124,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         return () => {
             cancelled = true;
         };
-    }, [isOpen, sessionsLoaded, sessionsLoading]);
+    }, [isOpen, sessionsLoaded]);
 
     const loadSessions = async () => {
         const response = await fetchAiChatSessions();
