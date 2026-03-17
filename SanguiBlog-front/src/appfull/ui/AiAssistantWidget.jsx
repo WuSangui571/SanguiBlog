@@ -5,20 +5,38 @@ import { sendAiChat } from '../../api.js';
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 
-function createAssistantMessage(content) {
-    return {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content
-    };
-}
-
 function createUserMessage(content) {
     return {
         id: `user-${Date.now()}`,
         role: 'user',
         content
     };
+}
+
+function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }) {
+    const [hasError, setHasError] = useState(false);
+
+    useEffect(() => {
+        setHasError(false);
+    }, [logoPath]);
+
+    return (
+        <div
+            className={`shrink-0 border-2 border-black bg-[#FF0080] text-white flex items-center justify-center overflow-hidden ${roundedClassName}`}
+            style={{ width: size, height: size }}
+        >
+            {!hasError ? (
+                <img
+                    src={logoPath}
+                    alt={alt}
+                    className="h-full w-full object-cover"
+                    onError={() => setHasError(true)}
+                />
+            ) : (
+                <Bot size={Math.max(18, Math.floor(size * 0.52))} strokeWidth={2.6} />
+            )}
+        </div>
+    );
 }
 
 export default function AiAssistantWidget({ isDarkMode, config }) {
@@ -28,15 +46,11 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
     const [draft, setDraft] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [messages, setMessages] = useState([]);
-    const openedOnceRef = useRef(false);
     const viewportRef = useRef(null);
     const interactionBlockerRef = useRef(null);
 
     useEffect(() => {
         if (!isOpen) return;
-        if (!openedOnceRef.current) {
-            openedOnceRef.current = true;
-        }
         requestAnimationFrame(() => {
             viewportRef.current?.scrollTo({
                 top: viewportRef.current.scrollHeight,
@@ -82,8 +96,8 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
             }
         ]);
         setDraft('');
-
         setIsSending(true);
+
         try {
             const response = await sendAiChat(content);
             const reply = response?.data?.reply?.trim() || '抱歉，我这次没有生成有效回复。';
@@ -140,15 +154,17 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                             <div className={`border-b-2 border-black px-4 py-4 ${panelAccentClass}`}>
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="shrink-0 w-11 h-11 rounded-2xl border-2 border-black bg-[#FF0080] text-white flex items-center justify-center">
-                                            <Bot size={22} strokeWidth={2.6} />
-                                        </div>
+                                        <AssistantLogo
+                                            logoPath={assistantConfig.logoPath}
+                                            alt={assistantConfig.title}
+                                            size={44}
+                                        />
                                         <div>
-                                            <p className="font-black text-base uppercase tracking-[0.14em]">
-                                                AI 助手
+                                            <p className="font-black text-base tracking-[0.06em]">
+                                                {assistantConfig.title}
                                             </p>
                                             <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
-                                                {assistantConfig.title}
+                                                AI 对话
                                             </p>
                                         </div>
                                     </div>
@@ -169,9 +185,14 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                             >
                                 {messages.length === 0 ? (
                                     <div className="flex min-h-[240px] items-center justify-center">
-                                        <div className="w-full max-w-[300px] text-center">
-                                            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[22px] border-2 border-black bg-[#FF0080] text-white">
-                                                <Bot size={30} strokeWidth={2.4} />
+                                        <div className="w-full max-w-[320px] text-center">
+                                            <div className="mx-auto mb-5 flex justify-center">
+                                                <AssistantLogo
+                                                    logoPath={assistantConfig.logoPath}
+                                                    alt={assistantConfig.title}
+                                                    size={64}
+                                                    roundedClassName="rounded-[22px]"
+                                                />
                                             </div>
                                             <h3 className="text-2xl font-black tracking-[0.08em]">
                                                 {assistantConfig.welcomeMessage}
@@ -249,21 +270,36 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
 
             <motion.button
                 type="button"
-                aria-label={isOpen ? 'AI 助手已打开' : '打开 AI 助手'}
+                aria-label={isOpen ? '三桂博客AI助理已打开' : '打开三桂博客AI助理'}
                 onClick={() => setIsOpen((prev) => !prev)}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 border-2 border-black rounded-full pl-4 pr-5 py-3 flex items-center gap-3 transition-colors ${bubbleButtonClass}`}
             >
-                <span className="relative flex items-center justify-center w-11 h-11 rounded-full border-2 border-black bg-[#FF0080] text-white">
-                    <Bot size={22} strokeWidth={2.8} />
+                <span className="relative flex items-center justify-center w-11 h-11 rounded-full border-2 border-black bg-[#FF0080] text-white overflow-hidden">
+                    <img
+                        src={assistantConfig.logoPath}
+                        alt={assistantConfig.title}
+                        className="h-full w-full object-cover"
+                        onError={(event) => {
+                            event.currentTarget.style.display = 'none';
+                            const fallback = event.currentTarget.nextElementSibling;
+                            if (fallback) fallback.style.display = 'flex';
+                        }}
+                    />
+                    <span
+                        className="hidden h-full w-full items-center justify-center"
+                        aria-hidden="true"
+                    >
+                        <Bot size={22} strokeWidth={2.8} />
+                    </span>
                     <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#00E096] border border-black" />
                 </span>
                 <span className="text-left">
                     <span className="block text-[10px] font-black uppercase tracking-[0.24em] opacity-80">
                         Ask Sangui AI
                     </span>
-                    <span className="block text-sm font-black">
+                    <span className="mt-0.5 block text-sm font-black">
                         三桂在线
                     </span>
                 </span>

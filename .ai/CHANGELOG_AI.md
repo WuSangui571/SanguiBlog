@@ -5,6 +5,55 @@
 
 ---
 
+## [2026-03-17] AI 助手图标改为支持自定义图片
+- 背景/需求：用户要求移除当前较丑的默认机器人图标，改为自定义图片 Logo，并明确图片应放置的位置与命名规则。
+- 修改类型：fix
+- 影响范围：前端 AI 助手图标、空会话欢迎页图标、右下角入口图标、前端静态资源约定
+- 变更摘要：
+  1) AI 助手图标统一改为“优先加载自定义图片，失败时回退默认图标”。
+  2) 头部图标、欢迎页图标、右下角入口图标三处统一复用同一张自定义图片。
+  3) 新增默认资源路径配置：`/static/ai/assistant-logo.png`。
+  4) 新增静态资源说明文件，明确放置目录与命名规则。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.js`
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.test.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/public/static/ai/README.md`
+- 检索与复用策略：
+  - 检索关键词：`public/` / `buildAssetUrl` / `ImageWithFallback` / `logo`
+  - 找到的可复用资源方式：项目前端已有 `public/static` 目录，适合放固定静态图片
+  - 最终选择：不新增上传接口，先用前端静态资源目录承载 AI Logo
+- 风险点：
+  - 当前只是前端静态资源位。如果你后面想在后台直接上传并切换 AI Logo，再单独接一个配置字段更合理。
+- 验证方式：
+  - 测试：执行 `node src/appfull/aiAssistantConfig.test.js` 通过。
+  - 构建：执行 `npm run build` 通过。
+
+## [2026-03-17] 统一 AI 助手对外名称为“三桂博客AI助理”
+- 背景/需求：用户要求 AI 助手名称统一，不再出现“三桂博客 AI 助手”“三桂博客的AI智能助手”等不同口径；标题区域与空会话欢迎页都统一使用“三桂博客AI助理”。
+- 修改类型：fix
+- 影响范围：前后端 AI 助手默认配置、前端标题展示、欢迎页文案
+- 变更摘要：
+  1) 后端 `AiAssistantSettingService` 默认标题改为 `三桂博客AI助理`，默认欢迎文案改为 `你好，我是三桂博客AI助理`。
+  2) 前端 `aiAssistantConfig` 默认标题与欢迎文案同步为同一口径。
+  3) AI 面板头部主标题直接显示 `assistantConfig.title`，副标题改为通用的 `AI 对话`，避免名称冲突。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingServiceTest.java`
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.js`
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.test.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+- 检索与复用策略：
+  - 检索关键词：`三桂博客 AI 助手` / `AI智能助手` / `title` / `welcomeMessage`
+  - 根因：前端默认值与后端默认值不一致，且面板头部还保留了一个泛称标题
+  - 最终选择：统一保留一个正式名称，其他位置改为功能性文案
+- 风险点：
+  - 如果数据库 `site_settings` 中已经手动配置了 `ai.chat.title` 或 `ai.chat.welcome_message` 的旧值，运行时仍会以数据库配置为准，需要同步改那两个配置值。
+- 验证方式：
+  - 测试：执行 `node src/appfull/aiAssistantConfig.test.js` 通过。
+  - 测试：执行 `mvn -q -Dtest=AiAssistantSettingServiceTest test` 通过。
+  - 构建：执行 `npm run build` 通过。
+
 ## [2026-03-17] AI 聊天窗口调整为右侧贯通式直角面板
 - 背景/需求：用户要求将当前偏小的 AI 弹窗改为更大的右侧停靠式面板；上边界贴住顶部导航，下边界贴住页面底部；外层边框改为直角，内部输入框、发送按钮和消息气泡继续保持原有圆角样式。
 - 修改类型：fix

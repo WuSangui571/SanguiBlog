@@ -7,6 +7,16 @@ assert.equal(
     '你好，我是三桂博客AI助理'
 );
 
+assert.equal(
+    DEFAULT_AI_ASSISTANT_CONFIG.title,
+    '三桂博客AI助理'
+);
+
+assert.equal(
+    DEFAULT_AI_ASSISTANT_CONFIG.logoPath,
+    '/static/ai/assistant-logo.png'
+);
+
 assert.deepEqual(
     resolveAiAssistantConfig(),
     DEFAULT_AI_ASSISTANT_CONFIG
