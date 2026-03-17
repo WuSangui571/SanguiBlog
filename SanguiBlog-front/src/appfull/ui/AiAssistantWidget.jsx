@@ -135,9 +135,9 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                         <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
                                             {assistantConfig.title}
                                         </p>
-                                        <p className={`mt-2 text-[11px] font-semibold ${subTextClass}`}>
-                                            欢迎语已预留后续后台配置入口。
-                                        </p>
+                                        {/*<p className={`mt-2 text-[11px] font-semibold ${subTextClass}`}>*/}
+                                        {/*    欢迎语已预留后续后台配置入口。*/}
+                                        {/*</p>*/}
                                     </div>
                                 </div>
                                 <button
@@ -181,7 +181,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                         </div>
 
                         <form onSubmit={handleSubmit} className={`border-t-2 border-black p-3 ${shellClass}`}>
-                            <div className="flex items-end gap-3">
+                            <div className="flex items-stretch gap-3">
                                 <label className="flex-1">
                                     <span className="sr-only">输入消息</span>
                                     <textarea
@@ -189,17 +189,17 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                         value={draft}
                                         onChange={(event) => setDraft(event.target.value)}
                                         placeholder={assistantConfig.inputPlaceholder}
-                                        className={`w-full resize-none rounded-[18px] border-2 border-black px-4 py-3 text-sm font-semibold outline-none ${
+                                        className={`sg-scrollbar w-full h-14 max-h-28 resize-none overflow-y-auto rounded-[18px] border-2 border-black px-4 py-4 text-sm leading-5 font-semibold outline-none ${
                                             isDarkMode
-                                                ? 'bg-gray-800 text-white placeholder:text-gray-400'
-                                                : 'bg-[#FFF9DB] text-black placeholder:text-gray-500'
+                                                ? 'sg-scrollbar-dark bg-gray-800 text-white placeholder:text-gray-400'
+                                                : 'sg-scrollbar-light bg-[#FFF9DB] text-black placeholder:text-gray-500'
                                         }`}
                                     />
                                 </label>
                                 <button
                                     type="submit"
                                     disabled={sendDisabled}
-                                    className={`shrink-0 w-14 h-14 rounded-[18px] border-2 border-black flex items-center justify-center transition-transform ${
+                                    className={`shrink-0 w-14 h-14 self-end rounded-[18px] border-2 border-black flex items-center justify-center transition-transform ${
                                         sendDisabled
                                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             : 'bg-[#FF0080] text-white hover:-translate-y-0.5'
