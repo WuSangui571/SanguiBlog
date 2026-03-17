@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, MessageSquarePlus, SendHorizontal, X } from 'lucide-react';
 import {
@@ -25,6 +25,9 @@ function mapServerMessage(message) {
         content: message.content || ''
     };
 }
+
+const MIN_TEXTAREA_HEIGHT = 54;
+const MAX_TEXTAREA_HEIGHT = 132;
 
 function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }) {
     const [hasError, setHasError] = useState(false);
@@ -66,6 +69,15 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
     const [messagesLoading, setMessagesLoading] = useState(false);
     const viewportRef = useRef(null);
     const interactionBlockerRef = useRef(null);
+    const textareaRef = useRef(null);
+
+    useLayoutEffect(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        textarea.style.height = `${MIN_TEXTAREA_HEIGHT}px`;
+        const nextHeight = Math.min(Math.max(textarea.scrollHeight, MIN_TEXTAREA_HEIGHT), MAX_TEXTAREA_HEIGHT);
+        textarea.style.height = `${nextHeight}px`;
+    }, [draft]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -160,8 +172,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
 
     const sendDisabled = !draft.trim() || isSending;
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+    const sendCurrentDraft = async () => {
         const content = draft.trim();
         if (!content || isSending) return;
 
@@ -213,6 +224,19 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         } finally {
             setIsSending(false);
         }
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        await sendCurrentDraft();
+    };
+
+    const handleTextareaKeyDown = async (event) => {
+        if (event.key !== 'Enter') return;
+        if (event.altKey) return;
+        if (event.nativeEvent?.isComposing) return;
+        event.preventDefault();
+        await sendCurrentDraft();
     };
 
     const shellClass = isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black';
@@ -380,15 +404,21 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                             </div>
 
                             <form onSubmit={handleSubmit} className={`border-t-2 border-black p-3 ${shellClass}`}>
-                                <div className="flex items-end gap-3">
-                                    <label className="flex-1 h-[54px]">
+                                <div className="relative">
+                                    <label className="block">
                                         <span className="sr-only">输入消息</span>
                                         <textarea
+                                            ref={textareaRef}
                                             rows={1}
                                             value={draft}
                                             onChange={(event) => setDraft(event.target.value)}
+                                            onKeyDown={handleTextareaKeyDown}
                                             placeholder={assistantConfig.inputPlaceholder}
-                                            className={`sg-scrollbar w-full h-full max-h-28 resize-none overflow-y-auto rounded-[18px] border-2 border-black px-4 py-[15px] text-sm leading-5 font-semibold outline-none ${
+                                            style={{
+                                                minHeight: `${MIN_TEXTAREA_HEIGHT}px`,
+                                                maxHeight: `${MAX_TEXTAREA_HEIGHT}px`
+                                            }}
+                                            className={`sg-scrollbar w-full resize-none overflow-y-auto rounded-[18px] border-2 border-black px-4 pt-[15px] pb-[15px] pr-[72px] text-sm leading-5 font-semibold outline-none ${
                                                 isDarkMode
                                                     ? 'sg-scrollbar-dark bg-gray-800 text-white placeholder:text-gray-400'
                                                     : 'sg-scrollbar-light bg-[#FFF9DB] text-black placeholder:text-gray-500'
@@ -398,7 +428,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                     <button
                                         type="submit"
                                         disabled={sendDisabled}
-                                        className={`shrink-0 w-[54px] h-[54px] rounded-[18px] border-2 border-black flex items-center justify-center transition-transform ${
+                                        className={`absolute right-3 bottom-3 shrink-0 w-[42px] h-[42px] rounded-[14px] border-2 border-black flex items-center justify-center transition-transform ${
                                             sendDisabled
                                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                 : 'bg-[#FF0080] text-white hover:-translate-y-0.5'
