@@ -24,7 +24,7 @@
 
 SanguiBlog 是一个前后端分离的个人博客系统。
 
-- **后端**: 基于 Spring Boot 3.2.5 构建的 RESTful API 服务。
+- **后端**: 基于 Spring Boot 3.5.11 构建的 RESTful API 服务。
 
 - **前端**: 基于 React 19 + Vite 构建的单页应用 (SPA)，使用 TailwindCSS 进行样式设计。
 
@@ -48,7 +48,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 | **Java** | **21** | 使用最新 LTS 版本，利用新特性 (Virtual Threads 等潜力) |
 
-| **Spring Boot** | 3.2.5 | 核心框架 |
+| **Spring Boot** | 3.5.11 | 核心框架 |
 
 | **Database** | MySQL 8.0+ | 数据存储 |
 
@@ -56,7 +56,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 
 | **Security** | Spring Security + JJWT (0.11.5) | 无状态认证 (Stateless Auth) |
 
-| **API Docs** | SpringDoc OpenAPI (Swagger) 2.5.0 | 接口文档 (`/swagger-ui.html`) |
+| **API Docs** | SpringDoc OpenAPI (Swagger) 2.8.16 | 接口文档 (`/swagger-ui.html`) |
 
 | **Utils** | Lombok, Commonmark | 代码简化与 Markdown 处理 |
 

@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-03-17] 升级后端到 Spring Boot 3.5.11 并同步 SpringDoc 适配
+- 背景/需求：用户要求将后端从 `Spring Boot 3.2.5` 升级到 `3.5.11`，并完成对应依赖适配，供后续上线测试与接入 Spring AI 技术栈使用。
+- 修改类型：chore
+- 影响范围：后端依赖管理、AI 技术栈前置版本兼容、AI 长期记忆文档
+- 变更摘要：
+  1) `SanguiBlog-server/pom.xml` 的父版本从 `3.2.5` 升级到 `3.5.11`。
+  2) `springdoc-openapi-starter-webmvc-ui` 从 `2.5.0` 升级到与 Boot 3.5.x 对齐的 `2.8.16`。
+  3) `.ai/PROJECT_MEMORY.md` 中过时的 Spring Boot / SpringDoc 版本说明同步更新，避免后续 AI 任务继续按旧版本判断。
+- 涉及文件：
+  - `SanguiBlog-server/pom.xml`
+  - `.ai/PROJECT_MEMORY.md`
+- 检索与复用策略：
+  - 检索关键词：`spring-boot-starter-parent` / `springdoc` / `3.2.5` / `2.5.0`
+  - 找到的旧实现：后端依赖集中在单一 `pom.xml`，不存在多模块或多套 Boot 版本配置
+  - 最终选择：仅升级父版本与 Boot 兼容性最敏感的 `springdoc`，不扩散到无关依赖
+- 风险点：
+  - 运行时仍需重点回归验证安全过滤链、JPA 查询与 Swagger 页面可用性，但源码编译已通过。
+- 验证方式：
+  - 静态：检索确认仓库关键文档与 `pom.xml` 中旧版本号已被替换。
+  - 编译：执行 `mvn -q -DskipTests compile` 通过（使用仓库内 Maven 本地缓存目录）。
+
 ## [2026-03-15] 首页站点版本号更新到 V2.1.289，并校正 README 过时版本说明
 - 背景/需求：用户要求将项目版本号从 `V2.1.288` 更新到 `V2.1.289`，不生成 release 文档，只需同步首页版本展示；同时检查根目录 `README.md` 是否存在过时内容，并在必要范围内更新。
 - 修改类型：chore
