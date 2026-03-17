@@ -163,7 +163,9 @@ public class AiChatService {
                         return;
                     }
                     replyBuilder.append(chunk);
-                    sendSseEvent(emitter, "chunk", Map.of("text", chunk));
+                    if (!sendSseEvent(emitter, "chunk", Map.of("text", chunk))) {
+                        emitter.complete();
+                    }
                 },
                 error -> {
                     log.error("调用通义千问流式聊天接口失败", error);
@@ -291,11 +293,13 @@ public class AiChatService {
         return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength);
     }
 
-    private void sendSseEvent(SseEmitter emitter, String eventName, Object data) {
+    private boolean sendSseEvent(SseEmitter emitter, String eventName, Object data) {
         try {
             emitter.send(SseEmitter.event().name(eventName).data(data));
+            return true;
         } catch (IOException ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "流式响应发送失败", ex);
+            log.warn("AI流式响应发送失败: event={}", eventName, ex);
+            return false;
         }
     }
 
