@@ -1,0 +1,13 @@
+package com.sangui.sanguiblog.model.repository;
+
+import com.sangui.sanguiblog.model.entity.AiChatSession;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface AiChatSessionRepository extends JpaRepository<AiChatSession, Long> {
+    List<AiChatSession> findByUserIdOrderByUpdatedAtDescIdDesc(Long userId);
+
+    Optional<AiChatSession> findByIdAndUserId(Long id, Long userId);
+}

@@ -256,10 +256,16 @@ const request = async (path, options = {}) => {
 };
 
 export const fetchSiteMeta = () => request(`/site/meta?t=${Date.now()}`);
-export const sendAiChat = (message, conversationId) => request("/ai/chat", {
+export const sendAiChat = (message, sessionId) => request("/ai/chat", {
   method: "POST",
-  body: JSON.stringify({ message, conversationId }),
+  body: JSON.stringify({ message, sessionId }),
 });
+export const fetchAiChatSessions = () => request("/ai/sessions");
+export const createAiChatSession = () =>
+  request("/ai/sessions", {
+    method: "POST",
+  });
+export const fetchAiChatMessages = (sessionId) => request(`/ai/sessions/${sessionId}/messages`);
 
 export const fetchCategories = () => request("/categories/tree");
 

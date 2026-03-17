@@ -159,8 +159,15 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   **视图-路由联动**：前台导航通过 `setView()` 触发 `onViewChange`，统一由 `src/pages/viewNavigation.js` 维护视图到 URL 的映射，保证“归档/关于/工具/文章详情”等视图切换时 URL 同步更新，便于 SEO 与日志追踪；当处于 `/admin/*` 子路由时不会被强制拉回 `/admin`。
 *   **站点地图与 robots**：后端提供 `GET /sitemap.xml`（XML）与 `GET /robots.txt`（文本），用于搜索引擎抓取；`/sitemap.xml` 会从数据库聚合已发布文章（`/article/:id`）与已启用工具页（`/tools/:id`）并生成 URL 列表，且通过内存缓存 + 变更标记 + 定时刷新自动更新；当 URL 总数超过 `site.sitemap.max-urls-per-file`（默认 45000）时，`/sitemap.xml` 会返回 `<sitemapindex>` 索引，分片 sitemap 通过 `GET /sitemap.xml?page=1..N` 获取（同一路径仅使用 query 参数，部署层通常无需额外新增 Nginx location）。此外，`/sitemap.xml` 与 `/robots.txt` 均支持 `ETag/If-None-Match`，命中时返回 304 以降低爬虫反复抓取的带宽与 CPU 成本。`/robots.txt` 会指向 `Sitemap: https://<域名>/sitemap.xml`，并默认禁止抓取 `/admin` 与 `/api/`。部署时若使用 Nginx 托管前端静态站点并启用 `try_files $uri /index.html`（SPA 回退），需在其前面显式添加 `location = /sitemap.xml` 与 `location = /robots.txt` 转发到后端，否则会被回退到前端首页导致“访问 /sitemap.xml 自动跳回 /”。
 *   **用户头像跳转**：前台导航点击用户头像时，若当前不在后台则进入 `/admin`，若已在后台则进入 `/admin/profile`，避免登录后直接跳过后台首页。
-*   **AI 助手前端预览**：自 V2.1.290 后新增右下角 AI 助手悬浮入口（纯前端预览，不依赖后端接口），点击后打开全局对话面板；默认欢迎语由 `src/appfull/aiAssistantConfig.js` 提供，并通过 `resolveAiAssistantConfig()` 收口，后续后端若返回 `meta.aiAssistant.welcomeMessage` 等字段，可直接覆盖当前前端默认值而无需重写 UI 结构。
-*   **AI 助手后端接入（通义千问）**：自 2026-03-17 起，后端新增 `POST /api/ai/chat` 非流式问答接口，基于 `Spring AI + Spring AI Alibaba DashScope` 调用通义千问；当前已接入 JDBC 持久化上下文记忆，模式为 `CHAT_MEMORY_JDBC`，但尚未接入 RAG。环境变量支持 `SPRING_AI_DASHSCOPE_API_KEY` 或 `AI_DASHSCOPE_API_KEY`，模型默认读取 `AI_DASHSCOPE_CHAT_MODEL`（缺省 `qwen-flash`）。后端使用 `conversationId + ChatMemory + JdbcChatMemoryRepository` 维护多轮上下文，前端将会话 ID 持久化到 `localStorage`（键名 `sg_ai_conversation_id`）；注意当前只持久化“模型记忆”，前端刷新后不会自动回放历史消息 UI。站点级 AI 配置优先复用 `site_settings` 表中的 `ai.chat.*` 键，包括 `assistant_name/title/welcome_message/input_placeholder/pending_reply/system_prompt`；前端通过 `/api/site/meta` 返回的 `aiAssistant` 字段接收这些配置。
+*   **AI 助手前端入口**：自 V2.1.290 后，前台页面提供右下角 AI 助手悬浮入口；`/admin` 及其子页面始终隐藏该入口。自 2026-03-17 起，AI 助手仅在登录用户下显示，未登录用户前台不展示入口，也无法访问 AI 接口。
+*   **AI 助手后端接入（通义千问）**：后端基于 `Spring AI + Spring AI Alibaba DashScope` 调用通义千问，模型默认读取 `AI_DASHSCOPE_CHAT_MODEL`（缺省 `qwen-flash`），环境变量支持 `SPRING_AI_DASHSCOPE_API_KEY` 或 `AI_DASHSCOPE_API_KEY`。当前不再使用 `conversationId + JdbcChatMemoryRepository` 的自动恢复方案，而是改为业务侧会话表：
+  * `ai_chat_sessions`：记录某个登录用户的 AI 对话会话。
+  * `ai_chat_messages`：记录该会话下的用户/助手消息。
+  * `POST /api/ai/sessions`：创建新会话。
+  * `GET /api/ai/sessions`：读取当前登录用户的历史会话列表。
+  * `GET /api/ai/sessions/{id}/messages`：读取当前登录用户某个会话的历史消息。
+  * `POST /api/ai/chat`：基于 `sessionId + message` 进行多轮上下文问答。
+  前端 AI 面板默认进入空白新会话，不会自动恢复上次对话；用户可从顶部会话条切换到历史会话继续交流。站点级 AI 配置继续优先复用 `site_settings` 表中的 `ai.chat.*` 键，包括 `assistant_name/title/welcome_message/input_placeholder/pending_reply/system_prompt`；前端通过 `/api/site/meta` 返回的 `aiAssistant` 字段接收这些配置。
 
 *   **全局错误过滤 (`src/main.jsx`)**:
 

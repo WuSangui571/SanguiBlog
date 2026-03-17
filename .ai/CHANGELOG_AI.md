@@ -5,6 +5,35 @@
 
 ---
 
+## [2026-03-17] AI 聊天支持恢复历史消息列表
+- 背景/需求：用户要求在已接入 JDBC 持久化记忆的基础上，打开 AI 面板时能够恢复当前会话的历史消息列表，而不只是让模型“记住上下文”。
+- 修改类型：feat
+- 影响范围：后端 AI 历史查询接口、前端 AI 面板初始化恢复逻辑、权限放行
+- 变更摘要：
+  1) 后端新增 `GET /api/ai/chat/history?conversationId=...`，直接从 `ChatMemory` 读取当前会话消息。
+  2) 历史消息仅返回用户与助手消息，过滤 system/tool 消息，避免把内部提示词暴露到前端。
+  3) 前端 AI 面板首次打开时，若当前会话已有历史，则自动恢复并渲染历史消息列表。
+  4) 新接口已加入安全白名单，前台访客可直接读取自己当前会话的历史消息。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiChatHistoryResponse.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AiChatController.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/SecurityConfig.java`
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+- 检索与复用策略：
+  - 检索关键词：`ChatMemory.get` / `MessageType` / `AiAssistantWidget`
+  - 找到的可复用能力：现有 JDBC ChatMemory 已经保存消息，无需再新建历史表
+  - 最终选择：直接在现有 ChatMemory 之上补“读取历史”接口，而不是复制一份聊天记录到新表
+- 风险点：
+  - 当前历史恢复依赖 `localStorage` 中的 `sg_ai_conversation_id`；如果用户主动清空本地存储，会视为新会话。
+  - 当前没有“新建会话/清空历史”入口，默认会持续恢复同一会话。
+- 验证方式：
+  - 编译：执行 `mvn -q -DskipTests compile` 通过。
+  - 测试：执行 `node src/appfull/aiAssistantConfig.test.js` 通过。
+  - 测试：执行 `node src/appfull/aiConversation.test.js` 通过。
+  - 构建：执行 `npm run build` 通过。
+
 ## [2026-03-17] 接入 JDBC 持久化聊天记忆，支持多轮上下文
 - 背景/需求：用户要求当前 AI 聊天从“一问一答”升级为具备上下文记忆，并明确采用 JDBC 持久化方案。
 - 修改类型：feat
@@ -3558,6 +3587,15 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
 ## V2.1.258 (2025-12-31)
 - **模块/页面**：修复 BotGuard 误伤管理端：管理后台请求（如 `/api/admin/posts`、`/api/admin/analytics/page-views`）在鉴权前被 BotGuard 判定为高风险并返回 429，导致 Admin 面板 “load posts failed”；现将 `/api/admin/**`、`/api/permissions/me`、`/api/upload/**` 加入 BotGuard 白名单，仅交由 Spring Security 做认证/授权，避免真实管理员被“请求过于频繁”拦截。
 - **版本**：首页 Banner 更新为 `SANGUI BLOG // V2.1.258`
+
+## [2026-03-17] 重构 AI 聊天为用户会话表模式并收紧为登录后可用
+- 背景/需求：用户要求放弃“浏览器 conversationId 自动恢复”的方案，改为数据库记录不同用户的会话与消息；新进入 AI 时默认显示空白新会话，并可切换到历史对话，同时 AI 仅限登录用户使用。
+- 修改类型：feat
+- 变更摘要：
+  1) 新增 `ai_chat_sessions` / `ai_chat_messages` 表对应的实体与仓储，改为按登录用户隔离会话。
+  2) 新增 `/api/ai/sessions`、`/api/ai/sessions/{id}/messages`，并重写 `/api/ai/chat` 为基于 `sessionId` 的上下文聊天。
+  3) 前端 AI 面板改为“默认新对话 + 顶部历史会话切换”，不再打开即自动恢复上次会话。
+  4) `/admin` 继续隐藏 AI 入口，同时前台也仅在已登录时显示 AI 助手入口；未登录用户无法调用相关接口。
 
 ## V2.1.259 (2025-12-31)
 - **模块/页面**：修复已登录用户接口仍被 BotGuard 429 的问题：通知中心等 `isAuthenticated()` 接口（如 `/api/notifications/history`）在 JWT 鉴权生效前被 BotGuard 误判为异常并短封；现 BotGuard 在检测到请求携带“有效 JWT”时直接放行（权限仍由 Spring Security 控制），避免后台与已登录用户体验被“请求过于频繁”影响。

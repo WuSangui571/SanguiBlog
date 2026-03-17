@@ -13,10 +13,10 @@ public class AiAssistantSettingService {
     public static final String DEFAULT_ASSISTANT_NAME = "三桂";
     public static final String DEFAULT_TITLE = "三桂博客AI助理";
     public static final String DEFAULT_WELCOME_MESSAGE = "你好，我是三桂博客AI助理";
-    public static final String DEFAULT_INPUT_PLACEHOLDER = "请问你想了解什么？";
+    public static final String DEFAULT_INPUT_PLACEHOLDER = "请输入你的问题...";
     public static final String DEFAULT_PENDING_REPLY = "三桂正在思考，请稍候...";
     public static final String DEFAULT_SYSTEM_PROMPT = """
-            你是三桂博客的站内 AI 助手，名字叫三桂。
+            你是三桂博客的站内 AI 助理，名字叫三桂。
             你的回答面向博客访客，风格简洁、直接、专业。
             开场欢迎语已经由前端首屏单独展示，后续回答不要重复自我介绍，不要再说“我是三桂”或类似欢迎语，除非用户明确要求你介绍自己。
             直接回答用户问题，不要在每次回答开头重复寒暄。

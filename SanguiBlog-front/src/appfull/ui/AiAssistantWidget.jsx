@@ -1,16 +1,28 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, SendHorizontal, X } from 'lucide-react';
-import { sendAiChat } from '../../api.js';
+import { Bot, MessageSquarePlus, SendHorizontal, X } from 'lucide-react';
+import {
+    createAiChatSession,
+    fetchAiChatMessages,
+    fetchAiChatSessions,
+    sendAiChat
+} from '../../api.js';
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
-import { resolveAiConversationId } from '../aiConversation.js';
 
-function createUserMessage(content) {
+function createLocalMessage(role, content, idPrefix = role) {
     return {
-        id: `user-${Date.now()}`,
-        role: 'user',
+        id: `${idPrefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        role,
         content
+    };
+}
+
+function mapServerMessage(message) {
+    return {
+        id: `server-${message.id}`,
+        role: message.role === 'assistant' ? 'assistant' : 'user',
+        content: message.content || ''
     };
 }
 
@@ -23,7 +35,7 @@ function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }
 
     return (
         <div
-            className={`shrink-0 border-2 border-black bg-[#FF0080] text-white flex items-center justify-center overflow-hidden ${roundedClassName}`}
+            className={`shrink-0 overflow-hidden border-2 border-black bg-[#FF0080] text-white flex items-center justify-center ${roundedClassName}`}
             style={{ width: size, height: size }}
         >
             {!hasError ? (
@@ -43,11 +55,15 @@ function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }
 export default function AiAssistantWidget({ isDarkMode, config }) {
     const { headerHeight } = useLayoutOffsets();
     const assistantConfig = useMemo(() => resolveAiAssistantConfig(config), [config]);
-    const [conversationId] = useState(() => resolveAiConversationId());
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [sessions, setSessions] = useState([]);
+    const [sessionsLoading, setSessionsLoading] = useState(false);
+    const [sessionsLoaded, setSessionsLoaded] = useState(false);
+    const [activeSessionId, setActiveSessionId] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [messagesLoading, setMessagesLoading] = useState(false);
     const viewportRef = useRef(null);
     const interactionBlockerRef = useRef(null);
 
@@ -59,7 +75,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                 behavior: 'smooth'
             });
         });
-    }, [isOpen, messages]);
+    }, [isOpen, messages, messagesLoading]);
 
     useEffect(() => {
         if (!isOpen || !interactionBlockerRef.current) {
@@ -80,6 +96,68 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         };
     }, [isOpen]);
 
+    useEffect(() => {
+        if (!isOpen || sessionsLoaded || sessionsLoading) {
+            return;
+        }
+
+        let cancelled = false;
+        setSessionsLoading(true);
+
+        fetchAiChatSessions()
+            .then((response) => {
+                if (cancelled) return;
+                const list = Array.isArray(response?.data) ? response.data : [];
+                setSessions(list);
+                setSessionsLoaded(true);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setSessionsLoaded(true);
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setSessionsLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isOpen, sessionsLoaded, sessionsLoading]);
+
+    const loadSessions = async () => {
+        const response = await fetchAiChatSessions();
+        const list = Array.isArray(response?.data) ? response.data : [];
+        setSessions(list);
+        setSessionsLoaded(true);
+        return list;
+    };
+
+    const loadSessionMessages = async (sessionId) => {
+        setMessagesLoading(true);
+        try {
+            const response = await fetchAiChatMessages(sessionId);
+            const list = Array.isArray(response?.data) ? response.data : [];
+            setMessages(list.map(mapServerMessage));
+        } finally {
+            setMessagesLoading(false);
+        }
+    };
+
+    const handleStartNewChat = () => {
+        setActiveSessionId(null);
+        setMessages([]);
+        setDraft('');
+        setMessagesLoading(false);
+    };
+
+    const handleSelectSession = async (sessionId) => {
+        if (!sessionId || sessionId === activeSessionId) return;
+        setActiveSessionId(sessionId);
+        await loadSessionMessages(sessionId);
+    };
+
     const sendDisabled = !draft.trim() || isSending;
 
     const handleSubmit = async (event) => {
@@ -87,31 +165,48 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         const content = draft.trim();
         if (!content || isSending) return;
 
-        const pendingId = `assistant-pending-${Date.now()}`;
-        setMessages((prev) => [
-            ...prev,
-            createUserMessage(content),
-            {
-                id: pendingId,
-                role: 'assistant',
-                content: assistantConfig.pendingReply
-            }
-        ]);
-        setDraft('');
-        setIsSending(true);
+        let sessionId = activeSessionId;
 
         try {
-            const response = await sendAiChat(content, conversationId);
+            setIsSending(true);
+
+            if (!sessionId) {
+                const createResponse = await createAiChatSession();
+                const createdSession = createResponse?.data;
+                sessionId = createdSession?.id;
+                if (!sessionId) {
+                    throw new Error('创建对话失败，请稍后再试。');
+                }
+                setActiveSessionId(sessionId);
+                setSessions((prev) => [createdSession, ...prev.filter((item) => item.id !== sessionId)]);
+            }
+
+            const pendingId = `assistant-pending-${Date.now()}`;
+            setMessages((prev) => [
+                ...prev,
+                createLocalMessage('user', content, 'user'),
+                {
+                    id: pendingId,
+                    role: 'assistant',
+                    content: assistantConfig.pendingReply
+                }
+            ]);
+            setDraft('');
+
+            const response = await sendAiChat(content, sessionId);
             const reply = response?.data?.reply?.trim() || '抱歉，我这次没有生成有效回复。';
+
             setMessages((prev) => prev.map((message) => (
                 message.id === pendingId
                     ? { ...message, content: reply }
                     : message
             )));
+
+            await loadSessions();
         } catch (error) {
             const fallback = error?.message?.trim() || 'AI 服务暂时不可用，请稍后再试。';
             setMessages((prev) => prev.map((message) => (
-                message.id === pendingId
+                message.id.startsWith('assistant-pending-')
                     ? { ...message, content: fallback }
                     : message
             )));
@@ -127,6 +222,9 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         : 'bg-black text-[#FFD700] hover:bg-[#FFD700] hover:text-black';
     const panelAccentClass = isDarkMode ? 'bg-[#111827]' : 'bg-[#FFF9DB]';
     const emptyStateNoteClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    const sessionItemClass = isDarkMode
+        ? 'bg-gray-800 text-white hover:bg-gray-700'
+        : 'bg-white text-black hover:bg-[#FFF4BF]';
 
     return (
         <>
@@ -166,7 +264,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                                 {assistantConfig.title}
                                             </p>
                                             <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
-                                                AI 对话
+                                                登录后可用
                                             </p>
                                         </div>
                                     </div>
@@ -180,12 +278,57 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                 </div>
                             </div>
 
+                            <div className={`border-b-2 border-black px-4 py-3 ${isDarkMode ? 'bg-[#0B1220]' : 'bg-[#FFFBEA]'}`}>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleStartNewChat}
+                                        className={`shrink-0 inline-flex items-center gap-2 rounded-[16px] border-2 border-black px-3 py-2 text-xs font-black ${isDarkMode ? 'bg-[#FFD700] text-black hover:bg-white' : 'bg-black text-[#FFD700] hover:bg-[#FFD700] hover:text-black'}`}
+                                    >
+                                        <MessageSquarePlus size={15} />
+                                        新对话
+                                    </button>
+                                    <div className="min-w-0 flex-1 overflow-x-auto">
+                                        <div className="flex min-w-max gap-2 pr-1">
+                                            {sessionsLoading ? (
+                                                <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>正在加载历史会话...</div>
+                                            ) : sessions.length === 0 ? (
+                                                <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>还没有历史会话</div>
+                                            ) : (
+                                                sessions.map((session) => {
+                                                    const active = session.id === activeSessionId;
+                                                    return (
+                                                        <button
+                                                            key={session.id}
+                                                            type="button"
+                                                            onClick={() => handleSelectSession(session.id)}
+                                                            className={`max-w-[170px] rounded-[16px] border-2 border-black px-3 py-2 text-left transition-colors ${active ? 'bg-[#FFD700] text-black' : sessionItemClass}`}
+                                                        >
+                                                            <div className="truncate text-xs font-black">
+                                                                {session.title || '新对话'}
+                                                            </div>
+                                                            <div className={`mt-1 truncate text-[11px] font-semibold ${active ? 'text-black/70' : subTextClass}`}>
+                                                                {session.lastMessagePreview || '暂无消息'}
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div
                                 ref={viewportRef}
                                 className={`sg-scrollbar flex-1 min-h-0 overflow-y-auto px-4 py-4 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'}`}
                                 style={{ overscrollBehavior: 'contain' }}
                             >
-                                {messages.length === 0 ? (
+                                {messagesLoading ? (
+                                    <div className="flex min-h-[240px] items-center justify-center">
+                                        <p className={`text-sm font-semibold ${subTextClass}`}>正在加载该对话的消息...</p>
+                                    </div>
+                                ) : messages.length === 0 ? (
                                     <div className="flex min-h-[240px] items-center justify-center">
                                         <div className="w-full max-w-[320px] text-center">
                                             <div className="mx-auto mb-5 flex justify-center">
@@ -200,10 +343,10 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                                 {assistantConfig.welcomeMessage}
                                             </h3>
                                             <p className={`mt-3 text-sm font-semibold leading-6 ${subTextClass}`}>
-                                                可以和我聊编程、博客创作，以及站内内容相关问题。
+                                                从一个全新的对话开始，或者切换到上方历史会话继续交流。
                                             </p>
                                             <p className={`mt-5 text-[11px] font-bold uppercase tracking-[0.24em] ${emptyStateNoteClass}`}>
-                                                从你的第一条提问开始
+                                                新进入时默认是空白会话
                                             </p>
                                         </div>
                                     </div>

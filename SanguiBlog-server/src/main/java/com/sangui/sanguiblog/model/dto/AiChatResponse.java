@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 @Builder
 public class AiChatResponse {
+    private Long sessionId;
     private String reply;
     private String model;
     private String mode;

@@ -130,13 +130,12 @@ public class SecurityConfig {
                     headers.contentTypeOptions(Customizer.withDefaults());
                 })
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
+                        .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/sitemap.xml",
                                 "/robots.txt",
                                 "/api/auth/login",
                                 "/api/auth/captcha",
-                                "/api/ai/chat",
                                 "/api/guard/captcha",
                                 "/api/guard/verify",
                                 "/api/site/meta",

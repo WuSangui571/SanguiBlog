@@ -560,3 +560,27 @@ CREATE TABLE IF NOT EXISTS about_page (
 INSERT INTO about_page (id, content_md, content_html, updated_by, created_at, updated_at)
 SELECT 1, NULL, NULL, NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM about_page WHERE id = 1);
+
+-- AI 聊天会话
+CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    last_message_preview VARCHAR(500),
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    CONSTRAINT fk_ai_chat_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_ai_chat_sessions_user_updated (user_id, updated_at, id)
+);
+
+-- AI 聊天消息
+CREATE TABLE IF NOT EXISTS ai_chat_messages (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    session_id BIGINT NOT NULL,
+    role VARCHAR(16) NOT NULL,
+    content LONGTEXT NOT NULL,
+    model_name VARCHAR(64),
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT fk_ai_chat_messages_session FOREIGN KEY (session_id) REFERENCES ai_chat_sessions(id) ON DELETE CASCADE,
+    INDEX idx_ai_chat_messages_session_created (session_id, created_at, id)
+);
