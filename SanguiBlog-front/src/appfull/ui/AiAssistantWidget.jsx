@@ -62,19 +62,13 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
 
         const { body, documentElement } = document;
         const previousBodyOverflow = body.style.overflow;
-        const previousBodyPaddingRight = body.style.paddingRight;
         const previousHtmlOverflow = documentElement.style.overflow;
-        const scrollbarWidth = window.innerWidth - documentElement.clientWidth;
 
         body.style.overflow = 'hidden';
         documentElement.style.overflow = 'hidden';
-        if (scrollbarWidth > 0) {
-            body.style.paddingRight = `${scrollbarWidth}px`;
-        }
 
         return () => {
             body.style.overflow = previousBodyOverflow;
-            body.style.paddingRight = previousBodyPaddingRight;
             documentElement.style.overflow = previousHtmlOverflow;
         };
     }, [isOpen]);
@@ -104,117 +98,106 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         <>
             <AnimatePresence>
                 {isOpen && (
-                    <>
-                        <motion.button
-                            type="button"
-                            aria-label="关闭 AI 助手遮罩"
-                            className="fixed inset-0 z-[82] bg-black/16"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsOpen(false)}
-                        />
-                        <motion.section
-                            role="dialog"
-                            aria-modal="true"
-                            aria-label={assistantConfig.title}
-                            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 16, scale: 0.96 }}
-                            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                            className={`fixed z-[83] right-4 bottom-24 md:right-6 md:bottom-6 w-[min(400px,calc(100vw-24px))] border-2 border-black rounded-[24px] overflow-hidden ${shellClass}`}
-                        >
-                            <div className={`border-b-2 border-black px-4 py-4 ${panelAccentClass}`}>
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex items-start gap-3">
-                                        <div className="shrink-0 w-11 h-11 rounded-2xl border-2 border-black bg-[#FF0080] text-white flex items-center justify-center">
-                                            <Bot size={22} strokeWidth={2.6} />
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-black text-base uppercase tracking-[0.14em]">
-                                                    AI 助手
-                                                </p>
-                                            </div>
-                                            <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
-                                                {assistantConfig.title}
+                    <motion.section
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={assistantConfig.title}
+                        initial={{ opacity: 0, y: 16, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 16, scale: 0.96 }}
+                        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                        className={`fixed z-[83] right-4 bottom-24 md:right-6 md:bottom-6 w-[min(400px,calc(100vw-24px))] border-2 border-black rounded-[24px] overflow-hidden ${shellClass}`}
+                    >
+                        <div className={`border-b-2 border-black px-4 py-4 ${panelAccentClass}`}>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="shrink-0 w-11 h-11 rounded-2xl border-2 border-black bg-[#FF0080] text-white flex items-center justify-center">
+                                        <Bot size={22} strokeWidth={2.6} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-black text-base uppercase tracking-[0.14em]">
+                                                AI 助手
                                             </p>
-                                            <p className={`mt-2 text-[11px] font-semibold ${subTextClass}`}>
-                                                欢迎语已预留后续后台配置入口。
+                                        </div>
+                                        <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
+                                            {assistantConfig.title}
+                                        </p>
+                                        <p className={`mt-2 text-[11px] font-semibold ${subTextClass}`}>
+                                            欢迎语已预留后续后台配置入口。
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsOpen(false)}
+                                    className={`shrink-0 w-10 h-10 rounded-full border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div
+                            ref={viewportRef}
+                            className={`sg-scrollbar max-h-[46vh] min-h-[240px] overflow-y-auto px-4 py-4 space-y-3 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'}`}
+                            style={{ overscrollBehavior: 'contain' }}
+                        >
+                            {messages.map((message) => {
+                                const isAssistant = message.role === 'assistant';
+                                return (
+                                    <div
+                                        key={message.id}
+                                        className={`flex ${isAssistant ? 'justify-start' : 'justify-end'}`}
+                                    >
+                                        <div
+                                            className={`max-w-[85%] border-2 border-black px-4 py-3 rounded-[20px] ${
+                                                isAssistant
+                                                    ? 'bg-[#FFD700] text-black'
+                                                    : isDarkMode
+                                                        ? 'bg-gray-800 text-white'
+                                                        : 'bg-white text-black'
+                                            }`}
+                                        >
+                                            <p className="text-sm leading-6 font-semibold whitespace-pre-wrap break-words">
+                                                {message.content}
                                             </p>
                                         </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsOpen(false)}
-                                        className={`shrink-0 w-10 h-10 rounded-full border-2 border-black flex items-center justify-center ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
-                                    >
-                                        <X size={18} />
-                                    </button>
-                                </div>
-                            </div>
+                                );
+                            })}
+                        </div>
 
-                            <div
-                                ref={viewportRef}
-                                className={`sg-scrollbar max-h-[46vh] min-h-[240px] overflow-y-auto px-4 py-4 space-y-3 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'}`}
-                                style={{ overscrollBehavior: 'contain' }}
-                            >
-                                {messages.map((message) => {
-                                    const isAssistant = message.role === 'assistant';
-                                    return (
-                                        <div
-                                            key={message.id}
-                                            className={`flex ${isAssistant ? 'justify-start' : 'justify-end'}`}
-                                        >
-                                            <div
-                                                className={`max-w-[85%] border-2 border-black px-4 py-3 rounded-[20px] ${
-                                                    isAssistant
-                                                        ? 'bg-[#FFD700] text-black'
-                                                        : isDarkMode
-                                                            ? 'bg-gray-800 text-white'
-                                                            : 'bg-white text-black'
-                                                }`}
-                                            >
-                                                <p className="text-sm leading-6 font-semibold whitespace-pre-wrap break-words">
-                                                    {message.content}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            <form onSubmit={handleSubmit} className={`border-t-2 border-black p-3 ${shellClass}`}>
-                                <div className="flex items-end gap-3">
-                                    <label className="flex-1">
-                                        <span className="sr-only">输入消息</span>
-                                        <textarea
-                                            rows={2}
-                                            value={draft}
-                                            onChange={(event) => setDraft(event.target.value)}
-                                            placeholder={assistantConfig.inputPlaceholder}
-                                            className={`w-full resize-none rounded-[18px] border-2 border-black px-4 py-3 text-sm font-semibold outline-none ${
-                                                isDarkMode
-                                                    ? 'bg-gray-800 text-white placeholder:text-gray-400'
-                                                    : 'bg-[#FFF9DB] text-black placeholder:text-gray-500'
-                                            }`}
-                                        />
-                                    </label>
-                                    <button
-                                        type="submit"
-                                        disabled={sendDisabled}
-                                        className={`shrink-0 w-14 h-14 rounded-[18px] border-2 border-black flex items-center justify-center transition-transform ${
-                                            sendDisabled
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                : 'bg-[#FF0080] text-white hover:-translate-y-0.5'
+                        <form onSubmit={handleSubmit} className={`border-t-2 border-black p-3 ${shellClass}`}>
+                            <div className="flex items-end gap-3">
+                                <label className="flex-1">
+                                    <span className="sr-only">输入消息</span>
+                                    <textarea
+                                        rows={2}
+                                        value={draft}
+                                        onChange={(event) => setDraft(event.target.value)}
+                                        placeholder={assistantConfig.inputPlaceholder}
+                                        className={`w-full resize-none rounded-[18px] border-2 border-black px-4 py-3 text-sm font-semibold outline-none ${
+                                            isDarkMode
+                                                ? 'bg-gray-800 text-white placeholder:text-gray-400'
+                                                : 'bg-[#FFF9DB] text-black placeholder:text-gray-500'
                                         }`}
-                                    >
-                                        <SendHorizontal size={18} />
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.section>
-                    </>
+                                    />
+                                </label>
+                                <button
+                                    type="submit"
+                                    disabled={sendDisabled}
+                                    className={`shrink-0 w-14 h-14 rounded-[18px] border-2 border-black flex items-center justify-center transition-transform ${
+                                        sendDisabled
+                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            : 'bg-[#FF0080] text-white hover:-translate-y-0.5'
+                                    }`}
+                                >
+                                    <SendHorizontal size={18} />
+                                </button>
+                            </div>
+                        </form>
+                    </motion.section>
                 )}
             </AnimatePresence>
 
