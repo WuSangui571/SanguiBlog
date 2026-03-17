@@ -58,6 +58,24 @@ html {
   background-color: rgba(148, 163, 184, 0.85);
 }
 
+.sg-scrollbar-light {
+  scrollbar-color: rgba(148, 163, 184, 0.75) rgba(255, 249, 219, 0.95);
+}
+.sg-scrollbar-light::-webkit-scrollbar {
+  width: 10px;
+}
+.sg-scrollbar-light::-webkit-scrollbar-track {
+  background: rgba(255, 249, 219, 0.95);
+}
+.sg-scrollbar-light::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.75);
+  border-radius: 999px;
+  border: 2px solid rgba(255, 249, 219, 0.95);
+}
+.sg-scrollbar-light::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.85);
+}
+
 /* 隐藏浏览器自带的密码可见图标，避免与自定义图标重复（Edge 等会注入） */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {

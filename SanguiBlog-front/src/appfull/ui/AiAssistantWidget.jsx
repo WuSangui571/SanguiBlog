@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, SendHorizontal, Sparkles, X } from 'lucide-react';
+import { Bot, SendHorizontal, X } from 'lucide-react';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 
 function createAssistantMessage(content) {
@@ -55,6 +55,30 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         });
     }, [isOpen, messages]);
 
+    useEffect(() => {
+        if (typeof document === 'undefined' || !isOpen) {
+            return undefined;
+        }
+
+        const { body, documentElement } = document;
+        const previousBodyOverflow = body.style.overflow;
+        const previousBodyPaddingRight = body.style.paddingRight;
+        const previousHtmlOverflow = documentElement.style.overflow;
+        const scrollbarWidth = window.innerWidth - documentElement.clientWidth;
+
+        body.style.overflow = 'hidden';
+        documentElement.style.overflow = 'hidden';
+        if (scrollbarWidth > 0) {
+            body.style.paddingRight = `${scrollbarWidth}px`;
+        }
+
+        return () => {
+            body.style.overflow = previousBodyOverflow;
+            body.style.paddingRight = previousBodyPaddingRight;
+            documentElement.style.overflow = previousHtmlOverflow;
+        };
+    }, [isOpen]);
+
     const sendDisabled = !draft.trim();
 
     const handleSubmit = (event) => {
@@ -92,7 +116,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                         />
                         <motion.section
                             role="dialog"
-                            aria-modal="false"
+                            aria-modal="true"
                             aria-label={assistantConfig.title}
                             initial={{ opacity: 0, y: 16, scale: 0.96 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -132,7 +156,8 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
 
                             <div
                                 ref={viewportRef}
-                                className={`max-h-[46vh] min-h-[240px] overflow-y-auto px-4 py-4 space-y-3 ${isDarkMode ? 'bg-[#0F172A]' : 'bg-[#FFFDF6]'}`}
+                                className={`sg-scrollbar max-h-[46vh] min-h-[240px] overflow-y-auto px-4 py-4 space-y-3 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'}`}
+                                style={{ overscrollBehavior: 'contain' }}
                             >
                                 {messages.map((message) => {
                                     const isAssistant = message.role === 'assistant';
@@ -150,12 +175,6 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                                             : 'bg-white text-black'
                                                 }`}
                                             >
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    {isAssistant ? <Sparkles size={14} /> : <SendHorizontal size={14} />}
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.14em]">
-                                                        {isAssistant ? assistantConfig.assistantName : '你'}
-                                                    </span>
-                                                </div>
                                                 <p className="text-sm leading-6 font-semibold whitespace-pre-wrap break-words">
                                                     {message.content}
                                                 </p>
