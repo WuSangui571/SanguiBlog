@@ -28,6 +28,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
     ]);
     const openedOnceRef = useRef(false);
     const viewportRef = useRef(null);
+    const interactionBlockerRef = useRef(null);
 
     useEffect(() => {
         setMessages((prev) => {
@@ -56,20 +57,21 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
     }, [isOpen, messages]);
 
     useEffect(() => {
-        if (typeof document === 'undefined' || !isOpen) {
+        if (!isOpen || !interactionBlockerRef.current) {
             return undefined;
         }
 
-        const { body, documentElement } = document;
-        const previousBodyOverflow = body.style.overflow;
-        const previousHtmlOverflow = documentElement.style.overflow;
+        const blocker = interactionBlockerRef.current;
+        const preventDefault = (event) => {
+            event.preventDefault();
+        };
 
-        body.style.overflow = 'hidden';
-        documentElement.style.overflow = 'hidden';
+        blocker.addEventListener('wheel', preventDefault, { passive: false });
+        blocker.addEventListener('touchmove', preventDefault, { passive: false });
 
         return () => {
-            body.style.overflow = previousBodyOverflow;
-            documentElement.style.overflow = previousHtmlOverflow;
+            blocker.removeEventListener('wheel', preventDefault);
+            blocker.removeEventListener('touchmove', preventDefault);
         };
     }, [isOpen]);
 
@@ -98,6 +100,16 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         <>
             <AnimatePresence>
                 {isOpen && (
+                    <>
+                    <motion.div
+                        ref={interactionBlockerRef}
+                        aria-hidden="true"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.16 }}
+                        className="fixed inset-0 z-[82] bg-transparent touch-none"
+                    />
                     <motion.section
                         role="dialog"
                         aria-modal="true"
@@ -198,6 +210,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                             </div>
                         </form>
                     </motion.section>
+                    </>
                 )}
             </AnimatePresence>
 
