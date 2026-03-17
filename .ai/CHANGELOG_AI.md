@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-03-17] 修复 AI 每轮回答重复自我介绍的问题
+- 背景/需求：用户反馈在 AI 面板里发问后，模型经常先输出“你好，我是三桂……”这类重复自我介绍，和首屏欢迎语形成重复，影响对话体验。
+- 修改类型：fix
+- 影响范围：后端 AI 系统提示词约束、站点自定义提示词拼接方式
+- 变更摘要：
+  1) 重写 `AiAssistantSettingService` 为干净 UTF-8 文本，修复该服务中的历史乱码。
+  2) 在默认系统提示词中明确约束：首屏欢迎语只展示一次，后续回答不要重复自我介绍或重复寒暄，除非用户明确要求。
+  3) 将 `ai.chat.system_prompt` 的站点自定义规则从“覆盖默认提示词”改为“附加到默认提示词之后”，避免后台自定义配置误覆盖基础行为约束。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingServiceTest.java`
+- 检索与复用策略：
+  - 检索关键词：`DEFAULT_SYSTEM_PROMPT` / `ai.chat.system_prompt` / `welcomeMessage`
+  - 找到的旧实现：系统提示词完全由 `site_settings` 中的 `ai.chat.system_prompt` 覆盖
+  - 最终选择：保留默认基础约束，再拼接站点附加指令，避免重复自我介绍问题再次出现
+- 风险点：
+  - 如果你数据库里已经配置了 `ai.chat.system_prompt`，它现在会作为附加规则继续生效，而不是覆盖默认规则；这属于有意修正。
+- 验证方式：
+  - 测试：执行 `mvn -q -Dtest=AiAssistantSettingServiceTest test` 通过。
+  - 编译：执行 `mvn -q -DskipTests compile` 通过。
+
 ## [2026-03-17] 将通义千问默认模型切换为 qwen-flash
 - 背景/需求：用户要求后端 AI 聊天默认使用通义千问的 flash 模型，而不是 `qwen-plus`。
 - 修改类型：fix

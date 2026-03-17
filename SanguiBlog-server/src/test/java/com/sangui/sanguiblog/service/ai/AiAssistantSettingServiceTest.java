@@ -41,7 +41,9 @@ class AiAssistantSettingServiceTest {
         assertEquals("站内问答助手", service.siteConfig().getTitle());
         assertEquals("欢迎来到三桂博客。", service.siteConfig().getWelcomeMessage());
         assertEquals("请输入博客相关问题", service.siteConfig().getInputPlaceholder());
-        assertEquals("你只能回答本站内容相关问题。", service.systemPrompt());
+        String prompt = service.systemPrompt();
+        assertEquals(true, prompt.contains(AiAssistantSettingService.DEFAULT_SYSTEM_PROMPT));
+        assertEquals(true, prompt.contains("你只能回答本站内容相关问题。"));
     }
 
     private static SiteSetting setting(String key, String value) {
