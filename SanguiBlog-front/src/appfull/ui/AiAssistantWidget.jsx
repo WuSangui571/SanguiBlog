@@ -4,6 +4,7 @@ import { Bot, SendHorizontal, X } from 'lucide-react';
 import { sendAiChat } from '../../api.js';
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
+import { resolveAiConversationId } from '../aiConversation.js';
 
 function createUserMessage(content) {
     return {
@@ -42,6 +43,7 @@ function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }
 export default function AiAssistantWidget({ isDarkMode, config }) {
     const { headerHeight } = useLayoutOffsets();
     const assistantConfig = useMemo(() => resolveAiAssistantConfig(config), [config]);
+    const [conversationId] = useState(() => resolveAiConversationId());
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState('');
     const [isSending, setIsSending] = useState(false);
@@ -99,7 +101,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         setIsSending(true);
 
         try {
-            const response = await sendAiChat(content);
+            const response = await sendAiChat(content, conversationId);
             const reply = response?.data?.reply?.trim() || '抱歉，我这次没有生成有效回复。';
             setMessages((prev) => prev.map((message) => (
                 message.id === pendingId

@@ -5,6 +5,41 @@
 
 ---
 
+## [2026-03-17] 接入 JDBC 持久化聊天记忆，支持多轮上下文
+- 背景/需求：用户要求当前 AI 聊天从“一问一答”升级为具备上下文记忆，并明确采用 JDBC 持久化方案。
+- 修改类型：feat
+- 影响范围：后端 AI 聊天接口、Spring AI ChatMemory 配置、前端 AI 会话 ID 持久化、请求参数结构
+- 变更摘要：
+  1) 后端新增 `spring-ai-starter-model-chat-memory-repository-jdbc` 依赖，并启用 JDBC Chat Memory schema 初始化。
+  2) 新增 `AiChatMemoryConfig`，基于 `MessageWindowChatMemory` + `ChatMemoryRepository` 配置多轮上下文窗口，默认保留最近 16 条消息。
+  3) `AiChatRequest` 新增 `conversationId`，`AiChatService` 改为通过 `MessageChatMemoryAdvisor` 按会话 ID 调用模型，返回模式标记为 `CHAT_MEMORY_JDBC`。
+  4) 前端新增 `aiConversation.js`，使用 `localStorage: sg_ai_conversation_id` 持久化会话 ID，并在每次 `/api/ai/chat` 请求中携带。
+  5) 当前实现只持久化模型上下文记忆，不会在页面刷新后自动回放历史聊天 UI。
+- 涉及文件：
+  - `SanguiBlog-server/pom.xml`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiChatMemoryConfig.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiChatRequest.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AiChatController.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java`
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/aiConversation.js`
+  - `SanguiBlog-front/src/appfull/aiConversation.test.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+- 检索与复用策略：
+  - 检索关键词：`AiChatService` / `conversationId` / `ChatMemory` / `JdbcChatMemoryRepository`
+  - 找到的旧实现：现有 `/api/ai/chat` 为单轮 `system + user` 模式，无会话 ID，无 ChatMemory
+  - 最终选择：复用现有接口与 AI 面板，在原链路上最小增量接入 Spring AI JDBC 持久化记忆，而不是新建第二套聊天接口
+- 风险点：
+  - `application.yaml` 当前设置为 `spring.ai.chat.memory.repository.jdbc.initialize-schema=always`，首次启动需要数据库账号具备建表权限。
+  - 当前前端不会自动加载旧消息历史，只是模型层会记住上下文。
+- 验证方式：
+  - 测试：执行 `mvn -q -Dtest=AiAssistantSettingServiceTest test` 通过。
+  - 编译：执行 `mvn -q -DskipTests compile` 通过。
+  - 测试：执行 `node src/appfull/aiAssistantConfig.test.js` 通过。
+  - 测试：执行 `node src/appfull/aiConversation.test.js` 通过。
+  - 构建：执行 `npm run build` 通过。
+
 ## [2026-03-17] AI 助手图标改为支持自定义图片
 - 背景/需求：用户要求移除当前较丑的默认机器人图标，改为自定义图片 Logo，并明确图片应放置的位置与命名规则。
 - 修改类型：fix

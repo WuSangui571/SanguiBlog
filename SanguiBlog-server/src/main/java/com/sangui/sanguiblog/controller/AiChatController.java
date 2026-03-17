@@ -20,6 +20,6 @@ public class AiChatController {
 
     @PostMapping("/chat")
     public ApiResponse<AiChatResponse> chat(@Valid @RequestBody AiChatRequest request) {
-        return ApiResponse.ok(aiChatService.chat(request.getMessage()));
+        return ApiResponse.ok(aiChatService.chat(request.getConversationId(), request.getMessage()));
     }
 }

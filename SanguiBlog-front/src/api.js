@@ -256,9 +256,9 @@ const request = async (path, options = {}) => {
 };
 
 export const fetchSiteMeta = () => request(`/site/meta?t=${Date.now()}`);
-export const sendAiChat = (message) => request("/ai/chat", {
+export const sendAiChat = (message, conversationId) => request("/ai/chat", {
   method: "POST",
-  body: JSON.stringify({ message }),
+  body: JSON.stringify({ message, conversationId }),
 });
 
 export const fetchCategories = () => request("/categories/tree");
