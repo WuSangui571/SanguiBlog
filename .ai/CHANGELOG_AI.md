@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-03-17] 后台页面隐藏 AI 助手入口
+- 背景/需求：用户要求 `/admin` 及其所有子页面不显示前端 AI 助手入口，避免后台管理界面被无关浮窗干扰；本步仍然只改前端。
+- 修改类型：fix
+- 影响范围：前端全局 AI 助手挂载条件、后台页面视觉干扰控制
+- 变更摘要：
+  1) 新增 `shouldShowAiAssistant(view)` 纯函数，统一收口 AI 助手在不同视图下的显示规则。
+  2) 在 `AppFull.jsx` 的全局挂载点判断当前视图，`view === 'admin'` 时不再渲染 AI 助手组件。
+  3) 补充纯函数测试，验证前台视图继续显示、后台视图隐藏。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/aiAssistantVisibility.js`
+  - `SanguiBlog-front/src/appfull/aiAssistantVisibility.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `view === 'admin'` / `/admin/*`
+  - 找到的旧实现：AI 助手统一在 `AppFull.jsx` 全局挂载；后台页面统一以 `initialView="admin"` 进入
+  - 最终选择：在全局挂载点直接判断 `view`，不把后台判断散落到 AI 组件内部
+- 风险点：
+  - 当前规则按 `view === 'admin'` 统一隐藏，适用于 `/admin` 与其子页面；如果未来后台拆成新的独立视图标识，需要同步扩展该判断。
+- 验证方式：
+  - 测试：执行 `node src/appfull/aiAssistantVisibility.test.js` 通过。
+  - 构建：执行 `npm run build` 通过。
+
 ## [2026-03-17] 修复 AI 打开时根滚动条槽位突兀发白的问题
 - 背景/需求：用户反馈打开 AI 对话窗口后，页面右侧滚动条区域会突兀地变成一条发白的带状区域，视觉跳变明显；同时仍需保留“首页不可滚动，仅 AI 面板可滚动”的交互目标。
 - 修改类型：fix

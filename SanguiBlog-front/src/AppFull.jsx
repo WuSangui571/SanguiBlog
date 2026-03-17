@@ -31,6 +31,7 @@ import SessionExpiredModal from "./appfull/ui/SessionExpiredModal.jsx";
 import ClickRipple from "./appfull/ui/ClickRipple.jsx";
 import ScrollToTop from "./appfull/ui/ScrollToTop.jsx";
 import AiAssistantWidget from "./appfull/ui/AiAssistantWidget.jsx";
+import { shouldShowAiAssistant } from "./appfull/aiAssistantVisibility.js";
 import { buildAssetUrl } from "./utils/asset.js";
 import logger from "./utils/logger.js";
 import HomeView from "./appfull/public/HomeView.jsx";
@@ -1491,10 +1492,12 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         onConfirm={handleSessionExpiredConfirm}
                         isDarkMode={isDarkMode}
                     />
-                    <AiAssistantWidget
-                        isDarkMode={isDarkMode}
-                        config={meta?.aiAssistant}
-                    />
+                    {shouldShowAiAssistant(view) && (
+                        <AiAssistantWidget
+                            isDarkMode={isDarkMode}
+                            config={meta?.aiAssistant}
+                        />
+                    )}
 
                     <AnimatePresence mode="wait">
                         <motion.main key={view} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
