@@ -5,6 +5,34 @@
 
 ---
 
+## [2026-03-17] 新增前端版 AI 助手右下角浮窗与预览对话面板
+- 背景/需求：用户要求先在前端实现一个醒目的 AI 助手入口，采用右下角浮窗主入口，点击后打开 AI 对话窗口；首屏需展示默认欢迎语“你好，我是三桂博客的AI智能助手三桂，有什么可以帮助您的吗？”，并预留后续由后台修改欢迎语的设计位；本步明确不改后端。
+- 修改类型：feat
+- 影响范围：前端全局交互入口、首页/文章/后台等页面共享 UI、前端 AI 配置收口
+- 变更摘要：
+  1) 新增右下角 AI 助手浮窗主入口，默认常驻全局页面，视觉采用黑黄主色 + 洋红点缀，与现有站点风格保持一致。
+  2) 新增全局 AI 对话面板，打开后默认显示欢迎语，并提供输入框与发送交互壳层。
+  3) 由于后端尚未接入，本步发送消息后返回固定占位回复，用于验证前端交互闭环。
+  4) 新增 `aiAssistantConfig.js`，将助手名称、标题、欢迎语、输入占位符与占位回复集中管理，并通过 `resolveAiAssistantConfig()` 预留未来后台配置覆盖能力。
+  5) 补充 `aiAssistantConfig.test.js`，先验证默认欢迎语与配置覆盖逻辑，再实现生产代码。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.js`
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+- 检索与复用策略：
+  - 检索关键词：`AppFull` / `Navigation` / `PopButton` / `dialog` / `drawer`
+  - 找到的旧实现：全局 UI 编排在 `AppFull.jsx`，弹层/抽屉模式可参考 `Navigation.jsx` 与文章目录抽屉
+  - 最终选择：复用现有全局编排与弹层交互模式，不新增路由、不新建第二套页面壳
+- 风险点：
+  - 当前仍是前端预览版，未接真实知识库或对话接口；占位回复仅用于展示交互链路。
+  - 右下角区域同时存在“返回顶部”按钮，当前通过更低的底部定位错开，后续若再新增浮层控件需继续检查移动端遮挡。
+- 验证方式：
+  - 测试：执行 `node src/appfull/aiAssistantConfig.test.js` 通过。
+  - 构建：执行 `npm run build` 通过。
+  - 手动：页面右下角可见 AI 助手浮窗，点击后出现对话面板并默认展示欢迎语。
+
 ## [2026-03-17] 首页站点版本号更新到 V2.1.290，并同步 README 当前版本说明
 - 背景/需求：用户要求将项目版本号从 `V2.1.289` 更新到 `V2.1.290`，不生成 release 文档，只同步首页版本展示，并检查根目录 `README.md` 是否存在过时内容。
 - 修改类型：chore

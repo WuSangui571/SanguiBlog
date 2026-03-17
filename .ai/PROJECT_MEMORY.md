@@ -159,6 +159,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   **视图-路由联动**：前台导航通过 `setView()` 触发 `onViewChange`，统一由 `src/pages/viewNavigation.js` 维护视图到 URL 的映射，保证“归档/关于/工具/文章详情”等视图切换时 URL 同步更新，便于 SEO 与日志追踪；当处于 `/admin/*` 子路由时不会被强制拉回 `/admin`。
 *   **站点地图与 robots**：后端提供 `GET /sitemap.xml`（XML）与 `GET /robots.txt`（文本），用于搜索引擎抓取；`/sitemap.xml` 会从数据库聚合已发布文章（`/article/:id`）与已启用工具页（`/tools/:id`）并生成 URL 列表，且通过内存缓存 + 变更标记 + 定时刷新自动更新；当 URL 总数超过 `site.sitemap.max-urls-per-file`（默认 45000）时，`/sitemap.xml` 会返回 `<sitemapindex>` 索引，分片 sitemap 通过 `GET /sitemap.xml?page=1..N` 获取（同一路径仅使用 query 参数，部署层通常无需额外新增 Nginx location）。此外，`/sitemap.xml` 与 `/robots.txt` 均支持 `ETag/If-None-Match`，命中时返回 304 以降低爬虫反复抓取的带宽与 CPU 成本。`/robots.txt` 会指向 `Sitemap: https://<域名>/sitemap.xml`，并默认禁止抓取 `/admin` 与 `/api/`。部署时若使用 Nginx 托管前端静态站点并启用 `try_files $uri /index.html`（SPA 回退），需在其前面显式添加 `location = /sitemap.xml` 与 `location = /robots.txt` 转发到后端，否则会被回退到前端首页导致“访问 /sitemap.xml 自动跳回 /”。
 *   **用户头像跳转**：前台导航点击用户头像时，若当前不在后台则进入 `/admin`，若已在后台则进入 `/admin/profile`，避免登录后直接跳过后台首页。
+*   **AI 助手前端预览**：自 V2.1.290 后新增右下角 AI 助手悬浮入口（纯前端预览，不依赖后端接口），点击后打开全局对话面板；默认欢迎语由 `src/appfull/aiAssistantConfig.js` 提供，并通过 `resolveAiAssistantConfig()` 收口，后续后端若返回 `meta.aiAssistant.welcomeMessage` 等字段，可直接覆盖当前前端默认值而无需重写 UI 结构。
 
 *   **全局错误过滤 (`src/main.jsx`)**:
 
