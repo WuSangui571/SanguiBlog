@@ -181,15 +181,15 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                         </div>
 
                         <form onSubmit={handleSubmit} className={`border-t-2 border-black p-3 ${shellClass}`}>
-                            <div className="flex items-stretch gap-3">
-                                <label className="flex-1">
+                            <div className="flex items-end gap-3">
+                                <label className="flex-1 h-[54px]">
                                     <span className="sr-only">输入消息</span>
                                     <textarea
-                                        rows={2}
+                                        rows={1}
                                         value={draft}
                                         onChange={(event) => setDraft(event.target.value)}
                                         placeholder={assistantConfig.inputPlaceholder}
-                                        className={`sg-scrollbar w-full h-14 max-h-28 resize-none overflow-y-auto rounded-[18px] border-2 border-black px-4 py-4 text-sm leading-5 font-semibold outline-none ${
+                                        className={`sg-scrollbar w-full h-full max-h-28 resize-none overflow-y-auto rounded-[18px] border-2 border-black px-4 py-[15px] text-sm leading-5 font-semibold outline-none ${
                                             isDarkMode
                                                 ? 'sg-scrollbar-dark bg-gray-800 text-white placeholder:text-gray-400'
                                                 : 'sg-scrollbar-light bg-[#FFF9DB] text-black placeholder:text-gray-500'
@@ -199,7 +199,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                 <button
                                     type="submit"
                                     disabled={sendDisabled}
-                                    className={`shrink-0 w-14 h-14 self-end rounded-[18px] border-2 border-black flex items-center justify-center transition-transform ${
+                                    className={`shrink-0 w-[54px] h-[54px] rounded-[18px] border-2 border-black flex items-center justify-center transition-transform ${
                                         sendDisabled
                                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             : 'bg-[#FF0080] text-white hover:-translate-y-0.5'
