@@ -4,7 +4,7 @@ import { DEFAULT_AI_ASSISTANT_CONFIG, resolveAiAssistantConfig } from './aiAssis
 
 assert.equal(
     DEFAULT_AI_ASSISTANT_CONFIG.welcomeMessage,
-    '你好，我是三桂博客的AI智能助手三桂，有什么可以帮助您的吗？'
+    '你好，我是三桂博客AI助理'
 );
 
 assert.deepEqual(

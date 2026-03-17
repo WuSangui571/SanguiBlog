@@ -1,7 +1,7 @@
 export const DEFAULT_AI_ASSISTANT_CONFIG = {
     assistantName: '三桂',
-    title: '三桂博客 AI 助手',
-    welcomeMessage: '你好，我是三桂博客的AI智能助手三桂，有什么可以帮助您的吗？',
+    title: '三桂博客AI助理',
+    welcomeMessage: '你好，我是三桂博客AI助理',
     inputPlaceholder: '请输入你的问题...',
     pendingReply: '三桂正在思考，请稍候...'
 };

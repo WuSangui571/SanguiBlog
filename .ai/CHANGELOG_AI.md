@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-03-17] AI 聊天窗口改为空会话欢迎页，不再默认发送首条 AI 消息
+- 背景/需求：用户要求 AI 聊天窗口打开后不要出现默认自我介绍消息；初始状态应是一个居中的欢迎页，这不是 AI 的发言，而是聊天窗口的空会话引导页。
+- 修改类型：fix
+- 影响范围：前端 AI 助手初始会话态、欢迎文案展示逻辑
+- 变更摘要：
+  1) 移除 AI 面板初始时自动插入的首条助手消息，空会话状态下 `messages` 默认为空数组。
+  2) 当会话为空时，聊天窗口中部改为展示欢迎页：大号标题“你好，我是三桂博客AI助理”，并附加简短引导文案。
+  3) 第一次真实问答仍从用户提问开始，随后才插入 AI 的思考中与回复消息。
+  4) 顺手清理了 `aiAssistantConfig.js` 与 `AiAssistantWidget.jsx` 中的历史乱码文本，统一为 UTF-8 正常中文。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/aiAssistantConfig.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+- 检索与复用策略：
+  - 检索关键词：`welcomeMessage` / `createAssistantMessage` / `messages` / `AiAssistantWidget`
+  - 找到的旧实现：AI 面板初始化时会把 `welcomeMessage` 注入为第一条助手消息
+  - 最终选择：保留现有配置字段与对话流，只把初始欢迎内容从“消息泡泡”改为“空会话欢迎页”
+- 风险点：
+  - 目前空会话欢迎页仍复用 `welcomeMessage` 作为主标题文案；如果你后面想把“欢迎页标题”和“AI 欢迎语”拆成两套后台配置，再单独扩展字段更合理。
+- 验证方式：
+  - 测试：执行 `node src/appfull/aiAssistantConfig.test.js` 通过。
+  - 构建：执行 `npm run build` 通过。
+
 ## [2026-03-17] 修复 AI 每轮回答重复自我介绍的问题
 - 背景/需求：用户反馈在 AI 面板里发问后，模型经常先输出“你好，我是三桂……”这类重复自我介绍，和首屏欢迎语形成重复，影响对话体验。
 - 修改类型：fix
