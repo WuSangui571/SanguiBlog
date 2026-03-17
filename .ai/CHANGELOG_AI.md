@@ -5,6 +5,25 @@
 
 ---
 
+## [2026-03-17] 将通义千问默认模型切换为 qwen-flash
+- 背景/需求：用户要求后端 AI 聊天默认使用通义千问的 flash 模型，而不是 `qwen-plus`。
+- 修改类型：fix
+- 影响范围：后端 AI 聊天默认模型配置
+- 变更摘要：
+  1) `application.yaml` 中 `AI_DASHSCOPE_CHAT_MODEL` 的默认值由 `qwen-plus` 调整为 `qwen-flash`。
+  2) `AiChatService` 中读取模型名的兜底值同步改为 `qwen-flash`，避免配置缺失时接口返回模型名与实际默认值不一致。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java`
+- 检索与复用策略：
+  - 检索关键词：`qwen-plus` / `spring.ai.dashscope.chat.options.model`
+  - 找到的旧实现：默认模型同时存在于配置文件和服务类的 `@Value` 兜底值
+  - 最终选择：双点同步修改，避免配置与返回值漂移
+- 风险点：
+  - 若你在线上环境显式设置了 `AI_DASHSCOPE_CHAT_MODEL`，则仍以环境变量为准，不会被这个默认值覆盖。
+- 验证方式：
+  - 编译：执行 `mvn -q -DskipTests compile` 通过。
+
 ## [2026-03-17] 接入通义千问后端聊天接口并打通前端真实调用
 - 背景/需求：用户要求正式接入 `Spring AI + Spring AI Alibaba + 通义千问 API`，先实现最小可用的后端聊天能力；环境变量中的 API Key 由用户后续注入。现阶段不做 RAG，但要为后续知识库增强保留结构。
 - 修改类型：feat

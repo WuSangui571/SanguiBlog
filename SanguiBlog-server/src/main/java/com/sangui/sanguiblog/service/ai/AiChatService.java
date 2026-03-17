@@ -23,7 +23,7 @@ public class AiChatService {
     private final ObjectProvider<ChatClient.Builder> chatClientBuilderProvider;
     private final AiAssistantSettingService aiAssistantSettingService;
 
-    @Value("${spring.ai.dashscope.chat.options.model:qwen-plus}")
+    @Value("${spring.ai.dashscope.chat.options.model:qwen-flash}")
     private String configuredModel;
 
     public AiChatResponse chat(String message) {

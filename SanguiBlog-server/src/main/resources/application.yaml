@@ -12,7 +12,7 @@ spring:
       api-key: ${SPRING_AI_DASHSCOPE_API_KEY:${AI_DASHSCOPE_API_KEY:}}
       chat:
         options:
-          model: ${AI_DASHSCOPE_CHAT_MODEL:qwen-plus}
+          model: ${AI_DASHSCOPE_CHAT_MODEL:qwen-flash}
           temperature: ${AI_DASHSCOPE_CHAT_TEMPERATURE:0.4}
   servlet:
     multipart:
