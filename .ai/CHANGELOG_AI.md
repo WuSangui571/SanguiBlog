@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-03-17] 首页站点版本号更新到 V2.1.290，并同步 README 当前版本说明
+- 背景/需求：用户要求将项目版本号从 `V2.1.289` 更新到 `V2.1.290`，不生成 release 文档，只同步首页版本展示，并检查根目录 `README.md` 是否存在过时内容。
+- 修改类型：chore
+- 影响范围：首页版本展示、后端站点元信息、根目录 README
+- 变更摘要：
+  1) 后端 `site.version` 从 `V2.1.289` 更新为 `V2.1.290`。
+  2) 首页 `HomeView` 的前端兜底版本同步更新为 `V2.1.290`。
+  3) `README.md` 中当前站点版本号从 `V2.1.289` 更新为 `V2.1.290`。
+  4) 按用户要求，不生成/更新 release 文档，其它 README 内容保持不变。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `README.md`
+- 检索与复用策略：
+  - 检索关键词：`V2.1.289` / `site.version` / `meta?.version` / `README`
+  - 找到的旧实现：首页版本统一读取后端 `site.version`，前端 `HomeView` 保留兜底版本；README 顶部单独维护当前版本说明
+  - 最终选择：仅同步首页版本来源与 README 中明确过时的版本描述，不生成 release 文档
+- 风险点：
+  - 仅更新首页版本展示，不会影响业务逻辑；README 仅改当前版本号这一处文本。
+- 验证方式：
+  - 静态：检索 `V2.1.289` 已不再出现在首页版本来源文件与 README 当前版本说明中。
+  - 手动：首页 Banner 应显示 `SANGUI BLOG // V2.1.290`；`README.md` 当前版本说明同步为 `V2.1.290`。
+
 ## [2026-03-17] 升级后端到 Spring Boot 3.5.11 并同步 SpringDoc 适配
 - 背景/需求：用户要求将后端从 `Spring Boot 3.2.5` 升级到 `3.5.11`，并完成对应依赖适配，供后续上线测试与接入 Spring AI 技术栈使用。
 - 修改类型：chore
