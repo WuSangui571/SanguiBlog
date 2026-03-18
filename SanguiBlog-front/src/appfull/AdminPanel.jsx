@@ -4277,6 +4277,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
     const [sessions, setSessions] = useState([]);
     const [sessionsLoading, setSessionsLoading] = useState(true);
     const [sessionsError, setSessionsError] = useState('');
+    const [visibilityFilter, setVisibilityFilter] = useState('ALL');
     const [activeSessionId, setActiveSessionId] = useState(null);
     const [sessionDetail, setSessionDetail] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -4286,10 +4287,25 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
     const mutedText = isDarkMode ? 'text-gray-400' : 'text-gray-500';
     const bodyText = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const chipBg = isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-700';
+    const visibleStatusClass = isDarkMode ? 'bg-emerald-950/60 text-emerald-200 border border-emerald-700/50' : 'bg-emerald-100 text-emerald-700 border border-emerald-300';
+    const hiddenStatusClass = isDarkMode ? 'bg-red-950/60 text-red-200 border border-red-700/50' : 'bg-red-100 text-red-700 border border-red-300';
     const messageBg = isDarkMode ? 'bg-gray-950 border border-gray-800' : 'bg-gray-50 border border-gray-200';
     const assistantBg = isDarkMode ? 'bg-amber-950/30 border-amber-700/40' : 'bg-amber-50 border-amber-200';
     const userBg = isDarkMode ? 'bg-sky-950/30 border-sky-700/40' : 'bg-sky-50 border-sky-200';
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
+    const getVisibilityMeta = (session) => {
+        const visible = session?.userVisible !== false;
+        return visible
+            ? { label: '用户侧可见', className: visibleStatusClass }
+            : { label: '用户侧已隐藏', className: hiddenStatusClass };
+    };
+    const filterButtonClass = (filter) => {
+        const active = visibilityFilter === filter;
+        if (active) {
+            return 'bg-black text-white';
+        }
+        return isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100';
+    };
 
     const loadSessions = useCallback(async () => {
         setSessionsLoading(true);
@@ -4342,8 +4358,30 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
         return <PermissionNotice title="无权限" description="仅超级管理员可以查看全站 AI 聊天审计记录。" />;
     }
 
-    const activeSession = sessionDetail?.session || sessions.find((item) => item.id === activeSessionId) || null;
+    const filteredSessions = sessions.filter((session) => {
+        if (visibilityFilter === 'VISIBLE') {
+            return session.userVisible !== false;
+        }
+        if (visibilityFilter === 'HIDDEN') {
+            return session.userVisible === false;
+        }
+        return true;
+    });
+
+    const activeSession = sessionDetail?.session && filteredSessions.some((item) => item.id === sessionDetail.session.id)
+        ? sessionDetail.session
+        : filteredSessions.find((item) => item.id === activeSessionId) || null;
     const messages = sessionDetail?.messages || [];
+
+    useEffect(() => {
+        if (filteredSessions.length === 0) {
+            setActiveSessionId(null);
+            return;
+        }
+        if (!filteredSessions.some((item) => item.id === activeSessionId)) {
+            setActiveSessionId(filteredSessions[0].id);
+        }
+    }, [activeSessionId, filteredSessions]);
 
     return (
         <div className="space-y-6">
@@ -4365,16 +4403,40 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                 <section className={`${cardBg} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] space-y-4`}>
                     <div className="flex items-center justify-between">
                         <h3 className="text-xl font-black">会话列表</h3>
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${chipBg}`}>{sessions.length} 条</span>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${chipBg}`}>{filteredSessions.length} / {sessions.length} 条</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setVisibilityFilter('ALL')}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass('ALL')}`}
+                        >
+                            全部
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setVisibilityFilter('VISIBLE')}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass('VISIBLE')}`}
+                        >
+                            用户侧可见
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setVisibilityFilter('HIDDEN')}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass('HIDDEN')}`}
+                        >
+                            用户侧已隐藏
+                        </button>
                     </div>
                     {sessionsLoading && <p className={`text-sm ${mutedText}`}>正在加载 AI 会话...</p>}
                     {sessionsError && <p className="text-sm text-red-500">{sessionsError}</p>}
-                    {!sessionsLoading && !sessionsError && sessions.length === 0 && (
+                    {!sessionsLoading && !sessionsError && filteredSessions.length === 0 && (
                         <p className={`text-sm ${mutedText}`}>当前还没有任何 AI 会话记录。</p>
                     )}
                     <div className={`max-h-[72vh] overflow-y-auto space-y-3 pr-1 ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar'}`}>
-                        {sessions.map((session) => {
+                        {filteredSessions.map((session) => {
                             const active = session.id === activeSessionId;
+                            const visibilityMeta = getVisibilityMeta(session);
                             return (
                                 <button
                                     key={session.id}
@@ -4396,12 +4458,20 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                                             #{session.id}
                                         </span>
                                     </div>
+                                    <div className="mt-3">
+                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${visibilityMeta.className}`}>
+                                            {visibilityMeta.label}
+                                        </span>
+                                    </div>
                                     <p className={`text-xs mt-3 line-clamp-2 ${active ? 'text-black/80' : mutedText}`}>
                                         {session.lastMessagePreview || '暂无预览'}
                                     </p>
                                     <div className={`mt-3 text-[11px] space-y-1 ${active ? 'text-black/70' : mutedText}`}>
                                         <p>创建：{formatDateTime(session.createdAt)}</p>
                                         <p>更新：{formatDateTime(session.updatedAt)}</p>
+                                        {session.userVisible === false && (
+                                            <p>隐藏：{formatDateTime(session.userHiddenAt)}</p>
+                                        )}
                                     </div>
                                 </button>
                             );
@@ -4421,13 +4491,23 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                                     <p className={`text-xs mt-1 ${mutedText}`}>
                                         会话 #{activeSession.id} · 创建于 {formatDateTime(activeSession.createdAt)} · 最后更新于 {formatDateTime(activeSession.updatedAt)}
                                     </p>
+                                    {activeSession.userVisible === false && (
+                                        <p className={`text-xs mt-1 ${mutedText}`}>
+                                            用户侧隐藏于 {formatDateTime(activeSession.userHiddenAt)}
+                                        </p>
+                                    )}
                                 </>
                             )}
                         </div>
                         {activeSession && (
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${chipBg}`}>
-                                {messages.length} 条消息
-                            </span>
+                            <div className="flex flex-col items-end gap-2">
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${chipBg}`}>
+                                    {messages.length} 条消息
+                                </span>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getVisibilityMeta(activeSession).className}`}>
+                                    {getVisibilityMeta(activeSession).label}
+                                </span>
+                            </div>
                         )}
                     </div>
 

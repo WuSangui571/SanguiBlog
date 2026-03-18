@@ -33,6 +33,8 @@ class AdminAiChatAuditServiceTest {
         session.setTitle("RAG 调试");
         session.setLastMessagePreview("请总结最近发布的文章");
         session.setUpdatedAt(Instant.parse("2026-03-18T08:00:00Z"));
+        session.setUserVisible(Boolean.FALSE);
+        session.setUserHiddenAt(Instant.parse("2026-03-18T08:05:00Z"));
 
         when(sessionRepository.findAllByOrderByUpdatedAtDescIdDesc()).thenReturn(List.of(session));
 
@@ -45,6 +47,8 @@ class AdminAiChatAuditServiceTest {
         assertEquals("SUPER_ADMIN", sessions.get(0).getRoleCode());
         assertEquals("超级管理员", sessions.get(0).getRoleName());
         assertEquals("RAG 调试", sessions.get(0).getTitle());
+        assertEquals(Boolean.FALSE, sessions.get(0).getUserVisible());
+        assertEquals(Instant.parse("2026-03-18T08:05:00Z"), sessions.get(0).getUserHiddenAt());
     }
 
     @Test
@@ -57,6 +61,7 @@ class AdminAiChatAuditServiceTest {
         session.setTitle("文章总结");
         session.setCreatedAt(Instant.parse("2026-03-18T07:00:00Z"));
         session.setUpdatedAt(Instant.parse("2026-03-18T07:10:00Z"));
+        session.setUserVisible(Boolean.TRUE);
 
         AiChatMessage userMessage = new AiChatMessage();
         userMessage.setId(101L);
@@ -80,6 +85,7 @@ class AdminAiChatAuditServiceTest {
 
         assertEquals(15L, detail.getSession().getId());
         assertEquals("bob", detail.getSession().getUsername());
+        assertEquals(Boolean.TRUE, detail.getSession().getUserVisible());
         assertEquals(2, detail.getMessages().size());
         assertEquals(15L, detail.getMessages().get(0).getSessionId());
         assertEquals("assistant", detail.getMessages().get(1).getRole());
@@ -112,6 +118,7 @@ class AdminAiChatAuditServiceTest {
         AiChatSession session = new AiChatSession();
         session.setId(sessionId);
         session.setUser(user);
+        session.setUserVisible(Boolean.TRUE);
         session.setCreatedAt(Instant.parse("2026-03-18T06:00:00Z"));
         session.setUpdatedAt(Instant.parse("2026-03-18T06:30:00Z"));
         return session;

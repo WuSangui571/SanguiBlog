@@ -19,4 +19,6 @@ public class AdminAiChatSessionDto {
     private String userTitle;
     private String roleCode;
     private String roleName;
+    private Boolean userVisible;
+    private Instant userHiddenAt;
 }
