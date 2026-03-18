@@ -4389,7 +4389,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-[#FF0080]">AI Audit</p>
-                    <h2 className="text-3xl font-black flex items-center gap-2"><Sparkles /> AI 管理</h2>
+                    <h2 className="text-3xl font-black flex items-center gap-2"><Sparkles /> AI 会话</h2>
                     <p className={`text-sm mt-1 ${mutedText}`}>查看所有用户的 AI 会话、消息时间线与归属信息，仅超级管理员可见。</p>
                 </div>
                 <button
@@ -7176,7 +7176,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         { key: 'create-post', label: '发布文章', icon: Edit, permissions: ['POST_CREATE'] },
         { key: 'posts', label: '文章列表', icon: FileText, permissions: ['POST_VIEW'] },
         { key: 'analytics', label: '访问日志', icon: BarChart3, permissions: ['ANALYTICS_VIEW'] },
-        { key: 'ai-management', label: 'AI管理', icon: Sparkles, permissions: [], role: 'SUPER_ADMIN' },
+        { key: 'ai-management', label: 'AI 会话', icon: Sparkles, permissions: [], role: 'SUPER_ADMIN' },
         { key: 'comments', label: '评论管理', icon: MessageCircle, permissions: ['COMMENT_VIEW'] },
         { key: 'categories', label: '二级分类', icon: Layers, permissions: ['CATEGORY_MANAGE'] },
         { key: 'taxonomy', label: '标签管理', icon: Tag, permissions: ['TAG_MANAGE'] },
