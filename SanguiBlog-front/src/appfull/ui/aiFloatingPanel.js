@@ -1,5 +1,3 @@
-const EDGE_DRAG_THRESHOLD = 12;
-
 export function getDefaultFloatingPosition({
     viewportWidth,
     headerHeight,
@@ -38,20 +36,11 @@ export function clampFloatingPosition({
 export function shouldStartPanelDrag({
     isFloating,
     rect,
-    clientX,
-    clientY,
     isInteractiveTarget
 }) {
     if (!isFloating || !rect || isInteractiveTarget) {
         return false;
     }
 
-    const offsetX = clientX - rect.left;
-    const offsetY = clientY - rect.top;
-    const nearLeft = offsetX <= EDGE_DRAG_THRESHOLD;
-    const nearRight = rect.right - clientX <= EDGE_DRAG_THRESHOLD;
-    const nearTop = offsetY <= EDGE_DRAG_THRESHOLD;
-    const nearBottom = rect.bottom - clientY <= EDGE_DRAG_THRESHOLD;
-
-    return nearLeft || nearRight || nearTop || nearBottom;
+    return true;
 }

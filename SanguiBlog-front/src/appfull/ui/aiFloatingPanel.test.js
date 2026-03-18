@@ -52,9 +52,7 @@ assert.deepEqual(
 assert.equal(
     shouldStartPanelDrag({
         isFloating: true,
-        rect: { left: 100, right: 560, top: 80, bottom: 680 },
-        clientX: 106,
-        clientY: 180,
+        rect: { left: 100, right: 560, top: 80, bottom: 150 },
         isInteractiveTarget: false
     }),
     true
@@ -63,20 +61,16 @@ assert.equal(
 assert.equal(
     shouldStartPanelDrag({
         isFloating: true,
-        rect: { left: 100, right: 560, top: 80, bottom: 680 },
-        clientX: 200,
-        clientY: 200,
+        rect: { left: 100, right: 560, top: 80, bottom: 150 },
         isInteractiveTarget: false
     }),
-    false
+    true
 );
 
 assert.equal(
     shouldStartPanelDrag({
         isFloating: true,
-        rect: { left: 100, right: 560, top: 80, bottom: 680 },
-        clientX: 104,
-        clientY: 84,
+        rect: { left: 100, right: 560, top: 80, bottom: 150 },
         isInteractiveTarget: true
     }),
     false

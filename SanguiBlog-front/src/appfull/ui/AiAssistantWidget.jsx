@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, History, MessageSquarePlus, Move, SendHorizontal, X } from 'lucide-react';
+import { Bot, History, MessageSquarePlus, Move, RotateCcw, SendHorizontal, X } from 'lucide-react';
 import {
     createAiChatSession,
     fetchAiChatMessages,
@@ -326,7 +326,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
             bottom: 0
         };
 
-    const handlePanelPointerDown = (event) => {
+    const handlePanelDragStart = (event) => {
         if (!isFloating || !panelRef.current) {
             return;
         }
@@ -335,13 +335,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
         const isInteractiveTarget = Boolean(
             target?.closest?.('button, textarea, input, a, [data-no-drag="true"]')
         );
-        const rect = panelRef.current.getBoundingClientRect();
+        const rect = event.currentTarget.getBoundingClientRect();
 
         if (!shouldStartPanelDrag({
             isFloating,
             rect,
-            clientX: event.clientX,
-            clientY: event.clientY,
             isInteractiveTarget
         })) {
             return;
@@ -488,15 +486,19 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 32 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                            onPointerDown={handlePanelPointerDown}
                             className={`fixed z-[83] left-0 right-0 overflow-hidden rounded-none border-t-2 border-black flex flex-col ${shellClass} ${
                                 isFloating
-                                    ? 'md:border-2 md:cursor-move'
+                                    ? 'md:border-2'
                                     : 'md:left-auto md:w-[460px] md:border-l-2 md:border-r-0 md:border-b-0'
                             }`}
                             style={floatingPanelStyle}
                         >
-                            <div className={`border-b-2 border-black px-4 py-4 ${panelAccentClass}`}>
+                            <div
+                                onPointerDown={handlePanelDragStart}
+                                className={`border-b-2 border-black px-4 py-4 ${panelAccentClass} ${
+                                    isFloating ? 'cursor-move' : ''
+                                }`}
+                            >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex items-start gap-3">
                                         <AssistantLogo
@@ -559,7 +561,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                                                         : 'bg-white text-black hover:bg-gray-100'
                                             }`}
                                         >
-                                            <Move size={18} />
+                                            {isFloating ? <RotateCcw size={18} /> : <Move size={18} />}
                                         </button>
                                         <button
                                             type="button"
