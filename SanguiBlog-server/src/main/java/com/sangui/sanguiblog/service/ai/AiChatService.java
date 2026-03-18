@@ -44,9 +44,11 @@ public class AiChatService {
     private static final Logger log = LoggerFactory.getLogger(AiChatService.class);
     private static final String DEFAULT_SESSION_TITLE = "新对话";
     private static final String DEFAULT_MODE = "DATABASE_SESSION_HISTORY";
+    private static final String SYSTEM_FACTS_MODE = "SYSTEM_FACTS";
 
     private final ChatModel chatModel;
     private final AiAssistantSettingService aiAssistantSettingService;
+    private final AiAssistantCapabilityService aiAssistantCapabilityService;
     private final AiChatSessionRepository aiChatSessionRepository;
     private final AiChatMessageRepository aiChatMessageRepository;
     private final UserRepository userRepository;
@@ -92,8 +94,13 @@ public class AiChatService {
     public AiChatResponse chat(Long userId, Long sessionId, String message) {
         AiChatSession session = findOwnedSession(userId, sessionId);
         String userMessage = normalizeMessage(message);
-        AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
 
+        AiAssistantCapabilityService.CapabilityAnswer capabilityAnswer = aiAssistantCapabilityService.answer(userMessage);
+        if (capabilityAnswer.answered()) {
+            return completeDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
+        }
+
+        AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
         List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext);
 
         try {
@@ -108,7 +115,6 @@ public class AiChatService {
             Instant now = Instant.now();
             aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, now));
             aiChatMessageRepository.save(buildMessage(session, "assistant", normalizedReply, configuredModel, now));
-
             updateSessionAfterReply(session, userMessage, normalizedReply, now);
 
             return AiChatResponse.builder()
@@ -129,6 +135,12 @@ public class AiChatService {
     public SseEmitter streamChat(Long userId, Long sessionId, String message) {
         AiChatSession session = findOwnedSession(userId, sessionId);
         String userMessage = normalizeMessage(message);
+
+        AiAssistantCapabilityService.CapabilityAnswer capabilityAnswer = aiAssistantCapabilityService.answer(userMessage);
+        if (capabilityAnswer.answered()) {
+            return streamDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
+        }
+
         AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
         List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext);
 
@@ -178,7 +190,6 @@ public class AiChatService {
                         emitter.complete();
                         return;
                     }
-
                     completeAssistantReply(emitter, session, reply, ragContext);
                 }
         );
@@ -190,6 +201,39 @@ public class AiChatService {
         });
         emitter.onError(error -> subscription.dispose());
 
+        return emitter;
+    }
+
+    private AiChatResponse completeDirectAnswer(AiChatSession session, String userMessage, String reply, String mode) {
+        Instant now = Instant.now();
+        aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, now));
+        aiChatMessageRepository.save(buildMessage(session, "assistant", reply, configuredModel, now));
+        updateSessionAfterReply(session, userMessage, reply, now);
+
+        return AiChatResponse.builder()
+                .sessionId(session.getId())
+                .reply(reply)
+                .model(configuredModel)
+                .mode(mode)
+                .references(List.of())
+                .build();
+    }
+
+    private SseEmitter streamDirectAnswer(AiChatSession session, String userMessage, String reply, String mode) {
+        Instant now = Instant.now();
+        aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, now));
+        aiChatMessageRepository.save(buildMessage(session, "assistant", reply, configuredModel, now));
+        updateSessionAfterReply(session, userMessage, reply, now);
+
+        SseEmitter emitter = new SseEmitter(0L);
+        sendSseEvent(emitter, "complete", Map.of(
+                "reply", reply,
+                "sessionId", session.getId(),
+                "model", configuredModel,
+                "mode", mode,
+                "references", List.of()
+        ));
+        emitter.complete();
         return emitter;
     }
 
@@ -210,10 +254,7 @@ public class AiChatService {
         if (!ragContext.hasContext()) {
             return basePrompt;
         }
-        return basePrompt
-                + System.lineSeparator()
-                + System.lineSeparator()
-                + ragContext.getSystemContext();
+        return basePrompt + System.lineSeparator() + System.lineSeparator() + ragContext.getSystemContext();
     }
 
     private User findUser(Long userId) {

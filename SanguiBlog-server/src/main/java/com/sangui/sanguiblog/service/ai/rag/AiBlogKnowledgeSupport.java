@@ -72,6 +72,47 @@ public final class AiBlogKnowledgeSupport {
         return "/article/" + postId;
     }
 
+    public static String buildOverviewDocumentId() {
+        return UUID.nameUUIDFromBytes("blog-overview".getBytes(StandardCharsets.UTF_8)).toString();
+    }
+
+    public static String buildOverviewText(List<Post> posts) {
+        List<Post> safePosts = posts == null ? List.of() : posts;
+        StringBuilder builder = new StringBuilder();
+        builder.append("三桂博客已发布文章知识总览").append(System.lineSeparator());
+        builder.append("当前共收录 ").append(safePosts.size()).append(" 篇已发布文章。").append(System.lineSeparator());
+        builder.append("以下内容用于帮助回答“博客写过什么”“有哪些主题”“能否总结已发布文章”等泛问题。")
+                .append(System.lineSeparator())
+                .append(System.lineSeparator());
+
+        for (int i = 0; i < safePosts.size(); i++) {
+            Post post = safePosts.get(i);
+            builder.append(i + 1).append(". ").append(normalize(post.getTitle()));
+            if (post.getPublishedAt() != null) {
+                builder.append("（").append(format(post.getPublishedAt())).append("）");
+            }
+            builder.append(System.lineSeparator());
+            if (StringUtils.hasText(post.getExcerpt())) {
+                builder.append("摘要: ").append(normalize(post.getExcerpt())).append(System.lineSeparator());
+            }
+            if (post.getCategory() != null && StringUtils.hasText(post.getCategory().getName())) {
+                builder.append("分类: ").append(normalize(post.getCategory().getName())).append(System.lineSeparator());
+            }
+            String tags = post.getTags().stream()
+                    .map(tag -> tag.getName() == null ? "" : tag.getName().trim())
+                    .filter(StringUtils::hasText)
+                    .sorted()
+                    .reduce((a, b) -> a + "、" + b)
+                    .orElse("");
+            if (StringUtils.hasText(tags)) {
+                builder.append("标签: ").append(tags).append(System.lineSeparator());
+            }
+            builder.append("链接: ").append(buildPostUrl(post.getId())).append(System.lineSeparator()).append(System.lineSeparator());
+        }
+
+        return builder.toString().trim();
+    }
+
     public static String buildRagContext(List<Document> documents) {
         if (documents == null || documents.isEmpty()) {
             return "";

@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface AiBlogKnowledgeDocumentRepository extends JpaRepository<AiBlogKnowledgeDocument, Long> {
     Optional<AiBlogKnowledgeDocument> findByPostId(Long postId);
+
+    long countBySyncStatus(String syncStatus);
 }

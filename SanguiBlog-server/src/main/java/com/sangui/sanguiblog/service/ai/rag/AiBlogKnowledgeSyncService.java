@@ -55,10 +55,11 @@ public class AiBlogKnowledgeSyncService {
 
         for (AiBlogKnowledgeDocument document : knowledgeDocumentRepository.findAll()) {
             if (!postRepository.existsByIdAndStatus(document.getPostId(), "PUBLISHED")) {
-                removePostKnowledge(document.getPostId());
+                removeTrackedPostKnowledge(document.getPostId());
             }
         }
 
+        syncOverviewDocument(publishedPosts);
         log.info("博客 RAG 启动同步完成，已扫描 {} 篇已发布文章", publishedPosts.size());
     }
 
@@ -74,6 +75,7 @@ public class AiBlogKnowledgeSyncService {
         }
 
         syncPublishedPost(post.get());
+        syncOverviewDocument(postRepository.findAllPublishedForKnowledge());
     }
 
     public void removePostKnowledge(Long postId) {
@@ -81,6 +83,11 @@ public class AiBlogKnowledgeSyncService {
             return;
         }
 
+        removeTrackedPostKnowledge(postId);
+        syncOverviewDocument(postRepository.findAllPublishedForKnowledge());
+    }
+
+    private void removeTrackedPostKnowledge(Long postId) {
         knowledgeDocumentRepository.findByPostId(postId).ifPresent(document -> {
             try {
                 deleteVectorDocuments(document.getId());
@@ -104,18 +111,15 @@ public class AiBlogKnowledgeSyncService {
                     return created;
                 });
 
-        document.setTitle(post.getTitle());
-        document.setSlug(post.getSlug());
-        document.setContentHash(contentHash);
-        if (!StringUtils.hasText(document.getSyncStatus())) {
-            document.setSyncStatus("PENDING");
-        }
-        document.setUpdatedAt(now);
-
         if (contentHash.equals(document.getContentHash()) && STATUS_READY.equals(document.getSyncStatus())) {
             return;
         }
 
+        document.setTitle(post.getTitle());
+        document.setSlug(post.getSlug());
+        document.setContentHash(contentHash);
+        document.setSyncStatus("PENDING");
+        document.setUpdatedAt(now);
         knowledgeDocumentRepository.save(document);
 
         try {
@@ -130,7 +134,6 @@ public class AiBlogKnowledgeSyncService {
             vectorStore().add(documents);
             saveChunks(document, documents, now);
 
-            document.setContentHash(contentHash);
             document.setSyncStatus(STATUS_READY);
             document.setLastError(null);
             document.setLastSyncedAt(now);
@@ -184,6 +187,29 @@ public class AiBlogKnowledgeSyncService {
         }
     }
 
+    private void syncOverviewDocument(List<Post> posts) {
+        String overviewId = AiBlogKnowledgeSupport.buildOverviewDocumentId();
+        try {
+            vectorStore().delete(List.of(overviewId));
+            if (posts == null || posts.isEmpty()) {
+                return;
+            }
+
+            Document overview = Document.builder()
+                    .id(overviewId)
+                    .text(AiBlogKnowledgeSupport.buildOverviewText(posts))
+                    .metadata(Map.of(
+                            "sourceType", "BLOG_OVERVIEW",
+                            "title", "三桂博客已发布文章知识总览",
+                            "url", "/archive"
+                    ))
+                    .build();
+            vectorStore().add(List.of(overview));
+        } catch (Exception ex) {
+            log.error("同步博客知识总览文档失败", ex);
+        }
+    }
+
     private void deleteVectorDocuments(Long documentId) {
         List<String> vectorIds = knowledgeChunkRepository.findByDocumentIdOrderByChunkNoAsc(documentId).stream()
                 .map(AiBlogKnowledgeChunk::getVectorDocumentId)
@@ -195,10 +221,10 @@ public class AiBlogKnowledgeSyncService {
     }
 
     private void markFailed(AiBlogKnowledgeDocument document, Exception ex) {
-            document.setSyncStatus(STATUS_FAILED);
-            document.setLastError(trimError(ex.getMessage()));
-            document.setUpdatedAt(Instant.now());
-            knowledgeDocumentRepository.save(document);
+        document.setSyncStatus(STATUS_FAILED);
+        document.setLastError(trimError(ex.getMessage()));
+        document.setUpdatedAt(Instant.now());
+        knowledgeDocumentRepository.save(document);
     }
 
     private String trimError(String message) {

@@ -798,5 +798,7 @@ npm run dev
   - `ai_blog_knowledge_chunks`
 - 应用启动时会全量扫描已发布文章并补齐知识库；`PostService.saveOrUpdate`、`PostService.updateMeta`、`PostService.delete` 会触发文章知识的自动增量同步或删除。
 - AI 聊天在原有数据库会话历史基础上新增博客文章 RAG，当前响应模式为 `BLOG_POST_RAG_PGVECTOR`，引用链接统一使用前台文章路由 `/article/{id}`。
+- AI 助手新增“系统事实/能力回答层”：对“是否已连接已发布文章知识库、当前能做什么、是否支持全文检索”等能力问题优先直接回答，不依赖向量召回。
+- PgVector 中除文章分片外，还会自动维护一份固定 UUID 的“博客已发布文章知识总览”文档，用于提升泛主题总结类问题的命中率；总览文档链接固定为 `/archive`。
 
 
