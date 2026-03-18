@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.config;
 
 import com.sangui.sanguiblog.security.JwtAuthenticationFilter;
 import com.sangui.sanguiblog.security.botguard.BotGuardFilter;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.Customizer;
@@ -130,7 +131,8 @@ public class SecurityConfig {
                     headers.contentTypeOptions(Customizer.withDefaults());
                 })
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                        .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(
                                 "/sitemap.xml",
                                 "/robots.txt",
