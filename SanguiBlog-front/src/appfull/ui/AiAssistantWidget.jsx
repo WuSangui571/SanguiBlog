@@ -28,6 +28,7 @@ import {
 } from './aiHistoryOverlay.js';
 import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMeta.js';
 import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.js';
+import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
 
 function createLocalMessage(role, content, idPrefix = role) {
     return {
@@ -89,6 +90,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const [historyOpen, setHistoryOpen] = useState(false);
     const [isFloating, setIsFloating] = useState(false);
     const [floatingPosition, setFloatingPosition] = useState(null);
+    const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
     const viewportRef = useRef(null);
     const interactionBlockerRef = useRef(null);
     const textareaRef = useRef(null);
@@ -130,6 +132,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             setHistoryOpen(false);
             setIsFloating(false);
             setFloatingPosition(null);
+            setPendingDeleteSession(null);
         }
 
         previousUserRef.current = user;
@@ -301,6 +304,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const handleCloseAssistant = () => {
         resetFloatingMode();
         setHistoryOpen(false);
+        setPendingDeleteSession(null);
         setIsOpen(false);
     };
 
@@ -315,6 +319,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         event.preventDefault();
         event.stopPropagation();
         if (!session?.id) return;
+        setPendingDeleteSession(session);
+        return;
 
         const confirmed = window.confirm(`确认删除这条会话记录吗？\n\n${session.title || '新对话'}`);
         if (!confirmed) return;
@@ -333,6 +339,25 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         }
     };
 
+    const confirmDeleteSession = async () => {
+        if (!pendingDeleteSession?.id) return;
+
+        try {
+            await deleteAiChatSession(pendingDeleteSession.id);
+            const nextSessions = await loadSessions();
+
+            if (pendingDeleteSession.id === activeSessionId) {
+                handleStartNewChat();
+            } else {
+                setSessions(nextSessions);
+            }
+            setPendingDeleteSession(null);
+        } catch (error) {
+            window.alert(error?.message?.trim() || '删除会话失败，请稍后再试。');
+        }
+    };
+
+    const deleteDialog = buildAiSessionDeleteDialog(pendingDeleteSession?.title);
     const sendDisabled = !draft.trim() || isSending;
     const newChatDisabled = isIdleNewSession({
         activeSessionId,
@@ -927,6 +952,80 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 </div>
                             </form>
                         </motion.section>
+                        <AnimatePresence>
+                            {pendingDeleteSession && (
+                                <motion.div
+                                    className="fixed inset-0 z-[85] flex items-center justify-center px-4"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                >
+                                    <div
+                                        className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+                                        onClick={() => setPendingDeleteSession(null)}
+                                    />
+                                    <motion.div
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-label={deleteDialog.title}
+                                        initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                                        className={`relative w-full max-w-sm overflow-hidden border-2 border-black shadow-[10px_10px_0px_0px_#000] ${
+                                            isDarkMode ? 'bg-[#111827] text-white' : 'bg-[#FFF9E6] text-black'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-3 border-b-2 border-black px-5 py-4">
+                                            <div className="space-y-1">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#FF0080]">
+                                                    会话删除
+                                                </p>
+                                                <h3 className="text-lg font-black">{deleteDialog.title}</h3>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setPendingDeleteSession(null)}
+                                                className={`inline-flex h-8 w-8 items-center justify-center rounded-[10px] border-2 border-black ${
+                                                    isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
+                                                }`}
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                        <div className="space-y-4 px-5 py-5">
+                                            <div className={`rounded-2xl border-2 border-black px-4 py-3 ${
+                                                isDarkMode ? 'bg-gray-900/80' : 'bg-white'
+                                            }`}>
+                                                <p className="text-xs font-semibold opacity-70">会话标题</p>
+                                                <p className="mt-1 text-sm font-black break-words">{deleteDialog.sessionTitle}</p>
+                                            </div>
+                                            <p className={`text-sm leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                {deleteDialog.description}
+                                            </p>
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPendingDeleteSession(null)}
+                                                    className={`px-4 py-2 rounded-full border-2 border-black text-sm font-bold shadow-[3px_3px_0px_0px_#000] ${
+                                                        isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    {deleteDialog.cancelText}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={confirmDeleteSession}
+                                                    className="px-4 py-2 rounded-full border-2 border-black bg-[#FF5A5F] text-white text-sm font-bold shadow-[3px_3px_0px_0px_#000] hover:bg-[#E84B50]"
+                                                >
+                                                    {deleteDialog.confirmText}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </>
                 )}
             </AnimatePresence>

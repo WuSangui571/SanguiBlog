@@ -826,5 +826,6 @@ npm run dev
 - `/api/site/meta` 下发的 `aiAssistant` 配置包含 `enabled`，前端首页只有在 `enabled=true` 时才渲染 AI 入口。
 - `/api/ai/**` 用户侧聊天链路在服务层统一调用 `AiAssistantSettingService.assertEnabled()`；关闭后前端入口消失，同时后端聊天接口返回不可用。
 - `/admin/settings` 中原“导入知识库”页签已更名为“AI助理”，并在同页增加 AI 助理总开关卡片；知识库导入功能保持原位置和原行为不变。
+- AI 历史会话删除确认已改为站内自定义弹层，删除操作不再使用浏览器默认 `window.confirm`；弹层会显示会话标题、软删除说明，并保留取消/确认删除两个动作。
 
 
