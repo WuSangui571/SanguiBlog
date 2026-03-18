@@ -808,5 +808,7 @@ npm run dev
 - 超级管理员知识库支持后台增删改查：创建走文本文件导入，更新支持修改标题、正文和启用状态，禁用/删除时会同步移除对应向量索引。
 - 所有知识同步服务在“删除旧 chunk 再重建新 chunk”时，都必须在 `deleteByDocumentId(...)` 后立即 `flush()`，否则稳定 UUID 的向量文档 ID 会在同一事务内触发唯一键冲突。
 - 启动期的知识扫描必须按“单篇文章/单知识文档独立事务”执行，避免某一篇文章或某一份知识文档同步失败后污染整个 Hibernate Session，连带导致后续 `null identifier` 断言异常。
+- 博客知识总览文档不能再作为单条超长文本直接写入 embedding；当前实现改为基于 `TokenTextSplitter` 切成多个 `BLOG_OVERVIEW` chunk 文档，分片 ID 使用稳定 UUID，并在同步前清理旧的单条总览 ID 与固定窗口内的 overview chunk ID。
+- `SystemSettingsView` 中依赖 `loadKnowledgeDocuments` 的 `useEffect` 必须放在该 `useCallback` 声明之后，避免 `/admin/settings` 因 const TDZ 触发前端白屏。
 
 

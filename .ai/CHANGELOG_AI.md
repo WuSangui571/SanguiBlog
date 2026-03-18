@@ -3861,3 +3861,11 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   1) `AiBlogKnowledgeSyncService` 与 `AiCustomKnowledgeSyncService` 在重建知识分片前，都会先删除旧 chunk 并立即 `flush()`，避免同一稳定向量 ID 在事务内重复插入。
   2) 启动扫描改为“单篇文章/单知识文档独立事务”执行，避免一条同步失败污染整轮启动扫描的 Hibernate Session。
   3) 补充两个最小回归测试，锁定“删除旧 chunk 后先 flush，再保存新 chunk”的行为。
+## [2026-03-18] 修复博客知识总览过长导致的 embedding 失败与后台设置白屏
+- 背景/需求：用户启动后遇到“博客知识总览文档”因单文档 token 过长而无法写入 embedding；同时进入 `/admin/settings` 时，前端因 `loadKnowledgeDocuments` 初始化顺序错误而白屏。
+- 修改类型：fix
+- 变更摘要：
+  1) 将博客知识总览从单条文档改为可切片的 overview chunk 文档集合，使用稳定 UUID 分片 ID 写入 PgVector，避免单文档 token 超限。
+  2) 启动同步总览前会清理旧版单条总览 ID 及固定窗口内的 overview chunk ID，兼容历史数据。
+  3) 重写 `AiBlogKnowledgeSupport` 与相关测试，补充总览切片回归验证。
+  4) 调整 `SystemSettingsView` 中 `loadKnowledgeDocuments` 的声明顺序，修复 `/admin/settings` 白屏。

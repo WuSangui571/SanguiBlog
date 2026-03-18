@@ -37,6 +37,7 @@ public class AiBlogKnowledgeSyncService {
     private static final Logger log = LoggerFactory.getLogger(AiBlogKnowledgeSyncService.class);
     private static final String STATUS_READY = "READY";
     private static final String STATUS_FAILED = "FAILED";
+    private static final int OVERVIEW_DELETE_WINDOW = 128;
 
     private final PostRepository postRepository;
     private final AiBlogKnowledgeDocumentRepository knowledgeDocumentRepository;
@@ -198,23 +199,18 @@ public class AiBlogKnowledgeSyncService {
     }
 
     private void syncOverviewDocument(List<Post> posts) {
-        String overviewId = AiBlogKnowledgeSupport.buildOverviewDocumentId();
         try {
-            vectorStore().delete(List.of(overviewId));
+            deleteOverviewDocuments();
             if (posts == null || posts.isEmpty()) {
                 return;
             }
 
-            Document overview = Document.builder()
-                    .id(overviewId)
-                    .text(AiBlogKnowledgeSupport.buildOverviewText(posts))
-                    .metadata(Map.of(
-                            "sourceType", "BLOG_OVERVIEW",
-                            "title", "三桂博客已发布文章知识总览",
-                            "url", "/archive"
-                    ))
-                    .build();
-            vectorStore().add(List.of(overview));
+            List<Document> overviewDocuments = AiBlogKnowledgeSupport.buildOverviewDocuments(posts, tokenTextSplitter);
+            if (overviewDocuments.isEmpty()) {
+                return;
+            }
+
+            vectorStore().add(overviewDocuments);
         } catch (Exception ex) {
             log.error("同步博客知识总览文档失败", ex);
         }
@@ -228,6 +224,15 @@ public class AiBlogKnowledgeSyncService {
         if (!vectorIds.isEmpty()) {
             vectorStore().delete(vectorIds);
         }
+    }
+
+    private void deleteOverviewDocuments() {
+        List<String> overviewIds = new ArrayList<>();
+        overviewIds.add(AiBlogKnowledgeSupport.buildOverviewDocumentId());
+        for (int i = 1; i <= OVERVIEW_DELETE_WINDOW; i++) {
+            overviewIds.add(AiBlogKnowledgeSupport.buildOverviewChunkDocumentId(i));
+        }
+        vectorStore().delete(overviewIds);
     }
 
     private void markFailed(AiBlogKnowledgeDocument document, Exception ex) {

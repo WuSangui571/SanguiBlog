@@ -5684,10 +5684,6 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         loadGames();
     }, [loadGames]);
 
-    useEffect(() => {
-        loadKnowledgeDocuments();
-    }, [loadKnowledgeDocuments]);
-
     const resetGameForm = useCallback((defaults = {}, clearEditing = true) => {
         setGameForm({
             title: '',
@@ -5782,6 +5778,10 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             setKnowledgeLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        loadKnowledgeDocuments();
+    }, [loadKnowledgeDocuments]);
 
     const resetKnowledgeForm = useCallback((defaults = {}, clearEditing = true) => {
         setKnowledgeForm({

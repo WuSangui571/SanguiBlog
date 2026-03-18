@@ -3,6 +3,7 @@ package com.sangui.sanguiblog.service.ai.rag;
 import com.sangui.sanguiblog.model.dto.AiChatResponse;
 import com.sangui.sanguiblog.model.entity.Post;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public final class AiBlogKnowledgeSupport {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final String BLOG_OVERVIEW_TITLE = "三桂博客已发布文章知识总览";
 
     private AiBlogKnowledgeSupport() {
     }
@@ -79,10 +81,15 @@ public final class AiBlogKnowledgeSupport {
         return UUID.nameUUIDFromBytes("blog-overview".getBytes(StandardCharsets.UTF_8)).toString();
     }
 
+    public static String buildOverviewChunkDocumentId(int chunkNo) {
+        String raw = "blog-overview-chunk-" + chunkNo;
+        return UUID.nameUUIDFromBytes(raw.getBytes(StandardCharsets.UTF_8)).toString();
+    }
+
     public static String buildOverviewText(List<Post> posts) {
         List<Post> safePosts = posts == null ? List.of() : posts;
         StringBuilder builder = new StringBuilder();
-        builder.append("三桂博客已发布文章知识总览").append(System.lineSeparator());
+        builder.append(BLOG_OVERVIEW_TITLE).append(System.lineSeparator());
         builder.append("当前共收录 ").append(safePosts.size()).append(" 篇已发布文章。").append(System.lineSeparator());
         builder.append("以下内容用于帮助回答“博客写过什么”“有哪些主题”“总结已发布文章”等泛问题。")
                 .append(System.lineSeparator())
@@ -115,13 +122,48 @@ public final class AiBlogKnowledgeSupport {
         return builder.toString().trim();
     }
 
+    public static List<Document> buildOverviewDocuments(List<Post> posts, TokenTextSplitter tokenTextSplitter) {
+        if (tokenTextSplitter == null) {
+            throw new IllegalArgumentException("tokenTextSplitter 不能为空");
+        }
+
+        String overviewText = buildOverviewText(posts);
+        if (!StringUtils.hasText(overviewText)) {
+            return List.of();
+        }
+
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("sourceType", "BLOG_OVERVIEW");
+        metadata.put("title", BLOG_OVERVIEW_TITLE);
+        metadata.put("url", "/archive");
+
+        Document source = Document.builder()
+                .text(overviewText)
+                .metadata(metadata)
+                .build();
+
+        List<Document> splitChunks = tokenTextSplitter.apply(List.of(source));
+        List<Document> chunks = new ArrayList<>(splitChunks.size());
+        for (int i = 0; i < splitChunks.size(); i++) {
+            Document chunk = splitChunks.get(i);
+            Map<String, Object> chunkMetadata = new LinkedHashMap<>(chunk.getMetadata());
+            chunkMetadata.put("chunkNo", i + 1);
+            chunks.add(Document.builder()
+                    .id(buildOverviewChunkDocumentId(i + 1))
+                    .text(chunk.getText())
+                    .metadata(chunkMetadata)
+                    .build());
+        }
+        return chunks;
+    }
+
     public static String buildRagContext(List<Document> documents) {
         if (documents == null || documents.isEmpty()) {
             return "";
         }
 
         StringBuilder builder = new StringBuilder();
-        builder.append("以下是三桂博客站点知识库中检索到的相关内容，可能来自已发布文章或超级管理员导入的文本知识库。");
+        builder.append("以下是从三桂博客站点知识库中检索到的相关内容，可能来自已发布文章或超级管理员导入的文本知识库。");
         builder.append("仅在这些内容与用户问题相关时优先使用；若知识库没有提供足够信息，请明确说明，不要编造。");
         builder.append(System.lineSeparator()).append(System.lineSeparator());
 
