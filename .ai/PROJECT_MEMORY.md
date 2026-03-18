@@ -789,4 +789,14 @@ npm run dev
 
 - 删除前需二次确认；删除后会尝试清理空目录，作用于 `uploads/posts/` 与 `uploads/covers/` 下的图片扩展名文件。
 
+### AI 博客文章 RAG（PgVector）
+
+- 第一阶段知识源只接 `posts.status = PUBLISHED` 的博客文章；当前页面临时上下文和管理员文件知识库仍留在下一阶段。
+- 主业务库继续使用 MySQL；PgVector 使用独立 PostgreSQL 连接，通过 `ai.rag.pgvector.*` 配置，不替换现有 Spring Data JPA 数据源。
+- MySQL 只保存博客知识同步状态和 PgVector 文档映射：
+  - `ai_blog_knowledge_documents`
+  - `ai_blog_knowledge_chunks`
+- 应用启动时会全量扫描已发布文章并补齐知识库；`PostService.saveOrUpdate`、`PostService.updateMeta`、`PostService.delete` 会触发文章知识的自动增量同步或删除。
+- AI 聊天在原有数据库会话历史基础上新增博客文章 RAG，当前响应模式为 `BLOG_POST_RAG_PGVECTOR`，引用链接统一使用前台文章路由 `/article/{id}`。
+
 

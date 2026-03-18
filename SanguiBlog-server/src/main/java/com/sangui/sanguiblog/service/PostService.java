@@ -25,6 +25,7 @@ import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
+import com.sangui.sanguiblog.service.ai.rag.AiBlogKnowledgeSyncService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.persistence.criteria.Join;
@@ -77,6 +78,7 @@ public class PostService {
     private final AnalyticsService analyticsService;
     private final GeoIpService geoIpService;
     private final SitemapService sitemapService;
+    private final AiBlogKnowledgeSyncService aiBlogKnowledgeSyncService;
 
     /**
      * 浏览量限流（每 IP + 每文章）：用于减少短时间重复刷新/StrictMode 双调用导致的重复记数，
@@ -277,10 +279,12 @@ public class PostService {
 
         Post saved = postRepository.save(post);
         sitemapService.markDirty();
+        aiBlogKnowledgeSyncService.syncPostKnowledge(saved.getId());
         return toDetail(saved);
     }
 
     public void delete(Long id) {
+        aiBlogKnowledgeSyncService.removePostKnowledge(id);
         postRepository.deleteById(id);
         sitemapService.markDirty();
     }
@@ -397,6 +401,7 @@ public class PostService {
         }
         Post saved = postRepository.save(post);
         sitemapService.markDirty();
+        aiBlogKnowledgeSyncService.syncPostKnowledge(saved.getId());
         return toAdminDto(saved);
     }
 

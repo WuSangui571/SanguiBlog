@@ -584,3 +584,32 @@ CREATE TABLE IF NOT EXISTS ai_chat_messages (
     CONSTRAINT fk_ai_chat_messages_session FOREIGN KEY (session_id) REFERENCES ai_chat_sessions(id) ON DELETE CASCADE,
     INDEX idx_ai_chat_messages_session_created (session_id, created_at, id)
 );
+
+-- AI 博客文章知识同步主表（MySQL 仅存同步状态与向量映射，不存向量本体）
+CREATE TABLE IF NOT EXISTS ai_blog_knowledge_documents (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    post_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    content_hash CHAR(64) NOT NULL,
+    sync_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+    last_error VARCHAR(1000),
+    last_synced_at DATETIME(6),
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    UNIQUE KEY uk_ai_blog_knowledge_post (post_id),
+    KEY idx_ai_blog_knowledge_sync_status (sync_status)
+);
+
+-- AI 博客文章分片与 PgVector 文档 ID 映射表
+CREATE TABLE IF NOT EXISTS ai_blog_knowledge_chunks (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    document_id BIGINT NOT NULL,
+    chunk_no INT NOT NULL,
+    vector_document_id VARCHAR(128) NOT NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT fk_ai_blog_knowledge_chunks_document FOREIGN KEY (document_id) REFERENCES ai_blog_knowledge_documents(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_ai_blog_chunk_vector_document (vector_document_id),
+    UNIQUE KEY uk_ai_blog_chunk_order (document_id, chunk_no),
+    KEY idx_ai_blog_knowledge_document (document_id)
+);

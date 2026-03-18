@@ -45,6 +45,8 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
 
     Optional<Post> findFirstByStatusOrderByPublishedAtDesc(String status);
 
+    boolean existsByIdAndStatus(Long id, String status);
+
     long countByStatus(String status);
 
     @Override
@@ -109,6 +111,15 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
             + "where p.status = 'PUBLISHED' and p.publishedAt is not null "
             + "order by p.publishedAt desc, p.createdAt desc")
     List<SitemapPostRow> findPublishedForSitemap();
+
+    @EntityGraph(attributePaths = { "category", "category.parent", "tags" })
+    @Query("select p from Post p where p.status = 'PUBLISHED' and p.publishedAt is not null "
+            + "order by p.publishedAt desc, p.createdAt desc")
+    List<Post> findAllPublishedForKnowledge();
+
+    @EntityGraph(attributePaths = { "category", "category.parent", "tags" })
+    @Query("select p from Post p where p.id = :id")
+    Optional<Post> findKnowledgeSourceById(@Param("id") Long id);
 
     @Query("select p from Post p where p.status = 'PUBLISHED' and p.publishedAt is not null "
             + "and p.category.id = :categoryId and p.id <> :postId "

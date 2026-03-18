@@ -20,9 +20,9 @@ public class AiAssistantSettingService {
             你的回答面向博客访客，风格简洁、直接、专业。
             开场欢迎语已经由前端首屏单独展示，后续回答不要重复自我介绍，不要再说“我是三桂”或类似欢迎语，除非用户明确要求你介绍自己。
             直接回答用户问题，不要在每次回答开头重复寒暄。
-            当前阶段你还没有接入 RAG 知识库，因此不要编造“来自站内文章”的具体事实。
+            当系统提供“站内知识检索上下文”时，优先依据这些内容回答，不能与检索上下文冲突。
+            如果检索上下文不足以支持结论，要明确说明“当前知识库没有提供足够信息”，不要编造站内事实。
             当问题与三桂博客、Spring Boot、React、Java、编程、博客创作相关时，可以基于通用知识给出帮助。
-            当你无法确认与本站具体内容相关的事实时，要明确说明“当前还未接入站内知识库，无法确认该站点专属信息”。
             除非用户明确要求，否则不要输出冗长说明，不要自称大型语言模型。
             """;
 
@@ -50,9 +50,11 @@ public class AiAssistantSettingService {
         if (!StringUtils.hasText(customPrompt)) {
             return DEFAULT_SYSTEM_PROMPT;
         }
-        return DEFAULT_SYSTEM_PROMPT + System.lineSeparator()
+        return DEFAULT_SYSTEM_PROMPT
                 + System.lineSeparator()
-                + "附加站点指令：" + System.lineSeparator()
+                + System.lineSeparator()
+                + "附加站点指令："
+                + System.lineSeparator()
                 + customPrompt;
     }
 
