@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, History, MessageSquarePlus, SendHorizontal, X } from 'lucide-react';
+import { Bot, History, MessageSquarePlus, Move, SendHorizontal, X } from 'lucide-react';
 import {
     createAiChatSession,
     fetchAiChatMessages,
@@ -16,6 +16,11 @@ import {
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 import AiMessageMarkdown from './AiMessageMarkdown.js';
 import { getAiMessagePresentation } from './aiMessagePresentation.js';
+import {
+    clampFloatingPosition,
+    getDefaultFloatingPosition,
+    shouldStartPanelDrag
+} from './aiFloatingPanel.js';
 import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMeta.js';
 import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.js';
 
@@ -77,12 +82,16 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
     const [messages, setMessages] = useState([]);
     const [messagesLoading, setMessagesLoading] = useState(false);
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [isFloating, setIsFloating] = useState(false);
+    const [floatingPosition, setFloatingPosition] = useState(null);
     const viewportRef = useRef(null);
     const interactionBlockerRef = useRef(null);
     const textareaRef = useRef(null);
     const previousUserRef = useRef(user);
     const historyPopoverRef = useRef(null);
     const historyTriggerGroupRef = useRef(null);
+    const panelRef = useRef(null);
+    const dragStateRef = useRef(null);
 
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
@@ -114,6 +123,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
             setMessages([]);
             setMessagesLoading(false);
             setHistoryOpen(false);
+            setIsFloating(false);
+            setFloatingPosition(null);
         }
 
         previousUserRef.current = user;
@@ -165,6 +176,43 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
             document.removeEventListener('touchstart', handlePointerDown);
         };
     }, [historyOpen]);
+
+    useEffect(() => {
+        if (!isFloating) {
+            dragStateRef.current = null;
+            return undefined;
+        }
+
+        const handlePointerMove = (event) => {
+            if (!dragStateRef.current || !panelRef.current) {
+                return;
+            }
+
+            const nextPosition = clampFloatingPosition({
+                x: event.clientX - dragStateRef.current.offsetX,
+                y: event.clientY - dragStateRef.current.offsetY,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+                panelWidth: panelRef.current.offsetWidth,
+                panelHeight: panelRef.current.offsetHeight,
+                headerHeight
+            });
+
+            setFloatingPosition(nextPosition);
+        };
+
+        const handlePointerUp = () => {
+            dragStateRef.current = null;
+        };
+
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp);
+
+        return () => {
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+        };
+    }, [headerHeight, isFloating]);
 
     useEffect(() => {
         if (!isOpen || sessionsLoaded || !canUseAiAssistant(user)) {
@@ -223,6 +271,34 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
         setHistoryOpen(false);
     };
 
+    const resetFloatingMode = () => {
+        setIsFloating(false);
+        setFloatingPosition(null);
+        dragStateRef.current = null;
+    };
+
+    const handleToggleFloatingMode = () => {
+        if (isFloating) {
+            resetFloatingMode();
+            return;
+        }
+
+        const nextPosition = getDefaultFloatingPosition({
+            viewportWidth: window.innerWidth,
+            headerHeight
+        });
+
+        setHistoryOpen(false);
+        setFloatingPosition(nextPosition);
+        setIsFloating(true);
+    };
+
+    const handleCloseAssistant = () => {
+        resetFloatingMode();
+        setHistoryOpen(false);
+        setIsOpen(false);
+    };
+
     const handleSelectSession = async (sessionId) => {
         if (!sessionId || sessionId === activeSessionId) return;
         setActiveSessionId(sessionId);
@@ -236,6 +312,47 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
         messages,
         draft
     });
+    const floatingPanelStyle = isFloating
+        ? {
+            top: floatingPosition?.y ?? headerHeight + 16,
+            left: floatingPosition?.x ?? (typeof window !== 'undefined' ? Math.max(24, window.innerWidth - 460 - 24) : 24),
+            right: 'auto',
+            bottom: 'auto',
+            width: 460,
+            height: `min(calc(100vh - ${headerHeight + 32}px), 760px)`
+        }
+        : {
+            top: headerHeight,
+            bottom: 0
+        };
+
+    const handlePanelPointerDown = (event) => {
+        if (!isFloating || !panelRef.current) {
+            return;
+        }
+
+        const target = event.target;
+        const isInteractiveTarget = Boolean(
+            target?.closest?.('button, textarea, input, a, [data-no-drag="true"]')
+        );
+        const rect = panelRef.current.getBoundingClientRect();
+
+        if (!shouldStartPanelDrag({
+            isFloating,
+            rect,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            isInteractiveTarget
+        })) {
+            return;
+        }
+
+        event.preventDefault();
+        dragStateRef.current = {
+            offsetX: event.clientX - rect.left,
+            offsetY: event.clientY - rect.top
+        };
+    };
 
     const sendCurrentDraft = async () => {
         const content = draft.trim();
@@ -363,6 +480,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                             className="fixed inset-0 z-[82] bg-transparent touch-none"
                         />
                         <motion.section
+                            ref={panelRef}
                             role="dialog"
                             aria-modal="true"
                             aria-label={assistantConfig.title}
@@ -370,8 +488,13 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 32 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                            className={`fixed z-[83] left-0 right-0 md:left-auto md:w-[460px] border-t-2 border-black md:border-l-2 md:border-r-0 md:border-b-0 rounded-none overflow-hidden flex flex-col ${shellClass}`}
-                            style={{ top: headerHeight, bottom: 0 }}
+                            onPointerDown={handlePanelPointerDown}
+                            className={`fixed z-[83] left-0 right-0 overflow-hidden rounded-none border-t-2 border-black flex flex-col ${shellClass} ${
+                                isFloating
+                                    ? 'md:border-2 md:cursor-move'
+                                    : 'md:left-auto md:w-[460px] md:border-l-2 md:border-r-0 md:border-b-0'
+                            }`}
+                            style={floatingPanelStyle}
                         >
                             <div className={`border-b-2 border-black px-4 py-4 ${panelAccentClass}`}>
                                 <div className="flex items-start justify-between gap-4">
@@ -426,7 +549,21 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => setIsOpen(false)}
+                                            onClick={handleToggleFloatingMode}
+                                            title={isFloating ? '恢复停靠' : '浮动窗口'}
+                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
+                                                isFloating
+                                                    ? 'bg-[#FFD700] text-black'
+                                                    : isDarkMode
+                                                        ? 'bg-gray-800 text-white hover:bg-gray-700'
+                                                        : 'bg-white text-black hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            <Move size={18} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleCloseAssistant}
                                             title="关闭"
                                             className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
                                                 isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'
