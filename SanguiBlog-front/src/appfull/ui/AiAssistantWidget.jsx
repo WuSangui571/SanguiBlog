@@ -10,7 +10,8 @@ import {
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import {
     canUseAiAssistant,
-    getAiAssistantGuestReply
+    getAiAssistantGuestReply,
+    shouldResetAiAssistantState
 } from '../aiAssistantAccess.js';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 import AiMessageMarkdown from './AiMessageMarkdown.js';
@@ -75,6 +76,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
     const viewportRef = useRef(null);
     const interactionBlockerRef = useRef(null);
     const textareaRef = useRef(null);
+    const previousUserRef = useRef(user);
 
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
@@ -93,6 +95,22 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
             });
         });
     }, [isOpen, messages, messagesLoading]);
+
+    useEffect(() => {
+        if (shouldResetAiAssistantState(previousUserRef.current, user)) {
+            setIsOpen(false);
+            setDraft('');
+            setIsSending(false);
+            setSessions([]);
+            setSessionsLoading(false);
+            setSessionsLoaded(false);
+            setActiveSessionId(null);
+            setMessages([]);
+            setMessagesLoading(false);
+        }
+
+        previousUserRef.current = user;
+    }, [user]);
 
     useEffect(() => {
         if (!isOpen || !interactionBlockerRef.current) {
