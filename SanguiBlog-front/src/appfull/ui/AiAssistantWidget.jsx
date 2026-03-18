@@ -8,6 +8,10 @@ import {
     streamAiChatReliable
 } from '../../api.js';
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
+import {
+    canUseAiAssistant,
+    getAiAssistantGuestReply
+} from '../aiAssistantAccess.js';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 import AiMessageMarkdown from './AiMessageMarkdown.js';
 
@@ -56,7 +60,7 @@ function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }
     );
 }
 
-export default function AiAssistantWidget({ isDarkMode, config }) {
+export default function AiAssistantWidget({ isDarkMode, config, user }) {
     const { headerHeight } = useLayoutOffsets();
     const assistantConfig = useMemo(() => resolveAiAssistantConfig(config), [config]);
     const [isOpen, setIsOpen] = useState(false);
@@ -110,7 +114,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
     }, [isOpen]);
 
     useEffect(() => {
-        if (!isOpen || sessionsLoaded) {
+        if (!isOpen || sessionsLoaded || !canUseAiAssistant(user)) {
             return;
         }
 
@@ -176,6 +180,16 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
     const sendCurrentDraft = async () => {
         const content = draft.trim();
         if (!content || isSending) return;
+
+        if (!canUseAiAssistant(user)) {
+            setMessages((prev) => [
+                ...prev,
+                createLocalMessage('user', content, 'guest-user'),
+                createLocalMessage('assistant', getAiAssistantGuestReply(), 'guest-assistant')
+            ]);
+            setDraft('');
+            return;
+        }
 
         let sessionId = activeSessionId;
         let streamCompleted = false;
@@ -338,7 +352,9 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                     </button>
                                     <div className="min-w-0 flex-1 overflow-x-auto">
                                         <div className="flex min-w-max gap-2 pr-1">
-                                            {sessionsLoading ? (
+                                            {!canUseAiAssistant(user) ? (
+                                                <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>登录后可查看历史会话</div>
+                                            ) : sessionsLoading ? (
                                                 <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>正在加载历史会话...</div>
                                             ) : sessions.length === 0 ? (
                                                 <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>还没有历史会话</div>

@@ -1492,7 +1492,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         onConfirm={handleSessionExpiredConfirm}
                         isDarkMode={isDarkMode}
                     />
-                    {user && shouldShowAiAssistant(view) && (
+                    {shouldShowAiAssistant(view) && (
                         <AiAssistantWidget
                             isDarkMode={isDarkMode}
                             config={meta?.aiAssistant}
