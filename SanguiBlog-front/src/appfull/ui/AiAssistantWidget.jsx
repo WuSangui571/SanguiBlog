@@ -5,7 +5,7 @@ import {
     createAiChatSession,
     fetchAiChatMessages,
     fetchAiChatSessions,
-    streamAiChat
+    streamAiChatReliable
 } from '../../api.js';
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
@@ -177,6 +177,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
         if (!content || isSending) return;
 
         let sessionId = activeSessionId;
+        let streamCompleted = false;
 
         try {
             setIsSending(true);
@@ -205,7 +206,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
             setDraft('');
 
             let streamedReply = '';
-            await streamAiChat({
+            await streamAiChatReliable({
                 message: content,
                 sessionId,
                 onChunk: (chunk) => {
@@ -218,6 +219,7 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                     )));
                 },
                 onComplete: (payload) => {
+                    streamCompleted = true;
                     const reply = payload?.reply?.trim() || streamedReply.trim() || '抱歉，我这次没有生成有效回复。';
                     streamedReply = reply;
                     setMessages((prev) => prev.map((message) => (
@@ -232,6 +234,10 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
             });
             await loadSessions();
         } catch (error) {
+            if (streamCompleted) {
+                await loadSessions();
+                return;
+            }
             const fallback = error?.message?.trim() || 'AI 服务暂时不可用，请稍后再试。';
             setMessages((prev) => prev.map((message) => (
                 message.id.startsWith('assistant-pending-')

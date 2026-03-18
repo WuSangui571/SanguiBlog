@@ -168,6 +168,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
   * `GET /api/ai/sessions/{id}/messages`：读取当前登录用户某个会话的历史消息。
   * `POST /api/ai/chat`：基于 `sessionId + message` 进行多轮上下文问答。
   * `POST /api/ai/chat/stream`：基于 `sessionId + message` 进行 SSE 流式回复，前端边接收边渲染。
+  * 前端流式消费已做终态保护：收到 `complete` 后即视为成功完成，后续 reader 断开或补发异常不应再把当前消息改写成 `network error`。
   前端 AI 面板默认进入空白新会话，不会自动恢复上次对话；用户可从顶部会话条切换到历史会话继续交流。站点级 AI 配置继续优先复用 `site_settings` 表中的 `ai.chat.*` 键，包括 `assistant_name/title/welcome_message/input_placeholder/pending_reply/system_prompt`；前端通过 `/api/site/meta` 返回的 `aiAssistant` 字段接收这些配置。
 
 *   **全局错误过滤 (`src/main.jsx`)**:
