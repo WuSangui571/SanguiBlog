@@ -79,6 +79,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         comments,
         recentComments,
         about,
+        loadMeta,
         loadPosts,
         loadArticle,
         loadAbout,
@@ -1273,7 +1274,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     );
                 }
                 return <AdminPanel setView={setView} notification={notification} setNotification={setNotification}
-                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} loadGameList={loadGameList} />;
+                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} loadGameList={loadGameList} onAiAssistantChanged={loadMeta} />;
             case 'about':
                 return (
                     <AboutView
@@ -1298,6 +1299,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         article,
         articleState
     });
+    const aiAssistantEnabled = meta ? meta?.aiAssistant?.enabled !== false : false;
 
     return (
         <PermissionContext.Provider value={permissionContextValue}>
@@ -1498,7 +1500,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         onConfirm={handleSessionExpiredConfirm}
                         isDarkMode={isDarkMode}
                     />
-                    {shouldShowAiAssistant(view) && (
+                    {aiAssistantEnabled && shouldShowAiAssistant(view) && (
                         <AiAssistantWidget
                             isDarkMode={isDarkMode}
                             config={meta?.aiAssistant}

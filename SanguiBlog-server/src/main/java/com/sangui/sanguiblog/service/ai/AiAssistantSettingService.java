@@ -1,15 +1,23 @@
 package com.sangui.sanguiblog.service.ai;
 
+import com.sangui.sanguiblog.model.dto.AiAssistantAdminSettingsDto;
 import com.sangui.sanguiblog.model.dto.SiteMetaDto;
+import com.sangui.sanguiblog.model.entity.SiteSetting;
 import com.sangui.sanguiblog.model.repository.SiteSettingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
 public class AiAssistantSettingService {
 
+    public static final boolean DEFAULT_ENABLED = true;
     public static final String DEFAULT_ASSISTANT_NAME = "三桂";
     public static final String DEFAULT_TITLE = "三桂博客AI助理";
     public static final String DEFAULT_WELCOME_MESSAGE = "你好，我是三桂博客AI助理";
@@ -26,6 +34,7 @@ public class AiAssistantSettingService {
             除非用户明确要求，否则不要输出冗长说明，不要自称大型语言模型。
             """;
 
+    private static final String KEY_ENABLED = "ai.chat.enabled";
     private static final String KEY_ASSISTANT_NAME = "ai.chat.assistant_name";
     private static final String KEY_TITLE = "ai.chat.title";
     private static final String KEY_WELCOME_MESSAGE = "ai.chat.welcome_message";
@@ -37,12 +46,34 @@ public class AiAssistantSettingService {
 
     public SiteMetaDto.AiAssistantDto siteConfig() {
         return SiteMetaDto.AiAssistantDto.builder()
+                .enabled(isEnabled())
                 .assistantName(readSetting(KEY_ASSISTANT_NAME, DEFAULT_ASSISTANT_NAME))
                 .title(readSetting(KEY_TITLE, DEFAULT_TITLE))
                 .welcomeMessage(readSetting(KEY_WELCOME_MESSAGE, DEFAULT_WELCOME_MESSAGE))
                 .inputPlaceholder(readSetting(KEY_INPUT_PLACEHOLDER, DEFAULT_INPUT_PLACEHOLDER))
                 .pendingReply(readSetting(KEY_PENDING_REPLY, DEFAULT_PENDING_REPLY))
                 .build();
+    }
+
+    public AiAssistantAdminSettingsDto adminSettings() {
+        return AiAssistantAdminSettingsDto.builder()
+                .enabled(isEnabled())
+                .build();
+    }
+
+    public boolean isEnabled() {
+        return siteSettingRepository.findBySettingKey(KEY_ENABLED)
+                .map(SiteSetting::getSettingValue)
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .map(this::parseEnabledValue)
+                .orElse(DEFAULT_ENABLED);
+    }
+
+    public void assertEnabled() {
+        if (!isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI 助理当前已关闭");
+        }
     }
 
     public String systemPrompt() {
@@ -58,11 +89,39 @@ public class AiAssistantSettingService {
                 + customPrompt;
     }
 
+    @Transactional
+    public AiAssistantAdminSettingsDto updateEnabled(boolean enabled) {
+        saveSetting(
+                KEY_ENABLED,
+                Boolean.toString(enabled),
+                "AI 助理总开关。关闭后前端入口隐藏，后端聊天接口停止提供服务。"
+        );
+        return adminSettings();
+    }
+
+    private boolean parseEnabledValue(String value) {
+        String normalized = value.trim().toLowerCase();
+        return !("false".equals(normalized) || "0".equals(normalized) || "off".equals(normalized));
+    }
+
     private String readSetting(String key, String defaultValue) {
         return siteSettingRepository.findBySettingKey(key)
-                .map(setting -> setting.getSettingValue())
+                .map(SiteSetting::getSettingValue)
                 .map(String::trim)
                 .filter(value -> !value.isEmpty())
                 .orElse(defaultValue);
+    }
+
+    private void saveSetting(String key, String value, String description) {
+        Instant now = Instant.now();
+        SiteSetting setting = siteSettingRepository.findBySettingKey(key).orElseGet(SiteSetting::new);
+        if (setting.getId() == null) {
+            setting.setSettingKey(key);
+            setting.setCreatedAt(now);
+        }
+        setting.setSettingValue(value);
+        setting.setDescription(description);
+        setting.setUpdatedAt(now);
+        siteSettingRepository.save(setting);
     }
 }

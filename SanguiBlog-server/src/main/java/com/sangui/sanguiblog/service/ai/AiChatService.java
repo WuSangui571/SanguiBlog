@@ -66,6 +66,7 @@ public class AiChatService {
 
     @Transactional
     public AiChatSessionDto createSession(Long userId) {
+        aiAssistantSettingService.assertEnabled();
         User user = findUser(userId);
         Instant now = Instant.now();
 
@@ -85,6 +86,7 @@ public class AiChatService {
 
     @Transactional
     public List<AiChatSessionDto> sessions(Long userId) {
+        aiAssistantSettingService.assertEnabled();
         aiChatSessionVisibilityService.enforceRecentVisibleLimit(userId);
         return aiChatSessionRepository.findByUserIdAndUserVisibleTrueOrderByUpdatedAtDescIdDesc(userId).stream()
                 .limit(AiChatSessionVisibilityService.USER_VISIBLE_SESSION_LIMIT)
@@ -94,6 +96,7 @@ public class AiChatService {
 
     @Transactional(readOnly = true)
     public List<AiChatMessageDto> sessionMessages(Long userId, Long sessionId) {
+        aiAssistantSettingService.assertEnabled();
         AiChatSession session = findOwnedSession(userId, sessionId);
         return aiChatMessageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId()).stream()
                 .map(this::toMessageDto)
@@ -102,11 +105,13 @@ public class AiChatService {
 
     @Transactional
     public void deleteSession(Long userId, Long sessionId) {
+        aiAssistantSettingService.assertEnabled();
         aiChatSessionVisibilityService.hideSessionForUser(userId, sessionId);
     }
 
     @Transactional
     public AiChatResponse chat(Long userId, Long sessionId, String message, AiCurrentPageContextDto currentPageContext) {
+        aiAssistantSettingService.assertEnabled();
         User currentUser = findUser(userId);
         AiChatSession session = findOwnedSession(userId, sessionId);
         String userMessage = normalizeMessage(message);
@@ -151,6 +156,7 @@ public class AiChatService {
     }
 
     public SseEmitter streamChat(Long userId, Long sessionId, String message, AiCurrentPageContextDto currentPageContext) {
+        aiAssistantSettingService.assertEnabled();
         User currentUser = findUser(userId);
         AiChatSession session = findOwnedSession(userId, sessionId);
         String userMessage = normalizeMessage(message);

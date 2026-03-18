@@ -237,9 +237,10 @@ function useProvideBlog() {
       article,
       articleState,
       comments,
-       recentComments,
+      recentComments,
       about,
       user,
+      loadMeta,
       loadPosts,
       loadArticle,
       submitComment,
@@ -250,6 +251,6 @@ function useProvideBlog() {
       doLogin,
       logout,
     }),
-    [meta, categories, tags, postsPage, postsLoading, postsError, article, articleState, comments, recentComments, about, user, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
+    [meta, categories, tags, postsPage, postsLoading, postsError, article, articleState, comments, recentComments, about, user, loadMeta, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
   );
 }

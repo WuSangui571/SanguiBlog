@@ -45,6 +45,8 @@ import {
     adminCreateKnowledgeDocument,
     adminUpdateKnowledgeDocument,
     adminDeleteKnowledgeDocument,
+    adminFetchAiAssistantSettings,
+    adminUpdateAiAssistantSettings,
     adminFetchAbout,
     adminSaveAbout,
     adminFetchComments,
@@ -5897,11 +5899,11 @@ const PermissionsView = ({ isDarkMode }) => {
 
 
 // 4.5 Sub-Component: System Settings (Super Admin) — 仅游戏管理精简版
-const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged }) => {
+const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged, onAiAssistantChanged }) => {
     const MAX_BROADCAST_LEN = 180;
     const SETTINGS_TABS = [
         { key: 'broadcast', label: '广播管理' },
-        { key: 'knowledge', label: '导入知识库' },
+        { key: 'knowledge', label: 'AI助理' },
         { key: 'games', label: '游戏管理' },
         { key: 'cleanup', label: '存储清理' }
     ];
@@ -5930,6 +5932,10 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [knowledgeSaving, setKnowledgeSaving] = useState(false);
     const [knowledgeDeletingId, setKnowledgeDeletingId] = useState(null);
     const [knowledgeKeyword, setKnowledgeKeyword] = useState('');
+    const [aiAssistantEnabled, setAiAssistantEnabled] = useState(true);
+    const [aiAssistantLoading, setAiAssistantLoading] = useState(false);
+    const [aiAssistantSaving, setAiAssistantSaving] = useState(false);
+    const [aiAssistantError, setAiAssistantError] = useState('');
     const { hasPermission } = usePermissionContext();
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
     const { notice, showNotice, hideNotice } = useTimedNotice(4200);
@@ -5946,6 +5952,24 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         setBroadcastDraft((prev) => ({ ...prev, content: next }));
     }, []);
     const broadcastContentLength = (broadcastDraft.content || '').length;
+
+    const loadAiAssistantSettings = useCallback(async () => {
+        setAiAssistantLoading(true);
+        setAiAssistantError('');
+        try {
+            const res = await adminFetchAiAssistantSettings();
+            const data = res?.data || res;
+            setAiAssistantEnabled(data?.enabled !== false);
+        } catch (err) {
+            setAiAssistantError(err?.message || '加载 AI 助理设置失败');
+        } finally {
+            setAiAssistantLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadAiAssistantSettings();
+    }, [loadAiAssistantSettings]);
 
     const loadGames = useCallback(async () => {
         setGameLoading(true);
@@ -6146,6 +6170,28 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             setKnowledgeDeletingId(null);
         }
     }, [knowledgeEditingId, loadKnowledgeDocuments, resetKnowledgeForm, showNotice]);
+
+    const handleAiAssistantToggleSave = useCallback(async (enabled) => {
+        setAiAssistantSaving(true);
+        setAiAssistantError('');
+        try {
+            const res = await adminUpdateAiAssistantSettings({ enabled });
+            const data = res?.data || res;
+            const nextEnabled = data?.enabled !== false;
+            setAiAssistantEnabled(nextEnabled);
+            onAiAssistantChanged && await onAiAssistantChanged();
+            showNotice(
+                nextEnabled
+                    ? 'AI 助理已开启，前台入口与聊天接口已恢复'
+                    : 'AI 助理已关闭，前台入口已隐藏，后端聊天接口已停用',
+                'success'
+            );
+        } catch (err) {
+            setAiAssistantError(err?.message || '保存 AI 助理开关失败');
+        } finally {
+            setAiAssistantSaving(false);
+        }
+    }, [onAiAssistantChanged, showNotice]);
 
     const formatKnowledgeStatus = useCallback((value) => {
         switch ((value || '').toUpperCase()) {
@@ -6530,9 +6576,9 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'knowledge' ? '' : 'hidden'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <h3 className="text-xl font-bold">导入知识库</h3>
+                        <h3 className="text-xl font-bold">AI助理</h3>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                            仅超级管理员可导入 `.txt` / `.md` / `.markdown` 文本知识库。导入后会自动同步到 AI 检索库，可随时增删改查。
+                            在这里统一管理 AI 助理总开关和导入知识库。关闭 AI 后，首页入口会消失，后端聊天接口也会停止提供服务。
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -6560,8 +6606,80 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     </div>
                 )}
 
+                {aiAssistantError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {aiAssistantError}
+                    </div>
+                )}
+
+                <div className={`rounded-2xl border-2 p-5 space-y-4 ${
+                    isDarkMode ? 'border-gray-700 bg-gray-950/60' : 'border-black bg-white'
+                }`}>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <Sparkles size={18} />
+                                <span className="text-lg font-bold">AI 助理总开关</span>
+                            </div>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                关闭后，前台 AI 入口会隐藏，用户侧 AI 聊天接口也会立即停止提供服务。
+                            </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                            aiAssistantEnabled
+                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                : 'border-gray-400 bg-gray-100 text-gray-600'
+                        }`}>
+                            {aiAssistantLoading ? '读取中...' : (aiAssistantEnabled ? '当前已开启' : '当前已关闭')}
+                        </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <label className="flex items-center gap-3 text-sm font-medium">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 border-2 border-black rounded"
+                                checked={aiAssistantEnabled}
+                                disabled={aiAssistantLoading || aiAssistantSaving}
+                                onChange={(e) => setAiAssistantEnabled(e.target.checked)}
+                            />
+                            <span>启用 AI 助理</span>
+                        </label>
+                        <button
+                            type="button"
+                            onClick={() => handleAiAssistantToggleSave(aiAssistantEnabled)}
+                            disabled={aiAssistantLoading || aiAssistantSaving}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-black text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {aiAssistantSaving ? '保存中...' : '保存开关'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleAiAssistantToggleSave(false)}
+                            disabled={aiAssistantLoading || aiAssistantSaving || !aiAssistantEnabled}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            一键关闭 AI
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleAiAssistantToggleSave(true)}
+                            disabled={aiAssistantLoading || aiAssistantSaving || aiAssistantEnabled}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            一键开启 AI
+                        </button>
+                    </div>
+                </div>
+
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
                     <div className="space-y-4">
+                        <div className="space-y-1">
+                            <h4 className="text-base font-bold">导入知识库</h4>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                仅超级管理员可导入 `.txt` / `.md` / `.markdown` 文本知识库。导入后会自动同步到 AI 检索库，可随时增删改查。
+                            </p>
+                        </div>
                         <div className="space-y-2">
                             <label className="text-sm font-semibold">知识库标题</label>
                             <input
@@ -7149,7 +7267,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
 // 4.5 The main Admin Panel structure
 // 4.5 The main Admin Panel structure
-const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, loadGameList }) => {
+const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, loadGameList, onAiAssistantChanged }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const BROADCAST_STYLES = [
@@ -7456,7 +7574,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
                             <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
                             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} />} />
-                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} onGameChanged={loadGameList} />} />
+                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} onGameChanged={loadGameList} onAiAssistantChanged={onAiAssistantChanged} />} />
                             <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
                             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
                         </Routes>

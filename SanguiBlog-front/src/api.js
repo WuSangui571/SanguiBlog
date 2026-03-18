@@ -907,3 +907,12 @@ export const adminDeleteKnowledgeDocument = (id) =>
   request(`/admin/knowledge-documents/${id}`, {
     method: "DELETE",
   });
+
+export const adminFetchAiAssistantSettings = () =>
+  request("/admin/ai-assistant-settings");
+
+export const adminUpdateAiAssistantSettings = (payload) =>
+  request("/admin/ai-assistant-settings", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });

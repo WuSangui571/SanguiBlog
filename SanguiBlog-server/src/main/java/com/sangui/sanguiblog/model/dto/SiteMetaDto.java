@@ -71,6 +71,7 @@ public class SiteMetaDto {
     @Data
     @Builder
     public static class AiAssistantDto {
+        private boolean enabled;
         private String assistantName;
         private String title;
         private String welcomeMessage;

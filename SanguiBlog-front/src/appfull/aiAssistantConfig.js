@@ -1,4 +1,5 @@
 export const DEFAULT_AI_ASSISTANT_CONFIG = {
+    enabled: true,
     assistantName: '三桂',
     title: '三桂博客AI助理',
     welcomeMessage: '你好，我是三桂博客AI助理',
@@ -12,7 +13,13 @@ const pickTrimmed = (value) => {
     return value.trim();
 };
 
+const pickEnabled = (value) => {
+    if (typeof value === 'boolean') return value;
+    return DEFAULT_AI_ASSISTANT_CONFIG.enabled;
+};
+
 export function resolveAiAssistantConfig(overrides = {}) {
+    const enabled = pickEnabled(overrides?.enabled);
     const assistantName = pickTrimmed(overrides?.assistantName) || DEFAULT_AI_ASSISTANT_CONFIG.assistantName;
     const title = pickTrimmed(overrides?.title) || DEFAULT_AI_ASSISTANT_CONFIG.title;
     const welcomeMessage = pickTrimmed(overrides?.welcomeMessage) || DEFAULT_AI_ASSISTANT_CONFIG.welcomeMessage;
@@ -21,6 +28,7 @@ export function resolveAiAssistantConfig(overrides = {}) {
     const logoPath = pickTrimmed(overrides?.logoPath) || DEFAULT_AI_ASSISTANT_CONFIG.logoPath;
 
     return {
+        enabled,
         assistantName,
         title,
         welcomeMessage,

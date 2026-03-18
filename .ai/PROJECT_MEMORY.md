@@ -822,5 +822,9 @@ npm run dev
 - 后台 `AI管理` 页面会直接显示每条会话的“用户侧可见状态”：绿色表示仍对用户可见，红色表示已被用户侧隐藏。
 - 后台 `AI管理` 页面支持按用户侧可见状态筛选：`全部 / 用户侧可见 / 用户侧已隐藏`。
 - 对 `user_visible = false` 的会话，后台列表和详情头部都会展示 `userHiddenAt`，用于审计该会话从用户侧消失的时间。
+- AI 助理总开关统一走 `site_settings` 中的 `ai.chat.enabled`，不额外新建专门表字段；默认开启。
+- `/api/site/meta` 下发的 `aiAssistant` 配置包含 `enabled`，前端首页只有在 `enabled=true` 时才渲染 AI 入口。
+- `/api/ai/**` 用户侧聊天链路在服务层统一调用 `AiAssistantSettingService.assertEnabled()`；关闭后前端入口消失，同时后端聊天接口返回不可用。
+- `/admin/settings` 中原“导入知识库”页签已更名为“AI助理”，并在同页增加 AI 助理总开关卡片；知识库导入功能保持原位置和原行为不变。
 
 
