@@ -18,28 +18,9 @@ import javax.sql.DataSource;
 @EnableConfigurationProperties(AiBlogRagProperties.class)
 public class AiBlogVectorStoreConfig {
 
-    @Bean(name = "aiBlogPgVectorDataSource")
-    @ConditionalOnProperty(prefix = "ai.rag", name = "enabled", havingValue = "true")
-    public DataSource aiBlogPgVectorDataSource(AiBlogRagProperties properties) {
-        return DataSourceBuilder.create()
-                .type(HikariDataSource.class)
-                .driverClassName("org.postgresql.Driver")
-                .url(properties.getPgvector().getUrl())
-                .username(properties.getPgvector().getUsername())
-                .password(properties.getPgvector().getPassword())
-                .build();
-    }
-
-    @Bean(name = "aiBlogPgVectorJdbcTemplate")
-    @ConditionalOnProperty(prefix = "ai.rag", name = "enabled", havingValue = "true")
-    public JdbcTemplate aiBlogPgVectorJdbcTemplate(DataSource aiBlogPgVectorDataSource) {
-        return new JdbcTemplate(aiBlogPgVectorDataSource);
-    }
-
     @Bean(name = "aiBlogVectorStore")
     @ConditionalOnProperty(prefix = "ai.rag", name = "enabled", havingValue = "true")
     public VectorStore aiBlogVectorStore(
-            JdbcTemplate aiBlogPgVectorJdbcTemplate,
             ObjectProvider<EmbeddingModel> embeddingModelProvider,
             AiBlogRagProperties properties
     ) {
@@ -48,7 +29,17 @@ public class AiBlogVectorStoreConfig {
             throw new IllegalStateException("未找到 DashScope EmbeddingModel，无法初始化博客 RAG 向量库");
         }
 
-        return PgVectorStore.builder(aiBlogPgVectorJdbcTemplate, embeddingModel)
+        DataSource pgVectorDataSource = DataSourceBuilder.create()
+                .type(HikariDataSource.class)
+                .driverClassName("org.postgresql.Driver")
+                .url(properties.getPgvector().getUrl())
+                .username(properties.getPgvector().getUsername())
+                .password(properties.getPgvector().getPassword())
+                .build();
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(pgVectorDataSource);
+
+        return PgVectorStore.builder(jdbcTemplate, embeddingModel)
                 .schemaName(properties.getPgvector().getSchema())
                 .vectorTableName(properties.getPgvector().getTable())
                 .initializeSchema(properties.getPgvector().isInitializeSchema())
