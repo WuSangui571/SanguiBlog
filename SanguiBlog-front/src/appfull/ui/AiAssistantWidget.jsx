@@ -15,6 +15,7 @@ import {
 } from '../aiAssistantAccess.js';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 import AiMessageMarkdown from './AiMessageMarkdown.js';
+import { getAiMessagePresentation } from './aiMessagePresentation.js';
 
 function createLocalMessage(role, content, idPrefix = role) {
     return {
@@ -436,19 +437,14 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                                     <div className="space-y-3">
                                         {messages.map((message) => {
                                             const isAssistant = message.role === 'assistant';
+                                            const presentation = getAiMessagePresentation(message.role, isDarkMode);
                                             return (
                                                 <div
                                                     key={message.id}
-                                                    className={`flex ${isAssistant ? 'justify-start' : 'justify-end'}`}
+                                                    className={presentation.wrapperClassName}
                                                 >
                                                     <div
-                                                        className={`max-w-[85%] border-2 border-black px-4 py-3 rounded-[20px] ${
-                                                            isAssistant
-                                                                ? 'bg-[#FFD700] text-black'
-                                                                : isDarkMode
-                                                                    ? 'bg-gray-800 text-white'
-                                                                    : 'bg-white text-black'
-                                                        }`}
+                                                        className={presentation.contentClassName}
                                                     >
                                                         {isAssistant ? (
                                                             <AiMessageMarkdown
