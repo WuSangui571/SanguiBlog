@@ -33,8 +33,11 @@ public final class AiBlogKnowledgeSupport {
                 format(post.getPublishedAt()),
                 post.getUpdatedAt() == null ? "" : post.getUpdatedAt().toString(),
                 normalize(post.getCategory() != null ? post.getCategory().getName() : ""),
-                normalize(post.getTags().stream().map(tag -> tag.getName() == null ? "" : tag.getName()).sorted().reduce((a, b) -> a + "," + b).orElse(""))
-        );
+                normalize(post.getTags().stream()
+                        .map(tag -> tag.getName() == null ? "" : tag.getName())
+                        .sorted()
+                        .reduce((a, b) -> a + "," + b)
+                        .orElse("")));
         return sha256(base);
     }
 
@@ -81,7 +84,7 @@ public final class AiBlogKnowledgeSupport {
         StringBuilder builder = new StringBuilder();
         builder.append("三桂博客已发布文章知识总览").append(System.lineSeparator());
         builder.append("当前共收录 ").append(safePosts.size()).append(" 篇已发布文章。").append(System.lineSeparator());
-        builder.append("以下内容用于帮助回答“博客写过什么”“有哪些主题”“能否总结已发布文章”等泛问题。")
+        builder.append("以下内容用于帮助回答“博客写过什么”“有哪些主题”“总结已发布文章”等泛问题。")
                 .append(System.lineSeparator())
                 .append(System.lineSeparator());
 
@@ -109,7 +112,6 @@ public final class AiBlogKnowledgeSupport {
             }
             builder.append("链接: ").append(buildPostUrl(post.getId())).append(System.lineSeparator()).append(System.lineSeparator());
         }
-
         return builder.toString().trim();
     }
 
@@ -119,7 +121,7 @@ public final class AiBlogKnowledgeSupport {
         }
 
         StringBuilder builder = new StringBuilder();
-        builder.append("以下是三桂博客已发布文章知识库中检索到的相关内容。");
+        builder.append("以下是三桂博客站点知识库中检索到的相关内容，可能来自已发布文章或超级管理员导入的文本知识库。");
         builder.append("仅在这些内容与用户问题相关时优先使用；若知识库没有提供足够信息，请明确说明，不要编造。");
         builder.append(System.lineSeparator()).append(System.lineSeparator());
 
@@ -127,35 +129,41 @@ public final class AiBlogKnowledgeSupport {
             Document document = documents.get(i);
             Map<String, Object> metadata = document.getMetadata();
             builder.append("【资料").append(i + 1).append("】").append(System.lineSeparator());
-            builder.append("标题: ").append(stringValue(metadata.get("title"), "未命名文章")).append(System.lineSeparator());
-            builder.append("链接: ").append(stringValue(metadata.get("url"), "")).append(System.lineSeparator());
+            builder.append("标题: ").append(stringValue(metadata.get("title"), "未命名文档")).append(System.lineSeparator());
+            String url = stringValue(metadata.get("url"), "");
+            if (StringUtils.hasText(url)) {
+                builder.append("链接: ").append(url).append(System.lineSeparator());
+            }
             builder.append("内容片段:").append(System.lineSeparator());
             builder.append(trimToLength(document.getText(), 1500)).append(System.lineSeparator()).append(System.lineSeparator());
         }
-
         return builder.toString().trim();
     }
 
     public static List<AiChatResponse.ReferenceDto> buildReferences(List<Document> documents) {
-        Map<Long, AiChatResponse.ReferenceDto> unique = new LinkedHashMap<>();
+        Map<String, AiChatResponse.ReferenceDto> unique = new LinkedHashMap<>();
         if (documents == null) {
             return List.of();
         }
 
         for (Document document : documents) {
             Map<String, Object> metadata = document.getMetadata();
+            String sourceType = stringValue(metadata.get("sourceType"), "POST");
             Long sourceId = toLong(metadata.get("sourceId"));
-            if (sourceId == null || unique.containsKey(sourceId)) {
+            if (sourceId == null) {
                 continue;
             }
-            unique.put(sourceId, AiChatResponse.ReferenceDto.builder()
-                    .sourceType(stringValue(metadata.get("sourceType"), "POST"))
+            String uniqueKey = sourceType + ":" + sourceId;
+            if (unique.containsKey(uniqueKey)) {
+                continue;
+            }
+            unique.put(uniqueKey, AiChatResponse.ReferenceDto.builder()
+                    .sourceType(sourceType)
                     .sourceId(sourceId)
-                    .title(stringValue(metadata.get("title"), "未命名文章"))
-                    .url(stringValue(metadata.get("url"), buildPostUrl(sourceId)))
+                    .title(stringValue(metadata.get("title"), "未命名文档"))
+                    .url(resolveReferenceUrl(sourceType, sourceId, metadata.get("url")))
                     .build());
         }
-
         return List.copyOf(unique.values());
     }
 
@@ -209,5 +217,16 @@ public final class AiBlogKnowledgeSupport {
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    private static String resolveReferenceUrl(String sourceType, Long sourceId, Object value) {
+        String url = stringValue(value, "");
+        if (StringUtils.hasText(url)) {
+            return url;
+        }
+        if ("POST".equalsIgnoreCase(sourceType)) {
+            return buildPostUrl(sourceId);
+        }
+        return "";
     }
 }

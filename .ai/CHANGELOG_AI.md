@@ -3845,3 +3845,12 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   1) 新增 `AiCurrentUserContextService`，统一构建当前登录用户的用户名、显示名、头衔、角色名和角色编码上下文。
   2) AI 聊天主链在每轮请求中都会把当前登录用户信息加入 system prompt，避免模型自行猜测用户身份。
   3) 补充当前登录用户上下文的最小回归测试，并验证与现有页面上下文、系统事实层、博客 RAG 共存。
+## [2026-03-18] 为超级管理员增加文本知识库导入与管理功能
+- 背景/需求：用户要求在 `/admin/settings` 下新增“导入知识库”分栏，仅允许超级管理员导入自定义文本类型知识库，并在后台对已上传知识库进行增删改查，同时接入现有 AI 检索增强。
+- 修改类型：feat
+- 变更摘要：
+  1) 新增 `ai_custom_knowledge_documents` / `ai_custom_knowledge_chunks` 两张 MySQL 表，用于保存文本知识库正文、同步状态与 PgVector 文档映射。
+  2) 新增超级管理员管理接口 `/api/admin/knowledge-documents`，支持列表、详情、导入、编辑、删除。
+  3) 新增 `AiCustomKnowledgeSyncService`，把导入的 `.txt` / `.md` / `.markdown` 文本自动切片并同步到现有 PgVector 向量库。
+  4) `/admin/settings` 新增“导入知识库”页签，支持上传、编辑正文、启停同步、删除和查看同步状态。
+  5) 站点 RAG 引用与上下文文案升级为“站点知识库”，可同时容纳博客文章和超级管理员导入的文本知识。

@@ -38,6 +38,11 @@ import {
     adminCreateGame,
     adminUpdateGame,
     adminDeleteGame,
+    adminFetchKnowledgeDocuments,
+    adminFetchKnowledgeDocumentDetail,
+    adminCreateKnowledgeDocument,
+    adminUpdateKnowledgeDocument,
+    adminDeleteKnowledgeDocument,
     adminFetchAbout,
     adminSaveAbout,
     adminFetchComments,
@@ -64,7 +69,7 @@ import {
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
     ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail, Megaphone,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
-    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy, Calendar
+    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy, Calendar, Database
 } from 'lucide-react';
 import {
     THEME,
@@ -5615,6 +5620,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const MAX_BROADCAST_LEN = 180;
     const SETTINGS_TABS = [
         { key: 'broadcast', label: '广播管理' },
+        { key: 'knowledge', label: '导入知识库' },
         { key: 'games', label: '游戏管理' },
         { key: 'cleanup', label: '存储清理' }
     ];
@@ -5634,6 +5640,15 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [gameEditingId, setGameEditingId] = useState(null);
     const [gameSaving, setGameSaving] = useState(false);
     const [gameDeletingId, setGameDeletingId] = useState(null);
+
+    const [knowledgeList, setKnowledgeList] = useState([]);
+    const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+    const [knowledgeError, setKnowledgeError] = useState('');
+    const [knowledgeForm, setKnowledgeForm] = useState({ title: '', enabled: true, file: null, contentText: '' });
+    const [knowledgeEditingId, setKnowledgeEditingId] = useState(null);
+    const [knowledgeSaving, setKnowledgeSaving] = useState(false);
+    const [knowledgeDeletingId, setKnowledgeDeletingId] = useState(null);
+    const [knowledgeKeyword, setKnowledgeKeyword] = useState('');
     const { hasPermission } = usePermissionContext();
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
     const { notice, showNotice, hideNotice } = useTimedNotice(4200);
@@ -5668,6 +5683,10 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     useEffect(() => {
         loadGames();
     }, [loadGames]);
+
+    useEffect(() => {
+        loadKnowledgeDocuments();
+    }, [loadKnowledgeDocuments]);
 
     const resetGameForm = useCallback((defaults = {}, clearEditing = true) => {
         setGameForm({
@@ -5747,6 +5766,118 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         const targetUrl = game.url ? buildAssetUrl(game.url) : '';
         if (targetUrl && typeof window !== 'undefined') {
             window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        }
+    }, []);
+
+    const loadKnowledgeDocuments = useCallback(async (keyword = '') => {
+        setKnowledgeLoading(true);
+        setKnowledgeError('');
+        try {
+            const res = await adminFetchKnowledgeDocuments({ page: 1, size: 200, keyword: keyword || undefined });
+            const data = res?.data || res;
+            setKnowledgeList((data && data.records) ? data.records : (data || []));
+        } catch (err) {
+            setKnowledgeError(err?.message || '加载知识库列表失败');
+        } finally {
+            setKnowledgeLoading(false);
+        }
+    }, []);
+
+    const resetKnowledgeForm = useCallback((defaults = {}, clearEditing = true) => {
+        setKnowledgeForm({
+            title: '',
+            enabled: true,
+            file: null,
+            contentText: '',
+            ...defaults
+        });
+        if (clearEditing) setKnowledgeEditingId(null);
+    }, []);
+
+    const handleKnowledgeSubmit = useCallback(async () => {
+        setKnowledgeSaving(true);
+        setKnowledgeError('');
+        try {
+            if (knowledgeEditingId) {
+                await adminUpdateKnowledgeDocument(knowledgeEditingId, {
+                    title: knowledgeForm.title,
+                    enabled: knowledgeForm.enabled,
+                    contentText: knowledgeForm.contentText
+                });
+                showNotice('知识库已更新，并已重新同步到 AI 检索库', 'success');
+            } else {
+                if (!knowledgeForm.file) {
+                    setKnowledgeError('请先选择要导入的文本知识库文件');
+                    setKnowledgeSaving(false);
+                    return;
+                }
+                await adminCreateKnowledgeDocument({
+                    title: knowledgeForm.title,
+                    enabled: knowledgeForm.enabled,
+                    file: knowledgeForm.file
+                });
+                showNotice('知识库导入成功，并已提交同步到 AI 检索库', 'success');
+            }
+            await loadKnowledgeDocuments();
+            resetKnowledgeForm({}, true);
+        } catch (err) {
+            setKnowledgeError(err?.message || '保存知识库失败');
+        } finally {
+            setKnowledgeSaving(false);
+        }
+    }, [knowledgeEditingId, knowledgeForm, loadKnowledgeDocuments, resetKnowledgeForm, showNotice]);
+
+    const handleKnowledgeEdit = useCallback(async (item) => {
+        if (!item?.id) return;
+        setKnowledgeSaving(true);
+        setKnowledgeError('');
+        try {
+            const res = await adminFetchKnowledgeDocumentDetail(item.id);
+            const data = res?.data || res;
+            resetKnowledgeForm({
+                title: data?.title || '',
+                enabled: data?.enabled !== false,
+                contentText: data?.contentText || '',
+                file: null
+            }, false);
+            setKnowledgeEditingId(item.id);
+        } catch (err) {
+            setKnowledgeError(err?.message || '加载知识库详情失败');
+        } finally {
+            setKnowledgeSaving(false);
+        }
+    }, [resetKnowledgeForm]);
+
+    const handleKnowledgeDelete = useCallback(async (id) => {
+        if (!id) return;
+        const ok = typeof window !== 'undefined' ? window.confirm('确认删除该知识库吗？删除后会同时移除对应向量索引。') : true;
+        if (!ok) return;
+        setKnowledgeDeletingId(id);
+        setKnowledgeError('');
+        try {
+            await adminDeleteKnowledgeDocument(id);
+            await loadKnowledgeDocuments();
+            if (knowledgeEditingId === id) resetKnowledgeForm({}, true);
+            showNotice('知识库已删除，对应 AI 检索索引也已移除', 'success');
+        } catch (err) {
+            setKnowledgeError(err?.message || '删除知识库失败');
+        } finally {
+            setKnowledgeDeletingId(null);
+        }
+    }, [knowledgeEditingId, loadKnowledgeDocuments, resetKnowledgeForm, showNotice]);
+
+    const formatKnowledgeStatus = useCallback((value) => {
+        switch ((value || '').toUpperCase()) {
+            case 'READY':
+                return '已同步';
+            case 'FAILED':
+                return '同步失败';
+            case 'DISABLED':
+                return '已停用';
+            case 'PENDING':
+                return '待同步';
+            default:
+                return value || '--';
         }
     }, []);
 
@@ -6110,6 +6241,197 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                     </div>
                                 );
                             })()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'knowledge' ? '' : 'hidden'}`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">导入知识库</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                            仅超级管理员可导入 `.txt` / `.md` / `.markdown` 文本知识库。导入后会自动同步到 AI 检索库，可随时增删改查。
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => loadKnowledgeDocuments()}
+                            disabled={knowledgeLoading}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        >
+                            {knowledgeLoading ? '刷新中...' : '刷新列表'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => resetKnowledgeForm()}
+                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000]"
+                        >
+                            {knowledgeEditingId ? '退出编辑' : '新建导入'}
+                        </button>
+                    </div>
+                </div>
+
+                {knowledgeError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {knowledgeError}
+                    </div>
+                )}
+
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold">知识库标题</label>
+                            <input
+                                value={knowledgeForm.title}
+                                onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, title: e.target.value }))}
+                                className={`w-full border-2 px-3 py-2 rounded-xl ${
+                                    isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
+                                }`}
+                                placeholder="可选，不填则默认使用文件名"
+                            />
+                        </div>
+
+                        {!knowledgeEditingId && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">导入文本文件</label>
+                                <input
+                                    type="file"
+                                    accept=".txt,.md,.markdown,text/plain,text/markdown"
+                                    onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
+                                    className={`w-full border-2 px-3 py-2 rounded-xl file:mr-3 file:px-3 file:py-1 file:border-0 file:rounded-full file:bg-black file:text-white ${
+                                        isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
+                                    }`}
+                                />
+                                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    支持 `.txt`、`.md`、`.markdown`，最大 2MB。
+                                </p>
+                            </div>
+                        )}
+
+                        <label className="flex items-center gap-3 text-sm font-medium">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 border-2 border-black rounded"
+                                checked={knowledgeForm.enabled}
+                                onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, enabled: e.target.checked }))}
+                            />
+                            <span>启用后参与 AI 检索增强</span>
+                        </label>
+
+                        {knowledgeEditingId && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">知识库正文</label>
+                                <textarea
+                                    value={knowledgeForm.contentText}
+                                    onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, contentText: e.target.value }))}
+                                    rows={14}
+                                    className={`w-full border-2 px-3 py-3 rounded-xl ${
+                                        isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
+                                    }`}
+                                    placeholder="编辑知识库正文后，保存会自动重建向量索引"
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={handleKnowledgeSubmit}
+                                disabled={knowledgeSaving}
+                                className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-black text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            >
+                                {knowledgeSaving ? '保存中...' : (knowledgeEditingId ? '保存知识库' : '导入知识库')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => resetKnowledgeForm()}
+                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                            >
+                                重置
+                            </button>
+                            {knowledgeEditingId && <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-xs`}>当前编辑 ID：{knowledgeEditingId}</span>}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                                <Database size={16} />
+                                <span className="text-sm font-semibold">已导入知识库</span>
+                                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>共 {knowledgeList.length} 项</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    value={knowledgeKeyword}
+                                    onChange={(e) => setKnowledgeKeyword(e.target.value)}
+                                    className={`border-2 px-3 py-2 rounded-full text-sm ${
+                                        isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
+                                    }`}
+                                    placeholder="按标题或文件名搜索"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => loadKnowledgeDocuments(knowledgeKeyword)}
+                                    className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[3px_3px_0px_0px_#000]"
+                                >
+                                    搜索
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden">
+                            {knowledgeLoading ? (
+                                <div className="p-6 text-sm text-gray-500">加载中，请稍候...</div>
+                            ) : knowledgeList.length === 0 ? (
+                                <div className="p-6 text-sm text-gray-500">暂无已导入知识库，先导入一份文本吧。</div>
+                            ) : (
+                                <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[760px] overflow-auto">
+                                    {knowledgeList.map((item) => (
+                                        <div key={item.id} className="p-4 space-y-3">
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <div className="min-w-0 space-y-1">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="text-sm font-bold break-all">{item.title}</span>
+                                                        <span className="text-[11px] px-2 py-0.5 rounded-full border border-black/30 bg-white text-black font-bold">
+                                                            {formatKnowledgeStatus(item.syncStatus)}
+                                                        </span>
+                                                        <span className={`text-[11px] px-2 py-0.5 rounded-full border ${item.enabled ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-400 text-gray-500 bg-gray-100'}`}>
+                                                            {item.enabled ? '启用中' : '已停用'}
+                                                        </span>
+                                                    </div>
+                                                    <p className={`text-xs break-all ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>源文件：{item.originalFilename}</p>
+                                                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{item.contentPreview || '暂无预览'}</p>
+                                                    <p className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                        最近同步：{formatDateTime(item.lastSyncedAt)} · 更新时间：{formatDateTime(item.updatedAt)}
+                                                    </p>
+                                                    {item.lastError && (
+                                                        <p className="text-xs text-red-500 break-all">最近错误：{item.lastError}</p>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleKnowledgeEdit(item)}
+                                                        className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black hover:-translate-y-0.5 transition-transform"
+                                                    >
+                                                        编辑
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleKnowledgeDelete(item.id)}
+                                                        disabled={knowledgeDeletingId === item.id}
+                                                        className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-red-500 text-white hover:-translate-y-0.5 transition-transform disabled:opacity-60"
+                                                    >
+                                                        {knowledgeDeletingId === item.id ? '删除中...' : '删除'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

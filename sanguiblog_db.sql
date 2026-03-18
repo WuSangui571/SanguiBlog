@@ -613,3 +613,35 @@ CREATE TABLE IF NOT EXISTS ai_blog_knowledge_chunks (
     UNIQUE KEY uk_ai_blog_chunk_order (document_id, chunk_no),
     KEY idx_ai_blog_knowledge_document (document_id)
 );
+
+-- AI 超级管理员导入知识库主表（文本型文件导入后存正文与同步状态）
+CREATE TABLE IF NOT EXISTS ai_custom_knowledge_documents (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    content_text LONGTEXT NOT NULL,
+    content_hash CHAR(64) NOT NULL,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    sync_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+    last_error VARCHAR(1000),
+    last_synced_at DATETIME(6),
+    uploaded_by BIGINT UNSIGNED,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    KEY idx_ai_custom_knowledge_sync_status (sync_status),
+    KEY idx_ai_custom_knowledge_enabled (enabled),
+    CONSTRAINT fk_ai_custom_knowledge_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- AI 超级管理员导入知识库分片与 PgVector 文档 ID 映射表
+CREATE TABLE IF NOT EXISTS ai_custom_knowledge_chunks (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    document_id BIGINT NOT NULL,
+    chunk_no INT NOT NULL,
+    vector_document_id VARCHAR(128) NOT NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT fk_ai_custom_knowledge_chunks_document FOREIGN KEY (document_id) REFERENCES ai_custom_knowledge_documents(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_ai_custom_chunk_vector_document (vector_document_id),
+    UNIQUE KEY uk_ai_custom_chunk_order (document_id, chunk_no),
+    KEY idx_ai_custom_knowledge_document (document_id)
+);

@@ -49,7 +49,7 @@ public class AiBlogRagService {
             return new AiBlogRagContext(
                     AiBlogKnowledgeSupport.buildRagContext(documents),
                     AiBlogKnowledgeSupport.buildReferences(documents),
-                    "BLOG_POST_RAG_PGVECTOR"
+                    "SITE_KNOWLEDGE_RAG_PGVECTOR"
             );
         } catch (Exception ex) {
             log.error("执行博客 RAG 检索失败", ex);

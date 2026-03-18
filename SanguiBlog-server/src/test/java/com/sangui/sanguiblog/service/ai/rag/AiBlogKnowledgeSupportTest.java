@@ -42,6 +42,24 @@ class AiBlogKnowledgeSupportTest {
     }
 
     @Test
+    void shouldNotDefaultAdminKnowledgeReferenceToArticleUrl() {
+        Document document = Document.builder()
+                .id("admin-1")
+                .text("这是后台导入的知识库文本")
+                .metadata(Map.of(
+                        "sourceType", "ADMIN_TEXT",
+                        "sourceId", 11L,
+                        "title", "运维手册"
+                ))
+                .build();
+
+        List<AiChatResponse.ReferenceDto> references = AiBlogKnowledgeSupport.buildReferences(List.of(document));
+        assertEquals(1, references.size());
+        assertEquals("ADMIN_TEXT", references.get(0).getSourceType());
+        assertEquals("", references.get(0).getUrl());
+    }
+
+    @Test
     void shouldBuildKnowledgeTextWithTitleAndContent() {
         Post post = new Post();
         post.setTitle("RAG 实战");

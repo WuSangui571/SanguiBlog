@@ -867,3 +867,34 @@ export const adminDeleteGame = (id) =>
   request(`/admin/games/${id}`, {
     method: "DELETE",
   });
+
+export const adminFetchKnowledgeDocuments = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.keyword) search.append("keyword", params.keyword);
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/knowledge-documents${query}`);
+};
+
+export const adminFetchKnowledgeDocumentDetail = (id) =>
+  request(`/admin/knowledge-documents/${id}`);
+
+export const adminCreateKnowledgeDocument = async ({ title, enabled = true, file }) => {
+  const formData = new FormData();
+  if (title) formData.append("title", title);
+  formData.append("enabled", String(enabled));
+  if (file) formData.append("file", file);
+  return authFormRequest("/api/admin/knowledge-documents", "POST", formData);
+};
+
+export const adminUpdateKnowledgeDocument = (id, payload) =>
+  request(`/admin/knowledge-documents/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+export const adminDeleteKnowledgeDocument = (id) =>
+  request(`/admin/knowledge-documents/${id}`, {
+    method: "DELETE",
+  });
