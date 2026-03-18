@@ -9,6 +9,7 @@ import {
 } from '../../api.js';
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
+import AiMessageMarkdown from './AiMessageMarkdown.js';
 
 function createLocalMessage(role, content, idPrefix = role) {
     return {
@@ -415,9 +416,17 @@ export default function AiAssistantWidget({ isDarkMode, config }) {
                                                                     : 'bg-white text-black'
                                                         }`}
                                                     >
-                                                        <p className="text-sm leading-6 font-semibold whitespace-pre-wrap break-words">
-                                                            {message.content}
-                                                        </p>
+                                                        {isAssistant ? (
+                                                            <AiMessageMarkdown
+                                                                content={message.content}
+                                                                isDarkMode={isDarkMode}
+                                                                isAssistant={isAssistant}
+                                                            />
+                                                        ) : (
+                                                            <p className="text-sm leading-6 font-semibold whitespace-pre-wrap break-words">
+                                                                {message.content}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             );
