@@ -7,6 +7,7 @@ import org.springframework.ai.document.Document;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,7 +16,9 @@ class AiBlogKnowledgeSupportTest {
 
     @Test
     void shouldBuildStableVectorDocumentIdAndUrl() {
-        assertEquals("post-12-chunk-3", AiBlogKnowledgeSupport.buildVectorDocumentId(12L, 3));
+        String id = AiBlogKnowledgeSupport.buildVectorDocumentId(12L, 3);
+        assertEquals(id, AiBlogKnowledgeSupport.buildVectorDocumentId(12L, 3));
+        UUID.fromString(id);
         assertEquals("/article/12", AiBlogKnowledgeSupport.buildPostUrl(12L));
     }
 

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public final class AiBlogKnowledgeSupport {
 
@@ -63,7 +64,8 @@ public final class AiBlogKnowledgeSupport {
     }
 
     public static String buildVectorDocumentId(Long postId, int chunkNo) {
-        return "post-" + postId + "-chunk-" + chunkNo;
+        String raw = "post-" + postId + "-chunk-" + chunkNo;
+        return UUID.nameUUIDFromBytes(raw.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     public static String buildPostUrl(Long postId) {
