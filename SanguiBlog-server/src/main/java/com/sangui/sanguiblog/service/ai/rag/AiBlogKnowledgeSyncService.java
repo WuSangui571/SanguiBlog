@@ -17,6 +17,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
@@ -43,6 +44,7 @@ public class AiBlogKnowledgeSyncService {
     private final TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
 
     @EventListener(ApplicationReadyEvent.class)
+    @Transactional
     public void syncOnStartup() {
         if (!isOperational() || !ragProperties.isSyncOnStartup()) {
             return;
@@ -63,6 +65,7 @@ public class AiBlogKnowledgeSyncService {
         log.info("博客 RAG 启动同步完成，已扫描 {} 篇已发布文章", publishedPosts.size());
     }
 
+    @Transactional
     public void syncPostKnowledge(Long postId) {
         if (!isOperational() || postId == null) {
             return;
@@ -78,6 +81,7 @@ public class AiBlogKnowledgeSyncService {
         syncOverviewDocument(postRepository.findAllPublishedForKnowledge());
     }
 
+    @Transactional
     public void removePostKnowledge(Long postId) {
         if (!isOperational() || postId == null) {
             return;

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
@@ -41,6 +42,7 @@ public class AiCustomKnowledgeSyncService {
     private final TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
 
     @EventListener(ApplicationReadyEvent.class)
+    @Transactional
     public void syncOnStartup() {
         if (!isOperational()) {
             return;
@@ -54,6 +56,7 @@ public class AiCustomKnowledgeSyncService {
         }
     }
 
+    @Transactional
     public void syncDocument(Long documentId) {
         if (!isOperational() || documentId == null) {
             return;
@@ -110,6 +113,7 @@ public class AiCustomKnowledgeSyncService {
         }
     }
 
+    @Transactional
     public void ensureDisabled(Long documentId) {
         if (!isOperational() || documentId == null) {
             return;
@@ -133,6 +137,7 @@ public class AiCustomKnowledgeSyncService {
         });
     }
 
+    @Transactional
     public void removeKnowledge(Long documentId) {
         if (!isOperational() || documentId == null) {
             return;
