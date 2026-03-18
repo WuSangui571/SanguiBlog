@@ -51,6 +51,7 @@ public class AiChatService {
     private final AiAssistantSettingService aiAssistantSettingService;
     private final AiAssistantCapabilityService aiAssistantCapabilityService;
     private final AiCurrentPageContextService aiCurrentPageContextService;
+    private final AiCurrentUserContextService aiCurrentUserContextService;
     private final AiChatSessionRepository aiChatSessionRepository;
     private final AiChatMessageRepository aiChatMessageRepository;
     private final UserRepository userRepository;
@@ -94,6 +95,7 @@ public class AiChatService {
 
     @Transactional
     public AiChatResponse chat(Long userId, Long sessionId, String message, AiCurrentPageContextDto currentPageContext) {
+        User currentUser = findUser(userId);
         AiChatSession session = findOwnedSession(userId, sessionId);
         String userMessage = normalizeMessage(message);
 
@@ -105,7 +107,7 @@ public class AiChatService {
         AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
         AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
                 aiCurrentPageContextService.advise(userMessage, currentPageContext);
-        List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext, pageContextAdvice);
+        List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext, pageContextAdvice, currentUser);
 
         try {
             ChatResponse response = chatModel.call(new Prompt(promptMessages));
@@ -137,6 +139,7 @@ public class AiChatService {
     }
 
     public SseEmitter streamChat(Long userId, Long sessionId, String message, AiCurrentPageContextDto currentPageContext) {
+        User currentUser = findUser(userId);
         AiChatSession session = findOwnedSession(userId, sessionId);
         String userMessage = normalizeMessage(message);
 
@@ -148,7 +151,7 @@ public class AiChatService {
         AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
         AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
                 aiCurrentPageContextService.advise(userMessage, currentPageContext);
-        List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext, pageContextAdvice);
+        List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext, pageContextAdvice, currentUser);
 
         Instant userMessageAt = Instant.now();
         if (DEFAULT_SESSION_TITLE.equals(session.getTitle())) {
@@ -247,10 +250,11 @@ public class AiChatService {
             Long sessionId,
             String userMessage,
             AiBlogRagService.AiBlogRagContext ragContext,
-            AiCurrentPageContextService.PageContextAdvice pageContextAdvice
+            AiCurrentPageContextService.PageContextAdvice pageContextAdvice,
+            User currentUser
     ) {
         List<Message> promptMessages = new ArrayList<>();
-        promptMessages.add(new SystemMessage(buildSystemPrompt(ragContext, pageContextAdvice)));
+        promptMessages.add(new SystemMessage(buildSystemPrompt(ragContext, pageContextAdvice, currentUser)));
         promptMessages.addAll(loadContextMessages(sessionId));
         promptMessages.add(new UserMessage(userMessage));
         return promptMessages;
@@ -258,10 +262,15 @@ public class AiChatService {
 
     private String buildSystemPrompt(
             AiBlogRagService.AiBlogRagContext ragContext,
-            AiCurrentPageContextService.PageContextAdvice pageContextAdvice
+            AiCurrentPageContextService.PageContextAdvice pageContextAdvice,
+            User currentUser
     ) {
         List<String> sections = new ArrayList<>();
         sections.add(aiAssistantSettingService.systemPrompt());
+        String userContext = aiCurrentUserContextService.buildSystemContext(currentUser);
+        if (StringUtils.hasText(userContext)) {
+            sections.add(userContext);
+        }
         if (ragContext.hasContext()) {
             sections.add(ragContext.getSystemContext());
         }
