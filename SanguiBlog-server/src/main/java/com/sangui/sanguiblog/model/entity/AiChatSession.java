@@ -29,6 +29,12 @@ public class AiChatSession {
     @Column(name = "last_message_preview", length = 500)
     private String lastMessagePreview;
 
+    @Column(name = "user_visible", nullable = false)
+    private Boolean userVisible = Boolean.TRUE;
+
+    @Column(name = "user_hidden_at")
+    private Instant userHiddenAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 

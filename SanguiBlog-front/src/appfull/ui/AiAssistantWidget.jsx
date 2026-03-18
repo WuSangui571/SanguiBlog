@@ -1,8 +1,9 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, History, MessageSquarePlus, Move, RotateCcw, SendHorizontal, X } from 'lucide-react';
+import { Bot, History, MessageSquarePlus, Move, RotateCcw, SendHorizontal, Trash2, X } from 'lucide-react';
 import {
     createAiChatSession,
+    deleteAiChatSession,
     fetchAiChatMessages,
     fetchAiChatSessions,
     streamAiChatReliable
@@ -310,6 +311,28 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         await loadSessionMessages(sessionId);
     };
 
+    const handleDeleteSession = async (session, event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!session?.id) return;
+
+        const confirmed = window.confirm(`确认删除这条会话记录吗？\n\n${session.title || '新对话'}`);
+        if (!confirmed) return;
+
+        try {
+            await deleteAiChatSession(session.id);
+            const nextSessions = await loadSessions();
+
+            if (session.id === activeSessionId) {
+                handleStartNewChat();
+            } else {
+                setSessions(nextSessions);
+            }
+        } catch (error) {
+            window.alert(error?.message?.trim() || '删除会话失败，请稍后再试。');
+        }
+    };
+
     const sendDisabled = !draft.trim() || isSending;
     const newChatDisabled = isIdleNewSession({
         activeSessionId,
@@ -614,11 +637,18 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                             {sessions.map((session) => {
                                                                 const active = session.id === activeSessionId;
                                                                 return (
-                                                                    <button
+                                                                    <div
                                                                         key={session.id}
-                                                                        type="button"
                                                                         onClick={() => handleSelectSession(session.id)}
-                                                                        className={`w-full rounded-[16px] border-2 border-black px-3 py-3 text-left transition-colors ${
+                                                                        onKeyDown={(event) => {
+                                                                            if (event.key === 'Enter' || event.key === ' ') {
+                                                                                event.preventDefault();
+                                                                                void handleSelectSession(session.id);
+                                                                            }
+                                                                        }}
+                                                                        role="button"
+                                                                        tabIndex={0}
+                                                                        className={`w-full cursor-pointer rounded-[16px] border-2 border-black px-3 py-3 text-left transition-colors ${
                                                                             active
                                                                                 ? 'bg-[#FFD700] text-black'
                                                                                 : isDarkMode
@@ -632,9 +662,31 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                                         <div className={`mt-1 text-[11px] font-semibold ${active ? 'text-black/70' : subTextClass}`}>
                                                                             {formatAiSessionTimeLabel(session.updatedAt)}
                                                                         </div>
-                                                                    </button>
+                                                                        <div className="mt-2 flex justify-end">
+                                                                            <button
+                                                                                type="button"
+                                                                                title="删除这条会话"
+                                                                                aria-label="删除这条会话"
+                                                                                onClick={(event) => {
+                                                                                    void handleDeleteSession(session, event);
+                                                                                }}
+                                                                                className={`inline-flex h-8 w-8 items-center justify-center rounded-[10px] border border-black transition-colors ${
+                                                                                    active
+                                                                                        ? 'bg-black/10 text-black hover:bg-black/20'
+                                                                                        : isDarkMode
+                                                                                            ? 'bg-gray-900 text-white hover:bg-gray-950'
+                                                                                            : 'bg-white text-black hover:bg-gray-100'
+                                                                                }`}
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
                                                                 );
                                                             })}
+                                                            <div className={`px-1 pt-1 text-[11px] font-semibold ${subTextClass}`}>
+                                                                仅显示最近 10 条对话
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>

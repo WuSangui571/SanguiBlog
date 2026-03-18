@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,6 +63,15 @@ public class AiChatController {
     @PostMapping("/sessions")
     public ApiResponse<AiChatSessionDto> createSession(@AuthenticationPrincipal UserPrincipal principal) {
         return ApiResponse.ok(aiChatService.createSession(principal.getId()));
+    }
+
+    @DeleteMapping("/sessions/{sessionId}")
+    public ApiResponse<Void> deleteSession(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long sessionId
+    ) {
+        aiChatService.deleteSession(principal.getId(), sessionId);
+        return ApiResponse.ok(null);
     }
 
     @GetMapping("/sessions/{sessionId}/messages")

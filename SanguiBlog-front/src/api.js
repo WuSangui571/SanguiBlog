@@ -394,6 +394,10 @@ export const createAiChatSession = () =>
   request("/ai/sessions", {
     method: "POST",
   });
+export const deleteAiChatSession = (sessionId) =>
+  request(`/ai/sessions/${sessionId}`, {
+    method: "DELETE",
+  });
 export const fetchAiChatMessages = (sessionId) => request(`/ai/sessions/${sessionId}/messages`);
 
 export const fetchCategories = () => request("/categories/tree");

@@ -52,6 +52,7 @@ public class AiChatService {
     private final AiAssistantCapabilityService aiAssistantCapabilityService;
     private final AiCurrentPageContextService aiCurrentPageContextService;
     private final AiCurrentUserContextService aiCurrentUserContextService;
+    private final AiChatSessionVisibilityService aiChatSessionVisibilityService;
     private final AiChatSessionRepository aiChatSessionRepository;
     private final AiChatMessageRepository aiChatMessageRepository;
     private final UserRepository userRepository;
@@ -72,15 +73,21 @@ public class AiChatService {
         session.setUser(user);
         session.setTitle(DEFAULT_SESSION_TITLE);
         session.setLastMessagePreview(null);
+        session.setUserVisible(Boolean.TRUE);
+        session.setUserHiddenAt(null);
         session.setCreatedAt(now);
         session.setUpdatedAt(now);
 
-        return toSessionDto(aiChatSessionRepository.save(session));
+        AiChatSession savedSession = aiChatSessionRepository.save(session);
+        aiChatSessionVisibilityService.enforceRecentVisibleLimit(userId);
+        return toSessionDto(savedSession);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<AiChatSessionDto> sessions(Long userId) {
-        return aiChatSessionRepository.findByUserIdOrderByUpdatedAtDescIdDesc(userId).stream()
+        aiChatSessionVisibilityService.enforceRecentVisibleLimit(userId);
+        return aiChatSessionRepository.findByUserIdAndUserVisibleTrueOrderByUpdatedAtDescIdDesc(userId).stream()
+                .limit(AiChatSessionVisibilityService.USER_VISIBLE_SESSION_LIMIT)
                 .map(this::toSessionDto)
                 .toList();
     }
@@ -91,6 +98,11 @@ public class AiChatService {
         return aiChatMessageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId()).stream()
                 .map(this::toMessageDto)
                 .toList();
+    }
+
+    @Transactional
+    public void deleteSession(Long userId, Long sessionId) {
+        aiChatSessionVisibilityService.hideSessionForUser(userId, sessionId);
     }
 
     @Transactional
@@ -289,7 +301,7 @@ public class AiChatService {
         if (sessionId == null) {
             throw new IllegalArgumentException("会话ID不能为空");
         }
-        return aiChatSessionRepository.findByIdAndUserId(sessionId, userId)
+        return aiChatSessionRepository.findByIdAndUserIdAndUserVisibleTrue(sessionId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "会话不存在或无权访问"));
     }
 
@@ -397,6 +409,7 @@ public class AiChatService {
         session.setLastMessagePreview(trimToLength(reply, 500));
         session.setUpdatedAt(assistantMessageAt);
         aiChatSessionRepository.save(session);
+        aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
 
         sendSseEvent(emitter, "complete", Map.of(
                 "reply", reply,
@@ -415,6 +428,7 @@ public class AiChatService {
         session.setLastMessagePreview(trimToLength(reply, 500));
         session.setUpdatedAt(now);
         aiChatSessionRepository.save(session);
+        aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
     }
 
     private String resolveMode(AiBlogRagService.AiBlogRagContext ragContext) {

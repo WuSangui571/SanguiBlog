@@ -816,5 +816,8 @@ npm run dev
   - `/api/admin/ai-chat/sessions`
   - `/api/admin/ai-chat/sessions/{sessionId}`
   统一返回会话所属用户、角色、会话创建/更新时间以及该会话完整消息时间线。
+- 用户侧 AI 历史会话支持软删除：`ai_chat_sessions` 通过 `user_visible` / `user_hidden_at` 标记隐藏，用户删除后前台不可见，但后台 AI 管理页仍然能查看原始记录。
+- 用户侧历史会话列表只显示按 `updated_at` 倒序排序后的最近 10 条可见会话；超出的旧会话会在后端自动标记为隐藏。
+- 前端历史会话弹窗底部固定提示“仅显示最近 10 条对话”，并为每条会话提供删除图标按钮。
 
 

@@ -10,7 +10,11 @@ import java.util.Optional;
 public interface AiChatSessionRepository extends JpaRepository<AiChatSession, Long> {
     List<AiChatSession> findByUserIdOrderByUpdatedAtDescIdDesc(Long userId);
 
+    List<AiChatSession> findByUserIdAndUserVisibleTrueOrderByUpdatedAtDescIdDesc(Long userId);
+
     Optional<AiChatSession> findByIdAndUserId(Long id, Long userId);
+
+    Optional<AiChatSession> findByIdAndUserIdAndUserVisibleTrue(Long id, Long userId);
 
     @EntityGraph(attributePaths = {"user", "user.role"})
     List<AiChatSession> findAllByOrderByUpdatedAtDescIdDesc();

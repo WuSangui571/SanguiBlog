@@ -567,11 +567,19 @@ CREATE TABLE IF NOT EXISTS ai_chat_sessions (
     user_id BIGINT UNSIGNED NOT NULL,
     title VARCHAR(255) NOT NULL,
     last_message_preview VARCHAR(500),
+    user_visible TINYINT(1) NOT NULL DEFAULT 1,
+    user_hidden_at DATETIME(6),
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     CONSTRAINT fk_ai_chat_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_ai_chat_sessions_user_updated (user_id, updated_at, id)
 );
+
+ALTER TABLE ai_chat_sessions
+    ADD COLUMN IF NOT EXISTS user_visible TINYINT(1) NOT NULL DEFAULT 1 AFTER last_message_preview;
+
+ALTER TABLE ai_chat_sessions
+    ADD COLUMN IF NOT EXISTS user_hidden_at DATETIME(6) NULL AFTER user_visible;
 
 -- AI 聊天消息
 CREATE TABLE IF NOT EXISTS ai_chat_messages (
