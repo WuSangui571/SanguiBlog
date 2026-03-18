@@ -32,6 +32,7 @@ import ClickRipple from "./appfull/ui/ClickRipple.jsx";
 import ScrollToTop from "./appfull/ui/ScrollToTop.jsx";
 import AiAssistantWidget from "./appfull/ui/AiAssistantWidget.jsx";
 import { shouldShowAiAssistant } from "./appfull/aiAssistantVisibility.js";
+import { buildAiCurrentPageContext } from "./appfull/aiCurrentPageContext.js";
 import { buildAssetUrl } from "./utils/asset.js";
 import logger from "./utils/logger.js";
 import HomeView from "./appfull/public/HomeView.jsx";
@@ -1292,6 +1293,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     };
 
     const globalBg = isDarkMode ? THEME.colors.bgDark : THEME.colors.bgLight;
+    const currentAiPageContext = buildAiCurrentPageContext({
+        view,
+        article,
+        articleState
+    });
 
     return (
         <PermissionContext.Provider value={permissionContextValue}>
@@ -1497,6 +1503,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                             isDarkMode={isDarkMode}
                             config={meta?.aiAssistant}
                             user={user}
+                            currentPageContext={currentAiPageContext}
                         />
                     )}
 

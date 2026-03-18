@@ -14,4 +14,6 @@ public class AiChatRequest {
     @NotBlank(message = "消息不能为空")
     @Size(max = 4000, message = "消息长度不能超过4000个字符")
     private String message;
+
+    private AiCurrentPageContextDto currentPageContext;
 }

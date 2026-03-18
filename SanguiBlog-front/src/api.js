@@ -257,12 +257,12 @@ const request = async (path, options = {}) => {
 };
 
 export const fetchSiteMeta = () => request(`/site/meta?t=${Date.now()}`);
-export const sendAiChat = (message, sessionId) => request("/ai/chat", {
+export const sendAiChat = (message, sessionId, currentPageContext = null) => request("/ai/chat", {
   method: "POST",
-  body: JSON.stringify({ message, sessionId }),
+  body: JSON.stringify({ message, sessionId, currentPageContext }),
 });
 
-export const streamAiChat = async ({ message, sessionId, onChunk, onComplete, onError }) => {
+export const streamAiChat = async ({ message, sessionId, currentPageContext = null, onChunk, onComplete, onError }) => {
   const token = getStoredToken();
   if (isTokenExpired(token)) {
     localStorage.removeItem("sg_token");
@@ -278,7 +278,7 @@ export const streamAiChat = async ({ message, sessionId, onChunk, onComplete, on
       ...buildHeaders(),
       Accept: "text/event-stream",
     },
-    body: JSON.stringify({ message, sessionId }),
+    body: JSON.stringify({ message, sessionId, currentPageContext }),
   });
 
   if (!res.ok) {
@@ -339,7 +339,7 @@ export const streamAiChat = async ({ message, sessionId, onChunk, onComplete, on
   }
 };
 
-export const streamAiChatReliable = async ({ message, sessionId, onChunk, onComplete, onError }) => {
+export const streamAiChatReliable = async ({ message, sessionId, currentPageContext = null, onChunk, onComplete, onError }) => {
   const token = getStoredToken();
   if (isTokenExpired(token)) {
     localStorage.removeItem("sg_token");
@@ -355,7 +355,7 @@ export const streamAiChatReliable = async ({ message, sessionId, onChunk, onComp
       ...buildHeaders(),
       Accept: "text/event-stream",
     },
-    body: JSON.stringify({ message, sessionId }),
+    body: JSON.stringify({ message, sessionId, currentPageContext }),
   });
 
   if (!res.ok) {

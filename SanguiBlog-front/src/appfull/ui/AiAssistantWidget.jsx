@@ -73,7 +73,7 @@ function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }
     );
 }
 
-export default function AiAssistantWidget({ isDarkMode, config, user }) {
+export default function AiAssistantWidget({ isDarkMode, config, user, currentPageContext = null }) {
     const { headerHeight } = useLayoutOffsets();
     const assistantConfig = useMemo(() => resolveAiAssistantConfig(config), [config]);
     const [isOpen, setIsOpen] = useState(false);
@@ -404,6 +404,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
             await streamAiChatReliable({
                 message: content,
                 sessionId,
+                currentPageContext,
                 onChunk: (chunk) => {
                     if (!chunk) return;
                     streamedReply += chunk;

@@ -3,6 +3,7 @@ package com.sangui.sanguiblog.service.ai;
 import com.sangui.sanguiblog.model.dto.AiChatMessageDto;
 import com.sangui.sanguiblog.model.dto.AiChatResponse;
 import com.sangui.sanguiblog.model.dto.AiChatSessionDto;
+import com.sangui.sanguiblog.model.dto.AiCurrentPageContextDto;
 import com.sangui.sanguiblog.model.entity.AiChatMessage;
 import com.sangui.sanguiblog.model.entity.AiChatSession;
 import com.sangui.sanguiblog.model.entity.User;
@@ -49,6 +50,7 @@ public class AiChatService {
     private final ChatModel chatModel;
     private final AiAssistantSettingService aiAssistantSettingService;
     private final AiAssistantCapabilityService aiAssistantCapabilityService;
+    private final AiCurrentPageContextService aiCurrentPageContextService;
     private final AiChatSessionRepository aiChatSessionRepository;
     private final AiChatMessageRepository aiChatMessageRepository;
     private final UserRepository userRepository;
@@ -91,7 +93,7 @@ public class AiChatService {
     }
 
     @Transactional
-    public AiChatResponse chat(Long userId, Long sessionId, String message) {
+    public AiChatResponse chat(Long userId, Long sessionId, String message, AiCurrentPageContextDto currentPageContext) {
         AiChatSession session = findOwnedSession(userId, sessionId);
         String userMessage = normalizeMessage(message);
 
@@ -101,7 +103,9 @@ public class AiChatService {
         }
 
         AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
-        List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext);
+        AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
+                aiCurrentPageContextService.advise(userMessage, currentPageContext);
+        List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext, pageContextAdvice);
 
         try {
             ChatResponse response = chatModel.call(new Prompt(promptMessages));
@@ -132,7 +136,7 @@ public class AiChatService {
         }
     }
 
-    public SseEmitter streamChat(Long userId, Long sessionId, String message) {
+    public SseEmitter streamChat(Long userId, Long sessionId, String message, AiCurrentPageContextDto currentPageContext) {
         AiChatSession session = findOwnedSession(userId, sessionId);
         String userMessage = normalizeMessage(message);
 
@@ -142,7 +146,9 @@ public class AiChatService {
         }
 
         AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
-        List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext);
+        AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
+                aiCurrentPageContextService.advise(userMessage, currentPageContext);
+        List<Message> promptMessages = buildPromptMessages(session.getId(), userMessage, ragContext, pageContextAdvice);
 
         Instant userMessageAt = Instant.now();
         if (DEFAULT_SESSION_TITLE.equals(session.getTitle())) {
@@ -240,21 +246,29 @@ public class AiChatService {
     private List<Message> buildPromptMessages(
             Long sessionId,
             String userMessage,
-            AiBlogRagService.AiBlogRagContext ragContext
+            AiBlogRagService.AiBlogRagContext ragContext,
+            AiCurrentPageContextService.PageContextAdvice pageContextAdvice
     ) {
         List<Message> promptMessages = new ArrayList<>();
-        promptMessages.add(new SystemMessage(buildSystemPrompt(ragContext)));
+        promptMessages.add(new SystemMessage(buildSystemPrompt(ragContext, pageContextAdvice)));
         promptMessages.addAll(loadContextMessages(sessionId));
         promptMessages.add(new UserMessage(userMessage));
         return promptMessages;
     }
 
-    private String buildSystemPrompt(AiBlogRagService.AiBlogRagContext ragContext) {
-        String basePrompt = aiAssistantSettingService.systemPrompt();
-        if (!ragContext.hasContext()) {
-            return basePrompt;
+    private String buildSystemPrompt(
+            AiBlogRagService.AiBlogRagContext ragContext,
+            AiCurrentPageContextService.PageContextAdvice pageContextAdvice
+    ) {
+        List<String> sections = new ArrayList<>();
+        sections.add(aiAssistantSettingService.systemPrompt());
+        if (ragContext.hasContext()) {
+            sections.add(ragContext.getSystemContext());
         }
-        return basePrompt + System.lineSeparator() + System.lineSeparator() + ragContext.getSystemContext();
+        if (pageContextAdvice.useContext()) {
+            sections.add(pageContextAdvice.systemContext());
+        }
+        return String.join(System.lineSeparator() + System.lineSeparator(), sections);
     }
 
     private User findUser(Long userId) {

@@ -33,7 +33,12 @@ public class AiChatController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody AiChatRequest request
     ) {
-        return ApiResponse.ok(aiChatService.chat(principal.getId(), request.getSessionId(), request.getMessage()));
+        return ApiResponse.ok(aiChatService.chat(
+                principal.getId(),
+                request.getSessionId(),
+                request.getMessage(),
+                request.getCurrentPageContext()
+        ));
     }
 
     @PostMapping(path = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -41,7 +46,12 @@ public class AiChatController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody AiChatRequest request
     ) {
-        return aiChatService.streamChat(principal.getId(), request.getSessionId(), request.getMessage());
+        return aiChatService.streamChat(
+                principal.getId(),
+                request.getSessionId(),
+                request.getMessage(),
+                request.getCurrentPageContext()
+        );
     }
 
     @GetMapping("/sessions")
