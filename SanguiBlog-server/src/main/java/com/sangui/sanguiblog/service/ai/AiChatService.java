@@ -199,13 +199,21 @@ public class AiChatService {
             AiBlogRagService.AiBlogRagContext ragContext
     ) {
         List<Message> promptMessages = new ArrayList<>();
-        promptMessages.add(new SystemMessage(aiAssistantSettingService.systemPrompt()));
-        if (ragContext.hasContext()) {
-            promptMessages.add(new SystemMessage(ragContext.getSystemContext()));
-        }
+        promptMessages.add(new SystemMessage(buildSystemPrompt(ragContext)));
         promptMessages.addAll(loadContextMessages(sessionId));
         promptMessages.add(new UserMessage(userMessage));
         return promptMessages;
+    }
+
+    private String buildSystemPrompt(AiBlogRagService.AiBlogRagContext ragContext) {
+        String basePrompt = aiAssistantSettingService.systemPrompt();
+        if (!ragContext.hasContext()) {
+            return basePrompt;
+        }
+        return basePrompt
+                + System.lineSeparator()
+                + System.lineSeparator()
+                + ragContext.getSystemContext();
     }
 
     private User findUser(Long userId) {
