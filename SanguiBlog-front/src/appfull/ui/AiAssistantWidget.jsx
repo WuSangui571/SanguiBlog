@@ -17,6 +17,7 @@ import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 import AiMessageMarkdown from './AiMessageMarkdown.js';
 import { getAiMessagePresentation } from './aiMessagePresentation.js';
 import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMeta.js';
+import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.js';
 
 function createLocalMessage(role, content, idPrefix = role) {
     return {
@@ -80,6 +81,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
     const interactionBlockerRef = useRef(null);
     const textareaRef = useRef(null);
     const previousUserRef = useRef(user);
+    const historyPopoverRef = useRef(null);
+    const historyTriggerGroupRef = useRef(null);
 
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
@@ -134,6 +137,34 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
             blocker.removeEventListener('touchmove', preventDefault);
         };
     }, [isOpen]);
+
+    useEffect(() => {
+        if (!historyOpen) {
+            return undefined;
+        }
+
+        const handlePointerDown = (event) => {
+            const target = event.target;
+            const clickedInsidePopover = historyPopoverRef.current?.contains(target) ?? false;
+            const clickedInsideTrigger = historyTriggerGroupRef.current?.contains(target) ?? false;
+
+            if (shouldCloseHistoryPopover({
+                isHistoryOpen: historyOpen,
+                clickedInsidePopover,
+                clickedInsideTrigger
+            })) {
+                setHistoryOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('touchstart', handlePointerDown);
+
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+            document.removeEventListener('touchstart', handlePointerDown);
+        };
+    }, [historyOpen]);
 
     useEffect(() => {
         if (!isOpen || sessionsLoaded || !canUseAiAssistant(user)) {
@@ -200,6 +231,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
     };
 
     const sendDisabled = !draft.trim() || isSending;
+    const newChatDisabled = isIdleNewSession({
+        activeSessionId,
+        messages,
+        draft
+    });
 
     const sendCurrentDraft = async () => {
         const content = draft.trim();
@@ -354,13 +390,21 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="relative flex shrink-0 items-center gap-2">
+                                    <div
+                                        ref={historyTriggerGroupRef}
+                                        className="relative flex shrink-0 items-center gap-2"
+                                    >
                                         <button
                                             type="button"
                                             onClick={handleStartNewChat}
-                                            title="新对话"
+                                            title={newChatDisabled ? '当前已是新对话' : '新对话'}
+                                            disabled={newChatDisabled}
                                             className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
-                                                isDarkMode ? 'bg-[#FFD700] text-black hover:bg-white' : 'bg-black text-[#FFD700] hover:bg-[#FFD700] hover:text-black'
+                                                newChatDisabled
+                                                    ? 'cursor-not-allowed bg-gray-200 text-gray-500'
+                                                    : isDarkMode
+                                                        ? 'bg-[#FFD700] text-black hover:bg-white'
+                                                        : 'bg-black text-[#FFD700] hover:bg-[#FFD700] hover:text-black'
                                             }`}
                                         >
                                             <MessageSquarePlus size={18} />
@@ -392,12 +436,25 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                                         </button>
                                         {historyOpen && canUseAiAssistant(user) && (
                                             <div
+                                                ref={historyPopoverRef}
                                                 className={`absolute right-0 top-[calc(100%+10px)] z-[84] w-[300px] rounded-[20px] border-2 border-black p-2 ${
                                                     isDarkMode ? 'bg-[#111827] text-white' : 'bg-white text-black'
                                                 }`}
                                             >
-                                                <div className={`border-b border-black/10 px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass}`}>
-                                                    历史会话
+                                                <div className="flex items-start justify-between gap-3 border-b border-black/10 px-3 pb-2 pt-1">
+                                                    <div className={`text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass}`}>
+                                                        历史会话
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHistoryOpen(false)}
+                                                        title="关闭历史会话窗口"
+                                                        className={`inline-flex h-7 w-7 items-center justify-center rounded-[10px] border border-black transition-colors ${
+                                                            isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'
+                                                        }`}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
                                                 </div>
                                                 <div className="mt-2 max-h-[280px] overflow-y-auto pr-1">
                                                     {sessionsLoading ? (
