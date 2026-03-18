@@ -4293,6 +4293,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
     const assistantBg = isDarkMode ? 'bg-amber-950/30 border-amber-700/40' : 'bg-amber-50 border-amber-200';
     const userBg = isDarkMode ? 'bg-sky-950/30 border-sky-700/40' : 'bg-sky-50 border-sky-200';
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
+    const panelHeightClass = 'h-[72vh]';
     const getVisibilityMeta = (session) => {
         const visible = session?.userVisible !== false;
         return visible
@@ -4400,12 +4401,12 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-6">
-                <section className={`${cardBg} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] space-y-4`}>
+                <section className={`${cardBg} ${panelHeightClass} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] flex flex-col`}>
                     <div className="flex items-center justify-between">
                         <h3 className="text-xl font-black">会话列表</h3>
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${chipBg}`}>{filteredSessions.length} / {sessions.length} 条</span>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                         <button
                             type="button"
                             onClick={() => setVisibilityFilter('ALL')}
@@ -4433,7 +4434,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                     {!sessionsLoading && !sessionsError && filteredSessions.length === 0 && (
                         <p className={`text-sm ${mutedText}`}>当前还没有任何 AI 会话记录。</p>
                     )}
-                    <div className={`max-h-[72vh] overflow-y-auto space-y-3 pr-1 ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar'}`}>
+                    <div className={`mt-4 flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar'}`}>
                         {filteredSessions.map((session) => {
                             const active = session.id === activeSessionId;
                             const visibilityMeta = getVisibilityMeta(session);
@@ -4479,7 +4480,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                     </div>
                 </section>
 
-                <section className={`${cardBg} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] min-h-[70vh] flex flex-col`}>
+                <section className={`${cardBg} ${panelHeightClass} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] flex flex-col overflow-hidden`}>
                     <div className="flex items-start justify-between gap-4 border-b border-dashed border-gray-300 dark:border-gray-700 pb-4">
                         <div className="min-w-0">
                             <h3 className="text-xl font-black truncate">{activeSession?.title || '请选择一条 AI 会话'}</h3>
