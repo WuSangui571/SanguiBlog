@@ -810,5 +810,11 @@ npm run dev
 - 启动期的知识扫描必须按“单篇文章/单知识文档独立事务”执行，避免某一篇文章或某一份知识文档同步失败后污染整个 Hibernate Session，连带导致后续 `null identifier` 断言异常。
 - 博客知识总览文档不能再作为单条超长文本直接写入 embedding；当前实现改为基于 `TokenTextSplitter` 切成多个 `BLOG_OVERVIEW` chunk 文档，分片 ID 使用稳定 UUID，并在同步前清理旧的单条总览 ID 与固定窗口内的 overview chunk ID。
 - `SystemSettingsView` 中依赖 `loadKnowledgeDocuments` 的 `useEffect` 必须放在该 `useCallback` 声明之后，避免 `/admin/settings` 因 const TDZ 触发前端白屏。
+- `/admin` 后台新增“AI管理”页面，导航位置在“访问日志”和“评论管理”之间，仅 `SUPER_ADMIN` 可见。
+- AI 管理页复用现有 `ai_chat_sessions` / `ai_chat_messages` 作为后台审计数据源，不新增第二套聊天记录表。
+- 后端提供超级管理员专用接口：
+  - `/api/admin/ai-chat/sessions`
+  - `/api/admin/ai-chat/sessions/{sessionId}`
+  统一返回会话所属用户、角色、会话创建/更新时间以及该会话完整消息时间线。
 
 

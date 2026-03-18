@@ -788,6 +788,11 @@ export const adminDeleteMyAnalyticsLogs = () =>
     method: "DELETE",
   });
 
+export const adminFetchAiAuditSessions = () => request("/admin/ai-chat/sessions");
+
+export const adminFetchAiAuditSessionDetail = (sessionId) =>
+  request(`/admin/ai-chat/sessions/${sessionId}`);
+
 export const adminFetchPermissionMatrix = () => request("/admin/permissions");
 
 export const adminUpdateRolePermissions = (roleCode, permissions) =>

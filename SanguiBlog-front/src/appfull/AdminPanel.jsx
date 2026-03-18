@@ -28,6 +28,8 @@ import {
     adminDeletePageViewLog,
     adminDeletePageViewLogs,
     adminDeleteMyAnalyticsLogs,
+    adminFetchAiAuditSessions,
+    adminFetchAiAuditSessionDetail,
     adminFetchPermissionMatrix,
     adminUpdateRolePermissions,
     adminScanUnusedAssets,
@@ -4271,6 +4273,204 @@ const COMMENT_STATUS_OPTIONS = [
 ];
 const REVIEW_STATUS_OPTIONS = COMMENT_STATUS_OPTIONS.filter((item) => item.value !== 'ALL');
 
+const AiAdminAuditView = ({ isDarkMode, user }) => {
+    const [sessions, setSessions] = useState([]);
+    const [sessionsLoading, setSessionsLoading] = useState(true);
+    const [sessionsError, setSessionsError] = useState('');
+    const [activeSessionId, setActiveSessionId] = useState(null);
+    const [sessionDetail, setSessionDetail] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailError, setDetailError] = useState('');
+
+    const cardBg = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
+    const mutedText = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    const bodyText = isDarkMode ? 'text-gray-100' : 'text-gray-900';
+    const chipBg = isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-700';
+    const messageBg = isDarkMode ? 'bg-gray-950 border border-gray-800' : 'bg-gray-50 border border-gray-200';
+    const assistantBg = isDarkMode ? 'bg-amber-950/30 border-amber-700/40' : 'bg-amber-50 border-amber-200';
+    const userBg = isDarkMode ? 'bg-sky-950/30 border-sky-700/40' : 'bg-sky-50 border-sky-200';
+    const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
+
+    const loadSessions = useCallback(async () => {
+        setSessionsLoading(true);
+        setSessionsError('');
+        try {
+            const res = await adminFetchAiAuditSessions();
+            const data = res?.data || res || [];
+            setSessions(Array.isArray(data) ? data : []);
+            setActiveSessionId((prev) => {
+                if (prev && data.some((item) => item.id === prev)) return prev;
+                return data[0]?.id || null;
+            });
+        } catch (err) {
+            setSessionsError(err?.message || '加载 AI 会话失败');
+            setSessions([]);
+            setActiveSessionId(null);
+        } finally {
+            setSessionsLoading(false);
+        }
+    }, []);
+
+    const loadSessionDetail = useCallback(async (sessionId) => {
+        if (!sessionId) {
+            setSessionDetail(null);
+            return;
+        }
+        setDetailLoading(true);
+        setDetailError('');
+        try {
+            const res = await adminFetchAiAuditSessionDetail(sessionId);
+            const data = res?.data || res || null;
+            setSessionDetail(data);
+        } catch (err) {
+            setDetailError(err?.message || '加载会话详情失败');
+            setSessionDetail(null);
+        } finally {
+            setDetailLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadSessions();
+    }, [loadSessions]);
+
+    useEffect(() => {
+        loadSessionDetail(activeSessionId);
+    }, [activeSessionId, loadSessionDetail]);
+
+    if (!user || user.role !== 'SUPER_ADMIN') {
+        return <PermissionNotice title="无权限" description="仅超级管理员可以查看全站 AI 聊天审计记录。" />;
+    }
+
+    const activeSession = sessionDetail?.session || sessions.find((item) => item.id === activeSessionId) || null;
+    const messages = sessionDetail?.messages || [];
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#FF0080]">AI Audit</p>
+                    <h2 className="text-3xl font-black flex items-center gap-2"><Sparkles /> AI 管理</h2>
+                    <p className={`text-sm mt-1 ${mutedText}`}>查看所有用户的 AI 会话、消息时间线与归属信息，仅超级管理员可见。</p>
+                </div>
+                <button
+                    onClick={loadSessions}
+                    className={`px-4 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                >
+                    刷新会话
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-6">
+                <section className={`${cardBg} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] space-y-4`}>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-black">会话列表</h3>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${chipBg}`}>{sessions.length} 条</span>
+                    </div>
+                    {sessionsLoading && <p className={`text-sm ${mutedText}`}>正在加载 AI 会话...</p>}
+                    {sessionsError && <p className="text-sm text-red-500">{sessionsError}</p>}
+                    {!sessionsLoading && !sessionsError && sessions.length === 0 && (
+                        <p className={`text-sm ${mutedText}`}>当前还没有任何 AI 会话记录。</p>
+                    )}
+                    <div className={`max-h-[72vh] overflow-y-auto space-y-3 pr-1 ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar'}`}>
+                        {sessions.map((session) => {
+                            const active = session.id === activeSessionId;
+                            return (
+                                <button
+                                    key={session.id}
+                                    type="button"
+                                    onClick={() => setActiveSessionId(session.id)}
+                                    className={`w-full text-left rounded-2xl border-2 px-4 py-4 transition ${active
+                                        ? 'border-black bg-[#FFD54F] text-black shadow-[6px_6px_0px_0px_#000]'
+                                        : (isDarkMode ? 'border-gray-700 bg-gray-950 hover:border-gray-500' : 'border-gray-200 bg-gray-50 hover:border-gray-400')
+                                        }`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="font-black truncate">{session.title || '未命名会话'}</p>
+                                            <p className={`text-xs mt-1 truncate ${active ? 'text-black/70' : mutedText}`}>
+                                                {session.displayName || session.username} · {session.roleName || session.roleCode || '未知角色'}
+                                            </p>
+                                        </div>
+                                        <span className={`shrink-0 text-[11px] px-2 py-1 rounded-full font-bold ${active ? 'bg-black text-white' : chipBg}`}>
+                                            #{session.id}
+                                        </span>
+                                    </div>
+                                    <p className={`text-xs mt-3 line-clamp-2 ${active ? 'text-black/80' : mutedText}`}>
+                                        {session.lastMessagePreview || '暂无预览'}
+                                    </p>
+                                    <div className={`mt-3 text-[11px] space-y-1 ${active ? 'text-black/70' : mutedText}`}>
+                                        <p>创建：{formatDateTime(session.createdAt)}</p>
+                                        <p>更新：{formatDateTime(session.updatedAt)}</p>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                <section className={`${cardBg} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] min-h-[70vh] flex flex-col`}>
+                    <div className="flex items-start justify-between gap-4 border-b border-dashed border-gray-300 dark:border-gray-700 pb-4">
+                        <div className="min-w-0">
+                            <h3 className="text-xl font-black truncate">{activeSession?.title || '请选择一条 AI 会话'}</h3>
+                            {activeSession && (
+                                <>
+                                    <p className={`text-sm mt-1 ${mutedText}`}>
+                                        用户：{activeSession.displayName || activeSession.username}（{activeSession.roleName || activeSession.roleCode || '未知角色'}）
+                                    </p>
+                                    <p className={`text-xs mt-1 ${mutedText}`}>
+                                        会话 #{activeSession.id} · 创建于 {formatDateTime(activeSession.createdAt)} · 最后更新于 {formatDateTime(activeSession.updatedAt)}
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                        {activeSession && (
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${chipBg}`}>
+                                {messages.length} 条消息
+                            </span>
+                        )}
+                    </div>
+
+                    {detailLoading && <p className={`text-sm mt-4 ${mutedText}`}>正在加载会话消息...</p>}
+                    {detailError && <p className="text-sm text-red-500 mt-4">{detailError}</p>}
+                    {!detailLoading && !detailError && !activeSession && (
+                        <div className="flex-1 flex items-center justify-center">
+                            <p className={`text-sm ${mutedText}`}>从左侧选择一条会话后，这里会显示完整消息时间线。</p>
+                        </div>
+                    )}
+
+                    {!detailLoading && !detailError && activeSession && (
+                        <div className={`mt-5 flex-1 overflow-y-auto pr-1 space-y-4 ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar'}`}>
+                            {messages.length === 0 ? (
+                                <p className={`text-sm ${mutedText}`}>这条会话当前还没有消息记录。</p>
+                            ) : messages.map((message) => {
+                                const bubbleClass = message.role === 'assistant' ? assistantBg : userBg;
+                                return (
+                                    <div key={message.id} className={`${messageBg} ${bubbleClass} rounded-2xl p-4`}>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${chipBg}`}>
+                                                    {message.role === 'assistant' ? 'AI 回复' : message.role === 'system' ? '系统消息' : '用户消息'}
+                                                </span>
+                                                <span className={`text-xs ${mutedText}`}>会话 #{message.sessionId}</span>
+                                            </div>
+                                            <span className={`text-xs ${mutedText}`}>{formatDateTime(message.createdAt)}</span>
+                                        </div>
+                                        <pre className={`mt-3 whitespace-pre-wrap break-words text-sm leading-7 font-sans ${bodyText}`}>{message.content || '（空消息）'}</pre>
+                                        {message.modelName && (
+                                            <p className={`text-xs mt-3 ${mutedText}`}>模型：{message.modelName}</p>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </section>
+            </div>
+        </div>
+    );
+};
+
 const CommentsAdminView = ({ isDarkMode }) => {
     const cardBg = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
     const inputClass = `w-full px-3 py-2 border-2 rounded-md text-sm outline-none transition ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white focus:border-indigo-400' : 'bg-white border-gray-200 text-gray-900 focus:border-indigo-500'}`;
@@ -6895,6 +7095,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         { key: 'create-post', label: '发布文章', icon: Edit, permissions: ['POST_CREATE'] },
         { key: 'posts', label: '文章列表', icon: FileText, permissions: ['POST_VIEW'] },
         { key: 'analytics', label: '访问日志', icon: BarChart3, permissions: ['ANALYTICS_VIEW'] },
+        { key: 'ai-management', label: 'AI管理', icon: Sparkles, permissions: [], role: 'SUPER_ADMIN' },
         { key: 'comments', label: '评论管理', icon: MessageCircle, permissions: ['COMMENT_VIEW'] },
         { key: 'categories', label: '二级分类', icon: Layers, permissions: ['CATEGORY_MANAGE'] },
         { key: 'taxonomy', label: '标签管理', icon: Tag, permissions: ['TAG_MANAGE'] },
@@ -6920,7 +7121,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         const groups = [
             { title: '创作管理', keys: ['create-post', 'posts'] },
             { title: '内容体系', keys: ['categories', 'taxonomy', 'about'] },
-            { title: '运营互动', keys: ['analytics', 'comments'] },
+            { title: '运营互动', keys: ['analytics', 'ai-management', 'comments'] },
             { title: '用户与权限', keys: ['users', 'permissions'] },
             { title: '个人与系统', keys: ['profile', 'settings'] },
         ];
@@ -7165,6 +7366,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             <Route path="dashboard" element={<DashboardView isDarkMode={isDarkMode} user={user} />} />
                             <Route path="create-post" element={<CreatePostView isDarkMode={isDarkMode} user={user} />} />
                             <Route path="analytics" element={<AnalyticsView isDarkMode={isDarkMode} user={user} />} />
+                            <Route path="ai-management" element={<AiAdminAuditView isDarkMode={isDarkMode} user={user} />} />
                             <Route path="comments" element={<CommentsAdminView isDarkMode={isDarkMode} />} />
                             <Route path="categories" element={<CategoriesView isDarkMode={isDarkMode} />} />
                             <Route path="taxonomy" element={<TaxonomyView isDarkMode={isDarkMode} />} />

@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.model.repository;
 
 import com.sangui.sanguiblog.model.entity.AiChatSession;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,4 +11,10 @@ public interface AiChatSessionRepository extends JpaRepository<AiChatSession, Lo
     List<AiChatSession> findByUserIdOrderByUpdatedAtDescIdDesc(Long userId);
 
     Optional<AiChatSession> findByIdAndUserId(Long id, Long userId);
+
+    @EntityGraph(attributePaths = {"user", "user.role"})
+    List<AiChatSession> findAllByOrderByUpdatedAtDescIdDesc();
+
+    @EntityGraph(attributePaths = {"user", "user.role"})
+    Optional<AiChatSession> findDetailById(Long id);
 }

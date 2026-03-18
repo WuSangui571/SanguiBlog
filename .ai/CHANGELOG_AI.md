@@ -3869,3 +3869,11 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   2) 启动同步总览前会清理旧版单条总览 ID 及固定窗口内的 overview chunk ID，兼容历史数据。
   3) 重写 `AiBlogKnowledgeSupport` 与相关测试，补充总览切片回归验证。
   4) 调整 `SystemSettingsView` 中 `loadKnowledgeDocuments` 的声明顺序，修复 `/admin/settings` 白屏。
+## [2026-03-18] 为后台新增仅超级管理员可见的 AI 管理页
+- 背景/需求：用户要求在 `/admin` 左侧导航中新增“AI管理”页面，位于“访问日志”和“评论管理”之间，用于查看所有用户的 AI 聊天会话与完整消息记录，仅允许超级管理员访问。
+- 修改类型：feat
+- 变更摘要：
+  1) 复用现有 `ai_chat_sessions` / `ai_chat_messages` 表，不再新增第二套 AI 审计表。
+  2) 新增 `/api/admin/ai-chat/sessions` 与 `/api/admin/ai-chat/sessions/{sessionId}` 两个超级管理员专用接口，返回会话所属用户、角色、会话创建时间、更新时间以及完整消息时间线。
+  3) 后台左侧导航新增“AI管理”，放置在“访问日志”和“评论管理”之间。
+  4) 新增 AI 审计页，采用“左侧会话列表 + 右侧消息时间线”布局展示全站 AI 聊天记录。
