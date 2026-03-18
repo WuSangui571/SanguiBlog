@@ -106,6 +106,7 @@ public class AiBlogKnowledgeSyncService {
 
         document.setTitle(post.getTitle());
         document.setSlug(post.getSlug());
+        document.setContentHash(contentHash);
         if (!StringUtils.hasText(document.getSyncStatus())) {
             document.setSyncStatus("PENDING");
         }
