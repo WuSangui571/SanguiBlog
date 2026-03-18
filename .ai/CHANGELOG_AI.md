@@ -3854,3 +3854,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   3) 新增 `AiCustomKnowledgeSyncService`，把导入的 `.txt` / `.md` / `.markdown` 文本自动切片并同步到现有 PgVector 向量库。
   4) `/admin/settings` 新增“导入知识库”页签，支持上传、编辑正文、启停同步、删除和查看同步状态。
   5) 站点 RAG 引用与上下文文案升级为“站点知识库”，可同时容纳博客文章和超级管理员导入的文本知识。
+## [2026-03-18] 修复知识同步时稳定向量 ID 重建导致的重复键启动异常
+- 背景/需求：用户启动时在新文章同步阶段遇到 `ai_blog_knowledge_chunks.uk_ai_blog_chunk_vector_document` 重复键冲突，随后 Hibernate Session 被污染并触发 `AiBlogKnowledgeChunk has a null identifier` 断言失败。
+- 修改类型：fix
+- 变更摘要：
+  1) `AiBlogKnowledgeSyncService` 与 `AiCustomKnowledgeSyncService` 在重建知识分片前，都会先删除旧 chunk 并立即 `flush()`，避免同一稳定向量 ID 在事务内重复插入。
+  2) 启动扫描改为“单篇文章/单知识文档独立事务”执行，避免一条同步失败污染整轮启动扫描的 Hibernate Session。
+  3) 补充两个最小回归测试，锁定“删除旧 chunk 后先 flush，再保存新 chunk”的行为。

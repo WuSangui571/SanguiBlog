@@ -17,7 +17,10 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
@@ -40,11 +43,11 @@ public class AiBlogKnowledgeSyncService {
     private final AiBlogKnowledgeChunkRepository knowledgeChunkRepository;
     private final ObjectProvider<VectorStore> vectorStoreProvider;
     private final AiBlogRagProperties ragProperties;
+    private final PlatformTransactionManager transactionManager;
 
     private final TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
 
     @EventListener(ApplicationReadyEvent.class)
-    @Transactional
     public void syncOnStartup() {
         if (!isOperational() || !ragProperties.isSyncOnStartup()) {
             return;
@@ -52,16 +55,16 @@ public class AiBlogKnowledgeSyncService {
 
         List<Post> publishedPosts = postRepository.findAllPublishedForKnowledge();
         for (Post post : publishedPosts) {
-            syncPublishedPost(post);
+            executeInNewTransaction(() -> syncPublishedPost(post));
         }
 
         for (AiBlogKnowledgeDocument document : knowledgeDocumentRepository.findAll()) {
             if (!postRepository.existsByIdAndStatus(document.getPostId(), "PUBLISHED")) {
-                removeTrackedPostKnowledge(document.getPostId());
+                executeInNewTransaction(() -> removeTrackedPostKnowledge(document.getPostId()));
             }
         }
 
-        syncOverviewDocument(publishedPosts);
+        executeInNewTransaction(() -> syncOverviewDocument(publishedPosts));
         log.info("博客 RAG 启动同步完成，已扫描 {} 篇已发布文章", publishedPosts.size());
     }
 
@@ -96,7 +99,9 @@ public class AiBlogKnowledgeSyncService {
             try {
                 deleteVectorDocuments(document.getId());
                 knowledgeChunkRepository.deleteByDocumentId(document.getId());
+                knowledgeChunkRepository.flush();
                 knowledgeDocumentRepository.delete(document);
+                knowledgeDocumentRepository.flush();
             } catch (Exception ex) {
                 markFailed(document, ex);
                 log.error("删除博客知识向量失败，postId={}", postId, ex);
@@ -129,6 +134,7 @@ public class AiBlogKnowledgeSyncService {
         try {
             deleteVectorDocuments(document.getId());
             knowledgeChunkRepository.deleteByDocumentId(document.getId());
+            knowledgeChunkRepository.flush();
 
             List<Document> documents = buildChunkDocuments(post);
             if (documents.isEmpty()) {
@@ -253,5 +259,11 @@ public class AiBlogKnowledgeSyncService {
             throw new IllegalStateException("PgVector 向量库未初始化，无法同步博客知识");
         }
         return vectorStore;
+    }
+
+    private void executeInNewTransaction(Runnable action) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        transactionTemplate.executeWithoutResult(status -> action.run());
     }
 }

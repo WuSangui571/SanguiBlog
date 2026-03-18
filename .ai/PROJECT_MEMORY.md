@@ -806,5 +806,7 @@ npm run dev
 - 新增“超级管理员文本知识库”能力：仅 `SUPER_ADMIN` 可在 `/admin/settings` -> `导入知识库` 中导入 `.txt` / `.md` / `.markdown` 文件；导入后正文存入 MySQL 的 `ai_custom_knowledge_documents`，分片映射存入 `ai_custom_knowledge_chunks`，并同步到现有 PgVector 向量库。
 - 超级管理员知识库与博客文章共用同一个 `VectorStore` 检索入口，因此 AI 站点知识检索已从“仅博客文章”扩展为“博客文章 + 超级管理员导入文本知识库”；检索模式统一为 `SITE_KNOWLEDGE_RAG_PGVECTOR`。
 - 超级管理员知识库支持后台增删改查：创建走文本文件导入，更新支持修改标题、正文和启用状态，禁用/删除时会同步移除对应向量索引。
+- 所有知识同步服务在“删除旧 chunk 再重建新 chunk”时，都必须在 `deleteByDocumentId(...)` 后立即 `flush()`，否则稳定 UUID 的向量文档 ID 会在同一事务内触发唯一键冲突。
+- 启动期的知识扫描必须按“单篇文章/单知识文档独立事务”执行，避免某一篇文章或某一份知识文档同步失败后污染整个 Hibernate Session，连带导致后续 `null identifier` 断言异常。
 
 
