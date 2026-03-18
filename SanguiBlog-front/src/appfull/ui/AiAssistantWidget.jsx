@@ -21,6 +21,10 @@ import {
     getDefaultFloatingPosition,
     shouldStartPanelDrag
 } from './aiFloatingPanel.js';
+import {
+    getHistoryPopoverScrollStyle,
+    shouldLockAssistantViewport
+} from './aiHistoryOverlay.js';
 import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMeta.js';
 import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.js';
 
@@ -312,6 +316,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
         messages,
         draft
     });
+    const lockAssistantViewport = shouldLockAssistantViewport(historyOpen);
     const floatingPanelStyle = isFloating
         ? {
             top: floatingPosition?.y ?? headerHeight + 16,
@@ -511,7 +516,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                                                 {assistantConfig.title}
                                             </p>
                                             <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
-                                                登录后可用
+                                                Beta测试
                                             </p>
                                         </div>
                                     </div>
@@ -595,7 +600,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                                                         <X size={14} />
                                                     </button>
                                                 </div>
-                                                <div className="mt-2 max-h-[280px] overflow-y-auto pr-1">
+                                                <div
+                                                    className="mt-2 max-h-[280px] overflow-y-auto pr-1"
+                                                    style={getHistoryPopoverScrollStyle()}
+                                                >
                                                     {sessionsLoading ? (
                                                         <div className={`px-3 py-3 text-xs font-semibold ${subTextClass}`}>正在加载历史会话...</div>
                                                     ) : sessions.length === 0 ? (
@@ -634,6 +642,16 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                                     </div>
                                 </div>
                             </div>
+
+                            {lockAssistantViewport && (
+                                <div
+                                    aria-hidden="true"
+                                    className="absolute inset-x-0 bottom-0 z-[83] bg-transparent"
+                                    style={{ top: 78 }}
+                                    onWheel={(event) => event.preventDefault()}
+                                    onTouchMove={(event) => event.preventDefault()}
+                                />
+                            )}
 
                             <div className={`hidden border-b-2 border-black px-4 py-3 ${isDarkMode ? 'bg-[#0B1220]' : 'bg-[#FFFBEA]'}`}>
                                 <div className="flex items-center justify-between gap-3">
@@ -757,7 +775,9 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
 
                             <div
                                 ref={viewportRef}
-                                className={`sg-scrollbar flex-1 min-h-0 overflow-y-auto px-4 py-4 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'}`}
+                                className={`sg-scrollbar flex-1 min-h-0 px-4 py-4 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'} ${
+                                    lockAssistantViewport ? 'overflow-hidden' : 'overflow-y-auto'
+                                }`}
                                 style={{ overscrollBehavior: 'contain' }}
                             >
                                 {messagesLoading ? (
