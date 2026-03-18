@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, MessageSquarePlus, SendHorizontal, X } from 'lucide-react';
+import { Bot, History, MessageSquarePlus, SendHorizontal, X } from 'lucide-react';
 import {
     createAiChatSession,
     fetchAiChatMessages,
@@ -16,6 +16,7 @@ import {
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 import AiMessageMarkdown from './AiMessageMarkdown.js';
 import { getAiMessagePresentation } from './aiMessagePresentation.js';
+import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMeta.js';
 
 function createLocalMessage(role, content, idPrefix = role) {
     return {
@@ -74,6 +75,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
     const [activeSessionId, setActiveSessionId] = useState(null);
     const [messages, setMessages] = useState([]);
     const [messagesLoading, setMessagesLoading] = useState(false);
+    const [historyOpen, setHistoryOpen] = useState(false);
     const viewportRef = useRef(null);
     const interactionBlockerRef = useRef(null);
     const textareaRef = useRef(null);
@@ -108,6 +110,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
             setActiveSessionId(null);
             setMessages([]);
             setMessagesLoading(false);
+            setHistoryOpen(false);
         }
 
         previousUserRef.current = user;
@@ -186,11 +189,13 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
         setMessages([]);
         setDraft('');
         setMessagesLoading(false);
+        setHistoryOpen(false);
     };
 
     const handleSelectSession = async (sessionId) => {
         if (!sessionId || sessionId === activeSessionId) return;
         setActiveSessionId(sessionId);
+        setHistoryOpen(false);
         await loadSessionMessages(sessionId);
     };
 
@@ -360,7 +365,84 @@ export default function AiAssistantWidget({ isDarkMode, config, user }) {
                             </div>
 
                             <div className={`border-b-2 border-black px-4 py-3 ${isDarkMode ? 'bg-[#0B1220]' : 'bg-[#FFFBEA]'}`}>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className={`min-w-0 text-[11px] font-bold uppercase tracking-[0.16em] ${subTextClass}`}>
+                                        {activeSessionId ? '继续对话' : '新的对话'}
+                                    </div>
+                                    <div className="relative flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleStartNewChat}
+                                            title="新对话"
+                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
+                                                isDarkMode ? 'bg-[#FFD700] text-black hover:bg-white' : 'bg-black text-[#FFD700] hover:bg-[#FFD700] hover:text-black'
+                                            }`}
+                                        >
+                                            <MessageSquarePlus size={18} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => canUseAiAssistant(user) && setHistoryOpen((prev) => !prev)}
+                                            title={canUseAiAssistant(user) ? '历史会话' : '登录后可查看历史会话'}
+                                            disabled={!canUseAiAssistant(user)}
+                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
+                                                canUseAiAssistant(user)
+                                                    ? isDarkMode
+                                                        ? 'bg-gray-800 text-white hover:bg-gray-700'
+                                                        : 'bg-white text-black hover:bg-[#FFF4BF]'
+                                                    : 'cursor-not-allowed bg-gray-200 text-gray-500'
+                                            }`}
+                                        >
+                                            <History size={18} />
+                                        </button>
+                                        {historyOpen && canUseAiAssistant(user) && (
+                                            <div
+                                                className={`absolute right-0 top-[calc(100%+10px)] z-[84] w-[300px] rounded-[20px] border-2 border-black p-2 ${
+                                                    isDarkMode ? 'bg-[#111827] text-white' : 'bg-white text-black'
+                                                }`}
+                                            >
+                                                <div className={`border-b border-black/10 px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass}`}>
+                                                    历史会话
+                                                </div>
+                                                <div className="mt-2 max-h-[280px] overflow-y-auto pr-1">
+                                                    {sessionsLoading ? (
+                                                        <div className={`px-3 py-3 text-xs font-semibold ${subTextClass}`}>正在加载历史会话...</div>
+                                                    ) : sessions.length === 0 ? (
+                                                        <div className={`px-3 py-3 text-xs font-semibold ${subTextClass}`}>还没有历史会话</div>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            {sessions.map((session) => {
+                                                                const active = session.id === activeSessionId;
+                                                                return (
+                                                                    <button
+                                                                        key={session.id}
+                                                                        type="button"
+                                                                        onClick={() => handleSelectSession(session.id)}
+                                                                        className={`w-full rounded-[16px] border-2 border-black px-3 py-3 text-left transition-colors ${
+                                                                            active
+                                                                                ? 'bg-[#FFD700] text-black'
+                                                                                : isDarkMode
+                                                                                    ? 'bg-gray-800 text-white hover:bg-gray-700'
+                                                                                    : 'bg-[#FFFBEA] text-black hover:bg-[#FFF4BF]'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="truncate text-sm font-black">
+                                                                            {truncateAiSessionTitle(session.title || '新对话')}
+                                                                        </div>
+                                                                        <div className={`mt-1 text-[11px] font-semibold ${active ? 'text-black/70' : subTextClass}`}>
+                                                                            {formatAiSessionTimeLabel(session.updatedAt)}
+                                                                        </div>
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="hidden flex items-center gap-2">
                                     <button
                                         type="button"
                                         onClick={handleStartNewChat}

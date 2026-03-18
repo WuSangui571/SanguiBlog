@@ -171,6 +171,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
   * 前端流式消费已做终态保护：收到 `complete` 后即视为成功完成，后续 reader 断开或补发异常不应再把当前消息改写成 `network error`。
   * 前端 AI 助手消息已支持 Markdown 渲染，当前复用 `react-markdown + remark-gfm + rehype-sanitize`，助手消息显示 Markdown，用户消息仍保持纯文本。
   * AI 助手对话区当前采用“助手贴背景、用户保留气泡”的布局：助手回复整行占据聊天背景宽度，用户消息仍使用右侧气泡。
+  * AI 助手顶部会话区当前采用“图标工具栏 + 历史会话浮窗”形式：顶部仅保留“新对话”“历史会话”两个图标按钮，历史会话点击后以浮窗列表展示，列表项显示会话标题截断与相对时间，不再使用横向滚动会话条。
   前端 AI 面板默认进入空白新会话，不会自动恢复上次对话；用户可从顶部会话条切换到历史会话继续交流。站点级 AI 配置继续优先复用 `site_settings` 表中的 `ai.chat.*` 键，包括 `assistant_name/title/welcome_message/input_placeholder/pending_reply/system_prompt`；前端通过 `/api/site/meta` 返回的 `aiAssistant` 字段接收这些配置。
 
 *   **全局错误过滤 (`src/main.jsx`)**:
