@@ -8,7 +8,7 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 
 ## 1. 目录索引
 
-- 发布说明目录：`release/`（当前仓库内最新现有对外 release 文档为 `release/V2.1.287.md`；`V2.2.0` 本次未单独撰写 release 文档）
+- 发布说明目录：`release/`（当前仓库内最新对外 release 文档为 `release/V2.2.0.md`）
 - Nginx 反代示例：`fake-nginx-config/nginx.conf`
 - 环境切换说明：`ChangeEnv.md`
 - 数据库初始化脚本：`sanguiblog_db.sql`
@@ -19,7 +19,7 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 ├─ SanguiBlog-server/      # Spring Boot 服务端（REST API、鉴权、站点地图等）
 ├─ SanguiBlog-front/       # React 单页应用（访客端 + 管理端 UI）
 ├─ uploads/                # 默认上传目录（生产环境建议挂载到持久化存储）
-├─ release/                # Release Notes（例如 V2.1.249 / V2.1.285）
+├─ release/                # Release Notes（例如 V2.1.287 / V2.2.0）
 ├─ sanguiblog_db.sql       # 初始化建库脚本（表结构 + 基础数据）
 └─ README.md               # 本文档
 ```

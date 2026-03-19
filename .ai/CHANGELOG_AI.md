@@ -3923,3 +3923,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   1) 将站点版本号统一升级为 `V2.2.0`。
   2) 更新首页版本兜底显示。
   3) 更新根目录 README，补充 AI 助理、DashScope、PgVector 与 RAG 相关说明。
+## [2026-03-19] 生成 V2.2.0 release 文档并同步 README
+- 背景/需求：用户要求基于当前 `V2.2.0` 生成新的 release 文档，并检查根目录 README 中与 release 状态相关的过时内容。
+- 修改类型：docs
+- 变更摘要：
+  1) 新增 `release/V2.2.0.md`，汇总 AI 助理大版本的对外发布说明。
+  2) README 中“最新 release 文档”描述更新为 `V2.2.0`。
+  3) README 中 release 目录示例版本同步更新。
