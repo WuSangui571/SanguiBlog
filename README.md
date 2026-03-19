@@ -2,11 +2,13 @@
 
 SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发，提供从环境准备到上线的最小可用流程与常见问题排查。
 
-> 当前站点版本号：`V2.1.290`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
+> 当前站点版本号：`V2.2.0`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
+>
+> `V2.2.0` 是一次较大的能力升级版本：在原有博客系统基础上，引入了 AI 助理、登录用户多轮会话、博客文章 RAG、当前文章页上下文增强、超级管理员知识库导入与后台 AI 会话审计。
 
 ## 1. 目录索引
 
-- 发布说明目录：`release/`（当前仓库内最新现有文档为 `release/V2.1.287.md`）
+- 发布说明目录：`release/`（当前仓库内最新现有对外 release 文档为 `release/V2.1.287.md`；`V2.2.0` 本次未单独撰写 release 文档）
 - Nginx 反代示例：`fake-nginx-config/nginx.conf`
 - 环境切换说明：`ChangeEnv.md`
 - 数据库初始化脚本：`sanguiblog_db.sql`
@@ -29,10 +31,13 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 | JDK | 21 | 后端 `pom.xml` 指定 `java.version=21` |
 | Maven | 3.9.x | 构建/打包后端 |
 | Node.js | ≥ 18（建议 20） | 构建前端 |
-| MySQL | ≥ 8.0 | 建议 UTF8MB4 |
+| MySQL | ≥ 8.0 | 主业务数据库，建议 UTF8MB4 |
+| PostgreSQL | 13+（可选） | 仅在启用博客/知识库 RAG 时需要，需安装 PgVector 扩展 |
 | Git | 任意近期版本 | 拉取代码 |
 
 > Windows / Linux 均可部署。生产环境建议：在 CI/构建机完成前后端构建，线上仅部署产物（后端 Jar + 前端 dist + 持久化 uploads）。
+>
+> 如果你暂时不启用 AI RAG，则 PostgreSQL / PgVector 不是必需项；只使用基础 AI 聊天时，MySQL 仍是唯一必需数据库。
 
 ## 4. 初始化数据库
 
@@ -45,6 +50,10 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
    mysql -u root -p sanguiblog_db < sanguiblog_db.sql
    ```
 3. 建议创建业务账号（读写权限），并在后端配置里配置用户名/密码（见下一节）。
+4. 如果你准备启用 AI 聊天相关新功能，请确保根目录 `sanguiblog_db.sql` 已同步到当前版本，里面已包含：
+   - AI 会话与消息表
+   - 博客 RAG 跟踪表
+   - 超级管理员文本知识库表
 
 ## 5. 后端配置与启动（SanguiBlog-server）
 后端配置文件：
@@ -61,6 +70,9 @@ spring:
     username: your_db_user
     password: your_db_password
     driver-class-name: com.mysql.cj.jdbc.Driver
+  ai:
+    dashscope:
+      api-key: your_dashscope_api_key
 
 jwt:
   secret: your_jwt_secret
@@ -107,6 +119,41 @@ cd SanguiBlog-server
 mvn -DskipTests package
 java -jar target/SanguiBlog-server-*.jar
 ```
+
+### 5.4 AI 助理与 RAG（V2.2.0+）
+
+`V2.2.0` 起，项目已内置 AI 助理。能力包括：
+
+- 站点前台 AI 聊天入口
+- 登录用户多轮会话与历史会话管理
+- 基于已发布博客文章的 RAG 检索增强
+- 文章详情页“当前页面内容”临时上下文总结
+- 超级管理员文本知识库导入
+- 后台 AI 会话审计
+
+基础 AI 聊天至少需要：
+
+- `SPRING_AI_DASHSCOPE_API_KEY` 或 `AI_DASHSCOPE_API_KEY`
+
+如需启用博客/知识库 RAG，还需要额外准备 PostgreSQL + PgVector，并配置：
+
+```bash
+AI_RAG_ENABLED=true
+AI_RAG_SYNC_ON_STARTUP=true
+AI_RAG_PGVECTOR_URL=jdbc:postgresql://127.0.0.1:5432/sanguiblog_ai
+AI_RAG_PGVECTOR_USERNAME=your_pg_user
+AI_RAG_PGVECTOR_PASSWORD=your_pg_password
+AI_RAG_PGVECTOR_SCHEMA=public
+AI_RAG_PGVECTOR_TABLE=vector_store
+AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=false
+AI_DASHSCOPE_EMBEDDING_MODEL=text-embedding-v4
+```
+
+说明：
+
+- 首次建 `vector_store` 表时，可临时将 `AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=true`，建表成功后建议改回 `false`
+- AI 入口支持在后台 `/admin/settings` 的 `AI助理` 分组中统一开启/关闭
+- 超级管理员可在后台管理 AI 知识库与 AI 会话审计
 
 ## 6. 前端构建与部署（SanguiBlog-front）
 
@@ -174,6 +221,8 @@ server {
 | `/sitemap.xml` 打开变首页 | `try_files` 先于 sitemap location | 添加 `location = /sitemap.xml` 与 `location = /robots.txt` 并放在 `try_files` 前 |
 | 上传失败/找不到文件 | `storage.base-path` 无写权限或 Nginx `/uploads/` 未映射 | 确保目录可写，配置 `alias` 或由后端静态映射提供 |
 | 服务启动失败提示 JWT_SECRET | 未设置 JWT 密钥 | 设置环境变量 `JWT_SECRET` 后再启动 |
+| AI 聊天不可用 | DashScope Key 未配置，或后台已关闭 AI 助理 | 检查 `SPRING_AI_DASHSCOPE_API_KEY` / `/admin/settings -> AI助理` |
+| AI RAG 不生效 | `AI_RAG_ENABLED` 未开启，或 PgVector 未就绪 | 检查 PostgreSQL / PgVector、`vector_store`、启动同步日志 |
 | 控制台出现 `content_script.js` 报错 | 浏览器扩展注入脚本噪声 | 无痕窗口/禁用扩展验证（通常与站点无关） |
 
 如需了解更深入的实现细节，可参考仓库内的历史发布说明与源码注释。
