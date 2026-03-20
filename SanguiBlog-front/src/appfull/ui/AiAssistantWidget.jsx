@@ -33,6 +33,11 @@ import {
 import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMeta.js';
 import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.js';
 import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
+import {
+    hasPlayedAiWelcomeIntro,
+    markAiWelcomeIntroPlayed,
+    shouldPlayAiWelcomeIntro
+} from './aiWelcomeIntro.js';
 
 function createLocalMessage(role, content, idPrefix = role) {
     return {
@@ -52,6 +57,7 @@ function mapServerMessage(message) {
 
 const MIN_TEXTAREA_HEIGHT = 54;
 const MAX_TEXTAREA_HEIGHT = 132;
+const WELCOME_INTRO_DURATION_MS = 2400;
 
 function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }) {
     const [hasError, setHasError] = useState(false);
@@ -99,6 +105,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const [floatingPosition, setFloatingPosition] = useState(null);
     const [floatingSize, setFloatingSize] = useState(null);
     const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
+    const [hasPlayedWelcomeIntro, setHasPlayedWelcomeIntro] = useState(() => hasPlayedAiWelcomeIntro());
+    const [welcomeIntroActive, setWelcomeIntroActive] = useState(false);
     const viewportRef = useRef(null);
     const textareaRef = useRef(null);
     const previousUserRef = useRef(user);
@@ -138,6 +146,29 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             window.removeEventListener('resize', handleResize);
         };
     }, []);
+
+    useEffect(() => {
+        if (!shouldPlayAiWelcomeIntro({
+            isOpen,
+            messagesLength: messages.length,
+            messagesLoading,
+            hasPlayed: hasPlayedWelcomeIntro
+        })) {
+            return undefined;
+        }
+
+        markAiWelcomeIntroPlayed();
+        setHasPlayedWelcomeIntro(true);
+        setWelcomeIntroActive(true);
+
+        const timeoutId = window.setTimeout(() => {
+            setWelcomeIntroActive(false);
+        }, WELCOME_INTRO_DURATION_MS);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [hasPlayedWelcomeIntro, isOpen, messages.length, messagesLoading]);
 
     useEffect(() => {
         if (shouldResetAiAssistantState(previousUserRef.current, user)) {
@@ -406,6 +437,14 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     };
 
     const deleteDialog = buildAiSessionDeleteDialog(pendingDeleteSession?.title);
+    const welcomeIntroLines = useMemo(
+        () => [
+            assistantConfig.welcomeMessage,
+            '从一个全新的对话开始，或者切换到上方历史会话继续交流。',
+            '新进入时默认是空白会话'
+        ],
+        [assistantConfig.welcomeMessage]
+    );
     const sendDisabled = !draft.trim() || isSending;
     const newChatDisabled = isIdleNewSession({
         activeSessionId,
@@ -988,23 +1027,101 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 ) : messages.length === 0 ? (
                                     <div className="flex min-h-[240px] items-center justify-center">
                                         <div className="w-full max-w-[320px] text-center">
-                                            <div className="mx-auto mb-5 flex justify-center">
-                                                <AssistantLogo
-                                                    logoPath={assistantConfig.logoPath}
-                                                    alt={assistantConfig.title}
-                                                    size={64}
-                                                    roundedClassName="rounded-[22px]"
-                                                />
+                                            <motion.div
+                                                className="mx-auto mb-5 flex justify-center"
+                                                initial={welcomeIntroActive ? { opacity: 0, scale: 0.84, rotate: -8 } : false}
+                                                animate={welcomeIntroActive ? {
+                                                    opacity: [0, 1, 1],
+                                                    scale: [0.84, 1.08, 1],
+                                                    rotate: [-8, 0, 0],
+                                                    filter: [
+                                                        'drop-shadow(0 0 0px rgba(255,0,128,0))',
+                                                        'drop-shadow(0 0 20px rgba(255,0,128,0.42))',
+                                                        'drop-shadow(0 0 10px rgba(255,215,0,0.22))'
+                                                    ]
+                                                } : { opacity: 1, scale: 1, rotate: 0, filter: 'drop-shadow(0 0 0px rgba(0,0,0,0))' }}
+                                                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                                            >
+                                                <div className="relative">
+                                                    <motion.div
+                                                        aria-hidden="true"
+                                                        className="pointer-events-none absolute inset-[-8px] rounded-[28px] border border-[#00F0FF]/40"
+                                                        initial={welcomeIntroActive ? { opacity: 0, scale: 0.92 } : false}
+                                                        animate={welcomeIntroActive ? {
+                                                            opacity: [0, 0.85, 0],
+                                                            scale: [0.92, 1.08, 1.14]
+                                                        } : { opacity: 0 }}
+                                                        transition={{ duration: 1.1, delay: 0.08, ease: 'easeOut' }}
+                                                    />
+                                                    <AssistantLogo
+                                                        logoPath={assistantConfig.logoPath}
+                                                        alt={assistantConfig.title}
+                                                        size={64}
+                                                        roundedClassName="rounded-[22px]"
+                                                    />
+                                                </div>
+                                            </motion.div>
+                                            <div className="space-y-3">
+                                                {welcomeIntroLines.map((line, index) => {
+                                                    const isHeadline = index === 0;
+                                                    const isHint = index === welcomeIntroLines.length - 1;
+                                                    return (
+                                                        <motion.div
+                                                            key={`${index}-${line}`}
+                                                            initial={welcomeIntroActive ? {
+                                                                opacity: 0,
+                                                                y: 18,
+                                                                scale: 0.96,
+                                                                filter: 'blur(10px)'
+                                                            } : false}
+                                                            animate={welcomeIntroActive ? {
+                                                                opacity: [0, 1, 1],
+                                                                y: [18, -4, 0],
+                                                                scale: [0.96, 1.02, 1],
+                                                                filter: ['blur(10px)', 'blur(0px)', 'blur(0px)']
+                                                            } : {
+                                                                opacity: 1,
+                                                                y: 0,
+                                                                scale: 1,
+                                                                filter: 'blur(0px)'
+                                                            }}
+                                                            transition={{
+                                                                duration: isHeadline ? 0.72 : 0.58,
+                                                                delay: 0.18 + index * 0.19,
+                                                                ease: [0.22, 1, 0.36, 1]
+                                                            }}
+                                                            className="relative overflow-hidden"
+                                                        >
+                                                            {welcomeIntroActive && (
+                                                                <motion.div
+                                                                    aria-hidden="true"
+                                                                    className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-[#00F0FF]/25 to-transparent"
+                                                                    initial={{ x: '-120%' }}
+                                                                    animate={{ x: '360%' }}
+                                                                    transition={{
+                                                                        duration: 0.72,
+                                                                        delay: 0.24 + index * 0.19,
+                                                                        ease: 'easeOut'
+                                                                    }}
+                                                                />
+                                                            )}
+                                                            {isHeadline ? (
+                                                                <h3 className="text-2xl font-black tracking-[0.08em]">
+                                                                    {line}
+                                                                </h3>
+                                                            ) : isHint ? (
+                                                                <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${emptyStateNoteClass}`}>
+                                                                    {line}
+                                                                </p>
+                                                            ) : (
+                                                                <p className={`text-sm font-semibold leading-6 ${subTextClass}`}>
+                                                                    {line}
+                                                                </p>
+                                                            )}
+                                                        </motion.div>
+                                                    );
+                                                })}
                                             </div>
-                                            <h3 className="text-2xl font-black tracking-[0.08em]">
-                                                {assistantConfig.welcomeMessage}
-                                            </h3>
-                                            <p className={`mt-3 text-sm font-semibold leading-6 ${subTextClass}`}>
-                                                从一个全新的对话开始，或者切换到上方历史会话继续交流。
-                                            </p>
-                                            <p className={`mt-5 text-[11px] font-bold uppercase tracking-[0.24em] ${emptyStateNoteClass}`}>
-                                                新进入时默认是空白会话
-                                            </p>
                                         </div>
                                     </div>
                                 ) : (
