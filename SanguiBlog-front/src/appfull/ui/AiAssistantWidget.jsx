@@ -1093,8 +1093,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                                 <motion.div
                                                                     aria-hidden="true"
                                                                     className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-[#00F0FF]/25 to-transparent"
-                                                                    initial={{ x: '-120%' }}
-                                                                    animate={{ x: '360%' }}
+                                                                    initial={{ x: '-120%', opacity: 0 }}
+                                                                    animate={{ x: ['-120%', '120%', '360%'], opacity: [0, 0.9, 0] }}
                                                                     transition={{
                                                                         duration: 0.72,
                                                                         delay: 0.24 + index * 0.19,
