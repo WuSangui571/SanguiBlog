@@ -68,7 +68,7 @@ public class SiteService {
         @Value("${site.home.signature-quote:阻挡你的不是别人，而是你自己。}")
         private String homeSignatureQuote;
 
-        public SiteMetaDto meta() {
+        public SiteMetaDto.SiteStats currentStats() {
                 final String status = "PUBLISHED";
                 long postCount = postRepository.countByStatus(status);
                 long commentCount = Optional.ofNullable(postRepository.sumCommentsByStatus(status)).orElse(0L);
@@ -79,6 +79,20 @@ public class SiteService {
                 Optional<Post> lastPublished = postRepository.findFirstByStatusOrderByPublishedAtDesc(status);
                 String lastDate = lastPublished.map(p -> DATE_FMT.format(p.getPublishedAt())).orElse("-");
                 String lastDateFull = lastPublished.map(p -> DATE_FULL_FMT.format(p.getPublishedAt())).orElse("-");
+
+                return SiteMetaDto.SiteStats.builder()
+                                .posts(postCount)
+                                .comments(commentCount)
+                                .categories(categoryCount)
+                                .tags(tagCount)
+                                .views(totalViews)
+                                .lastUpdated(lastDate)
+                                .lastUpdatedFull(lastDateFull)
+                                .build();
+        }
+
+        public SiteMetaDto meta() {
+                SiteMetaDto.SiteStats stats = currentStats();
 
                 SystemBroadcast broadcast = systemBroadcastRepository.findTopByOrderByCreatedAtDesc()
                                 .orElse(null);
@@ -133,15 +147,7 @@ public class SiteService {
                                                                 .orElse(null)));
 
                 return SiteMetaDto.builder()
-                                .stats(SiteMetaDto.SiteStats.builder()
-                                                .posts(postCount)
-                                                .comments(commentCount)
-                                                .categories(categoryCount)
-                                                .tags(tagCount)
-                                                .views(totalViews)
-                                                .lastUpdated(lastDate)
-                                                .lastUpdatedFull(lastDateFull)
-                                                .build())
+                                .stats(stats)
                                 .broadcast(SiteMetaDto.BroadcastDto.builder()
                                                 .active(broadcast != null
                                                                 && Boolean.TRUE.equals(broadcast.getIsActive()))
