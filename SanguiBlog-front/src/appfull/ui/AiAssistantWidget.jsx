@@ -33,6 +33,7 @@ import {
 import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMeta.js';
 import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.js';
 import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
+import { buildAiLauncherBadge } from './aiLauncherBadge.js';
 import {
     buildAiWelcomeIntroLines,
     shouldPlayAiWelcomeIntro
@@ -432,6 +433,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     };
 
     const deleteDialog = buildAiSessionDeleteDialog(pendingDeleteSession?.title);
+    const launcherBadge = useMemo(() => buildAiLauncherBadge(assistantConfig), [assistantConfig]);
     const welcomeIntroLines = useMemo(
         () => buildAiWelcomeIntroLines(assistantConfig.welcomeMessage),
         [assistantConfig.welcomeMessage]
@@ -1267,13 +1269,44 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 onClick={() => setIsOpen((prev) => !prev)}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 border-2 border-black rounded-full pl-4 pr-5 py-3 flex items-center gap-3 transition-colors ${bubbleButtonClass}`}
+                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 overflow-hidden border-2 border-black rounded-[24px] pl-3.5 pr-5 py-3 flex items-center gap-3 shadow-[8px_8px_0px_0px_#000] transition-colors ${
+                    isDarkMode
+                        ? 'bg-[#0B1220] text-white hover:bg-[#111B31]'
+                        : 'bg-[#FFF8D8] text-black hover:bg-white'
+                }`}
             >
-                <span className="relative flex items-center justify-center w-11 h-11 rounded-full border-2 border-black bg-[#FF0080] text-white overflow-hidden">
+                <span className="pointer-events-none absolute inset-0 opacity-90">
+                    <span
+                        className={`absolute inset-0 ${
+                            isDarkMode
+                                ? 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.2),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.12),transparent_48%,rgba(0,240,255,0.12))]'
+                                : 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.16),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.08),transparent_48%,rgba(0,240,255,0.08))]'
+                        }`}
+                    />
+                    <motion.span
+                        aria-hidden="true"
+                        className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/35 to-transparent"
+                        animate={{ x: ['-120%', '360%'] }}
+                        transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 1.3, ease: 'easeInOut' }}
+                    />
+                </span>
+                <span className="relative flex items-center justify-center w-11 h-11 rounded-[18px] border-2 border-black bg-[#FF0080] text-white overflow-hidden shadow-[0_0_0_2px_rgba(0,0,0,0.12)]">
+                    <motion.span
+                        aria-hidden="true"
+                        className="absolute inset-[-6px] rounded-[22px] border border-[#00F0FF]/70"
+                        animate={{ scale: [1, 1.18, 1], opacity: [0.65, 0, 0.65] }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
+                    />
+                    <motion.span
+                        aria-hidden="true"
+                        className="absolute inset-[-11px] rounded-[28px] border border-[#FFD700]/45"
+                        animate={{ scale: [0.96, 1.26, 0.96], opacity: [0, 0.55, 0] }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut', delay: 0.45 }}
+                    />
                     <img
                         src={assistantConfig.logoPath}
                         alt={assistantConfig.title}
-                        className="h-full w-full object-cover"
+                        className="relative z-[1] h-full w-full object-cover"
                         onError={(event) => {
                             event.currentTarget.style.display = 'none';
                             const fallback = event.currentTarget.nextElementSibling;
@@ -1286,14 +1319,20 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     >
                         <Bot size={22} strokeWidth={2.8} />
                     </span>
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#00E096] border border-black" />
+                    <motion.span
+                        className="absolute -top-1 -right-1 z-[2] w-3 h-3 rounded-full bg-[#00E096] border border-black"
+                        animate={{ scale: [1, 1.22, 1], opacity: [1, 0.78, 1] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                    />
                 </span>
-                <span className="text-left">
-                    <span className="block text-[10px] font-black uppercase tracking-[0.24em] opacity-80">
-                        Ask Sangui AI
+                <span className="relative text-left">
+                    <span className={`block text-[10px] font-black uppercase tracking-[0.28em] ${
+                        isDarkMode ? 'text-[#00F0FF]' : 'text-[#0F766E]'
+                    }`}>
+                        {launcherBadge.eyebrow}
                     </span>
-                    <span className="mt-0.5 block text-sm font-black">
-                        三桂在线
+                    <span className="mt-0.5 block text-sm font-black leading-5">
+                        {launcherBadge.label}
                     </span>
                 </span>
             </motion.button>
