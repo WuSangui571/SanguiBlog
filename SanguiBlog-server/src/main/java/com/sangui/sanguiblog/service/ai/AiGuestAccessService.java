@@ -214,7 +214,6 @@ public class AiGuestAccessService {
 
     private void registerRapidStrike(AccessState state, Instant now) {
         state.roll(now);
-        state.lastRequestAt = now;
         state.rapidStrikes += 1;
     }
 

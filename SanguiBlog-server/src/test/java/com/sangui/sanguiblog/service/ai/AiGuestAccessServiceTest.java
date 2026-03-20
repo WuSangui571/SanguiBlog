@@ -8,8 +8,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -95,6 +95,42 @@ class AiGuestAccessServiceTest {
 
         assertEquals(false, context.guest());
         service.assertCanSend(context);
+    }
+
+    @Test
+    void shouldNotResetRetryWindowAfterRejectedGuestRequest() throws InterruptedException {
+        AiGuestAccessProperties props = buildProps();
+        props.setGuestMinIntervalMs(4_000);
+        props.setGuestCaptchaStrikeThreshold(10);
+        props.setGuestBlockStrikeThreshold(20);
+
+        AiGuestAccessService service = new AiGuestAccessService(props, mockCaptchaService(false), new BotGuardProperties());
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("10.0.0.5");
+        request.addHeader("User-Agent", "JUnit");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        AiGuestAccessService.AccessContext context = service.resolveContext(null, request, response);
+        service.assertCanSend(context);
+
+        long firstRetryAfter;
+        try {
+            service.assertCanSend(context);
+            fail("Second rapid request should be throttled");
+            return;
+        } catch (AiAccessControlException ex) {
+            firstRetryAfter = ((Number) ex.getData().get("retryAfterSeconds")).longValue();
+        }
+
+        Thread.sleep(2_100);
+
+        try {
+            service.assertCanSend(context);
+            fail("Request should still be throttled until the original interval has elapsed");
+        } catch (AiAccessControlException ex) {
+            long secondRetryAfter = ((Number) ex.getData().get("retryAfterSeconds")).longValue();
+            assertTrue(secondRetryAfter < firstRetryAfter, "retryAfterSeconds should decrease instead of being reset");
+        }
     }
 
     private AiGuestAccessProperties buildProps() {
