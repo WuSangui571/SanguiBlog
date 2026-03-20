@@ -23,6 +23,7 @@ import {
     shouldStartPanelDrag
 } from './aiFloatingPanel.js';
 import {
+    shouldCapturePageScrollWithAssistantOpen,
     getHistoryPopoverScrollStyle,
     shouldLockAssistantViewport
 } from './aiHistoryOverlay.js';
@@ -92,7 +93,6 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const [floatingPosition, setFloatingPosition] = useState(null);
     const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
     const viewportRef = useRef(null);
-    const interactionBlockerRef = useRef(null);
     const textareaRef = useRef(null);
     const previousUserRef = useRef(user);
     const historyPopoverRef = useRef(null);
@@ -137,25 +137,6 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
         previousUserRef.current = user;
     }, [user]);
-
-    useEffect(() => {
-        if (!isOpen || !interactionBlockerRef.current) {
-            return undefined;
-        }
-
-        const blocker = interactionBlockerRef.current;
-        const preventDefault = (event) => {
-            event.preventDefault();
-        };
-
-        blocker.addEventListener('wheel', preventDefault, { passive: false });
-        blocker.addEventListener('touchmove', preventDefault, { passive: false });
-
-        return () => {
-            blocker.removeEventListener('wheel', preventDefault);
-            blocker.removeEventListener('touchmove', preventDefault);
-        };
-    }, [isOpen]);
 
     useEffect(() => {
         if (!historyOpen) {
@@ -364,6 +345,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         messages,
         draft
     });
+    const capturePageScroll = shouldCapturePageScrollWithAssistantOpen(isOpen);
     const lockAssistantViewport = shouldLockAssistantViewport(historyOpen);
     const floatingPanelStyle = isFloating
         ? {
@@ -522,15 +504,16 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             <AnimatePresence>
                 {isOpen && (
                     <>
-                        <motion.div
-                            ref={interactionBlockerRef}
-                            aria-hidden="true"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.16 }}
-                            className="fixed inset-0 z-[82] bg-transparent touch-none"
-                        />
+                        {capturePageScroll && (
+                            <motion.div
+                                aria-hidden="true"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.16 }}
+                                className="fixed inset-0 z-[82] bg-transparent touch-none"
+                            />
+                        )}
                         <motion.section
                             ref={panelRef}
                             role="dialog"
