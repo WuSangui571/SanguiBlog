@@ -632,8 +632,16 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             : message
                     )));
                 },
-                onError: (message) => {
-                    throw new Error(message || 'AI 服务暂时不可用，请稍后再试。');
+                onError: (errorPayload) => {
+                    if (errorPayload instanceof Error) {
+                        throw errorPayload;
+                    }
+                    if (typeof errorPayload === 'object' && errorPayload !== null) {
+                        const nextError = new Error(errorPayload.message || 'AI 服务暂时不可用，请稍后再试。');
+                        nextError.payload = errorPayload;
+                        throw nextError;
+                    }
+                    throw new Error(errorPayload || 'AI 服务暂时不可用，请稍后再试。');
                 }
             });
             if (!isGuestMode) {
@@ -646,7 +654,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 }
                 return;
             }
-            const payload = error?.payload?.data || {};
+            const payload = error?.payload?.data || error?.payload || {};
             const fallback = error?.message?.trim() || 'AI 服务暂时不可用，请稍后再试。';
             const guestAccessNotice = buildAiGuestAccessNotice({
                 isGuestMode,

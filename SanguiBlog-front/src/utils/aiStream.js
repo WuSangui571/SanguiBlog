@@ -36,6 +36,15 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
     let terminalState = null;
+    let terminalError = null;
+
+    const buildTerminalError = () => {
+        const error = new Error(terminalError?.message || 'AI 服务调用失败，请稍后再试。');
+        if (terminalError) {
+            error.payload = terminalError;
+        }
+        return error;
+    };
 
     const handleEvent = (event, data) => {
         if (terminalState) return;
@@ -54,7 +63,10 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
 
         if (event === 'error') {
             terminalState = 'error';
-            onError?.(data?.message || 'AI服务调用失败，请稍后再试');
+            terminalError = typeof data === 'object' && data !== null
+                ? data
+                : { message: data || 'AI 服务调用失败，请稍后再试。' };
+            onError?.(terminalError);
             void reader.cancel?.();
         }
     };
@@ -70,7 +82,7 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
             }
 
             if (terminalState === 'error') {
-                throw new Error('AI服务调用失败，请稍后再试');
+                throw buildTerminalError();
             }
 
             if (done) {
@@ -84,7 +96,7 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
                 }
 
                 if (terminalState === 'error') {
-                    throw new Error('AI服务调用失败，请稍后再试');
+                    throw buildTerminalError();
                 }
 
                 return;

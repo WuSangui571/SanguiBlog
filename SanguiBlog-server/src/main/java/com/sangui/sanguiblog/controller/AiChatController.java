@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.controller;
 
+import com.sangui.sanguiblog.exception.AiAccessControlException;
 import com.sangui.sanguiblog.model.dto.AiChatMessageDto;
 import com.sangui.sanguiblog.model.dto.AiChatRequest;
 import com.sangui.sanguiblog.model.dto.AiChatResponse;
@@ -22,7 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
@@ -56,15 +60,19 @@ public class AiChatController {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse
     ) {
-        return aiChatService.streamChat(
-                principal != null ? principal.getId() : null,
-                request.getSessionId(),
-                request.getMessage(),
-                request.getCurrentPageContext(),
-                request.getLocalHistory(),
-                httpRequest,
-                httpResponse
-        );
+        try {
+            return aiChatService.streamChat(
+                    principal != null ? principal.getId() : null,
+                    request.getSessionId(),
+                    request.getMessage(),
+                    request.getCurrentPageContext(),
+                    request.getLocalHistory(),
+                    httpRequest,
+                    httpResponse
+            );
+        } catch (AiAccessControlException ex) {
+            return buildAccessDeniedEmitter(ex);
+        }
     }
 
     @GetMapping("/sessions")
@@ -92,5 +100,19 @@ public class AiChatController {
             @PathVariable Long sessionId
     ) {
         return ApiResponse.ok(aiChatService.sessionMessages(principal.getId(), sessionId));
+    }
+
+    private SseEmitter buildAccessDeniedEmitter(AiAccessControlException ex) {
+        SseEmitter emitter = new SseEmitter(0L);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("message", ex.getMessage());
+        payload.putAll(ex.getData());
+        try {
+            emitter.send(SseEmitter.event().name("error").data(payload));
+        } catch (IOException ignored) {
+            // Best effort only.
+        }
+        emitter.complete();
+        return emitter;
     }
 }

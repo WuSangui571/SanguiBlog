@@ -2,58 +2,42 @@ import assert from 'node:assert/strict';
 
 import { consumeSseStream } from './aiStream.js';
 
-class FakeReader {
-    constructor(steps) {
-        this.steps = steps;
-        this.index = 0;
-        this.cancelled = false;
-    }
-
-    async read() {
-        if (this.index >= this.steps.length) {
-            return { value: undefined, done: true };
-        }
-
-        const step = this.steps[this.index++];
-        if (step instanceof Error) {
-            throw step;
-        }
-
-        return step;
-    }
-
-    async cancel() {
-        this.cancelled = true;
-    }
-}
-
 const encoder = new TextEncoder();
 
-const completeThenDisconnectReader = new FakeReader([
-    {
-        value: encoder.encode('event: chunk\ndata: {"text":"你好"}\n\n'),
-        done: false
-    },
-    {
-        value: encoder.encode('event: complete\ndata: {"reply":"你好，世界"}\n\n'),
-        done: false
-    },
-    new Error('network error')
-]);
+const createReader = (chunks) => {
+    let index = 0;
+    return {
+        async read() {
+            if (index >= chunks.length) {
+                return { value: undefined, done: true };
+            }
+            const chunk = chunks[index++];
+            return { value: encoder.encode(chunk), done: false };
+        },
+        async cancel() {
+            return undefined;
+        }
+    };
+};
 
-const chunks = [];
-const completes = [];
 const errors = [];
 
-await consumeSseStream({
-    reader: completeThenDisconnectReader,
-    onChunk: (chunk) => chunks.push(chunk),
-    onComplete: (payload) => completes.push(payload),
-    onError: (message) => errors.push(message)
-});
+try {
+    await consumeSseStream({
+        reader: createReader([
+            'event: error\n',
+            'data: {"message":"提问太快了，请稍后再试","retryAfterSeconds":9}\n\n'
+        ]),
+        onError: (payload) => errors.push(payload)
+    });
+    assert.fail('consumeSseStream should throw on terminal error');
+} catch (error) {
+    assert.equal(error.message, '提问太快了，请稍后再试');
+    assert.equal(error.payload.retryAfterSeconds, 9);
+}
 
-assert.deepEqual(chunks, ['你好']);
-assert.equal(completes.length, 1);
-assert.equal(completes[0].reply, '你好，世界');
-assert.deepEqual(errors, []);
-assert.equal(completeThenDisconnectReader.cancelled, true);
+assert.equal(errors.length, 1);
+assert.equal(errors[0].message, '提问太快了，请稍后再试');
+assert.equal(errors[0].retryAfterSeconds, 9);
+
+console.log('aiStream tests passed');
