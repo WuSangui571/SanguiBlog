@@ -64,7 +64,7 @@ assert.equal(shouldPlayAiWelcomeIntro({
 
 const welcomeLines = buildAiWelcomeIntroLines('你好，我是三桂博客AI助理。');
 assert.equal(welcomeLines[0], '你好，我是三桂博客AI助理。');
-assert.match(welcomeLines[1], /总结文章/);
-assert.equal(welcomeLines[2], '直接输入问题即可开始对话。');
+assert.equal(welcomeLines[1], '我可以帮你总结文章、解答站内问题，也能结合当前页面继续聊。');
+assert.equal(welcomeLines[2], '直接问我就行。');
 
 console.log('aiWelcomeIntro tests passed');

@@ -32,7 +32,7 @@ export function shouldPlayAiWelcomeIntro({
 export function buildAiWelcomeIntroLines(welcomeMessage) {
     return [
         welcomeMessage,
-        '你可以让我总结文章、回答博客相关问题、结合当前页面内容进行说明，也能基于知识库为你提供更贴合站点内容的回复。',
-        '直接输入问题即可开始对话。'
+        '我可以帮你总结文章、解答站内问题，也能结合当前页面继续聊。',
+        '直接问我就行。'
     ];
 }
