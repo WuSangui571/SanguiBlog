@@ -1269,28 +1269,73 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 onClick={() => setIsOpen((prev) => !prev)}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 overflow-hidden border-2 border-black rounded-[24px] pl-3.5 pr-5 py-3 flex items-center gap-3 shadow-[8px_8px_0px_0px_#000] transition-colors ${
+                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 overflow-visible border-2 border-black rounded-[24px] pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors ${
                     isDarkMode
-                        ? 'bg-[#0B1220] text-white hover:bg-[#111B31]'
-                        : 'bg-[#FFF8D8] text-black hover:bg-white'
+                        ? 'bg-[#07111F] text-white hover:bg-[#0C1A2D]'
+                        : 'bg-[#FFFCEE] text-black hover:bg-white'
                 }`}
+                style={{
+                    boxShadow: isDarkMode
+                        ? '0 0 0 1px rgba(0,240,255,0.15), 0 14px 34px rgba(0,0,0,0.32), 0 0 28px rgba(0,240,255,0.12)'
+                        : '0 0 0 1px rgba(15,118,110,0.12), 0 14px 34px rgba(15,23,42,0.12), 0 0 24px rgba(0,240,255,0.10)'
+                }}
             >
+                <span className="pointer-events-none absolute inset-[-14px] opacity-100">
+                    <motion.span
+                        aria-hidden="true"
+                        className={`absolute inset-0 rounded-[34px] ${
+                            isDarkMode
+                                ? 'bg-[radial-gradient(circle,_rgba(0,240,255,0.16),_transparent_66%)]'
+                                : 'bg-[radial-gradient(circle,_rgba(0,240,255,0.10),_transparent_66%)]'
+                        }`}
+                        animate={{ scale: [0.94, 1.04, 0.94], opacity: [0.45, 0.8, 0.45] }}
+                        transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                </span>
                 <span className="pointer-events-none absolute inset-0 opacity-90">
                     <span
                         className={`absolute inset-0 ${
                             isDarkMode
-                                ? 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.2),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.12),transparent_48%,rgba(0,240,255,0.12))]'
-                                : 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.16),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.08),transparent_48%,rgba(0,240,255,0.08))]'
+                                ? 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.24),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.10),transparent_48%,rgba(0,240,255,0.14))]'
+                                : 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.14),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.06),transparent_48%,rgba(0,240,255,0.10))]'
                         }`}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/35 to-transparent"
+                        className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent"
                         animate={{ x: ['-120%', '360%'] }}
                         transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 1.3, ease: 'easeInOut' }}
                     />
                 </span>
-                <span className="relative flex items-center justify-center w-11 h-11 rounded-[18px] border-2 border-black bg-[#FF0080] text-white overflow-hidden shadow-[0_0_0_2px_rgba(0,0,0,0.12)]">
+                <span className="relative flex items-center justify-center w-11 h-11 rounded-[18px] border-2 border-black bg-[#FF0080] text-white overflow-visible">
+                    <motion.span
+                        aria-hidden="true"
+                        className="absolute inset-[-9px] rounded-[24px] border border-[#00F0FF]/45"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                        style={{ borderStyle: 'dashed' }}
+                    />
+                    <motion.span
+                        aria-hidden="true"
+                        className="absolute inset-[-14px] rounded-[30px] border border-[#FFD700]/30"
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 11, repeat: Infinity, ease: 'linear' }}
+                        style={{ borderStyle: 'dotted' }}
+                    />
+                    <motion.span
+                        aria-hidden="true"
+                        className="absolute left-1/2 top-1/2 h-[5px] w-[5px] rounded-full bg-[#00F0FF]"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 3.6, repeat: Infinity, ease: 'linear' }}
+                        style={{ transformOrigin: '0 -20px' }}
+                    />
+                    <motion.span
+                        aria-hidden="true"
+                        className="absolute left-1/2 top-1/2 h-[4px] w-[4px] rounded-full bg-[#FFD700]"
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 5.2, repeat: Infinity, ease: 'linear' }}
+                        style={{ transformOrigin: '0 18px' }}
+                    />
                     <motion.span
                         aria-hidden="true"
                         className="absolute inset-[-6px] rounded-[22px] border border-[#00F0FF]/70"
@@ -1306,7 +1351,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     <img
                         src={assistantConfig.logoPath}
                         alt={assistantConfig.title}
-                        className="relative z-[1] h-full w-full object-cover"
+                        className="relative z-[2] h-full w-full object-cover rounded-[16px]"
                         onError={(event) => {
                             event.currentTarget.style.display = 'none';
                             const fallback = event.currentTarget.nextElementSibling;
@@ -1320,7 +1365,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         <Bot size={22} strokeWidth={2.8} />
                     </span>
                     <motion.span
-                        className="absolute -top-1 -right-1 z-[2] w-3 h-3 rounded-full bg-[#00E096] border border-black"
+                        className="absolute -top-1 -right-1 z-[3] w-3 h-3 rounded-full bg-[#00E096] border border-black"
                         animate={{ scale: [1, 1.22, 1], opacity: [1, 0.78, 1] }}
                         transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                     />
