@@ -120,6 +120,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const panelRef = useRef(null);
     const dragStateRef = useRef(null);
     const resizeStateRef = useRef(null);
+    const isGuestMode = isAiAssistantGuest(user);
 
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
@@ -426,7 +427,6 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
     const deleteDialog = buildAiSessionDeleteDialog(pendingDeleteSession?.title);
     const launcherBadge = useMemo(() => buildAiLauncherBadge(assistantConfig), [assistantConfig]);
-    const isGuestMode = isAiAssistantGuest(user);
     const welcomeIntroLines = useMemo(
         () => buildAiWelcomeIntroLines(assistantConfig.welcomeMessage),
         [assistantConfig.welcomeMessage]
