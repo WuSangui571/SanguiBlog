@@ -34,6 +34,7 @@ import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMet
 import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.js';
 import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
 import {
+    buildAiWelcomeIntroLines,
     hasPlayedAiWelcomeIntro,
     markAiWelcomeIntroPlayed,
     shouldPlayAiWelcomeIntro
@@ -438,11 +439,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
     const deleteDialog = buildAiSessionDeleteDialog(pendingDeleteSession?.title);
     const welcomeIntroLines = useMemo(
-        () => [
-            assistantConfig.welcomeMessage,
-            '从一个全新的对话开始，或者切换到上方历史会话继续交流。',
-            '新进入时默认是空白会话'
-        ],
+        () => buildAiWelcomeIntroLines(assistantConfig.welcomeMessage),
         [assistantConfig.welcomeMessage]
     );
     const sendDisabled = !draft.trim() || isSending;
