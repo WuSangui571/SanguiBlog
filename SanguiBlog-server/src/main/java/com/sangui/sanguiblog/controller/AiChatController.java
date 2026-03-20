@@ -7,6 +7,8 @@ import com.sangui.sanguiblog.model.dto.AiChatSessionDto;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.security.UserPrincipal;
 import com.sangui.sanguiblog.service.ai.AiChatService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -32,26 +34,36 @@ public class AiChatController {
     @PostMapping("/chat")
     public ApiResponse<AiChatResponse> chat(
             @AuthenticationPrincipal UserPrincipal principal,
-            @Valid @RequestBody AiChatRequest request
+            @Valid @RequestBody AiChatRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
         return ApiResponse.ok(aiChatService.chat(
-                principal.getId(),
+                principal != null ? principal.getId() : null,
                 request.getSessionId(),
                 request.getMessage(),
-                request.getCurrentPageContext()
+                request.getCurrentPageContext(),
+                request.getLocalHistory(),
+                httpRequest,
+                httpResponse
         ));
     }
 
     @PostMapping(path = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamChat(
             @AuthenticationPrincipal UserPrincipal principal,
-            @Valid @RequestBody AiChatRequest request
+            @Valid @RequestBody AiChatRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
         return aiChatService.streamChat(
-                principal.getId(),
+                principal != null ? principal.getId() : null,
                 request.getSessionId(),
                 request.getMessage(),
-                request.getCurrentPageContext()
+                request.getCurrentPageContext(),
+                request.getLocalHistory(),
+                httpRequest,
+                httpResponse
         );
     }
 

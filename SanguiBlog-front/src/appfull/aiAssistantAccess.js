@@ -1,17 +1,21 @@
-export function canUseAiAssistant(user) {
-    return Boolean(user);
+export function canUseAiAssistant() {
+    return true;
+}
+
+export function isAiAssistantGuest(user) {
+    return !Boolean(user);
 }
 
 export function shouldResetAiAssistantState(prevUser, nextUser) {
-    return canUseAiAssistant(prevUser) && !canUseAiAssistant(nextUser);
+    return Boolean(prevUser) !== Boolean(nextUser);
 }
 
 export function getAiAssistantGuestReply() {
-    return '请先登录后再使用三桂博客AI助理，当前未登录状态下暂不可用。';
+    return '访客模式下可直接体验 AI 助理，但会受到更严格的频率与额度限制。';
 }
 
 export function getAiAssistantSessionHint(user) {
-    return canUseAiAssistant(user)
-        ? '登录后可用'
-        : '请先登录后使用';
+    return user
+        ? '已登录，可使用完整历史会话'
+        : '访客模式仅保留当前临时对话';
 }

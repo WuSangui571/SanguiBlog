@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.exception;
 
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.exception.LoginChallengeException;
+import com.sangui.sanguiblog.exception.AiAccessControlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +75,11 @@ public class GlobalExceptionHandler {
         data.put("captchaRequired", ex.isCaptchaRequired());
         data.put("remainingAttempts", ex.getRemainingAttempts());
         return ResponseEntity.badRequest().body(ApiResponse.fail(ex.getMessage(), data));
+    }
+
+    @ExceptionHandler(AiAccessControlException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAiAccessControl(AiAccessControlException ex) {
+        return ResponseEntity.status(ex.getStatus()).body(ApiResponse.fail(ex.getMessage(), ex.getData()));
     }
 
     @ExceptionHandler(Exception.class)

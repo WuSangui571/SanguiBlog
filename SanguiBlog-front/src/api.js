@@ -257,12 +257,21 @@ const request = async (path, options = {}) => {
 };
 
 export const fetchSiteMeta = () => request(`/site/meta?t=${Date.now()}`);
+export const fetchGuardCaptcha = (force = false) => {
+  const query = force ? "?force=true" : "";
+  return request(`/guard/captcha${query}`);
+};
+export const verifyGuardCaptcha = (captcha) =>
+  request("/guard/verify", {
+    method: "POST",
+    body: JSON.stringify({ captcha }),
+  });
 export const sendAiChat = (message, sessionId, currentPageContext = null) => request("/ai/chat", {
   method: "POST",
   body: JSON.stringify({ message, sessionId, currentPageContext }),
 });
 
-export const streamAiChat = async ({ message, sessionId, currentPageContext = null, onChunk, onComplete, onError }) => {
+export const streamAiChat = async ({ message, sessionId, currentPageContext = null, localHistory = [], onChunk, onComplete, onError }) => {
   const token = getStoredToken();
   if (isTokenExpired(token)) {
     localStorage.removeItem("sg_token");
@@ -278,7 +287,7 @@ export const streamAiChat = async ({ message, sessionId, currentPageContext = nu
       ...buildHeaders(),
       Accept: "text/event-stream",
     },
-    body: JSON.stringify({ message, sessionId, currentPageContext }),
+    body: JSON.stringify({ message, sessionId, currentPageContext, localHistory }),
   });
 
   if (!res.ok) {
@@ -339,7 +348,7 @@ export const streamAiChat = async ({ message, sessionId, currentPageContext = nu
   }
 };
 
-export const streamAiChatReliable = async ({ message, sessionId, currentPageContext = null, onChunk, onComplete, onError }) => {
+export const streamAiChatReliable = async ({ message, sessionId, currentPageContext = null, localHistory = [], onChunk, onComplete, onError }) => {
   const token = getStoredToken();
   if (isTokenExpired(token)) {
     localStorage.removeItem("sg_token");
@@ -355,7 +364,7 @@ export const streamAiChatReliable = async ({ message, sessionId, currentPageCont
       ...buildHeaders(),
       Accept: "text/event-stream",
     },
-    body: JSON.stringify({ message, sessionId, currentPageContext }),
+    body: JSON.stringify({ message, sessionId, currentPageContext, localHistory }),
   });
 
   if (!res.ok) {

@@ -80,6 +80,21 @@ ai:
   chat:
     context:
       max-messages: ${AI_CHAT_CONTEXT_MAX_MESSAGES:16}
+    public-access:
+      enabled: ${AI_CHAT_PUBLIC_ACCESS_ENABLED:true}
+      visitor-cookie-name: ${AI_CHAT_PUBLIC_VISITOR_COOKIE_NAME:sg_ai_vid}
+      guest-min-interval-ms: ${AI_CHAT_GUEST_MIN_INTERVAL_MS:12000}
+      guest-per-visitor-hour: ${AI_CHAT_GUEST_PER_VISITOR_HOUR:5}
+      guest-per-visitor-day: ${AI_CHAT_GUEST_PER_VISITOR_DAY:15}
+      guest-per-ip-hour: ${AI_CHAT_GUEST_PER_IP_HOUR:12}
+      guest-per-ip-day: ${AI_CHAT_GUEST_PER_IP_DAY:40}
+      guest-captcha-strike-threshold: ${AI_CHAT_GUEST_CAPTCHA_STRIKE_THRESHOLD:2}
+      guest-block-strike-threshold: ${AI_CHAT_GUEST_BLOCK_STRIKE_THRESHOLD:4}
+      guest-block-duration: ${AI_CHAT_GUEST_BLOCK_DURATION:20m}
+      guest-global-daily-budget: ${AI_CHAT_GUEST_GLOBAL_DAILY_BUDGET:300}
+      user-min-interval-ms: ${AI_CHAT_USER_MIN_INTERVAL_MS:3000}
+      user-per-hour: ${AI_CHAT_USER_PER_HOUR:60}
+      user-per-day: ${AI_CHAT_USER_PER_DAY:240}
   rag:
     enabled: ${AI_RAG_ENABLED:false}
     top-k: ${AI_RAG_TOP_K:6}

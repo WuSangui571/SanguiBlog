@@ -158,6 +158,7 @@ public class SecurityConfig {
                                 "/uploads/**",
                                 "/error")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/ai/chat", "/api/ai/chat/stream").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/comments/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/site/broadcast").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/upload/**").authenticated()

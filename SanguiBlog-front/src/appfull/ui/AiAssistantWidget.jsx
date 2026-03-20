@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, History, MessageSquarePlus, Move, RotateCcw, SendHorizontal, Trash2, X } from 'lucide-react';
 import {
@@ -6,12 +6,13 @@ import {
     deleteAiChatSession,
     fetchAiChatMessages,
     fetchAiChatSessions,
-    streamAiChatReliable
+    fetchGuardCaptcha,
+    streamAiChatReliable,
+    verifyGuardCaptcha
 } from '../../api.js';
 import { useLayoutOffsets } from '../../contexts/LayoutOffsetContext.jsx';
 import {
-    canUseAiAssistant,
-    getAiAssistantGuestReply,
+    isAiAssistantGuest,
     shouldResetAiAssistantState
 } from '../aiAssistantAccess.js';
 import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
@@ -106,6 +107,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const [floatingSize, setFloatingSize] = useState(null);
     const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
     const [welcomeIntroActive, setWelcomeIntroActive] = useState(false);
+    const [guardPromptOpen, setGuardPromptOpen] = useState(false);
+    const [guardCaptchaImage, setGuardCaptchaImage] = useState('');
+    const [guardCaptchaInput, setGuardCaptchaInput] = useState('');
+    const [guardCaptchaLoading, setGuardCaptchaLoading] = useState(false);
+    const [guardError, setGuardError] = useState('');
     const viewportRef = useRef(null);
     const textareaRef = useRef(null);
     const previousUserRef = useRef(user);
@@ -182,6 +188,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             setFloatingPosition(null);
             setFloatingSize(null);
             setPendingDeleteSession(null);
+            closeGuardPrompt();
         }
 
         previousUserRef.current = user;
@@ -285,7 +292,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     }, [headerHeight, isFloating]);
 
     useEffect(() => {
-        if (!isOpen || sessionsLoaded || !canUseAiAssistant(user)) {
+        if (!isOpen || sessionsLoaded || isGuestMode) {
             return;
         }
 
@@ -312,7 +319,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         return () => {
             cancelled = true;
         };
-    }, [isOpen, sessionsLoaded]);
+    }, [isGuestMode, isOpen, sessionsLoaded]);
 
     const loadSessions = async () => {
         const response = await fetchAiChatSessions();
@@ -380,6 +387,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         resetFloatingMode();
         setHistoryOpen(false);
         setPendingDeleteSession(null);
+        closeGuardPrompt();
         setIsOpen(false);
     };
 
@@ -396,22 +404,6 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         if (!session?.id) return;
         setPendingDeleteSession(session);
         return;
-
-        const confirmed = window.confirm(`确认删除这条会话记录吗？\n\n${session.title || '新对话'}`);
-        if (!confirmed) return;
-
-        try {
-            await deleteAiChatSession(session.id);
-            const nextSessions = await loadSessions();
-
-            if (session.id === activeSessionId) {
-                handleStartNewChat();
-            } else {
-                setSessions(nextSessions);
-            }
-        } catch (error) {
-            window.alert(error?.message?.trim() || '删除会话失败，请稍后再试。');
-        }
     };
 
     const confirmDeleteSession = async () => {
@@ -434,6 +426,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
     const deleteDialog = buildAiSessionDeleteDialog(pendingDeleteSession?.title);
     const launcherBadge = useMemo(() => buildAiLauncherBadge(assistantConfig), [assistantConfig]);
+    const isGuestMode = isAiAssistantGuest(user);
     const welcomeIntroLines = useMemo(
         () => buildAiWelcomeIntroLines(assistantConfig.welcomeMessage),
         [assistantConfig.welcomeMessage]
@@ -474,6 +467,64 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             height: '100vh'
         }
         : floatingPanelStyle;
+
+    const buildLocalHistory = () =>
+        messages
+            .filter((item) => item && (item.role === 'user' || item.role === 'assistant') && item.content?.trim())
+            .slice(-10)
+            .map((item) => ({
+                role: item.role,
+                content: item.content
+            }));
+
+    const openGuardPrompt = async (message = '') => {
+        setGuardPromptOpen(true);
+        setGuardCaptchaInput('');
+        setGuardError(message || '');
+        setGuardCaptchaLoading(true);
+        try {
+            const response = await fetchGuardCaptcha(true);
+            const data = response?.data || {};
+            setGuardCaptchaImage(data.imageBase64 || '');
+        } catch (error) {
+            setGuardError(error?.message?.trim() || '获取验证码失败，请稍后再试。');
+        } finally {
+            setGuardCaptchaLoading(false);
+        }
+    };
+
+    const closeGuardPrompt = () => {
+        setGuardPromptOpen(false);
+        setGuardCaptchaInput('');
+        setGuardError('');
+        setGuardCaptchaImage('');
+        setGuardCaptchaLoading(false);
+    };
+
+    const handleGuardVerify = async () => {
+        const captcha = guardCaptchaInput.trim();
+        if (!captcha) {
+            setGuardError('请输入验证码。');
+            return;
+        }
+        setGuardCaptchaLoading(true);
+        try {
+            await verifyGuardCaptcha(captcha);
+            closeGuardPrompt();
+            window.alert('验证通过，现在可以继续提问了。');
+        } catch (error) {
+            setGuardError(error?.message?.trim() || '验证码验证失败，请重试。');
+            try {
+                const response = await fetchGuardCaptcha(true);
+                const data = response?.data || {};
+                setGuardCaptchaImage(data.imageBase64 || '');
+            } catch {
+                // ignore refresh error here
+            }
+        } finally {
+            setGuardCaptchaLoading(false);
+        }
+    };
 
     const handlePanelDragStart = (event) => {
         if (!isFloating || !panelRef.current) {
@@ -525,23 +576,15 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         const content = draft.trim();
         if (!content || isSending) return;
 
-        if (!canUseAiAssistant(user)) {
-            setMessages((prev) => [
-                ...prev,
-                createLocalMessage('user', content, 'guest-user'),
-                createLocalMessage('assistant', getAiAssistantGuestReply(), 'guest-assistant')
-            ]);
-            setDraft('');
-            return;
-        }
-
         let sessionId = activeSessionId;
         let streamCompleted = false;
+        const pendingId = `assistant-pending-${Date.now()}`;
+        const localHistory = buildLocalHistory();
 
         try {
             setIsSending(true);
 
-            if (!sessionId) {
+            if (!sessionId && !isGuestMode) {
                 const createResponse = await createAiChatSession();
                 const createdSession = createResponse?.data;
                 sessionId = createdSession?.id;
@@ -552,7 +595,6 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 setSessions((prev) => [createdSession, ...prev.filter((item) => item.id !== sessionId)]);
             }
 
-            const pendingId = `assistant-pending-${Date.now()}`;
             setMessages((prev) => [
                 ...prev,
                 createLocalMessage('user', content, 'user'),
@@ -569,6 +611,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 message: content,
                 sessionId,
                 currentPageContext,
+                localHistory,
                 onChunk: (chunk) => {
                     if (!chunk) return;
                     streamedReply += chunk;
@@ -592,15 +635,28 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     throw new Error(message || 'AI 服务暂时不可用，请稍后再试。');
                 }
             });
-            await loadSessions();
+            if (!isGuestMode) {
+                await loadSessions();
+            }
         } catch (error) {
             if (streamCompleted) {
-                await loadSessions();
+                if (!isGuestMode) {
+                    await loadSessions();
+                }
                 return;
             }
+            const payload = error?.payload?.data || {};
             const fallback = error?.message?.trim() || 'AI 服务暂时不可用，请稍后再试。';
+
+            if (payload.captchaRequired) {
+                setMessages((prev) => prev.filter((message) => message.id !== pendingId));
+                setDraft(content);
+                await openGuardPrompt(fallback);
+                return;
+            }
+
             setMessages((prev) => prev.map((message) => (
-                message.id.startsWith('assistant-pending-')
+                message.id === pendingId
                     ? { ...message, content: fallback }
                     : message
             )));
@@ -720,7 +776,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                 {assistantConfig.title}
                                             </p>
                                             <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
-                                                Beta测试
+                                                Beta娴嬭瘯
                                             </p>
                                         </div>
                                     </div>
@@ -731,7 +787,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         <button
                                             type="button"
                                             onClick={handleStartNewChat}
-                                            title={newChatDisabled ? '当前已是新对话' : '新对话'}
+                                            title={newChatDisabled ? '当前已经是新对话' : '新对话'}
                                             disabled={newChatDisabled}
                                             className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
                                                 newChatDisabled
@@ -745,11 +801,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => canUseAiAssistant(user) && setHistoryOpen((prev) => !prev)}
-                                            title={canUseAiAssistant(user) ? '历史会话' : '登录后可查看历史会话'}
-                                            disabled={!canUseAiAssistant(user)}
+                                            onClick={() => !isGuestMode && setHistoryOpen((prev) => !prev)}
+                                            title={!isGuestMode ? '历史会话' : '访客模式不保留历史会话'}
+                                            disabled={isGuestMode}
                                             className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
-                                                canUseAiAssistant(user)
+                                                !isGuestMode
                                                     ? isDarkMode
                                                         ? 'bg-gray-800 text-white hover:bg-gray-700'
                                                         : 'bg-white text-black hover:bg-[#FFF4BF]'
@@ -782,7 +838,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         >
                                             <X size={18} />
                                         </button>
-                                        {historyOpen && canUseAiAssistant(user) && (
+                                        {historyOpen && !isGuestMode && (
                                             <div
                                                 ref={historyPopoverRef}
                                                 className={`absolute right-0 top-[calc(100%+10px)] z-[84] w-[300px] rounded-[20px] border-2 border-black p-2 ${
@@ -791,7 +847,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             >
                                                 <div className="flex items-start justify-between gap-3 border-b border-black/10 px-3 pb-2 pt-1">
                                                     <div className={`text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass}`}>
-                                                        历史会话
+                                                        鍘嗗彶浼氳瘽
                                                     </div>
                                                     <button
                                                         type="button"
@@ -904,11 +960,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => canUseAiAssistant(user) && setHistoryOpen((prev) => !prev)}
-                                            title={canUseAiAssistant(user) ? '历史会话' : '登录后可查看历史会话'}
-                                            disabled={!canUseAiAssistant(user)}
+                                            onClick={() => !isGuestMode && setHistoryOpen((prev) => !prev)}
+                                            title={!isGuestMode ? '历史会话' : '访客模式不保留历史会话'}
+                                            disabled={isGuestMode}
                                             className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
-                                                canUseAiAssistant(user)
+                                                !isGuestMode
                                                     ? isDarkMode
                                                         ? 'bg-gray-800 text-white hover:bg-gray-700'
                                                         : 'bg-white text-black hover:bg-[#FFF4BF]'
@@ -917,14 +973,14 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         >
                                             <History size={18} />
                                         </button>
-                                        {historyOpen && canUseAiAssistant(user) && (
+                                        {historyOpen && !isGuestMode && (
                                             <div
                                                 className={`absolute right-0 top-[calc(100%+10px)] z-[84] w-[300px] rounded-[20px] border-2 border-black p-2 ${
                                                     isDarkMode ? 'bg-[#111827] text-white' : 'bg-white text-black'
                                                 }`}
                                             >
                                                 <div className={`border-b border-black/10 px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass}`}>
-                                                    历史会话
+                                                    鍘嗗彶浼氳瘽
                                                 </div>
                                                 <div className="mt-2 max-h-[280px] overflow-y-auto pr-1">
                                                     {sessionsLoading ? (
@@ -975,8 +1031,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                     </button>
                                     <div className="min-w-0 flex-1 overflow-x-auto">
                                         <div className="flex min-w-max gap-2 pr-1">
-                                            {!canUseAiAssistant(user) ? (
-                                                <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>登录后可查看历史会话</div>
+                                            {isGuestMode ? (
+                                                <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>访客模式仅保留当前临时对话</div>
                                             ) : sessionsLoading ? (
                                                 <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>正在加载历史会话...</div>
                                             ) : sessions.length === 0 ? (
@@ -1152,7 +1208,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             <form onSubmit={handleSubmit} className={`border-t-2 border-black p-3 ${shellClass}`}>
                                 <div className="relative">
                                     <label className="block">
-                                        <span className="sr-only">输入消息</span>
+                                        <span className="sr-only">杈撳叆娑堟伅</span>
                                         <textarea
                                             ref={textareaRef}
                                             rows={1}
@@ -1186,6 +1242,112 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             </form>
                         </motion.section>
                         <AnimatePresence>
+                            {guardPromptOpen && (
+                                <motion.div
+                                    className="fixed inset-0 z-[85] flex items-center justify-center px-4"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                >
+                                    <div
+                                        className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+                                        onClick={closeGuardPrompt}
+                                    />
+                                    <motion.div
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-label="访客验证"
+                                        initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                                        className={`relative w-full max-w-sm overflow-hidden border-2 border-black shadow-[10px_10px_0px_0px_#000] ${
+                                            isDarkMode ? 'bg-[#111827] text-white' : 'bg-[#FFF9E6] text-black'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-3 border-b-2 border-black px-5 py-4">
+                                            <div className="space-y-1">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#00F0FF]">
+                                                    访客验证
+                                                </p>
+                                                <h3 className="text-lg font-black">继续提问前，请先完成验证码</h3>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={closeGuardPrompt}
+                                                className={`inline-flex h-8 w-8 items-center justify-center rounded-[10px] border-2 border-black ${
+                                                    isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
+                                                }`}
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                        <div className="space-y-4 px-5 py-5">
+                                            <p className={`text-sm leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                访客模式下会限制提问频率和额度。当前请求触发了额外验证，完成后即可继续使用。
+                                            </p>
+                                            <div className="flex items-center gap-3">
+                                                {guardCaptchaImage ? (
+                                                    <img
+                                                        src={guardCaptchaImage}
+                                                        alt="guard captcha"
+                                                        className="h-14 w-32 border-2 border-black bg-white object-contain"
+                                                    />
+                                                ) : (
+                                                    <div className={`flex h-14 w-32 items-center justify-center border-2 border-dashed border-black text-xs font-bold ${
+                                                        isDarkMode ? 'bg-gray-900 text-gray-300' : 'bg-white text-gray-500'
+                                                    }`}>
+                                                        {guardCaptchaLoading ? '加载中...' : '验证码'}
+                                                    </div>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openGuardPrompt('')}
+                                                    disabled={guardCaptchaLoading}
+                                                    className={`rounded-full border-2 border-black px-3 py-2 text-xs font-bold ${
+                                                        isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    刷新
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={guardCaptchaInput}
+                                                onChange={(event) => setGuardCaptchaInput(event.target.value.trim().slice(0, 4))}
+                                                placeholder="请输入验证码"
+                                                className={`w-full rounded-[16px] border-2 border-black px-4 py-3 text-sm font-bold outline-none ${
+                                                    isDarkMode ? 'bg-gray-900 text-white placeholder:text-gray-500' : 'bg-white text-black placeholder:text-gray-400'
+                                                }`}
+                                            />
+                                            {guardError && (
+                                                <div className="rounded-[14px] border-2 border-black bg-[#FF5A5F] px-3 py-2 text-sm font-bold text-white">
+                                                    {guardError}
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={closeGuardPrompt}
+                                                    className={`px-4 py-2 rounded-full border-2 border-black text-sm font-bold shadow-[3px_3px_0px_0px_#000] ${
+                                                        isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    稍后再说
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleGuardVerify}
+                                                    disabled={guardCaptchaLoading}
+                                                    className="px-4 py-2 rounded-full border-2 border-black bg-[#00B8D9] text-white text-sm font-bold shadow-[3px_3px_0px_0px_#000] hover:bg-[#0098B3] disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    {guardCaptchaLoading ? '验证中...' : '完成验证'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </motion.div>
+                            )}
                             {pendingDeleteSession && (
                                 <motion.div
                                     className="fixed inset-0 z-[85] flex items-center justify-center px-4"
@@ -1212,7 +1374,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         <div className="flex items-start justify-between gap-3 border-b-2 border-black px-5 py-4">
                                             <div className="space-y-1">
                                                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#FF0080]">
-                                                    会话删除
+                                                    浼氳瘽鍒犻櫎
                                                 </p>
                                                 <h3 className="text-lg font-black">{deleteDialog.title}</h3>
                                             </div>
@@ -1230,7 +1392,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             <div className={`rounded-2xl border-2 border-black px-4 py-3 ${
                                                 isDarkMode ? 'bg-gray-900/80' : 'bg-white'
                                             }`}>
-                                                <p className="text-xs font-semibold opacity-70">会话标题</p>
+                                                <p className="text-xs font-semibold opacity-70">浼氳瘽鏍囬</p>
                                                 <p className="mt-1 text-sm font-black break-words">{deleteDialog.sessionTitle}</p>
                                             </div>
                                             <p className={`text-sm leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -1384,3 +1546,4 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         </>
     );
 }
+
