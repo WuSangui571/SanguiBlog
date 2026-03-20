@@ -35,8 +35,6 @@ import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.
 import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
 import {
     buildAiWelcomeIntroLines,
-    hasPlayedAiWelcomeIntro,
-    markAiWelcomeIntroPlayed,
     shouldPlayAiWelcomeIntro
 } from './aiWelcomeIntro.js';
 
@@ -106,7 +104,6 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const [floatingPosition, setFloatingPosition] = useState(null);
     const [floatingSize, setFloatingSize] = useState(null);
     const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
-    const [hasPlayedWelcomeIntro, setHasPlayedWelcomeIntro] = useState(() => hasPlayedAiWelcomeIntro());
     const [welcomeIntroActive, setWelcomeIntroActive] = useState(false);
     const viewportRef = useRef(null);
     const textareaRef = useRef(null);
@@ -152,14 +149,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         if (!shouldPlayAiWelcomeIntro({
             isOpen,
             messagesLength: messages.length,
-            messagesLoading,
-            hasPlayed: hasPlayedWelcomeIntro
+            messagesLoading
         })) {
             return undefined;
         }
 
-        markAiWelcomeIntroPlayed();
-        setHasPlayedWelcomeIntro(true);
         setWelcomeIntroActive(true);
 
         const timeoutId = window.setTimeout(() => {
@@ -169,7 +163,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         return () => {
             window.clearTimeout(timeoutId);
         };
-    }, [hasPlayedWelcomeIntro, isOpen, messages.length, messagesLoading]);
+    }, [isOpen, messages.length, messagesLoading]);
 
     useEffect(() => {
         if (shouldResetAiAssistantState(previousUserRef.current, user)) {
