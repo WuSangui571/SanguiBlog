@@ -82,6 +82,9 @@ function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }
 export default function AiAssistantWidget({ isDarkMode, config, user, currentPageContext = null }) {
     const { headerHeight } = useLayoutOffsets();
     const assistantConfig = useMemo(() => resolveAiAssistantConfig(config), [config]);
+    const [isMobileViewport, setIsMobileViewport] = useState(() =>
+        typeof window !== 'undefined' ? window.innerWidth < 768 : false
+    );
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState('');
     const [isSending, setIsSending] = useState(false);
@@ -124,6 +127,19 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     }, [isOpen, messages, messagesLoading]);
 
     useEffect(() => {
+        const handleResize = () => {
+            setIsMobileViewport(window.innerWidth < 768);
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
+    useEffect(() => {
         if (shouldResetAiAssistantState(previousUserRef.current, user)) {
             setIsOpen(false);
             setDraft('');
@@ -143,6 +159,16 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
         previousUserRef.current = user;
     }, [user]);
+
+    useEffect(() => {
+        if (isMobileViewport && isFloating) {
+            setIsFloating(false);
+            setFloatingPosition(null);
+            setFloatingSize(null);
+            dragStateRef.current = null;
+            resizeStateRef.current = null;
+        }
+    }, [isFloating, isMobileViewport]);
 
     useEffect(() => {
         if (!historyOpen) {
@@ -297,6 +323,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     };
 
     const handleToggleFloatingMode = () => {
+        if (isMobileViewport) {
+            window.alert('手机端暂不支持浮动窗口，请在桌面端使用该功能。');
+            return;
+        }
+
         if (isFloating) {
             resetFloatingMode();
             return;
@@ -401,6 +432,16 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             top: headerHeight,
             bottom: 0
         };
+    const panelStyle = isMobileViewport
+        ? {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh'
+        }
+        : floatingPanelStyle;
 
     const handlePanelDragStart = (event) => {
         if (!isFloating || !panelRef.current) {
@@ -585,13 +626,15 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             exit={{ opacity: 0, x: 32 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
                             className={`fixed z-[83] left-0 right-0 overflow-hidden rounded-none border-t-2 border-black flex flex-col ${shellClass} ${
-                                isFloating
+                                isMobileViewport
+                                    ? 'border-0 rounded-none'
+                                    : isFloating
                                     ? 'md:border-2'
                                     : 'md:left-auto md:w-[460px] md:border-l-2 md:border-r-0 md:border-b-0'
                             }`}
-                            style={floatingPanelStyle}
+                            style={panelStyle}
                         >
-                            {isFloating && (
+                            {isFloating && !isMobileViewport && (
                                 <>
                                     <div
                                         onPointerDown={(event) => handleResizeStart('n', event)}
@@ -630,7 +673,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             <div
                                 onPointerDown={handlePanelDragStart}
                                 className={`border-b-2 border-black px-4 py-4 ${panelAccentClass} ${
-                                    isFloating ? 'cursor-move' : ''
+                                    isFloating && !isMobileViewport ? 'cursor-move' : ''
                                 }`}
                             >
                                 <div className="flex items-start justify-between gap-4">
