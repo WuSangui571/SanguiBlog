@@ -35,6 +35,7 @@ import { formatAiSessionTimeLabel, truncateAiSessionTitle } from './aiSessionMet
 import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.js';
 import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
 import { buildAiLauncherBadge } from './aiLauncherBadge.js';
+import { buildAiGuestAccessNotice } from './aiGuestAccessNotice.js';
 import {
     buildAiWelcomeIntroLines,
     shouldPlayAiWelcomeIntro
@@ -647,17 +648,27 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             }
             const payload = error?.payload?.data || {};
             const fallback = error?.message?.trim() || 'AI 服务暂时不可用，请稍后再试。';
+            const guestAccessNotice = buildAiGuestAccessNotice({
+                isGuestMode,
+                payload,
+                message: fallback,
+                status: error?.status
+            });
 
             if (payload.captchaRequired) {
-                setMessages((prev) => prev.filter((message) => message.id !== pendingId));
-                setDraft(content);
-                await openGuardPrompt(fallback);
+                const notice = guestAccessNotice || fallback;
+                setMessages((prev) => prev.map((message) => (
+                    message.id === pendingId
+                        ? { ...message, content: notice }
+                        : message
+                )));
+                await openGuardPrompt('检测到访客提问过快，请完成验证码后继续。登录后可获得更高的提问额度。');
                 return;
             }
 
             setMessages((prev) => prev.map((message) => (
                 message.id === pendingId
-                    ? { ...message, content: fallback }
+                    ? { ...message, content: guestAccessNotice || fallback }
                     : message
             )));
         } finally {

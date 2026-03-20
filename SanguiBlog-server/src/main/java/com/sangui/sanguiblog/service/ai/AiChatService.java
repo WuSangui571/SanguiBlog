@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -341,12 +342,12 @@ public class AiChatService {
 
     private SseEmitter streamGuestDirectAnswer(String reply, String mode) {
         SseEmitter emitter = new SseEmitter(0L);
-        sendSseEvent(emitter, "complete", Map.of(
-                "reply", reply,
-                "sessionId", null,
-                "model", configuredModel,
-                "mode", mode,
-                "references", List.of()
+        sendSseEvent(emitter, "complete", buildCompleteEventPayload(
+                reply,
+                null,
+                configuredModel,
+                mode,
+                List.of()
         ));
         emitter.complete();
         return emitter;
@@ -536,12 +537,12 @@ public class AiChatService {
             String reply,
             AiBlogRagService.AiBlogRagContext ragContext
     ) {
-        sendSseEvent(emitter, "complete", Map.of(
-                "reply", reply,
-                "sessionId", null,
-                "model", configuredModel,
-                "mode", resolveMode(ragContext),
-                "references", ragContext.getReferences()
+        sendSseEvent(emitter, "complete", buildCompleteEventPayload(
+                reply,
+                null,
+                configuredModel,
+                resolveMode(ragContext),
+                ragContext != null ? ragContext.getReferences() : null
         ));
         emitter.complete();
     }
@@ -559,14 +560,30 @@ public class AiChatService {
         aiChatSessionRepository.save(session);
         aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
 
-        sendSseEvent(emitter, "complete", Map.of(
-                "reply", reply,
-                "sessionId", session.getId(),
-                "model", configuredModel,
-                "mode", resolveMode(ragContext),
-                "references", ragContext.getReferences()
+        sendSseEvent(emitter, "complete", buildCompleteEventPayload(
+                reply,
+                session.getId(),
+                configuredModel,
+                resolveMode(ragContext),
+                ragContext != null ? ragContext.getReferences() : null
         ));
         emitter.complete();
+    }
+
+    static Map<String, Object> buildCompleteEventPayload(
+            String reply,
+            Long sessionId,
+            String model,
+            String mode,
+            List<?> references
+    ) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("reply", reply);
+        payload.put("sessionId", sessionId);
+        payload.put("model", model);
+        payload.put("mode", mode);
+        payload.put("references", references == null ? List.of() : references);
+        return payload;
     }
 
     private void updateSessionAfterReply(AiChatSession session, String userMessage, String reply, Instant now) {

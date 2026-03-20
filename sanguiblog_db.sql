@@ -639,7 +639,7 @@ CREATE TABLE IF NOT EXISTS ai_custom_knowledge_documents (
     KEY idx_ai_custom_knowledge_sync_status (sync_status),
     KEY idx_ai_custom_knowledge_enabled (enabled),
     CONSTRAINT fk_ai_custom_knowledge_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
-);/
+);
 
 -- AI 超级管理员导入知识库分片与 PgVector 文档 ID 映射表
 CREATE TABLE IF NOT EXISTS ai_custom_knowledge_chunks (
