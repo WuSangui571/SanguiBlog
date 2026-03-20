@@ -1481,12 +1481,28 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 : 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.14),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.06),transparent_48%,rgba(0,240,255,0.10))]'
                         }`}
                     />
-                    <motion.span
-                        aria-hidden="true"
-                        className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent"
-                        animate={{ x: ['-120%', '360%'] }}
-                        transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 1.3, ease: 'easeInOut' }}
-                    />
+                    {isDarkMode ? (
+                        <motion.span
+                            aria-hidden="true"
+                            className="absolute inset-[2px] rounded-[22px] border border-[#00F0FF]/18"
+                            animate={{
+                                opacity: [0.18, 0.42, 0.18],
+                                boxShadow: [
+                                    '0 0 0 rgba(0,240,255,0)',
+                                    '0 0 14px rgba(0,240,255,0.18)',
+                                    '0 0 0 rgba(0,240,255,0)'
+                                ]
+                            }}
+                            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                    ) : (
+                        <motion.span
+                            aria-hidden="true"
+                            className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                            animate={{ x: ['-120%', '360%'] }}
+                            transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 1.3, ease: 'easeInOut' }}
+                        />
+                    )}
                 </span>
                 <span className="relative flex items-center justify-center w-11 h-11 rounded-[18px] border-2 border-black bg-[#FF0080] text-white overflow-visible">
                     <motion.span
