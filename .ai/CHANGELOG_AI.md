@@ -3958,3 +3958,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   1) 在 `SiteService` 中抽出 `currentStats()`，统一返回首页与 AI 共用的实时站点统计。
   2) `AiAssistantCapabilityService` 新增总浏览量、总评论数、总标签数、最后更新时间的结构化直答。
   3) 放宽统计类问法识别规则，支持“多少个标签”“多少评论”“总浏览量”等自然提问。
+## [2026-03-20] 升级站点版本号到 V2.2.1 并同步 README
+- 背景/需求：用户要求将当前站点版本从 `V2.2.0` 升级为 `V2.2.1`，只更新首页展示版本并检查 README 中的过时版本说明，不新增新的 release 文档。
+- 修改类型：docs
+- 变更摘要：
+  1) 后端 `site.version` 与首页 `HomeView` fallback 统一更新为 `V2.2.1`。
+  2) README 顶部当前版本说明更新为 `V2.2.1`。
+  3) README 中 release 说明改为“当前最新现有对外 release 文档仍为 `release/V2.2.0.md`”，避免和“不新增 V2.2.1 release 文档”的要求冲突。

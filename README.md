@@ -2,13 +2,13 @@
 
 SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发，提供从环境准备到上线的最小可用流程与常见问题排查。
 
-> 当前站点版本号：`V2.2.0`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
+> 当前站点版本号：`V2.2.1`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
 >
-> `V2.2.0` 是一次较大的能力升级版本：在原有博客系统基础上，引入了 AI 助理、登录用户多轮会话、博客文章 RAG、当前文章页上下文增强、超级管理员知识库导入与后台 AI 会话审计。
+> `V2.2.x` 延续了 `V2.2.0` 引入的 AI 助理体系：包含登录用户多轮会话、博客文章 RAG、当前文章页上下文增强、超级管理员知识库导入与后台 AI 会话审计。
 
 ## 1. 目录索引
 
-- 发布说明目录：`release/`（当前仓库内最新对外 release 文档为 `release/V2.2.0.md`）
+- 发布说明目录：`release/`（当前仓库内最新现有对外 release 文档仍为 `release/V2.2.0.md`）
 - Nginx 反代示例：`fake-nginx-config/nginx.conf`
 - 环境切换说明：`ChangeEnv.md`
 - 数据库初始化脚本：`sanguiblog_db.sql`
@@ -19,7 +19,7 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 ├─ SanguiBlog-server/      # Spring Boot 服务端（REST API、鉴权、站点地图等）
 ├─ SanguiBlog-front/       # React 单页应用（访客端 + 管理端 UI）
 ├─ uploads/                # 默认上传目录（生产环境建议挂载到持久化存储）
-├─ release/                # Release Notes（例如 V2.1.287 / V2.2.0）
+├─ release/                # Release Notes（例如 V2.1.287 / V2.2.0，当前未单独新增 V2.2.1 发布文档）
 ├─ sanguiblog_db.sql       # 初始化建库脚本（表结构 + 基础数据）
 └─ README.md               # 本文档
 ```
@@ -122,7 +122,7 @@ java -jar target/SanguiBlog-server-*.jar
 
 ### 5.4 AI 助理与 RAG（V2.2.0+）
 
-`V2.2.0` 起，项目已内置 AI 助理。能力包括：
+`V2.2.0` 起，项目已内置 AI 助理；当前 `V2.2.1` 延续并完善了该能力。能力包括：
 
 - 站点前台 AI 聊天入口
 - 登录用户多轮会话与历史会话管理
