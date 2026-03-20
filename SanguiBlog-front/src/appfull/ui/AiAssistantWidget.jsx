@@ -18,8 +18,11 @@ import { resolveAiAssistantConfig } from '../aiAssistantConfig.js';
 import AiMessageMarkdown from './AiMessageMarkdown.js';
 import { getAiMessagePresentation } from './aiMessagePresentation.js';
 import {
+    DEFAULT_FLOATING_PANEL_WIDTH,
     clampFloatingPosition,
+    getDefaultFloatingSize,
     getDefaultFloatingPosition,
+    resizeFloatingPanel,
     shouldStartPanelDrag
 } from './aiFloatingPanel.js';
 import {
@@ -91,6 +94,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const [historyOpen, setHistoryOpen] = useState(false);
     const [isFloating, setIsFloating] = useState(false);
     const [floatingPosition, setFloatingPosition] = useState(null);
+    const [floatingSize, setFloatingSize] = useState(null);
     const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
     const viewportRef = useRef(null);
     const textareaRef = useRef(null);
@@ -99,6 +103,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const historyTriggerGroupRef = useRef(null);
     const panelRef = useRef(null);
     const dragStateRef = useRef(null);
+    const resizeStateRef = useRef(null);
 
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
@@ -132,6 +137,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             setHistoryOpen(false);
             setIsFloating(false);
             setFloatingPosition(null);
+            setFloatingSize(null);
             setPendingDeleteSession(null);
         }
 
@@ -169,11 +175,32 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     useEffect(() => {
         if (!isFloating) {
             dragStateRef.current = null;
+            resizeStateRef.current = null;
             return undefined;
         }
 
         const handlePointerMove = (event) => {
-            if (!dragStateRef.current || !panelRef.current) {
+            if (!panelRef.current) {
+                return;
+            }
+
+            if (resizeStateRef.current) {
+                const nextRect = resizeFloatingPanel({
+                    direction: resizeStateRef.current.direction,
+                    startRect: resizeStateRef.current.startRect,
+                    pointerX: event.clientX,
+                    pointerY: event.clientY,
+                    viewportWidth: window.innerWidth,
+                    viewportHeight: window.innerHeight,
+                    headerHeight
+                });
+
+                setFloatingPosition({ x: nextRect.x, y: nextRect.y });
+                setFloatingSize({ width: nextRect.width, height: nextRect.height });
+                return;
+            }
+
+            if (!dragStateRef.current) {
                 return;
             }
 
@@ -192,6 +219,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
         const handlePointerUp = () => {
             dragStateRef.current = null;
+            resizeStateRef.current = null;
         };
 
         window.addEventListener('pointermove', handlePointerMove);
@@ -263,7 +291,9 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const resetFloatingMode = () => {
         setIsFloating(false);
         setFloatingPosition(null);
+        setFloatingSize(null);
         dragStateRef.current = null;
+        resizeStateRef.current = null;
     };
 
     const handleToggleFloatingMode = () => {
@@ -272,12 +302,18 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             return;
         }
 
+        const nextSize = getDefaultFloatingSize({
+            viewportHeight: window.innerHeight,
+            headerHeight
+        });
         const nextPosition = getDefaultFloatingPosition({
             viewportWidth: window.innerWidth,
-            headerHeight
+            headerHeight,
+            panelWidth: nextSize.width
         });
 
         setHistoryOpen(false);
+        setFloatingSize(nextSize);
         setFloatingPosition(nextPosition);
         setIsFloating(true);
     };
@@ -350,11 +386,16 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const floatingPanelStyle = isFloating
         ? {
             top: floatingPosition?.y ?? headerHeight + 16,
-            left: floatingPosition?.x ?? (typeof window !== 'undefined' ? Math.max(24, window.innerWidth - 460 - 24) : 24),
+            left:
+                floatingPosition?.x ??
+                (typeof window !== 'undefined'
+                    ? Math.max(24, window.innerWidth - DEFAULT_FLOATING_PANEL_WIDTH - 24)
+                    : 24),
             right: 'auto',
             bottom: 'auto',
-            width: 460,
-            height: `min(calc(100vh - ${headerHeight + 32}px), 760px)`
+            width: floatingSize?.width ?? DEFAULT_FLOATING_PANEL_WIDTH,
+            height:
+                floatingSize?.height ?? `min(calc(100vh - ${headerHeight + 32}px), 760px)`
         }
         : {
             top: headerHeight,
@@ -384,6 +425,26 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         dragStateRef.current = {
             offsetX: event.clientX - rect.left,
             offsetY: event.clientY - rect.top
+        };
+    };
+
+    const handleResizeStart = (direction, event) => {
+        if (!isFloating || !panelRef.current) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const rect = panelRef.current.getBoundingClientRect();
+        resizeStateRef.current = {
+            direction,
+            startRect: {
+                x: rect.left,
+                y: rect.top,
+                width: rect.width,
+                height: rect.height
+            }
         };
     };
 
@@ -530,6 +591,42 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             }`}
                             style={floatingPanelStyle}
                         >
+                            {isFloating && (
+                                <>
+                                    <div
+                                        onPointerDown={(event) => handleResizeStart('n', event)}
+                                        className="absolute left-3 right-3 top-0 z-[84] h-3 -translate-y-1/2 cursor-ns-resize bg-transparent"
+                                    />
+                                    <div
+                                        onPointerDown={(event) => handleResizeStart('e', event)}
+                                        className="absolute bottom-3 right-0 top-3 z-[84] w-3 translate-x-1/2 cursor-ew-resize bg-transparent"
+                                    />
+                                    <div
+                                        onPointerDown={(event) => handleResizeStart('s', event)}
+                                        className="absolute bottom-0 left-3 right-3 z-[84] h-3 translate-y-1/2 cursor-ns-resize bg-transparent"
+                                    />
+                                    <div
+                                        onPointerDown={(event) => handleResizeStart('w', event)}
+                                        className="absolute bottom-3 left-0 top-3 z-[84] w-3 -translate-x-1/2 cursor-ew-resize bg-transparent"
+                                    />
+                                    <div
+                                        onPointerDown={(event) => handleResizeStart('nw', event)}
+                                        className="absolute left-0 top-0 z-[85] h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize bg-transparent"
+                                    />
+                                    <div
+                                        onPointerDown={(event) => handleResizeStart('ne', event)}
+                                        className="absolute right-0 top-0 z-[85] h-4 w-4 translate-x-1/2 -translate-y-1/2 cursor-nesw-resize bg-transparent"
+                                    />
+                                    <div
+                                        onPointerDown={(event) => handleResizeStart('se', event)}
+                                        className="absolute bottom-0 right-0 z-[85] h-4 w-4 translate-x-1/2 translate-y-1/2 cursor-nwse-resize bg-transparent"
+                                    />
+                                    <div
+                                        onPointerDown={(event) => handleResizeStart('sw', event)}
+                                        className="absolute bottom-0 left-0 z-[85] h-4 w-4 -translate-x-1/2 translate-y-1/2 cursor-nesw-resize bg-transparent"
+                                    />
+                                </>
+                            )}
                             <div
                                 onPointerDown={handlePanelDragStart}
                                 className={`border-b-2 border-black px-4 py-4 ${panelAccentClass} ${
