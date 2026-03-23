@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { rehypeSanitize, SG_REHYPE_SANITIZE_SCHEMA } from '../../utils/rehypeSanitizeSchema.js';
+import MarkdownCodeBlock from './MarkdownCodeBlock.js';
 
 function createMarkdownComponents({ isDarkMode, isAssistant }) {
     const inlineCodeClass = isAssistant
@@ -54,11 +55,29 @@ function createMarkdownComponents({ isDarkMode, isAssistant }) {
             },
             children
         ),
-        pre: ({ children }) => React.createElement('pre', { className: blockClass }, children),
-        code: ({ className, children }) => {
+        pre: ({ children }) => {
+            const child = React.Children.only(children);
+            const text = child?.props?.children ? String(child.props.children).replace(/\n$/, '') : '';
+            const className = child?.props?.className || '';
+            const hasLanguage = typeof className === 'string' && className.includes('language-');
+            const isMultiline = text.includes('\n');
+
+            if (hasLanguage || isMultiline) {
+                return React.createElement(MarkdownCodeBlock, {
+                    textContent: text,
+                    className,
+                    isDarkMode
+                });
+            }
+
+            return React.createElement('pre', { className: blockClass }, children);
+        },
+        code: ({ inline, className, children }) => {
             const text = String(children).replace(/\n$/, '');
-            const isBlock = typeof className === 'string' && className.includes('language-');
-            if (isBlock) {
+            const hasLanguage = typeof className === 'string' && className.includes('language-');
+            const isMultiline = text.includes('\n');
+            const shouldInline = inline ?? (!hasLanguage && !isMultiline);
+            if (!shouldInline) {
                 return React.createElement(
                     'code',
                     {

@@ -17,3 +17,8 @@ assert.match(html, /<ul[^>]*>/);
 assert.match(html, /<strong[^>]*>加粗<\/strong>/);
 assert.match(html, /<code[^>]*>code<\/code>/);
 assert.match(html, /console\.log\(1\)/);
+assert.match(html, />JS<\/span>/);
+assert.match(html, /aria-label="复制代码"/);
+assert.match(html, /复制<\/button>/);
+
+console.log('AiMessageMarkdown tests passed');

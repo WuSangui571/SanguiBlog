@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-03-23] 为 AI 回复 Markdown 代码块增加语言标签与一键复制
+- 背景/需求：用户要求 AI 回复中的 Markdown 代码块增加语言类型显示与一键复制按钮，点击后复制代码到剪切板，并给出轻量成功提示，整体 UI 需要与站内现有代码块风格协调。
+- 修改类型：feat
+- 影响范围：前端 AI Markdown 渲染、代码块交互组件、最小回归测试
+- 变更摘要：
+  1) 检索并确认站内已有文章详情页、关于页两套代码块复制交互，可复用其“语言标签 + 复制按钮 + 轻提示”的视觉语义。
+  2) 为 AI Markdown 新增共享代码块组件 `MarkdownCodeBlock`，统一负责语言标签识别、复制按钮、复制成功/失败轻提示与代码块容器样式。
+  3) `AiMessageMarkdown` 的 fenced code block 渲染改为接入共享代码块组件；行内代码保持原有轻量样式，不受影响。
+  4) 新增 AI Markdown 渲染最小回归测试，覆盖标题、列表、加粗、行内代码、代码块语言标签与复制按钮结构。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.js`
+  - `SanguiBlog-front/src/appfull/ui/MarkdownCodeBlock.js`
+  - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiMessageMarkdown` / `navigator.clipboard` / `复制代码` / `language-`
+  - 找到的候选点：`AiMessageMarkdown.js`、`ArticleDetail.jsx` 内本地 `CodeBlockWithCopy`、`AboutView.jsx` 内本地 `CodeBlockWithCopy`
+  - 最终选择：不新增接口，不在 AI 组件里单独再写一套复制逻辑，而是抽共享代码块组件供 AI Markdown 复用，避免形成第三套重复实现
+- 风险点：
+  - 文章详情页和关于页目前仍保留各自本地代码块实现，本次未继续扩大重构范围；后续若要彻底消除重复，可再统一切换到共享组件。
+- 验证方式：
+  - 测试：执行 `node src/appfull/ui/AiMessageMarkdown.test.js` 通过。
+
 ## [2026-03-23] 修复 AI 聊天页 Beta 标签中文乱码
 - 背景/需求：用户反馈 AI 聊天页头部状态标签显示为 `Beta娴嬭瘯`，期望恢复为正常中文 `Beta 测试版`。
 - 修改类型：fix
