@@ -195,7 +195,7 @@ public class AiAssistantCapabilityService {
             }
             builder.append(System.lineSeparator());
         }
-        builder.append("如果你愿意，我也可以继续只基于其中某一篇站内文章给你做总结，而不是重新现写一篇。");
+        builder.append("如果你想继续看其中某一篇，我也可以直接按那篇文章帮你总结重点。");
         return CapabilityAnswer.answered(builder.toString().trim());
     }
 

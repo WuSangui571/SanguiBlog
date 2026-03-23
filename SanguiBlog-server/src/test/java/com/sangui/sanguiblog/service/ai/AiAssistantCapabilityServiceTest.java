@@ -137,6 +137,8 @@ class AiAssistantCapabilityServiceTest {
         assertTrue(answer.reply().contains("优先从站内已发布文章里帮你找"));
         assertTrue(answer.reply().contains("JVM 内存模型与 GC 实战"));
         assertTrue(answer.reply().contains("https://www.sangui.top/article/301"));
+        assertTrue(answer.reply().contains("如果你想继续看其中某一篇"));
+        assertFalse(answer.reply().contains("而不是重新现写一篇"));
     }
 
     @Test
