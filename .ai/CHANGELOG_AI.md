@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-03-23] 修复 AI 聊天页 Beta 标签中文乱码
+- 背景/需求：用户反馈 AI 聊天页头部状态标签显示为 `Beta娴嬭瘯`，期望恢复为正常中文 `Beta 测试版`。
+- 修改类型：fix
+- 影响范围：前端 AI 助手头部状态文案、最小回归测试
+- 变更摘要：
+  1) 定位到乱码来源为 `AiAssistantWidget.jsx` 内部硬编码文案，而非后端接口或站点配置返回值。
+  2) 将该标签文案从 `Beta娴嬭瘯` 修正为 `Beta 测试版`。
+  3) 新增最小回归测试，断言组件源码中必须包含正确文案，且不再包含旧乱码文本。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.test.js`
+- 检索与复用策略：
+  - 检索关键词：`Beta娴嬭瘯` / `Beta 测试版` / `AiAssistantWidget` / `welcomeMessage`
+  - 找到的候选点：`AiAssistantWidget.jsx` 头部状态标签、`aiAssistantConfig.js` 默认配置、`AiAssistantSettingService.java` 站点配置服务
+  - 最终选择：复用现有 AI 组件，仅做单点文案修复；不新增接口、不改配置结构，避免把一次文案修复扩大成编码重构
+- 风险点：
+  - 当前前后端仍存在其他历史乱码文本，但本次未一并清理，以保持改动最小化并聚焦用户明确指定的问题。
+- 验证方式：
+  - 测试：执行 `node src/appfull/ui/AiAssistantWidget.test.js` 通过。
+
 ## [2026-03-17] AI 聊天支持恢复历史消息列表
 - 背景/需求：用户要求在已接入 JDBC 持久化记忆的基础上，打开 AI 面板时能够恢复当前会话的历史消息列表，而不只是让模型“记住上下文”。
 - 修改类型：feat

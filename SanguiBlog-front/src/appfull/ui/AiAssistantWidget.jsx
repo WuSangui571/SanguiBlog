@@ -795,7 +795,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                 {assistantConfig.title}
                                             </p>
                                             <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
-                                                Beta娴嬭瘯
+                                                Beta 测试版
                                             </p>
                                         </div>
                                     </div>
