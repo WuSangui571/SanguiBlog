@@ -12,14 +12,14 @@ $frontEnvFile = Join-Path $repoRoot "SanguiBlog-front/.env.local"
 $config = @{
     dev  = @{
         Port      = "8080"
-        DbUrl     = "jdbc:mysql://123.56.244.121:3306/sanguiblog_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"
+        DbUrl     = "jdbc:mysql://123.56.244.121:3306/sanguiblog_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"
         Storage   = "D:\02-WorkSpace\02-Java\SanguiBlog\uploads"
         AssetBase = "http://localhost:8080/uploads"
         ApiBase   = "http://localhost:8080/api"
     }
     prod = @{
         Port      = "8082"
-        DbUrl     = "jdbc:mysql://127.0.0.1:3306/sanguiblog_db?useSSL=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"
+        DbUrl     = "jdbc:mysql://123.56.244.121:3306/sanguiblog_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"
         Storage   = "/home/sangui/uploads"
         AssetBase = "http://sangui.top/uploads"
         ApiBase   = "/api"
