@@ -6,12 +6,17 @@ import com.sangui.sanguiblog.model.repository.AiBlogKnowledgeDocumentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.service.SiteService;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,14 +45,14 @@ class AiAssistantCapabilityServiceTest {
         AiBlogKnowledgeDocumentRepository knowledgeRepository = mock(AiBlogKnowledgeDocumentRepository.class);
         SiteService siteService = mock(SiteService.class);
         when(postRepository.findFirstByStatusOrderByPublishedAtDesc("PUBLISHED"))
-                .thenReturn(Optional.of(buildPost("记一次网站迁移：从 HTTPS 配置到异地容灾备份", "site-migration", LocalDateTime.of(2026, 3, 18, 10, 0))));
+                .thenReturn(Optional.of(buildPost(101L, "记一次网站迁移：从 HTTPS 配置到异地容灾备份", "site-migration", LocalDateTime.of(2026, 3, 18, 10, 0))));
 
         AiAssistantCapabilityService service = new AiAssistantCapabilityService(postRepository, knowledgeRepository, siteService);
         AiAssistantCapabilityService.CapabilityAnswer answer = service.answer("最新发的文章是什么？");
 
         assertTrue(answer.answered());
         assertTrue(answer.reply().contains("记一次网站迁移：从 HTTPS 配置到异地容灾备份"));
-        assertTrue(answer.reply().contains("/posts/site-migration"));
+        assertTrue(answer.reply().contains("/article/101"));
     }
 
     @Test
@@ -99,7 +104,7 @@ class AiAssistantCapabilityServiceTest {
 
         assertTrue(answer.answered());
         assertTrue(answer.reply().contains("建议直接查看"));
-        assertTrue(answer.reply().contains("归档"));
+        assertTrue(answer.reply().contains("归档页"));
     }
 
     @Test
@@ -114,8 +119,45 @@ class AiAssistantCapabilityServiceTest {
         assertFalse(answer.answered());
     }
 
-    private static Post buildPost(String title, String slug, LocalDateTime publishedAt) {
+    @Test
+    void shouldPreferExistingSitePostsWhenUserAsksForArticleRecommendation() {
+        PostRepository postRepository = mock(PostRepository.class);
+        AiBlogKnowledgeDocumentRepository knowledgeRepository = mock(AiBlogKnowledgeDocumentRepository.class);
+        SiteService siteService = mock(SiteService.class);
+        when(postRepository.searchPublishedCandidates(eq("JVM"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(
+                        buildPost(301L, "JVM 内存模型与 GC 实战", "jvm-memory-gc", LocalDateTime.of(2026, 3, 21, 9, 30)),
+                        buildPost(199L, "从字节码到类加载：JVM 运行时笔记", "jvm-classloading", LocalDateTime.of(2026, 1, 8, 20, 0))
+                )));
+
+        AiAssistantCapabilityService service = new AiAssistantCapabilityService(postRepository, knowledgeRepository, siteService);
+        AiAssistantCapabilityService.CapabilityAnswer answer = service.answer("给我一篇关于JVM的站内文章");
+
+        assertTrue(answer.answered());
+        assertTrue(answer.reply().contains("优先从站内已发布文章里帮你找"));
+        assertTrue(answer.reply().contains("JVM 内存模型与 GC 实战"));
+        assertTrue(answer.reply().contains("/article/301"));
+    }
+
+    @Test
+    void shouldExplainSitePagesAndSitemapDirectly() {
+        PostRepository postRepository = mock(PostRepository.class);
+        AiBlogKnowledgeDocumentRepository knowledgeRepository = mock(AiBlogKnowledgeDocumentRepository.class);
+        SiteService siteService = mock(SiteService.class);
+        AiAssistantCapabilityService service = new AiAssistantCapabilityService(postRepository, knowledgeRepository, siteService);
+
+        AiAssistantCapabilityService.CapabilityAnswer answer = service.answer("你的 sitemap.xml 里有哪些页面？tools 页面是干什么的？");
+
+        assertTrue(answer.answered());
+        assertTrue(answer.reply().contains("/sitemap.xml"));
+        assertTrue(answer.reply().contains("/tools"));
+        assertTrue(answer.reply().contains("/archive"));
+        assertTrue(answer.reply().contains("/about"));
+    }
+
+    private static Post buildPost(Long id, String title, String slug, LocalDateTime publishedAt) {
         Post post = new Post();
+        post.setId(id);
         post.setTitle(title);
         post.setSlug(slug);
         post.setPublishedAt(publishedAt);

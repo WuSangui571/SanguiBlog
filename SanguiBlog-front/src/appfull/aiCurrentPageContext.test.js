@@ -31,7 +31,9 @@ const validArticle = {
     articleState: { status: "ok" }
   });
 
-  assert.equal(context, null);
+  assert.equal(context.pageType, "home");
+  assert.equal(context.url, "/");
+  assert.match(context.content, /首页/);
 }
 
 {
@@ -42,6 +44,31 @@ const validArticle = {
   });
 
   assert.equal(context, null);
+}
+
+{
+  const context = buildAiCurrentPageContext({
+    view: "games",
+    gameDetail: {
+      title: "JSON 格式化工具",
+      description: "用于格式化和校验 JSON 的工具页"
+    }
+  });
+
+  assert.equal(context.pageType, "tools");
+  assert.equal(context.title, "JSON 格式化工具");
+  assert.equal(context.url, "/tools");
+  assert.match(context.content, /工具页/);
+}
+
+{
+  const context = buildAiCurrentPageContext({
+    view: "archive"
+  });
+
+  assert.equal(context.pageType, "archive");
+  assert.equal(context.url, "/archive");
+  assert.match(context.content, /归档/);
 }
 
 console.log("aiCurrentPageContext tests passed");

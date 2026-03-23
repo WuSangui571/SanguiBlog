@@ -107,6 +107,46 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     @Query("select p.id as postId, t.name as tagName from Post p join p.tags t where p.id in :postIds")
     List<PostTagRow> findTagNamesByPostIds(@Param("postIds") List<Long> postIds);
 
+    @EntityGraph(attributePaths = { "category", "category.parent", "tags" })
+    @Query(
+            value = """
+                    select distinct p
+                    from Post p
+                    left join p.tags t
+                    where p.status = 'PUBLISHED'
+                      and p.publishedAt is not null
+                      and (
+                          lower(p.title) like lower(concat('%', :keyword, '%'))
+                          or lower(coalesce(p.excerpt, '')) like lower(concat('%', :keyword, '%'))
+                          or lower(coalesce(p.slug, '')) like lower(concat('%', :keyword, '%'))
+                          or lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%'))
+                      )
+                    order by
+                      case
+                          when lower(p.title) like lower(concat('%', :keyword, '%')) then 0
+                          when lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%')) then 1
+                          when lower(coalesce(p.excerpt, '')) like lower(concat('%', :keyword, '%')) then 2
+                          else 3
+                      end,
+                      p.publishedAt desc,
+                      p.createdAt desc
+                    """,
+            countQuery = """
+                    select count(distinct p.id)
+                    from Post p
+                    left join p.tags t
+                    where p.status = 'PUBLISHED'
+                      and p.publishedAt is not null
+                      and (
+                          lower(p.title) like lower(concat('%', :keyword, '%'))
+                          or lower(coalesce(p.excerpt, '')) like lower(concat('%', :keyword, '%'))
+                          or lower(coalesce(p.slug, '')) like lower(concat('%', :keyword, '%'))
+                          or lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%'))
+                      )
+                    """
+    )
+    Page<Post> searchPublishedCandidates(@Param("keyword") String keyword, Pageable pageable);
+
     @Query("select p.id as id, p.publishedAt as publishedAt, p.updatedAt as updatedAt from Post p "
             + "where p.status = 'PUBLISHED' and p.publishedAt is not null "
             + "order by p.publishedAt desc, p.createdAt desc")

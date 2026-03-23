@@ -5,6 +5,36 @@
 
 ---
 
+## [2026-03-23] 让 AI 优先推荐站内已发布文章并补齐站点页面语义
+- 背景/需求：用户反馈 AI 在被要求“给我一篇关于 JVM 的站内文章”时，会直接自己写一篇新博客，而不是优先去站内找已有文章；同时 AI 对 `/sitemap.xml`、`/tools`、`/archive`、`/about` 等站点页面语义掌握不足。
+- 修改类型：feat
+- 影响范围：AI 能力直答层、文章检索优先策略、当前页面上下文、最小回归测试
+- 变更摘要：
+  1) 为 `AiAssistantCapabilityService` 增加“站内已有文章优先检索”能力，命中“给我一篇/找一篇/推荐一篇/有没有写过”等问法时，会先查已发布文章候选并返回站内链接，而不是让模型直接现写。
+  2) 为 AI 能力层补充 `/sitemap.xml` 与核心页面语义说明，能直接回答首页、归档页、关于页、工具页和文章详情页分别是什么。
+  3) 为 `AiCurrentPageContext` 前后端链路补充首页、归档页、关于页、工具页上下文，不再只在 `/article/:id` 下可用。
+  4) 新增/重写定向测试，覆盖“站内文章优先推荐”“站点页面说明”和“非文章页当前页面上下文”。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantCapabilityService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiCurrentPageContextService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/PostRepository.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiAssistantCapabilityServiceTest.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiCurrentPageContextServiceTest.java`
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.js`
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.test.js`
+  - `SanguiBlog-front/src/AppFull.jsx`
+- 检索与复用策略：
+  - 检索关键词：`AiChatService` / `AiAssistantCapabilityService` / `AiCurrentPageContextService` / `AiBlogRagService` / `SitemapService` / `/sitemap.xml`
+  - 找到的候选点：现有系统事实层、当前文章页上下文、站点地图服务、博客 RAG 检索
+  - 最终选择：在现有能力层上补“结构化站内文章优先查找 + 站点页面说明 + 非文章页当前上下文”，不新增第二套 AI 接口或第二套知识检索实现
+- 风险点：
+  - 文章优先检索当前基于标题/摘要/slug/标签关键词匹配，若文章主题词只存在正文中而标题摘要标签都未体现，仍可能落回后续 RAG 或普通问答。
+  - 当前页面上下文对首页/归档/关于/工具页使用的是站内语义摘要，不是实时抓取页面 DOM。
+- 验证方式：
+  - 测试：执行 `node src/appfull/aiCurrentPageContext.test.js` 通过。
+  - 测试：执行 `cmd /c mvn -q "-Dtest=AiAssistantCapabilityServiceTest,AiCurrentPageContextServiceTest" test` 通过。
+  - 自检：执行 `git diff --check` 通过。
+
 ## [2026-03-23] 升级站点版本号到 V2.2.3 并同步 README
 - 背景/需求：用户要求将当前项目版本号从 `V2.2.1` 更新到 `V2.2.3`，不生成 release 文档，只更新首页版本展示，并检查根目录 `README.md` 中是否存在过时版本说明。
 - 修改类型：docs

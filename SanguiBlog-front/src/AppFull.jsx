@@ -1297,7 +1297,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const currentAiPageContext = buildAiCurrentPageContext({
         view,
         article,
-        articleState
+        articleState,
+        gameDetail,
+        gameId
     });
     const aiAssistantEnabled = meta ? meta?.aiAssistant?.enabled !== false : false;
 
