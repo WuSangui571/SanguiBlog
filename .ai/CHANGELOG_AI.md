@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-03-23] 修复 AI 站内文章检索把“JVM的已发布”当作关键词的问题
+- 背景/需求：用户提问“给我一篇JVM的已发布的博客”时，AI 不再报错，但会把“JVM的已发布”整体当作检索词，导致误判为站内无结果。
+- 修改类型：fix
+- 影响范围：AI 站内文章关键词提取与归一化
+- 变更摘要：
+  1) 为 `AiAssistantCapabilityService.extractLookupKeyword(...)` 增加关键词归一化步骤。
+  2) 自动剥离“已发布 / 站内 / 博客 / 博文 / 文章”等尾部噪音词，保留核心主题词，例如把“JVM的已发布的博客”归一为 `JVM`。
+  3) 新增回归测试，锁定“给我一篇JVM的已发布的博客”必须命中 `JVM` 相关文章。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantCapabilityService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiAssistantCapabilityServiceTest.java`
+- 检索与复用策略：
+  - 检索关键词：`extractLookupKeyword` / `TOPIC_AFTER_ARTICLE_PATTERN` / `JVM的已发布`
+  - 找到的候选点：现有关键词正则、ASCII 兜底提取、站内文章候选查询
+  - 最终选择：不改主链与查询，只补关键词归一化
+- 风险点：
+  - 当前归一化主要清洗尾部业务噪音词，若用户用更复杂自然语序，后续仍可继续补规则。
+- 验证方式：
+  - 测试：执行 `cmd /c mvn -q "-Dtest=AiAssistantCapabilityServiceTest" test` 通过。
+  - 自检：执行 `git diff --check` 通过。
+
 ## [2026-03-23] 修复 AI 站内文章优先检索触发的 MySQL DISTINCT 排序报错
 - 背景/需求：用户在提问“给我一篇 JVM 的已发布博客”时，AI 返回“AI 服务暂时不可用”，后端定位到 `searchPublishedCandidates(...)` 生成的 SQL 因 `DISTINCT + ORDER BY tags 列` 在 MySQL 上不兼容而报错。
 - 修改类型：fix

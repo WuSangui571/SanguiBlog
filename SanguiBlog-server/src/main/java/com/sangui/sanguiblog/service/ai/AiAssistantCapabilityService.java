@@ -264,24 +264,24 @@ public class AiAssistantCapabilityService {
     private String extractLookupKeyword(String question) {
         String fromAbout = extractByPattern(question, TOPIC_AFTER_ABOUT_PATTERN);
         if (StringUtils.hasText(fromAbout)) {
-            return fromAbout;
+            return normalizeLookupKeyword(fromAbout);
         }
 
         String fromArticle = extractByPattern(question, TOPIC_AFTER_ARTICLE_PATTERN);
         if (StringUtils.hasText(fromArticle)) {
-            return fromArticle;
+            return normalizeLookupKeyword(fromArticle);
         }
 
         String fromWritten = extractByPattern(question, TOPIC_AFTER_WRITTEN_PATTERN);
         if (StringUtils.hasText(fromWritten)) {
-            return fromWritten;
+            return normalizeLookupKeyword(fromWritten);
         }
 
         Matcher ascii = ASCII_TOPIC_PATTERN.matcher(question);
         while (ascii.find()) {
             String candidate = ascii.group(1);
             if (StringUtils.hasText(candidate) && !candidate.equalsIgnoreCase("sitemap")) {
-                return candidate.trim();
+                return normalizeLookupKeyword(candidate);
             }
         }
         return "";
@@ -294,6 +294,19 @@ public class AiAssistantCapabilityService {
         }
         String value = matcher.group(1);
         return value == null ? "" : value.trim();
+    }
+
+    private String normalizeLookupKeyword(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return "";
+        }
+
+        String normalized = keyword.trim();
+        normalized = normalized.replaceAll("^[的\\s]+", "");
+        normalized = normalized.replaceAll("[\\s`\"'“”‘’《》<>]+", "");
+        normalized = normalized.replaceAll("(的)?(已发布|站内|博客|博文|文章)+$", "");
+        normalized = normalized.replaceAll("(的)+$", "");
+        return normalized.trim();
     }
 
     private String safe(String value, String fallback) {

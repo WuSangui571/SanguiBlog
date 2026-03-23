@@ -140,6 +140,24 @@ class AiAssistantCapabilityServiceTest {
     }
 
     @Test
+    void shouldNormalizeLookupKeywordForPublishedBlogQuestion() {
+        PostRepository postRepository = mock(PostRepository.class);
+        AiBlogKnowledgeDocumentRepository knowledgeRepository = mock(AiBlogKnowledgeDocumentRepository.class);
+        SiteService siteService = mock(SiteService.class);
+        when(postRepository.searchPublishedCandidates(eq("JVM"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(
+                        buildPost(301L, "JVM 内存模型与 GC 实战", "jvm-memory-gc", LocalDateTime.of(2026, 3, 21, 9, 30))
+                )));
+
+        AiAssistantCapabilityService service = new AiAssistantCapabilityService(postRepository, knowledgeRepository, siteService);
+        AiAssistantCapabilityService.CapabilityAnswer answer = service.answer("给我一篇JVM的已发布的博客");
+
+        assertTrue(answer.answered());
+        assertTrue(answer.reply().contains("JVM 内存模型与 GC 实战"));
+        assertFalse(answer.reply().contains("JVM的已发布"));
+    }
+
+    @Test
     void shouldExplainSitePagesAndSitemapDirectly() {
         PostRepository postRepository = mock(PostRepository.class);
         AiBlogKnowledgeDocumentRepository knowledgeRepository = mock(AiBlogKnowledgeDocumentRepository.class);
