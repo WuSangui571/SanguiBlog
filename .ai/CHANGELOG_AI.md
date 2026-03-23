@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-03-23] 升级站点版本号到 V2.2.3 并同步 README
+- 背景/需求：用户要求将当前项目版本号从 `V2.2.1` 更新到 `V2.2.3`，不生成 release 文档，只更新首页版本展示，并检查根目录 `README.md` 中是否存在过时版本说明。
+- 修改类型：docs
+- 影响范围：首页版本展示、后端站点元信息、根目录 README
+- 变更摘要：
+  1) 后端 `site.version` 从 `V2.2.1` 更新为 `V2.2.3`。
+  2) 首页 `HomeView` 的前端兜底版本同步更新为 `V2.2.3`。
+  3) `README.md` 中当前站点版本号与 AI 助理能力说明中的旧版本表述同步更新为 `V2.2.3`。
+  4) `README.md` 中关于未单独生成 release 文档的说明同步改为 `V2.2.3`，其余内容保持不变。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `README.md`
+- 检索与复用策略：
+  - 检索关键词：`V2.2.1` / `site.version` / `meta?.version` / `README`
+  - 找到的旧实现：首页版本统一读取后端 `site.version`，前端 `HomeView` 保留兜底版本；README 顶部与 AI 助理章节维护当前版本说明
+  - 最终选择：仅同步首页版本来源与 README 中明确过时的版本描述，不生成/更新 release 文档
+- 风险点：
+  - 本次只同步用户明确要求的首页版本与 README 过时文本，不涉及其他文档或发布说明文件。
+- 验证方式：
+  - 静态：检索 `V2.2.1` 已不再出现在首页版本来源文件与 `README.md` 的当前版本说明中。
+
 ## [2026-03-23] 去除 AI 聊天页代码块外层黑色投影
 - 背景/需求：用户要求 AI 聊天页中的 Markdown 代码块继续保留语言标签与复制按钮，但不要复用文章页那种右侧和下侧黑色投影。
 - 修改类型：fix
