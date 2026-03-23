@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-03-23] 修复 AI 站内文章优先检索触发的 MySQL DISTINCT 排序报错
+- 背景/需求：用户在提问“给我一篇 JVM 的已发布博客”时，AI 返回“AI 服务暂时不可用”，后端定位到 `searchPublishedCandidates(...)` 生成的 SQL 因 `DISTINCT + ORDER BY tags 列` 在 MySQL 上不兼容而报错。
+- 修改类型：fix
+- 影响范围：AI 站内文章优先检索、后端文章候选查询 SQL
+- 变更摘要：
+  1) 确认根因是 `PostRepository.searchPublishedCandidates(...)` 使用 `left join p.tags t + distinct` 后，又按 `t.name` 参与排序，Hibernate 生成的 SQL 被 MySQL 拒绝。
+  2) 将查询改为 `exists` 子查询判断标签是否命中，避免再生成 `distinct` 依赖的标签排序列。
+  3) 保留原有排序语义：标题命中优先、标签命中次优、摘要命中再次，然后按发布时间倒序。
+  4) 现有 AI 能力回归测试继续通过，确认未破坏原本的站点页面语义与当前页面上下文能力。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/PostRepository.java`
+- 检索与复用策略：
+  - 检索关键词：`searchPublishedCandidates` / `distinct` / `order by` / `tags` / `exists`
+  - 找到的候选点：新增文章候选查询本身、`AiAssistantCapabilityService` 调用链、用户提供的 MySQL 报错 SQL
+  - 最终选择：只修查询实现，不改 AI 主链和接口契约
+- 风险点：
+  - 当前仍未做正文全文匹配，主题词若只存在正文中，仍需依赖后续 RAG 兜底。
+- 验证方式：
+  - 测试：执行 `cmd /c mvn -q "-Dtest=AiAssistantCapabilityServiceTest,AiCurrentPageContextServiceTest" test` 通过。
+  - 自检：执行 `git diff --check` 通过。
+
 ## [2026-03-23] 让 AI 优先推荐站内已发布文章并补齐站点页面语义
 - 背景/需求：用户反馈 AI 在被要求“给我一篇关于 JVM 的站内文章”时，会直接自己写一篇新博客，而不是优先去站内找已有文章；同时 AI 对 `/sitemap.xml`、`/tools`、`/archive`、`/about` 等站点页面语义掌握不足。
 - 修改类型：feat

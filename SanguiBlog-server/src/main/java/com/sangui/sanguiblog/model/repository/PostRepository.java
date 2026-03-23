@@ -110,21 +110,28 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     @EntityGraph(attributePaths = { "category", "category.parent", "tags" })
     @Query(
             value = """
-                    select distinct p
+                    select p
                     from Post p
-                    left join p.tags t
                     where p.status = 'PUBLISHED'
                       and p.publishedAt is not null
                       and (
                           lower(p.title) like lower(concat('%', :keyword, '%'))
                           or lower(coalesce(p.excerpt, '')) like lower(concat('%', :keyword, '%'))
                           or lower(coalesce(p.slug, '')) like lower(concat('%', :keyword, '%'))
-                          or lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%'))
+                          or exists (
+                              select t.id
+                              from p.tags t
+                              where lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%'))
+                          )
                       )
                     order by
                       case
                           when lower(p.title) like lower(concat('%', :keyword, '%')) then 0
-                          when lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%')) then 1
+                          when exists (
+                              select t.id
+                              from p.tags t
+                              where lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%'))
+                          ) then 1
                           when lower(coalesce(p.excerpt, '')) like lower(concat('%', :keyword, '%')) then 2
                           else 3
                       end,
@@ -132,16 +139,19 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
                       p.createdAt desc
                     """,
             countQuery = """
-                    select count(distinct p.id)
+                    select count(p.id)
                     from Post p
-                    left join p.tags t
                     where p.status = 'PUBLISHED'
                       and p.publishedAt is not null
                       and (
                           lower(p.title) like lower(concat('%', :keyword, '%'))
                           or lower(coalesce(p.excerpt, '')) like lower(concat('%', :keyword, '%'))
                           or lower(coalesce(p.slug, '')) like lower(concat('%', :keyword, '%'))
-                          or lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%'))
+                          or exists (
+                              select t.id
+                              from p.tags t
+                              where lower(coalesce(t.name, '')) like lower(concat('%', :keyword, '%'))
+                          )
                       )
                     """
     )
