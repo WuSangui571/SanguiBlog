@@ -36,7 +36,7 @@ export function getCodeBlockLanguageLabel(className) {
     return langMatch?.[1] ? langMatch[1].toUpperCase() : 'CODE';
 }
 
-export default function MarkdownCodeBlock({ textContent, className, isDarkMode }) {
+export default function MarkdownCodeBlock({ textContent, className, isDarkMode, showShadow = true }) {
     const [copyState, setCopyState] = useState('idle');
     const resetTimerRef = useRef(null);
     const langLabel = getCodeBlockLanguageLabel(className);
@@ -85,7 +85,7 @@ export default function MarkdownCodeBlock({ textContent, className, isDarkMode }
     return React.createElement(
         'div',
         {
-            className: `not-prose my-4 overflow-hidden rounded-2xl border-2 border-black shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'border-gray-700' : ''}`
+            className: `not-prose my-4 overflow-hidden rounded-2xl border-2 border-black ${showShadow ? 'shadow-[6px_6px_0px_0px_#000]' : ''} ${isDarkMode ? 'border-gray-700' : ''}`
         },
         React.createElement(
             'div',

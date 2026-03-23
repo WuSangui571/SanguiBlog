@@ -66,7 +66,8 @@ function createMarkdownComponents({ isDarkMode, isAssistant }) {
                 return React.createElement(MarkdownCodeBlock, {
                     textContent: text,
                     className,
-                    isDarkMode
+                    isDarkMode,
+                    showShadow: false
                 });
             }
 

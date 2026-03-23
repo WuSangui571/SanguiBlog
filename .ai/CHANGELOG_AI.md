@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-03-23] 去除 AI 聊天页代码块外层黑色投影
+- 背景/需求：用户要求 AI 聊天页中的 Markdown 代码块继续保留语言标签与复制按钮，但不要复用文章页那种右侧和下侧黑色投影。
+- 修改类型：fix
+- 影响范围：前端 AI Markdown 代码块样式、最小回归测试
+- 变更摘要：
+  1) 检索确认阴影来自共享组件 `MarkdownCodeBlock` 的最外层容器样式。
+  2) 为共享代码块组件增加 `showShadow` 开关，默认仍保留阴影，避免影响其他复用场景。
+  3) AI Markdown 渲染调用共享组件时显式传入 `showShadow: false`，仅 AI 聊天页去掉外层黑色投影。
+  4) 回归测试新增断言，确保 AI Markdown 输出中不再包含该阴影类名。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/MarkdownCodeBlock.js`
+  - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.js`
+  - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.test.js`
+- 检索与复用策略：
+  - 检索关键词：`shadow-[6px_6px_0px_0px_#000]` / `MarkdownCodeBlock` / `AiMessageMarkdown`
+  - 找到的候选点：共享组件阴影类、AI Markdown 调用点、AI Markdown 测试
+  - 最终选择：复用现有共享组件并加细粒度样式开关，不回退到单独写一份 AI 专用代码块组件
+- 风险点：
+  - 文章页/关于页若未来接入共享组件，默认仍会保留原阴影；本次只修改 AI 聊天页表现。
+- 验证方式：
+  - 测试：执行 `node src/appfull/ui/AiMessageMarkdown.test.js` 通过。
+  - 测试：执行 `node src/appfull/ui/AiAssistantWidget.test.js` 通过。
+
 ## [2026-03-23] 为 AI 回复 Markdown 代码块增加语言标签与一键复制
 - 背景/需求：用户要求 AI 回复中的 Markdown 代码块增加语言类型显示与一键复制按钮，点击后复制代码到剪切板，并给出轻量成功提示，整体 UI 需要与站内现有代码块风格协调。
 - 修改类型：feat

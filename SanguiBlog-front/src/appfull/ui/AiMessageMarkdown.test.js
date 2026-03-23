@@ -20,5 +20,6 @@ assert.match(html, /console\.log\(1\)/);
 assert.match(html, />JS<\/span>/);
 assert.match(html, /aria-label="复制代码"/);
 assert.match(html, /复制<\/button>/);
+assert.doesNotMatch(html, /shadow-\[6px_6px_0px_0px_#000\]/);
 
 console.log('AiMessageMarkdown tests passed');
