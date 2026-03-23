@@ -52,7 +52,7 @@ class AiAssistantCapabilityServiceTest {
 
         assertTrue(answer.answered());
         assertTrue(answer.reply().contains("记一次网站迁移：从 HTTPS 配置到异地容灾备份"));
-        assertTrue(answer.reply().contains("/article/101"));
+        assertTrue(answer.reply().contains("https://www.sangui.top/article/101"));
     }
 
     @Test
@@ -136,7 +136,7 @@ class AiAssistantCapabilityServiceTest {
         assertTrue(answer.answered());
         assertTrue(answer.reply().contains("优先从站内已发布文章里帮你找"));
         assertTrue(answer.reply().contains("JVM 内存模型与 GC 实战"));
-        assertTrue(answer.reply().contains("/article/301"));
+        assertTrue(answer.reply().contains("https://www.sangui.top/article/301"));
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.sangui.sanguiblog.model.repository.AiBlogKnowledgeDocumentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.service.SiteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class AiAssistantCapabilityService {
 
+    private static final String DEFAULT_SITE_BASE_URL = "https://www.sangui.top";
     private static final DateTimeFormatter PUBLISHED_AT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final int ARTICLE_LOOKUP_LIMIT = 3;
 
@@ -46,14 +48,21 @@ public class AiAssistantCapabilityService {
             "/tools", "/archive", "/about", "tools页面", "archive页面", "about页面", "首页"
     );
 
-    private static final Pattern TOPIC_AFTER_ABOUT_PATTERN = Pattern.compile("关于\\s*([A-Za-z0-9#+._\\-\\u4e00-\\u9fa5]{2,}?)(?=的?(?:站内)?(?:文章|博文|博客)|[？?，,。.]|$)");
-    private static final Pattern TOPIC_AFTER_WRITTEN_PATTERN = Pattern.compile("写过\\s*([A-Za-z0-9#+._\\-\\u4e00-\\u9fa5]{2,}?)(?=的?(?:文章|博文|博客)|[？?，,。.]|$)");
-    private static final Pattern TOPIC_AFTER_ARTICLE_PATTERN = Pattern.compile("一篇\\s*([A-Za-z0-9#+._\\-\\u4e00-\\u9fa5]{2,}?)\\s*(?:的)?(?:站内)?(?:文章|博文|博客)");
-    private static final Pattern ASCII_TOPIC_PATTERN = Pattern.compile("\\b([A-Za-z][A-Za-z0-9#+._\\-]{1,})\\b");
+    private static final Pattern TOPIC_AFTER_ABOUT_PATTERN =
+            Pattern.compile("关于\\s*([A-Za-z0-9#+._\\-\\u4e00-\\u9fa5]{2,}?)(?=的?(?:站内)?(?:文章|博文|博客)|[？?，,。.]|$)");
+    private static final Pattern TOPIC_AFTER_WRITTEN_PATTERN =
+            Pattern.compile("写过\\s*([A-Za-z0-9#+._\\-\\u4e00-\\u9fa5]{2,}?)(?=的?(?:文章|博文|博客)|[？?，,。.]|$)");
+    private static final Pattern TOPIC_AFTER_ARTICLE_PATTERN =
+            Pattern.compile("一篇\\s*([A-Za-z0-9#+._\\-\\u4e00-\\u9fa5]{2,}?)\\s*(?:的)?(?:站内)?(?:文章|博文|博客)");
+    private static final Pattern ASCII_TOPIC_PATTERN =
+            Pattern.compile("\\b([A-Za-z][A-Za-z0-9#+._\\-]{1,})\\b");
 
     private final PostRepository postRepository;
     private final AiBlogKnowledgeDocumentRepository knowledgeDocumentRepository;
     private final SiteService siteService;
+
+    @Value("${site.base-url:https://www.sangui.top}")
+    private String siteBaseUrl = DEFAULT_SITE_BASE_URL;
 
     public CapabilityAnswer answer(String question) {
         if (!StringUtils.hasText(question)) {
@@ -160,6 +169,7 @@ public class AiAssistantCapabilityService {
         if (page == null) {
             return CapabilityAnswer.unanswered();
         }
+
         List<Post> candidates = page.getContent();
         if (candidates == null || candidates.isEmpty()) {
             return CapabilityAnswer.answered("""
@@ -173,17 +183,15 @@ public class AiAssistantCapabilityService {
                 .append(keyword)
                 .append("”更匹配的候选：")
                 .append(System.lineSeparator());
-        for (int i = 0; i < candidates.size(); i++) {
-            Post post = candidates.get(i);
-            builder.append(i + 1)
-                    .append(". 《")
+        for (Post post : candidates) {
+            builder.append("- 《")
                     .append(safe(post.getTitle(), "未命名文章"))
                     .append("》");
             if (post.getPublishedAt() != null) {
                 builder.append("（").append(post.getPublishedAt().format(PUBLISHED_AT_FORMATTER)).append("）");
             }
             if (post.getId() != null) {
-                builder.append(" - /article/").append(post.getId());
+                builder.append("：").append(buildAbsoluteArticleUrl(post.getId()));
             }
             builder.append(System.lineSeparator());
         }
@@ -204,8 +212,10 @@ public class AiAssistantCapabilityService {
     }
 
     private String buildLatestPublishedPostReply(Post post) {
-        String publishedAt = post.getPublishedAt() != null ? post.getPublishedAt().format(PUBLISHED_AT_FORMATTER) : "发布时间暂未记录";
-        String url = post.getId() != null ? "/article/" + post.getId() : "文章详情页";
+        String publishedAt = post.getPublishedAt() != null
+                ? post.getPublishedAt().format(PUBLISHED_AT_FORMATTER)
+                : "发布时间暂未记录";
+        String url = post.getId() != null ? buildAbsoluteArticleUrl(post.getId()) : "文章详情页";
         return """
                 当前最新发布的文章是《%s》。
                 发布时间：%s
@@ -311,6 +321,12 @@ public class AiAssistantCapabilityService {
 
     private String safe(String value, String fallback) {
         return StringUtils.hasText(value) ? value.trim() : fallback;
+    }
+
+    private String buildAbsoluteArticleUrl(Long postId) {
+        String baseUrl = StringUtils.hasText(siteBaseUrl) ? siteBaseUrl.trim() : DEFAULT_SITE_BASE_URL;
+        baseUrl = baseUrl.replaceAll("/+$", "");
+        return baseUrl + "/article/" + postId;
     }
 
     public record CapabilityAnswer(boolean answered, String reply) {

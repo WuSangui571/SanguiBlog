@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-03-23] 将 AI 站内文章推荐回复改为可点击的完整站点链接
+- 背景/需求：用户反馈 AI 在推荐站内已发布文章时返回的是相对路径，例如 `/article/213`，期望直接给出可点击的完整链接，并带上站点域名。
+- 修改类型：fix
+- 影响范围：AI 推荐文章回复文案、最新文章直答文案
+- 变更摘要：
+  1) 为 `AiAssistantCapabilityService` 增加站点绝对链接拼接逻辑，统一基于 `site.base-url` 输出文章完整地址。
+  2) “站内候选文章推荐”改为返回 `https://.../article/{id}` 形式的绝对链接。
+  3) “最新发布的文章是什么”这类直答中的文章链接也同步改为绝对链接。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantCapabilityService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiAssistantCapabilityServiceTest.java`
+- 检索与复用策略：
+  - 检索关键词：`site.base-url` / `/article/` / `文章链接`
+  - 找到的候选点：`application-local.yaml` 中的 `site.base-url`、`SitemapService` 的 base-url 逻辑、能力层里现有相对路径拼接
+  - 最终选择：复用现有站点基地址配置，不新增新配置项
+- 风险点：
+  - 如果运行环境未显式配置 `site.base-url`，会回退到默认值 `https://www.sangui.top`。
+- 验证方式：
+  - 测试：执行 `cmd /c mvn -q "-Dtest=AiAssistantCapabilityServiceTest" test` 通过。
+  - 自检：执行 `git diff --check` 通过。
+
 ## [2026-03-23] 修复 AI 站内文章检索把“JVM的已发布”当作关键词的问题
 - 背景/需求：用户提问“给我一篇JVM的已发布的博客”时，AI 不再报错，但会把“JVM的已发布”整体当作检索词，导致误判为站内无结果。
 - 修改类型：fix
