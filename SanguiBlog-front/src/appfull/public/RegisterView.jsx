@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Eye, EyeOff, ShieldCheck, Ticket, Upload, UserPlus } from "lucide-react";
+import { Eye, EyeOff, Ticket, Upload, UserPlus } from "lucide-react";
 
 import PopButton from "../../components/common/PopButton.jsx";
 import {
@@ -32,7 +32,6 @@ export default function RegisterView({ setView, isDarkMode }) {
   const [inviteCode, setInviteCode] = useState("");
   const [inviteError, setInviteError] = useState("");
   const [inviteVerified, setInviteVerified] = useState(false);
-  const [inviteTicket, setInviteTicket] = useState("");
   const [inviteMeta, setInviteMeta] = useState(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyCooldownUntil, setVerifyCooldownUntil] = useState(0);
@@ -74,18 +73,18 @@ export default function RegisterView({ setView, isDarkMode }) {
 
   const inviteSummary = useMemo(() => {
     if (!inviteMeta) return "";
-    const ttlLabel = inviteMeta?.expiresAtLabel || inviteMeta?.expiresInLabel || inviteMeta?.expiresAt;
-    return ttlLabel ? `邀请码验证通过，有效期至 ${ttlLabel}` : "邀请码验证通过";
+    const ttlLabel = inviteMeta?.expiresAtLabel || inviteMeta?.expiresAt;
+    return ttlLabel ? `邀请码验证通过，有效至 ${ttlLabel}` : "邀请码验证通过";
   }, [inviteMeta]);
 
   const handleInviteVerify = async (event) => {
     event.preventDefault();
     setInviteError("");
     setSubmitError("");
+
     const validationError = validateInviteCode(inviteCode);
     if (validationError) {
       setInviteVerified(false);
-      setInviteTicket("");
       setInviteMeta(null);
       setInviteError(validationError);
       return;
@@ -103,18 +102,12 @@ export default function RegisterView({ setView, isDarkMode }) {
       const response = await verifyRegistrationInvite(normalizeInviteCode(inviteCode));
       const data = response?.data || response || {};
       setInviteVerified(true);
-      setInviteTicket(data?.inviteTicket || data?.ticket || "");
       setInviteMeta(data || null);
       setInviteError("");
     } catch (error) {
       setInviteVerified(false);
-      setInviteTicket("");
       setInviteMeta(null);
-      if (error?.status === 404) {
-        setInviteError("邀请码校验接口尚未接入，本次已先完成注册页绘制与前端校验骨架。");
-      } else {
-        setInviteError(error?.message || "邀请码验证失败");
-      }
+      setInviteError(error?.message || "邀请码验证失败");
     } finally {
       setVerifying(false);
     }
@@ -129,6 +122,7 @@ export default function RegisterView({ setView, isDarkMode }) {
   const handleAvatarPick = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
     const now = Date.now();
     if (now < avatarCooldownUntil) {
       setFieldErrors((prev) => ({
@@ -163,31 +157,24 @@ export default function RegisterView({ setView, isDarkMode }) {
   const handleRegister = async (event) => {
     event.preventDefault();
     setSubmitError("");
+
     const errors = validateRegistrationForm(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
     setSubmitting(true);
     try {
-      const response = await registerWithInvite({
+      await registerWithInvite({
         inviteCode: normalizeInviteCode(inviteCode),
-        inviteTicket: inviteTicket || undefined,
+        avatarFile: form.avatarFile,
         username: form.username.trim(),
         displayName: form.displayName.trim(),
         password: form.password,
         confirmPassword: form.confirmPassword,
       });
-      const data = response?.data || response || {};
-      if (data?.token) {
-        localStorage.setItem("sg_token", data.token);
-      }
       setView("login");
     } catch (error) {
-      if (error?.status === 404) {
-        setSubmitError("注册接口尚未接入，当前页面已完成前端交互与校验准备。");
-      } else {
-        setSubmitError(error?.message || "注册失败");
-      }
+      setSubmitError(error?.message || "注册失败");
     } finally {
       setSubmitting(false);
     }
@@ -208,7 +195,7 @@ export default function RegisterView({ setView, isDarkMode }) {
               </div>
             </div>
             <p className={`mt-4 text-sm font-medium leading-6 ${subtle}`}>
-              当前注册流程按“先验邀请码，再填写资料”推进。邀请码验证、过期判断与一次性消费将由后端控制，本页先完成前端交互与校验骨架。
+              当前注册流程采用“先验证邀请码，再填写资料”的方式推进。
             </p>
             <div className="mt-6 space-y-3">
               <div className={`border-2 px-4 py-3 ${stepOneClass}`}>
@@ -218,16 +205,16 @@ export default function RegisterView({ setView, isDarkMode }) {
                 </div>
                 <p className="mt-1 text-sm font-semibold">请输入邀请码并发起验证</p>
               </div>
+              {inviteVerified ? (
+                <div className={`border-2 px-4 py-3 ${stepTwoClass}`}>
+                  <div className="flex items-center gap-2 font-black uppercase text-sm">
+                    <Upload size={16} />
+                    填写注册资料
+                  </div>
+                  <p className="mt-1 text-sm font-semibold">验证通过后可填写头像、用户名与密码</p>
+                </div>
+              ) : null}
             </div>
-            {inviteVerified ? (
-              <div className="mt-6 border-2 border-dashed border-black p-4 bg-black text-[#FFD700]">
-                <p className="text-xs font-black uppercase tracking-[0.2em]">注册字段</p>
-                <p className="mt-2 text-sm font-semibold leading-6">
-                  已解锁：头像、用户名、显示名称、密码、确认密码。
-                  用户名与密码前端阶段仅允许英文、数字与常见符号。
-                </p>
-              </div>
-            ) : null}
           </aside>
 
           <div className="space-y-6">
@@ -254,26 +241,26 @@ export default function RegisterView({ setView, isDarkMode }) {
                     autoCapitalize="characters"
                     autoCorrect="off"
                     spellCheck={false}
-                    placeholder="例如：SG-2026-ABCD"
+                    placeholder="例如：SG-ABCD-EFGH-JKLM"
                     onChange={(event) => {
                       setInviteCode(normalizeInviteCode(event.target.value));
                       setInviteError("");
                     }}
                   />
                   <p className={`text-xs font-medium ${subtle}`}>
-                    验证通过后，才会显示后续五项注册信息。前端已加入 5 秒验证冷却，后端仍需做真实限流。
+                    Step 1 只验证邀请码；验证通过后，才会显示后续注册信息。
                   </p>
                 </div>
-                {inviteSummary && (
+                {inviteSummary ? (
                   <div className="border-2 border-black bg-[#00E096] p-3 text-sm font-bold text-black">
                     {inviteSummary}
                   </div>
-                )}
-                {inviteError && (
+                ) : null}
+                {inviteError ? (
                   <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
                     {inviteError}
                   </div>
-                )}
+                ) : null}
                 <div className="flex gap-4 flex-wrap">
                   <PopButton
                     variant="primary"
@@ -282,11 +269,11 @@ export default function RegisterView({ setView, isDarkMode }) {
                   >
                     {verifying ? "验证中..." : "验证邀请码"}
                   </PopButton>
-                  {verifyWaitSeconds > 0 && (
+                  {verifyWaitSeconds > 0 ? (
                     <div className="px-4 py-3 border-2 border-black text-sm font-bold">
                       冷却中：{verifyWaitSeconds}s
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </form>
             </section>
@@ -323,7 +310,9 @@ export default function RegisterView({ setView, isDarkMode }) {
                         >
                           选择头像
                         </button>
-                        <p className={`text-xs font-medium ${subtle}`}>支持 PNG/JPG/WebP/GIF/AVIF，最大 2MB，3 秒内禁止连续重复选择。</p>
+                        <p className={`text-xs font-medium ${subtle}`}>
+                          支持 PNG/JPG/WebP/GIF/AVIF，最大 2MB，3 秒内禁止连续重复选择。
+                        </p>
                       </div>
                     </div>
                     <FieldError message={fieldErrors.avatarFile} />
@@ -384,9 +373,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                           type={showConfirmPassword ? "text" : "password"}
                           autoComplete="new-password"
                           value={form.confirmPassword}
-                          onChange={(event) => {
-                            updateAsciiField("confirmPassword", event.target.value);
-                          }}
+                          onChange={(event) => updateAsciiField("confirmPassword", event.target.value)}
                         />
                         <button
                           type="button"
@@ -401,11 +388,11 @@ export default function RegisterView({ setView, isDarkMode }) {
                     </div>
                   </div>
 
-                  {submitError && (
+                  {submitError ? (
                     <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
                       {submitError}
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="flex gap-4 flex-wrap">
                     <PopButton
@@ -420,7 +407,6 @@ export default function RegisterView({ setView, isDarkMode }) {
                       className="px-4 py-3 border-2 border-black font-bold"
                       onClick={() => {
                         setInviteVerified(false);
-                        setInviteTicket("");
                         setInviteMeta(null);
                       }}
                     >

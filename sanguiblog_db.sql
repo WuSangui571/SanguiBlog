@@ -677,3 +677,20 @@ CREATE TABLE IF NOT EXISTS ai_custom_knowledge_chunks (
     UNIQUE KEY uk_ai_custom_chunk_order (document_id, chunk_no),
     KEY idx_ai_custom_knowledge_document (document_id)
 );
+
+-- 注册邀请码（仅 SUPER_ADMIN 可生成；一次性使用并带过期时间）
+CREATE TABLE IF NOT EXISTS registration_invites (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    invite_code VARCHAR(64) NOT NULL,
+    expires_at DATETIME(6) NOT NULL,
+    created_by BIGINT UNSIGNED NULL,
+    consumed_by BIGINT UNSIGNED NULL,
+    consumed_at DATETIME(6) NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    UNIQUE KEY uk_registration_invites_code (invite_code),
+    KEY idx_registration_invites_expires_at (expires_at),
+    KEY idx_registration_invites_consumed_at (consumed_at),
+    CONSTRAINT fk_registration_invites_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_registration_invites_consumed_by FOREIGN KEY (consumed_by) REFERENCES users(id) ON DELETE SET NULL
+);

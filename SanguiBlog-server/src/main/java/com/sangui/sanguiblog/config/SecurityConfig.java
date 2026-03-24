@@ -138,6 +138,8 @@ public class SecurityConfig {
                                 "/robots.txt",
                                 "/api/auth/login",
                                 "/api/auth/captcha",
+                                "/api/auth/register",
+                                "/api/auth/register/invite/verify",
                                 "/api/guard/captcha",
                                 "/api/guard/verify",
                                 "/api/site/meta",

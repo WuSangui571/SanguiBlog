@@ -522,10 +522,49 @@ export const verifyRegistrationInvite = (inviteCode) =>
     body: JSON.stringify({ inviteCode }),
   });
 
-export const registerWithInvite = (payload) =>
-  request("/auth/register", {
+export const registerWithInvite = async (payload = {}) => {
+  const formData = new FormData();
+  formData.append("inviteCode", payload.inviteCode || "");
+  formData.append("username", payload.username || "");
+  formData.append("displayName", payload.displayName || "");
+  formData.append("password", payload.password || "");
+  formData.append("confirmPassword", payload.confirmPassword || "");
+  if (payload.avatarFile) {
+    formData.append("avatar", payload.avatarFile);
+  }
+
+  const res = await fetch(`${API_ORIGIN}/api/auth/register`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    let payloadBody = null;
+    let message = txt || res.statusText;
+    if (txt) {
+      try {
+        payloadBody = JSON.parse(txt);
+        if (payloadBody && typeof payloadBody === "object") {
+          message = payloadBody.message || payloadBody.msg || message;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    const error = new Error(message || res.statusText);
+    error.status = res.status;
+    if (payloadBody) error.payload = payloadBody;
+    throw error;
+  }
+
+  return res.json();
+};
+
+export const adminCreateRegistrationInvite = (payload) =>
+  request("/admin/registration-invites", {
+    method: "POST",
+    body: JSON.stringify(payload || {}),
   });
 
 export const fetchCurrentUser = () => request("/auth/me");

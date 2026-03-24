@@ -47,6 +47,7 @@ import {
     adminDeleteKnowledgeDocument,
     adminFetchAiAssistantSettings,
     adminUpdateAiAssistantSettings,
+    adminCreateRegistrationInvite,
     adminFetchAbout,
     adminSaveAbout,
     adminFetchComments,
@@ -73,7 +74,7 @@ import {
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
     ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail, Megaphone,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
-    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy, Calendar, Database
+    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy, Calendar, Database, Ticket
 } from 'lucide-react';
 import {
     THEME,
@@ -5979,8 +5980,15 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const SETTINGS_TABS = [
         { key: 'broadcast', label: '广播管理' },
         { key: 'knowledge', label: 'AI助理' },
+        { key: 'registration', label: '注册邀请码' },
         { key: 'games', label: '游戏管理' },
         { key: 'cleanup', label: '存储清理' }
+    ];
+    const REGISTRATION_INVITE_DURATION_OPTIONS = [
+        { code: 'MINUTES_5', label: '5分钟' },
+        { code: 'HOURS_1', label: '1小时' },
+        { code: 'DAYS_1', label: '1天' },
+        { code: 'DAYS_10', label: '10天' }
     ];
     const [activeSettingsTab, setActiveSettingsTab] = useState('broadcast');
     const [broadcastDraft, setBroadcastDraft] = useState({
@@ -6011,6 +6019,11 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [aiAssistantLoading, setAiAssistantLoading] = useState(false);
     const [aiAssistantSaving, setAiAssistantSaving] = useState(false);
     const [aiAssistantError, setAiAssistantError] = useState('');
+    const [inviteDurationCode, setInviteDurationCode] = useState('MINUTES_5');
+    const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+    const [inviteGenerating, setInviteGenerating] = useState(false);
+    const [inviteError, setInviteError] = useState('');
+    const [latestInvite, setLatestInvite] = useState(null);
     const { hasPermission } = usePermissionContext();
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
     const { notice, showNotice, hideNotice } = useTimedNotice(4200);
@@ -6267,6 +6280,46 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             setAiAssistantSaving(false);
         }
     }, [onAiAssistantChanged, showNotice]);
+
+    const selectedInviteDuration = useMemo(
+        () => REGISTRATION_INVITE_DURATION_OPTIONS.find((item) => item.code === inviteDurationCode) || REGISTRATION_INVITE_DURATION_OPTIONS[0],
+        [REGISTRATION_INVITE_DURATION_OPTIONS, inviteDurationCode]
+    );
+
+    const handleOpenInviteDialog = useCallback(() => {
+        setInviteError('');
+        setInviteDialogOpen(true);
+    }, []);
+
+    const handleCloseInviteDialog = useCallback(() => {
+        if (inviteGenerating) return;
+        setInviteDialogOpen(false);
+    }, [inviteGenerating]);
+
+    const handleCreateRegistrationInvite = useCallback(async () => {
+        setInviteGenerating(true);
+        setInviteError('');
+        try {
+            const res = await adminCreateRegistrationInvite({ durationCode: inviteDurationCode });
+            const data = res?.data || res;
+            setLatestInvite(data || null);
+            setInviteDialogOpen(false);
+            if (data?.inviteCode && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+                try {
+                    await navigator.clipboard.writeText(data.inviteCode);
+                    showNotice(`邀请码已生成并复制到剪贴板，有效期：${data.durationLabel || selectedInviteDuration.label}`, 'success');
+                } catch {
+                    showNotice(`邀请码已生成：${data.inviteCode}`, 'success');
+                }
+            } else {
+                showNotice(`邀请码已生成：${data?.inviteCode || '--'}`, 'success');
+            }
+        } catch (err) {
+            setInviteError(err?.message || '生成邀请码失败');
+        } finally {
+            setInviteGenerating(false);
+        }
+    }, [inviteDurationCode, selectedInviteDuration.label, showNotice]);
 
     const formatKnowledgeStatus = useCallback((value) => {
         switch ((value || '').toUpperCase()) {
@@ -6911,6 +6964,102 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 </div>
             </div>
 
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'registration' ? '' : 'hidden'}`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">注册邀请码</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                            仅超级管理员可生成一次性注册邀请码。邀请码会在指定时效后失效，且只能成功注册一个新账号。
+                        </p>
+                    </div>
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full border ${
+                        isDarkMode
+                            ? 'border-gray-600 bg-gray-800 text-gray-100'
+                            : 'border-black/30 bg-white text-gray-800'
+                    }`}>仅 SUPER_ADMIN</span>
+                </div>
+
+                {inviteError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {inviteError}
+                    </div>
+                )}
+
+                <div className={`rounded-2xl border-2 p-5 space-y-4 ${
+                    isDarkMode ? 'border-gray-700 bg-gray-950/60' : 'border-black bg-white'
+                }`}>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <Ticket size={18} />
+                                <span className="text-lg font-bold">生成注册邀请码</span>
+                            </div>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                默认时效为 5 分钟；点击生成时会先弹出确认框，再根据所选时效创建邀请码。
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleOpenInviteDialog}
+                            className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000]"
+                        >
+                            生成邀请码
+                        </button>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className={`rounded-xl border p-4 ${
+                            isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'
+                        }`}>
+                            <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">默认时效</div>
+                            <div className="mt-2 text-2xl font-black">{selectedInviteDuration.label}</div>
+                            <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                可在确认框中切换为 1 小时、1 天或 10 天。
+                            </div>
+                        </div>
+                        <div className={`rounded-xl border p-4 ${
+                            isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'
+                        }`}>
+                            <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">使用规则</div>
+                            <ul className={`mt-2 space-y-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                <li>邀请码过期后不可再验证或注册。</li>
+                                <li>每个邀请码只能成功注册 1 个账号。</li>
+                                <li>生成成功后会自动尝试复制到剪贴板。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div className={`rounded-2xl border-2 p-5 space-y-4 ${
+                    isDarkMode ? 'border-gray-700 bg-gray-950/60' : 'border-black bg-white'
+                }`}>
+                    <div className="flex items-center gap-2">
+                        <Copy size={18} />
+                        <span className="text-lg font-bold">最近生成结果</span>
+                    </div>
+                    {!latestInvite ? (
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            暂无最近生成的邀请码。生成成功后，邀请码与失效时间会显示在这里。
+                        </p>
+                    ) : (
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <div className={`rounded-xl border p-4 ${isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'}`}>
+                                <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">邀请码</div>
+                                <div className="mt-2 font-mono text-lg font-black break-all">{latestInvite.inviteCode}</div>
+                            </div>
+                            <div className={`rounded-xl border p-4 ${isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'}`}>
+                                <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">时效</div>
+                                <div className="mt-2 text-lg font-black">{latestInvite.durationLabel || '--'}</div>
+                            </div>
+                            <div className={`rounded-xl border p-4 ${isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'}`}>
+                                <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">失效时间</div>
+                                <div className="mt-2 text-base font-bold">{latestInvite.expiresAtLabel || formatDateTime(latestInvite.expiresAt)}</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'games' ? '' : 'hidden'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
@@ -7253,6 +7402,70 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 </div>
             </div>
 
+            {inviteDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+                    <div className={`${surface} max-w-lg w-full rounded-2xl shadow-2xl p-6 space-y-5`}>
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h4 className="text-lg font-bold">确认生成注册邀请码</h4>
+                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                                    请选择邀请码时效。生成后会立即复制到剪贴板，并可供新用户在时效内注册。
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleCloseInviteDialog}
+                                className="text-gray-500 hover:text-black"
+                                aria-label="关闭"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold">邀请码时效</label>
+                            <select
+                                value={inviteDurationCode}
+                                onChange={(e) => setInviteDurationCode(e.target.value)}
+                                className={`w-full border-2 px-3 py-3 rounded-xl ${
+                                    isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
+                                }`}
+                            >
+                                {REGISTRATION_INVITE_DURATION_OPTIONS.map((option) => (
+                                    <option key={option.code} value={option.code}>{option.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className={`rounded-xl border p-4 ${
+                            isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'
+                        }`}>
+                            <div className="text-sm font-bold">即将生成</div>
+                            <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                一次性注册邀请码，默认角色为普通用户，当前时效：{selectedInviteDuration.label}。
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={handleCloseInviteDialog}
+                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                            >
+                                取消
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCreateRegistrationInvite}
+                                disabled={inviteGenerating}
+                                className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            >
+                                {inviteGenerating ? '生成中...' : '确认生成'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {confirmOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
                     <div className={`${surface} max-w-lg w-full rounded-2xl shadow-2xl p-6 space-y-4`}>

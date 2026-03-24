@@ -5,6 +5,49 @@
 
 ---
 
+## [2026-03-24] 新增超级管理员注册邀请码生成与公开注册后端闭环
+- 背景/需求：用户要求在 `/admin/settings` 增加超级管理员专用的邀请码生成功能，支持默认 5 分钟以及 1 小时、1 天、10 天等时效选项；生成后自动复制邀请码到剪贴板，并让新用户可在有效期内通过邀请码完成注册。
+- 修改类型：feat
+- 影响范围：后台系统设置页、公开注册接口、公开邀请码校验接口、邀请码持久化表结构、注册头像存储复用
+- 变更摘要：
+  1) 新增 `registration_invites` 实体、仓库、服务和数据库表，支持邀请码生成、过期校验、一次性消费与消费人记录。
+  2) 新增超级管理员接口 `/api/admin/registration-invites`，仅 `SUPER_ADMIN` 可创建邀请码，默认时效为 5 分钟，并支持更多可选时效。
+  3) 新增公开接口 `/api/auth/register/invite/verify` 与 `/api/auth/register`，前者负责校验邀请码是否存在且未过期，后者以 `multipart/form-data` 完成匿名注册与头像上传。
+  4) 抽出 `AvatarStorageService` 复用头像文件校验与存储逻辑，避免匿名注册另起一套不一致的上传规则。
+  5) 在 `/admin/settings` 新增“注册邀请码”分组，支持选择时效、弹出确认框、生成后自动复制邀请码，并展示最近一次生成结果。
+  6) 将前台注册页接到真实后端接口，邀请码验证通过后可直接提交真实注册请求。
+- 涉及文件：
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/public/RegisterView.jsx`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/SecurityConfig.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AuthController.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminRegistrationInviteController.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/UploadController.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AdminRegistrationInviteCreateRequest.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AdminRegistrationInviteDto.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/PublicRegistrationInviteVerifyDto.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/PublicRegistrationInviteVerifyRequest.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/PublicRegistrationRequest.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/entity/RegistrationInvite.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/RegistrationInviteRepository.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AvatarStorageService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PublicRegistrationService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/RegistrationInviteService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/PublicRegistrationServiceTest.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/RegistrationInviteServiceTest.java`
+  - `sanguiblog_db.sql`
+- 检索与复用策略：
+  - 检索关键词：`/admin/settings` / `site_settings` / `admin/users` / `upload/avatar` / `register` / `captcha`
+  - 找到的候选点：系统设置页现有分组选项卡、后台用户创建逻辑、现有头像上传控制器、AI 设置保存模式
+  - 最终选择：复用系统设置页现有通知与确认框交互、复用后台用户字段语义和头像存储规则；不复用 `site_settings` 保存邀请码，而是新建专用表以支持过期、一人一码、审计与消费锁定
+- 风险点：
+  - 当前仅做了前端 5 秒邀请码验证冷却与头像选择冷却，真正的验证码式限流仍建议后续在服务端补齐。
+  - 注册成功后当前默认跳回登录页，不自动登录；若后续要改成自动登录，需要单独设计安全策略。
+- 验证方式：
+  - 测试：执行 `mvn -q "-Dtest=RegistrationInviteServiceTest,PublicRegistrationServiceTest" test` 通过。
+  - 构建：待前端构建与后端编译一并验证。
+
 ## [2026-03-24] 新增邀请码注册页入口与前端校验骨架
 - 背景/需求：用户要求为博客增加邀请码注册流程，并明确本轮先完成注册页面绘制，不做超级管理员端的邀请码生成页面；同时要求入口位于 `/login`，注册页需先校验邀请码，再解锁五项注册信息表单。
 - 修改类型：feat

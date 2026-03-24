@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.controller;
 
 import com.sangui.sanguiblog.config.StoragePathResolver;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
+import com.sangui.sanguiblog.service.AvatarStorageService;
 import com.sangui.sanguiblog.service.PostAssetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -31,36 +32,20 @@ public class UploadController {
     private static final List<String> ALLOWED_IMAGE_EXT = List.of(".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif");
     private static final Set<String> ALLOWED_IMAGE_CONTENT_TYPES = Set.of(
             "image/png", "image/jpeg", "image/webp", "image/gif", "image/avif");
-    private static final long AVATAR_MAX_BYTES = 2 * 1024 * 1024;          // 2MB
-    private static final long ASSET_MAX_BYTES = 20 * 1024 * 1024;          // 20MB per file
-    private static final long ASSET_TOTAL_MAX_BYTES = 50 * 1024 * 1024;    // 50MB per request
+    private static final long ASSET_MAX_BYTES = 20 * 1024 * 1024;
+    private static final long ASSET_TOTAL_MAX_BYTES = 50 * 1024 * 1024;
     private static final int MAX_ASSET_FILES = 10;
-    private static final long COVER_MAX_BYTES = 10 * 1024 * 1024;          // 10MB per cover
+    private static final long COVER_MAX_BYTES = 10 * 1024 * 1024;
     private static final DateTimeFormatter COVER_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final StoragePathResolver storagePathResolver;
     private final PostAssetService postAssetService;
+    private final AvatarStorageService avatarStorageService;
 
     @PostMapping("/avatar")
     public ApiResponse<Map<String, String>> uploadAvatar(@RequestParam("avatar") MultipartFile file) {
-        validateImageFile(file, AVATAR_MAX_BYTES, "头像");
-
-        try {
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".")
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : "";
-            String filename = UUID.randomUUID().toString() + extension;
-
-            Path filePath = storagePathResolver.resolveAvatarFile(filename);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            String url = "/avatar/" + filename;
-            return ApiResponse.ok(Map.of("url", url, "filename", filename));
-
-        } catch (IOException e) {
-            throw new RuntimeException("文件上传失败: " + e.getMessage());
-        }
+        String filename = avatarStorageService.storeAvatar(file);
+        return ApiResponse.ok(Map.of("url", "/avatar/" + filename, "filename", filename));
     }
 
     @PostMapping("/post-cover")
@@ -74,17 +59,16 @@ public class UploadController {
         if (extension.isEmpty()) {
             extension = ".png";
         }
-        String filename = UUID.randomUUID().toString() + extension;
+        String filename = UUID.randomUUID() + extension;
         try {
             Files.createDirectories(dir);
             Files.copy(file.getInputStream(), dir.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new RuntimeException("封面上传失败: " + e.getMessage());
+            throw new RuntimeException("封面上传失败: " + e.getMessage(), e);
         }
         String relativePath = folder + "/" + filename;
-        String url = "/uploads/" + relativePath;
         return ApiResponse.ok(Map.of(
-                "url", url,
+                "url", "/uploads/" + relativePath,
                 "path", relativePath,
                 "filename", filename
         ));
@@ -152,19 +136,16 @@ public class UploadController {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException(scene + "文件不能为空");
         }
-
         if (file.getSize() > maxBytes) {
             throw new IllegalArgumentException(scene + "文件过大，限制 " + (maxBytes / 1024 / 1024) + "MB");
         }
-
         String ext = extractExtension(file.getOriginalFilename());
         if (!ALLOWED_IMAGE_EXT.contains(ext)) {
             throw new IllegalArgumentException(scene + "文件类型不支持，仅允许 " + String.join("/", ALLOWED_IMAGE_EXT));
         }
-
         String contentType = file.getContentType();
         if (StringUtils.hasText(contentType) && !ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType.toLowerCase())) {
-            throw new IllegalArgumentException(scene + "Content-Type 不被允许: " + contentType);
+            throw new IllegalArgumentException(scene + " Content-Type 不被允许: " + contentType);
         }
     }
 
