@@ -214,25 +214,20 @@ export default function RegisterView({ setView, isDarkMode }) {
               <div className={`border-2 px-4 py-3 ${stepOneClass}`}>
                 <div className="flex items-center gap-2 font-black uppercase text-sm">
                   <Ticket size={16} />
-                  Step 1
+                  邀请码验证
                 </div>
-                <p className="mt-1 text-sm font-semibold">输入邀请码并发起验证</p>
-              </div>
-              <div className={`border-2 px-4 py-3 ${stepTwoClass}`}>
-                <div className="flex items-center gap-2 font-black uppercase text-sm">
-                  <ShieldCheck size={16} />
-                  Step 2
-                </div>
-                <p className="mt-1 text-sm font-semibold">验证成功后解锁五项注册信息</p>
+                <p className="mt-1 text-sm font-semibold">请输入邀请码并发起验证</p>
               </div>
             </div>
-            <div className="mt-6 border-2 border-dashed border-black p-4 bg-black text-[#FFD700]">
-              <p className="text-xs font-black uppercase tracking-[0.2em]">字段范围</p>
-              <p className="mt-2 text-sm font-semibold leading-6">
-                头像、用户名、显示名称、密码、确认密码。
-                用户名与密码前端阶段仅允许英文、数字与常见符号。
-              </p>
-            </div>
+            {inviteVerified ? (
+              <div className="mt-6 border-2 border-dashed border-black p-4 bg-black text-[#FFD700]">
+                <p className="text-xs font-black uppercase tracking-[0.2em]">注册字段</p>
+                <p className="mt-2 text-sm font-semibold leading-6">
+                  已解锁：头像、用户名、显示名称、密码、确认密码。
+                  用户名与密码前端阶段仅允许英文、数字与常见符号。
+                </p>
+              </div>
+            ) : null}
           </aside>
 
           <div className="space-y-6">
@@ -434,22 +429,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                   </div>
                 </form>
               </section>
-            ) : (
-              <section className={`${panel} p-6 md:p-8`}>
-                <p className="text-xs font-black uppercase tracking-[0.25em]">Step 2 Preview</p>
-                <h2 className="mt-2 text-2xl font-black">验证通过后显示的注册表单</h2>
-                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                  {["头像", "用户名", "显示名称", "密码", "确认密码"].map((label) => (
-                    <div key={label} className="border-2 border-dashed border-black p-4">
-                      <p className="text-xs font-black uppercase">{label}</p>
-                      <p className={`mt-2 text-sm font-medium ${subtle}`}>
-                        当前保持隐藏，只有邀请码校验成功后才会解锁。
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

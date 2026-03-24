@@ -299,7 +299,7 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
                             onClick={() => setView('register')}
                             className="mt-2 text-sm font-black underline underline-offset-4"
                         >
-                            使用邀请码注册新用户
+                            去注册
                         </button>
                     </div>
                 </form>
