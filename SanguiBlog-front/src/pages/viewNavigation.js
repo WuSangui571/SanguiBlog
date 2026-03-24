@@ -43,6 +43,7 @@ export const buildViewNavigator = (navigate, options = {}) => {
       return go("/admin");
     }
     if (view === "login") return go("/login");
+    if (view === "register") return go("/register");
     if (view === "games") return go("/tools");
 
     if (view === "article" && targetId) {

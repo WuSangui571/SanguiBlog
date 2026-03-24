@@ -292,6 +292,16 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
                             取消
                         </PopButton>
                     </div>
+                    <div className="border-t-2 border-dashed border-black pt-4">
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">没有账号？</p>
+                        <button
+                            type="button"
+                            onClick={() => setView('register')}
+                            className="mt-2 text-sm font-black underline underline-offset-4"
+                        >
+                            使用邀请码注册新用户
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

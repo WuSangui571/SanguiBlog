@@ -516,6 +516,18 @@ export const login = (username, password, captcha) =>
     body: JSON.stringify({ username, password, captcha }),
   });
 
+export const verifyRegistrationInvite = (inviteCode) =>
+  request("/auth/register/invite/verify", {
+    method: "POST",
+    body: JSON.stringify({ inviteCode }),
+  });
+
+export const registerWithInvite = (payload) =>
+  request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
 export const fetchCurrentUser = () => request("/auth/me");
 
 export const fetchComments = (postId) => request(`/posts/${postId}/comments`);

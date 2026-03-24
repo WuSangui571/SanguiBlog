@@ -4,6 +4,7 @@ import ArchivePage from "./pages/Archive";
 import AboutPage from "./pages/About";
 import ArticlePage from "./pages/Article";
 import LoginPage from "./pages/Login";
+import RegisterPage from "./pages/Register";
 import AdminPage from "./pages/Admin";
 import GamesPage from "./pages/Games";
 import GameDetailPage from "./pages/GameDetail";
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/games" element={<GamesRedirect />} />
         <Route path="/games/:id" element={<GameDetailRedirect />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin/*" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

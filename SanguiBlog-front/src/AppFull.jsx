@@ -40,6 +40,7 @@ import ArticleDetail from "./appfull/public/ArticleDetail.jsx";
 import ArchiveView from "./appfull/public/ArchiveView.jsx";
 import AboutView from "./appfull/public/AboutView.jsx";
 import LoginView from "./appfull/public/LoginView.jsx";
+import RegisterView from "./appfull/public/RegisterView.jsx";
 import {
     THEME,
     CATEGORY_TREE,
@@ -238,6 +239,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             title = `关于｜${brand}`;
         } else if (view === 'login') {
             title = `登录｜${brand}`;
+        } else if (view === 'register') {
+            title = `注册｜${brand}`;
         } else if (view === 'admin') {
             title = `后台管理｜${brand}`;
         } else if (view === 'article') {
@@ -1265,6 +1268,8 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 );
             case 'login':
                 return <LoginView setView={setView} setUser={setUser} isDarkMode={isDarkMode} doLogin={doLogin} />;
+            case 'register':
+                return <RegisterView setView={setView} isDarkMode={isDarkMode} />;
             case 'admin':
                 if (!user) {
                     return (

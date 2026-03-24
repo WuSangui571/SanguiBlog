@@ -5,6 +5,37 @@
 
 ---
 
+## [2026-03-24] 新增邀请码注册页入口与前端校验骨架
+- 背景/需求：用户要求为博客增加邀请码注册流程，并明确本轮先完成注册页面绘制，不做超级管理员端的邀请码生成页面；同时要求入口位于 `/login`，注册页需先校验邀请码，再解锁五项注册信息表单。
+- 修改类型：feat
+- 影响范围：前端登录页入口、前端注册页路由与交互、前端注册字段校验工具
+- 变更摘要：
+  1) 新增 `/register` 路由与页面壳，并在 `AppFull` 中接入 `register` 视图与标题切换。
+  2) 登录页底部新增“使用邀请码注册新用户”入口，直接跳转到注册页。
+  3) 新增 `RegisterView`，按“先验证邀请码、再填写注册信息”组织 UI；邀请码区加入 5 秒前端冷却提示，头像选择加入 3 秒前端冷却提示。
+  4) 新增注册表单前端校验工具，覆盖邀请码格式、头像类型与大小、用户名 ASCII 限制、显示名称长度、密码长度与确认密码一致性。
+  5) 预留 `verifyRegistrationInvite` / `registerWithInvite` 前端 API 调用位；当前若后端尚未接入，会向页面返回明确提示，不伪造成功流程。
+- 涉及文件：
+  - `SanguiBlog-front/src/App.jsx`
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/pages/Register.jsx`
+  - `SanguiBlog-front/src/pages/viewNavigation.js`
+  - `SanguiBlog-front/src/appfull/public/LoginView.jsx`
+  - `SanguiBlog-front/src/appfull/public/RegisterView.jsx`
+  - `SanguiBlog-front/src/appfull/public/registerValidation.js`
+  - `SanguiBlog-front/src/appfull/public/registerValidation.test.js`
+- 检索与复用策略：
+  - 检索关键词：`/login` / `admin/users` / `upload/avatar` / `captcha` / `register`
+  - 找到的候选点：现有登录页验证码逻辑、后台用户管理页用户创建表单、现有头像上传接口
+  - 最终选择：复用现有登录页的 ASCII 输入约束思路与后台用户表单的字段语义，但不复用当前登录后专用的头像上传链路，也不提前新增第二套后台邀请码生成 UI
+- 风险点：
+  - 当前只完成前端页面与校验骨架，后端邀请码验证/注册接口尚未接入时，页面会给出明确提示而不会真正完成注册。
+  - 匿名注册流的头像最终应走“公开上传限流”或“注册接口 multipart”二选一，本轮尚未落定，故当前仅做本地文件预览与前端校验。
+- 验证方式：
+  - 测试：执行 `node src/appfull/public/registerValidation.test.js`。
+  - 构建：执行 `cmd /c npm run build` 通过。
+
 ## [2026-03-24] 后台 AI 管理页纳入未登录访客会话并显示会话起始 IP/异常 IP
 - 背景/需求：用户反馈 `/admin/ai-management` 目前只能看到已登录用户的 AI 会话，看不到未登录访客；同时希望超级管理员可按“已登录/未登录”筛选，并把访客会话原本显示昵称/身份的位置改为“此次会话开始时的 IP + 访客”，若同一会话后续请求 IP 变化则标记异常。
 - 修改类型：feat
