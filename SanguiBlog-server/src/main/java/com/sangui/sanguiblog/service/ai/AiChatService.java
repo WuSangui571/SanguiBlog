@@ -77,8 +77,13 @@ public class AiChatService {
 
         AiChatSession session = new AiChatSession();
         session.setUser(user);
+        session.setGuestVisitorId(null);
         session.setTitle(DEFAULT_SESSION_TITLE);
         session.setLastMessagePreview(null);
+        session.setSessionStartIp(null);
+        session.setLatestIp(null);
+        session.setIpChanged(Boolean.FALSE);
+        session.setIpChangedAt(null);
         session.setUserVisible(Boolean.TRUE);
         session.setUserHiddenAt(null);
         session.setCreatedAt(now);
@@ -129,14 +134,12 @@ public class AiChatService {
         aiGuestAccessService.assertCanSend(accessContext);
 
         User currentUser = userId != null ? findUser(userId) : null;
-        AiChatSession session = accessContext.guest() ? null : findOwnedSession(userId, sessionId);
+        AiChatSession session = resolveChatSession(accessContext, userId, sessionId);
         String userMessage = normalizeMessage(message);
 
         AiAssistantCapabilityService.CapabilityAnswer capabilityAnswer = aiAssistantCapabilityService.answer(userMessage);
         if (capabilityAnswer.answered()) {
-            return accessContext.guest()
-                    ? buildGuestDirectResponse(capabilityAnswer.reply(), SYSTEM_FACTS_MODE)
-                    : completeDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
+            return completeDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
         }
 
         AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
@@ -144,7 +147,7 @@ public class AiChatService {
                 aiCurrentPageContextService.advise(userMessage, currentPageContext);
         List<Message> promptMessages = buildPromptMessages(
                 accessContext,
-                sessionId,
+                session != null ? session.getId() : null,
                 localHistory,
                 userMessage,
                 ragContext,
@@ -161,16 +164,6 @@ public class AiChatService {
             }
 
             String normalizedReply = reply.trim();
-            if (accessContext.guest()) {
-                return AiChatResponse.builder()
-                        .sessionId(null)
-                        .reply(normalizedReply)
-                        .model(configuredModel)
-                        .mode(resolveMode(ragContext))
-                        .references(ragContext.getReferences())
-                        .build();
-            }
-
             Instant now = Instant.now();
             aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, now));
             aiChatMessageRepository.save(buildMessage(session, "assistant", normalizedReply, configuredModel, now));
@@ -205,14 +198,12 @@ public class AiChatService {
         aiGuestAccessService.assertCanSend(accessContext);
 
         User currentUser = userId != null ? findUser(userId) : null;
-        AiChatSession session = accessContext.guest() ? null : findOwnedSession(userId, sessionId);
+        AiChatSession session = resolveChatSession(accessContext, userId, sessionId);
         String userMessage = normalizeMessage(message);
 
         AiAssistantCapabilityService.CapabilityAnswer capabilityAnswer = aiAssistantCapabilityService.answer(userMessage);
         if (capabilityAnswer.answered()) {
-            return accessContext.guest()
-                    ? streamGuestDirectAnswer(capabilityAnswer.reply(), SYSTEM_FACTS_MODE)
-                    : streamDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
+            return streamDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
         }
 
         AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
@@ -220,7 +211,7 @@ public class AiChatService {
                 aiCurrentPageContextService.advise(userMessage, currentPageContext);
         List<Message> promptMessages = buildPromptMessages(
                 accessContext,
-                sessionId,
+                session != null ? session.getId() : null,
                 localHistory,
                 userMessage,
                 ragContext,
@@ -228,16 +219,14 @@ public class AiChatService {
                 currentUser
         );
 
-        if (!accessContext.guest()) {
-            Instant userMessageAt = Instant.now();
-            if (DEFAULT_SESSION_TITLE.equals(session.getTitle())) {
-                session.setTitle(buildSessionTitle(userMessage));
-            }
-            session.setLastMessagePreview(trimToPreview(userMessage));
-            session.setUpdatedAt(userMessageAt);
-            aiChatSessionRepository.save(session);
-            aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, userMessageAt));
+        Instant userMessageAt = Instant.now();
+        if (DEFAULT_SESSION_TITLE.equals(session.getTitle())) {
+            session.setTitle(buildSessionTitle(userMessage));
         }
+        session.setLastMessagePreview(trimToPreview(userMessage));
+        session.setUpdatedAt(userMessageAt);
+        aiChatSessionRepository.save(session);
+        aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, userMessageAt));
 
         SseEmitter emitter = new SseEmitter(0L);
         StringBuilder replyBuilder = new StringBuilder();
@@ -262,11 +251,7 @@ public class AiChatService {
                             emitter.complete();
                             return;
                         }
-                        if (accessContext.guest()) {
-                            completeGuestReply(emitter, reply, ragContext);
-                        } else {
-                            completeAssistantReply(emitter, session, reply, ragContext);
-                        }
+                        completeAssistantReply(emitter, session, reply, ragContext);
                     } catch (Exception fallbackError) {
                         log.error("流式失败后回退同步聊天也失败", fallbackError);
                         sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
@@ -280,11 +265,7 @@ public class AiChatService {
                         emitter.complete();
                         return;
                     }
-                    if (accessContext.guest()) {
-                        completeGuestReply(emitter, reply, ragContext);
-                    } else {
-                        completeAssistantReply(emitter, session, reply, ragContext);
-                    }
+                    completeAssistantReply(emitter, session, reply, ragContext);
                 }
         );
 
@@ -295,16 +276,6 @@ public class AiChatService {
         });
         emitter.onError(error -> subscription.dispose());
         return emitter;
-    }
-
-    private AiChatResponse buildGuestDirectResponse(String reply, String mode) {
-        return AiChatResponse.builder()
-                .sessionId(null)
-                .reply(reply)
-                .model(configuredModel)
-                .mode(mode)
-                .references(List.of())
-                .build();
     }
 
     private AiChatResponse completeDirectAnswer(AiChatSession session, String userMessage, String reply, String mode) {
@@ -335,19 +306,6 @@ public class AiChatService {
                 "model", configuredModel,
                 "mode", mode,
                 "references", List.of()
-        ));
-        emitter.complete();
-        return emitter;
-    }
-
-    private SseEmitter streamGuestDirectAnswer(String reply, String mode) {
-        SseEmitter emitter = new SseEmitter(0L);
-        sendSseEvent(emitter, "complete", buildCompleteEventPayload(
-                reply,
-                null,
-                configuredModel,
-                mode,
-                List.of()
         ));
         emitter.complete();
         return emitter;
@@ -436,6 +394,62 @@ public class AiChatService {
         }
         return aiChatSessionRepository.findByIdAndUserIdAndUserVisibleTrue(sessionId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "会话不存在或无权访问"));
+    }
+
+    private AiChatSession resolveChatSession(
+            AiGuestAccessService.AccessContext accessContext,
+            Long userId,
+            Long sessionId
+    ) {
+        if (!accessContext.guest()) {
+            return findOwnedSession(userId, sessionId);
+        }
+        return findOrCreateGuestSession(accessContext, sessionId);
+    }
+
+    private AiChatSession findOrCreateGuestSession(
+            AiGuestAccessService.AccessContext accessContext,
+            Long sessionId
+    ) {
+        if (sessionId != null) {
+            AiChatSession existing = aiChatSessionRepository.findByIdAndGuestVisitorId(sessionId, accessContext.visitorId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "访客会话不存在或无权访问"));
+            applyGuestSessionIp(existing, accessContext.ip());
+            return aiChatSessionRepository.save(existing);
+        }
+
+        Instant now = Instant.now();
+        AiChatSession session = new AiChatSession();
+        session.setUser(null);
+        session.setGuestVisitorId(accessContext.visitorId());
+        session.setTitle(DEFAULT_SESSION_TITLE);
+        session.setLastMessagePreview(null);
+        session.setSessionStartIp(accessContext.ip());
+        session.setLatestIp(accessContext.ip());
+        session.setIpChanged(Boolean.FALSE);
+        session.setIpChangedAt(null);
+        session.setUserVisible(Boolean.FALSE);
+        session.setUserHiddenAt(null);
+        session.setCreatedAt(now);
+        session.setUpdatedAt(now);
+        return aiChatSessionRepository.save(session);
+    }
+
+    private void applyGuestSessionIp(AiChatSession session, String currentIp) {
+        if (session == null || !StringUtils.hasText(currentIp)) {
+            return;
+        }
+        if (!StringUtils.hasText(session.getSessionStartIp())) {
+            session.setSessionStartIp(currentIp);
+        }
+        session.setLatestIp(currentIp);
+        session.setUserVisible(Boolean.FALSE);
+        if (!currentIp.equals(session.getSessionStartIp())) {
+            session.setIpChanged(Boolean.TRUE);
+            if (session.getIpChangedAt() == null) {
+                session.setIpChangedAt(Instant.now());
+            }
+        }
     }
 
     private Message toPromptMessage(AiChatMessage message) {
@@ -532,21 +546,6 @@ public class AiChatService {
         }
     }
 
-    private void completeGuestReply(
-            SseEmitter emitter,
-            String reply,
-            AiBlogRagService.AiBlogRagContext ragContext
-    ) {
-        sendSseEvent(emitter, "complete", buildCompleteEventPayload(
-                reply,
-                null,
-                configuredModel,
-                resolveMode(ragContext),
-                ragContext != null ? ragContext.getReferences() : null
-        ));
-        emitter.complete();
-    }
-
     private void completeAssistantReply(
             SseEmitter emitter,
             AiChatSession session,
@@ -558,7 +557,9 @@ public class AiChatService {
         session.setLastMessagePreview(trimToPreview(reply));
         session.setUpdatedAt(assistantMessageAt);
         aiChatSessionRepository.save(session);
-        aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
+        if (session.getUser() != null) {
+            aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
+        }
 
         sendSseEvent(emitter, "complete", buildCompleteEventPayload(
                 reply,
@@ -593,7 +594,9 @@ public class AiChatService {
         session.setLastMessagePreview(trimToPreview(reply));
         session.setUpdatedAt(now);
         aiChatSessionRepository.save(session);
-        aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
+        if (session.getUser() != null) {
+            aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
+        }
     }
 
     private String resolveMode(AiBlogRagService.AiBlogRagContext ragContext) {

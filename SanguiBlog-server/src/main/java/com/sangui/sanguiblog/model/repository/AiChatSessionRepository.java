@@ -16,6 +16,8 @@ public interface AiChatSessionRepository extends JpaRepository<AiChatSession, Lo
 
     Optional<AiChatSession> findByIdAndUserIdAndUserVisibleTrue(Long id, Long userId);
 
+    Optional<AiChatSession> findByIdAndGuestVisitorId(Long id, String guestVisitorId);
+
     @EntityGraph(attributePaths = {"user", "user.role"})
     List<AiChatSession> findAllByOrderByUpdatedAtDescIdDesc();
 

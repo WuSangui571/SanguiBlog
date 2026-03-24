@@ -626,6 +626,9 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     streamCompleted = true;
                     const reply = payload?.reply?.trim() || streamedReply.trim() || '抱歉，我这次没有生成有效回复。';
                     streamedReply = reply;
+                    if (payload?.sessionId) {
+                        setActiveSessionId(payload.sessionId);
+                    }
                     setMessages((prev) => prev.map((message) => (
                         message.id === pendingId
                             ? { ...message, content: reply }

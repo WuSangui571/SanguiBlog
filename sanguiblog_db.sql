@@ -564,16 +564,40 @@ WHERE NOT EXISTS (SELECT 1 FROM about_page WHERE id = 1);
 -- AI 聊天会话
 CREATE TABLE IF NOT EXISTS ai_chat_sessions (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NULL,
+    guest_visitor_id VARCHAR(64),
     title VARCHAR(255) NOT NULL,
     last_message_preview VARCHAR(500),
+    session_start_ip VARCHAR(64),
+    latest_ip VARCHAR(64),
+    ip_changed TINYINT(1) NOT NULL DEFAULT 0,
+    ip_changed_at DATETIME(6),
     user_visible TINYINT(1) NOT NULL DEFAULT 1,
     user_hidden_at DATETIME(6),
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     CONSTRAINT fk_ai_chat_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_ai_chat_sessions_user_updated (user_id, updated_at, id)
+    INDEX idx_ai_chat_sessions_user_updated (user_id, updated_at, id),
+    INDEX idx_ai_chat_sessions_guest_visitor (guest_visitor_id)
 );
+
+ALTER TABLE ai_chat_sessions
+    MODIFY COLUMN user_id BIGINT UNSIGNED NULL;
+
+ALTER TABLE ai_chat_sessions
+    ADD COLUMN IF NOT EXISTS guest_visitor_id VARCHAR(64) NULL AFTER user_id;
+
+ALTER TABLE ai_chat_sessions
+    ADD COLUMN IF NOT EXISTS session_start_ip VARCHAR(64) NULL AFTER last_message_preview;
+
+ALTER TABLE ai_chat_sessions
+    ADD COLUMN IF NOT EXISTS latest_ip VARCHAR(64) NULL AFTER session_start_ip;
+
+ALTER TABLE ai_chat_sessions
+    ADD COLUMN IF NOT EXISTS ip_changed TINYINT(1) NOT NULL DEFAULT 0 AFTER latest_ip;
+
+ALTER TABLE ai_chat_sessions
+    ADD COLUMN IF NOT EXISTS ip_changed_at DATETIME(6) NULL AFTER ip_changed;
 
 ALTER TABLE ai_chat_sessions
     ADD COLUMN IF NOT EXISTS user_visible TINYINT(1) NOT NULL DEFAULT 1 AFTER last_message_preview;

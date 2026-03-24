@@ -4280,6 +4280,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
     const [sessionsLoading, setSessionsLoading] = useState(true);
     const [sessionsError, setSessionsError] = useState('');
     const [visibilityFilter, setVisibilityFilter] = useState('ALL');
+    const [authFilter, setAuthFilter] = useState('ALL');
     const [activeSessionId, setActiveSessionId] = useState(null);
     const [sessionDetail, setSessionDetail] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -4291,23 +4292,40 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
     const chipBg = isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-700';
     const visibleStatusClass = isDarkMode ? 'bg-emerald-950/60 text-emerald-200 border border-emerald-700/50' : 'bg-emerald-100 text-emerald-700 border border-emerald-300';
     const hiddenStatusClass = isDarkMode ? 'bg-red-950/60 text-red-200 border border-red-700/50' : 'bg-red-100 text-red-700 border border-red-300';
+    const anomalyStatusClass = isDarkMode ? 'bg-orange-950/60 text-orange-200 border border-orange-700/50' : 'bg-orange-100 text-orange-700 border border-orange-300';
     const messageBg = isDarkMode ? 'bg-gray-950 border border-gray-800' : 'bg-gray-50 border border-gray-200';
     const assistantBg = isDarkMode ? 'bg-amber-950/30 border-amber-700/40' : 'bg-amber-50 border-amber-200';
     const userBg = isDarkMode ? 'bg-sky-950/30 border-sky-700/40' : 'bg-sky-50 border-sky-200';
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
     const panelHeightClass = 'h-[72vh]';
     const getVisibilityMeta = (session) => {
+        if (session?.guest) {
+            return { label: '访客临时会话', className: hiddenStatusClass };
+        }
         const visible = session?.userVisible !== false;
         return visible
             ? { label: '用户侧可见', className: visibleStatusClass }
             : { label: '用户侧已隐藏', className: hiddenStatusClass };
     };
-    const filterButtonClass = (filter) => {
-        const active = visibilityFilter === filter;
+    const filterButtonClass = (active) => {
         if (active) {
             return 'bg-black text-white';
         }
         return isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100';
+    };
+    const getIdentityMeta = (session) => {
+        if (session?.guest) {
+            const startIp = session.sessionStartIp || session.latestIp || '--';
+            const latestIp = session.latestIp || startIp || '--';
+            return {
+                primary: `${startIp} · 访客`,
+                secondary: session.ipChanged ? `IP 异常：当前 IP ${latestIp}` : `当前 IP：${latestIp}`
+            };
+        }
+        return {
+            primary: `${session?.displayName || session?.username || '未知用户'} · ${session?.roleName || session?.roleCode || '未知角色'}`,
+            secondary: ''
+        };
     };
 
     const loadSessions = useCallback(async () => {
@@ -4363,10 +4381,17 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
 
     const filteredSessions = sessions.filter((session) => {
         if (visibilityFilter === 'VISIBLE') {
-            return session.userVisible !== false;
+            if (session.guest) return false;
+            if (session.userVisible === false) return false;
         }
         if (visibilityFilter === 'HIDDEN') {
-            return session.userVisible === false;
+            if (!session.guest && session.userVisible !== false) return false;
+        }
+        if (authFilter === 'LOGGED_IN') {
+            return session.guest !== true;
+        }
+        if (authFilter === 'GUEST') {
+            return session.guest === true;
         }
         return true;
     });
@@ -4374,6 +4399,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
     const activeSession = sessionDetail?.session && filteredSessions.some((item) => item.id === sessionDetail.session.id)
         ? sessionDetail.session
         : filteredSessions.find((item) => item.id === activeSessionId) || null;
+    const activeIdentityMeta = activeSession ? getIdentityMeta(activeSession) : null;
     const messages = sessionDetail?.messages || [];
 
     useEffect(() => {
@@ -4392,7 +4418,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                 <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-[#FF0080]">AI Audit</p>
                     <h2 className="text-3xl font-black flex items-center gap-2"><Sparkles /> AI 会话</h2>
-                    <p className={`text-sm mt-1 ${mutedText}`}>查看所有用户的 AI 会话、消息时间线与归属信息，仅超级管理员可见。</p>
+                    <p className={`text-sm mt-1 ${mutedText}`}>查看已登录用户与未登录访客的 AI 会话、消息时间线与归属信息，仅超级管理员可见。</p>
                 </div>
                 <button
                     onClick={loadSessions}
@@ -4412,23 +4438,46 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                         <button
                             type="button"
                             onClick={() => setVisibilityFilter('ALL')}
-                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass('ALL')}`}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(visibilityFilter === 'ALL')}`}
                         >
                             全部
                         </button>
                         <button
                             type="button"
                             onClick={() => setVisibilityFilter('VISIBLE')}
-                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass('VISIBLE')}`}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(visibilityFilter === 'VISIBLE')}`}
                         >
                             用户侧可见
                         </button>
                         <button
                             type="button"
                             onClick={() => setVisibilityFilter('HIDDEN')}
-                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass('HIDDEN')}`}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(visibilityFilter === 'HIDDEN')}`}
                         >
                             用户侧已隐藏
+                        </button>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setAuthFilter('ALL')}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(authFilter === 'ALL')}`}
+                        >
+                            全部身份
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAuthFilter('LOGGED_IN')}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(authFilter === 'LOGGED_IN')}`}
+                        >
+                            已登录
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAuthFilter('GUEST')}
+                            className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(authFilter === 'GUEST')}`}
+                        >
+                            未登录
                         </button>
                     </div>
                     {sessionsLoading && <p className={`text-sm ${mutedText}`}>正在加载 AI 会话...</p>}
@@ -4440,6 +4489,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                         {filteredSessions.map((session) => {
                             const active = session.id === activeSessionId;
                             const visibilityMeta = getVisibilityMeta(session);
+                            const identityMeta = getIdentityMeta(session);
                             return (
                                 <button
                                     key={session.id}
@@ -4454,8 +4504,13 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                                         <div className="min-w-0">
                                             <p className="font-black truncate">{session.title || '未命名会话'}</p>
                                             <p className={`text-xs mt-1 truncate ${active ? 'text-black/70' : mutedText}`}>
-                                                {session.displayName || session.username} · {session.roleName || session.roleCode || '未知角色'}
+                                                {identityMeta.primary}
                                             </p>
+                                            {identityMeta.secondary && (
+                                                <p className={`text-[11px] mt-1 truncate ${session.ipChanged ? 'text-red-600 dark:text-red-300' : (active ? 'text-black/60' : mutedText)}`}>
+                                                    {identityMeta.secondary}
+                                                </p>
+                                            )}
                                         </div>
                                         <span className={`shrink-0 text-[11px] px-2 py-1 rounded-full font-bold ${active ? 'bg-black text-white' : chipBg}`}>
                                             #{session.id}
@@ -4465,6 +4520,11 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${visibilityMeta.className}`}>
                                             {visibilityMeta.label}
                                         </span>
+                                        {session.guest === true && session.ipChanged && (
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 ml-2 text-[11px] font-bold ${anomalyStatusClass}`}>
+                                                IP 异常
+                                            </span>
+                                        )}
                                     </div>
                                     <p className={`text-xs mt-3 line-clamp-2 ${active ? 'text-black/80' : mutedText}`}>
                                         {session.lastMessagePreview || '暂无预览'}
@@ -4489,14 +4549,24 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                             {activeSession && (
                                 <>
                                     <p className={`text-sm mt-1 ${mutedText}`}>
-                                        用户：{activeSession.displayName || activeSession.username}（{activeSession.roleName || activeSession.roleCode || '未知角色'}）
+                                        {activeSession.guest ? '会话身份' : '用户'}：{activeIdentityMeta.primary}
                                     </p>
+                                    {activeIdentityMeta.secondary && (
+                                        <p className={`text-xs mt-1 ${activeSession.ipChanged ? 'text-red-600 dark:text-red-300' : mutedText}`}>
+                                            {activeIdentityMeta.secondary}
+                                        </p>
+                                    )}
                                     <p className={`text-xs mt-1 ${mutedText}`}>
                                         会话 #{activeSession.id} · 创建于 {formatDateTime(activeSession.createdAt)} · 最后更新于 {formatDateTime(activeSession.updatedAt)}
                                     </p>
+                                    {activeSession.guest && (
+                                        <p className={`text-xs mt-1 ${mutedText}`}>
+                                            起始 IP：{activeSession.sessionStartIp || '--'} · 当前 IP：{activeSession.latestIp || activeSession.sessionStartIp || '--'}
+                                        </p>
+                                    )}
                                     {activeSession.userVisible === false && (
                                         <p className={`text-xs mt-1 ${mutedText}`}>
-                                            用户侧隐藏于 {formatDateTime(activeSession.userHiddenAt)}
+                                            {activeSession.guest ? '访客会话默认不提供历史回看入口' : `用户侧隐藏于 ${formatDateTime(activeSession.userHiddenAt)}`}
                                         </p>
                                     )}
                                 </>
@@ -4510,6 +4580,11 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${getVisibilityMeta(activeSession).className}`}>
                                     {getVisibilityMeta(activeSession).label}
                                 </span>
+                                {activeSession.guest === true && activeSession.ipChanged && (
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${anomalyStatusClass}`}>
+                                        IP 异常
+                                    </span>
+                                )}
                             </div>
                         )}
                     </div>

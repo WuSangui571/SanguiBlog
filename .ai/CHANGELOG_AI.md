@@ -5,6 +5,39 @@
 
 ---
 
+## [2026-03-24] 后台 AI 管理页纳入未登录访客会话并显示会话起始 IP/异常 IP
+- 背景/需求：用户反馈 `/admin/ai-management` 目前只能看到已登录用户的 AI 会话，看不到未登录访客；同时希望超级管理员可按“已登录/未登录”筛选，并把访客会话原本显示昵称/身份的位置改为“此次会话开始时的 IP + 访客”，若同一会话后续请求 IP 变化则标记异常。
+- 修改类型：feat
+- 影响范围：AI 聊天会话持久化、后台 AI 审计 DTO/页面、访客当前临时会话复用
+- 变更摘要：
+  1) 扩展现有 `ai_chat_sessions`，允许 `user_id` 为空，并新增 `guest_visitor_id`、`session_start_ip`、`latest_ip`、`ip_changed`、`ip_changed_at` 字段；不新增第二套访客审计表。
+  2) AI 聊天主链调整为：未登录访客首次提问时自动创建会话并落库，后续同一临时会话复用 `sessionId`；每次访客提问都会更新最新 IP，并在偏离会话起始 IP 时标记异常。
+  3) 后台 `/api/admin/ai-chat/sessions` / 详情 DTO 新增访客标识、起始 IP、当前 IP、IP 异常状态字段，超级管理员可以直接看到访客会话。
+  4) `/admin/ai-management` 新增“全部身份 / 已登录 / 未登录”筛选；访客卡片与详情头部改为显示“起始 IP · 访客”，IP 变化时展示红色异常提示与异常状态胶囊。
+  5) 前台访客模式仍不开放历史会话 UI，但当前临时对话会复用后端返回的 `sessionId`，确保后台审计能把同一访客会话串起来。
+  6) 访客会话不再显示为“用户侧可见”：新建/更新访客会话时统一标记 `user_visible=false`，后台文案改为“访客临时会话”，并将访客记录归入“已隐藏”筛选语义。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/entity/AiChatSession.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/AiChatSessionRepository.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AdminAiChatSessionDto.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AdminAiChatAuditService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AdminAiChatAuditServiceTest.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiChatServiceTest.java`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `sanguiblog_db.sql`
+- 检索与复用策略：
+  - 检索关键词：`AdminAiChatAuditService` / `ai-management` / `AiGuestAccessService` / `ai_chat_sessions` / `visitor` / `ip`
+  - 找到的候选点：现有 AI 审计接口与页面、现有访客准入服务、现有 `ai_chat_sessions / ai_chat_messages` 持久化链路
+  - 最终选择：复用现有 AI 会话表与后台管理页，只扩展现有会话模型和 DTO，不新增访客专用聊天表或第二套后台接口
+- 风险点：
+  - 现有数据库需手动执行 `sanguiblog_db.sql` 中新增字段变更，尤其是 `ai_chat_sessions.user_id` 允许为空与访客/IP 新字段。
+  - 访客前台仍保持“无历史会话列表”的产品策略，本次只补后台审计能力与当前临时会话复用。
+- 验证方式：
+  - 测试：执行 `mvn -q "-Dtest=AdminAiChatAuditServiceTest,AiChatServiceTest" test` 通过。
+  - 构建：执行 `cmd /c npm run build` 通过。
+
 ## [2026-03-23] 将 AI 站内文章推荐回复改为可点击的完整站点链接
 - 背景/需求：用户反馈 AI 在推荐站内已发布文章时返回的是相对路径，例如 `/article/213`，期望直接给出可点击的完整链接，并带上站点域名。
 - 修改类型：fix

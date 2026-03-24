@@ -19,6 +19,12 @@ public class AdminAiChatSessionDto {
     private String userTitle;
     private String roleCode;
     private String roleName;
+    private Boolean guest;
+    private String guestVisitorId;
+    private String sessionStartIp;
+    private String latestIp;
+    private Boolean ipChanged;
+    private Instant ipChangedAt;
     private Boolean userVisible;
     private Instant userHiddenAt;
 }

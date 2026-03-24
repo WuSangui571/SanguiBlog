@@ -61,6 +61,12 @@ public class AdminAiChatAuditService {
                 .userTitle(user != null ? user.getTitle() : "")
                 .roleCode(role != null ? role.getCode() : "")
                 .roleName(role != null ? role.getName() : "")
+                .guest(user == null)
+                .guestVisitorId(session.getGuestVisitorId())
+                .sessionStartIp(session.getSessionStartIp())
+                .latestIp(session.getLatestIp())
+                .ipChanged(session.getIpChanged())
+                .ipChangedAt(session.getIpChangedAt())
                 .userVisible(session.getUserVisible())
                 .userHiddenAt(session.getUserHiddenAt())
                 .build();

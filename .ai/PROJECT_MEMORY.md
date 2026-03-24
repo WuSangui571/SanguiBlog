@@ -812,6 +812,9 @@ npm run dev
 - `SystemSettingsView` 中依赖 `loadKnowledgeDocuments` 的 `useEffect` 必须放在该 `useCallback` 声明之后，避免 `/admin/settings` 因 const TDZ 触发前端白屏。
 - `/admin` 后台新增“AI管理”页面，导航位置在“访问日志”和“评论管理”之间，仅 `SUPER_ADMIN` 可见。
 - AI 管理页复用现有 `ai_chat_sessions` / `ai_chat_messages` 作为后台审计数据源，不新增第二套聊天记录表。
+- 自 2026-03-24 起，AI 审计不再只覆盖已登录用户：`ai_chat_sessions.user_id` 允许为空，未登录访客会话也会落在同一张表里，并通过 `guest_visitor_id` 标识访客浏览器。
+- 访客 AI 会话在同一临时对话内会复用后端返回的 `sessionId`；前台仍不开放访客历史会话列表，但后台可看到完整访客消息时间线。
+- `ai_chat_sessions` 新增访客与 IP 审计字段：`guest_visitor_id`、`session_start_ip`、`latest_ip`、`ip_changed`、`ip_changed_at`；后台列表/详情默认显示“起始 IP · 访客”，若同一会话后续请求 IP 偏离起始 IP，则显示 `IP 异常`。
 - 后端提供超级管理员专用接口：
   - `/api/admin/ai-chat/sessions`
   - `/api/admin/ai-chat/sessions/{sessionId}`
@@ -821,6 +824,7 @@ npm run dev
 - 前端历史会话弹窗底部固定提示“仅显示最近 10 条对话”，并为每条会话提供删除图标按钮。
 - 后台 `AI管理` 页面会直接显示每条会话的“用户侧可见状态”：绿色表示仍对用户可见，红色表示已被用户侧隐藏。
 - 后台 `AI管理` 页面支持按用户侧可见状态筛选：`全部 / 用户侧可见 / 用户侧已隐藏`。
+- 后台 `AI管理` 页面自 2026-03-24 起还支持按登录态筛选：`全部身份 / 已登录 / 未登录`。
 - 对 `user_visible = false` 的会话，后台列表和详情头部都会展示 `userHiddenAt`，用于审计该会话从用户侧消失的时间。
 - AI 助理总开关统一走 `site_settings` 中的 `ai.chat.enabled`，不额外新建专门表字段；默认开启。
 - `/api/site/meta` 下发的 `aiAssistant` 配置包含 `enabled`，前端首页只有在 `enabled=true` 时才渲染 AI 入口。

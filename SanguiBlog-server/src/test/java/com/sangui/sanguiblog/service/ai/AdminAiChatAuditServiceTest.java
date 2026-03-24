@@ -49,6 +49,7 @@ class AdminAiChatAuditServiceTest {
         assertEquals("RAG 调试", sessions.get(0).getTitle());
         assertEquals(Boolean.FALSE, sessions.get(0).getUserVisible());
         assertEquals(Instant.parse("2026-03-18T08:05:00Z"), sessions.get(0).getUserHiddenAt());
+        assertEquals(Boolean.FALSE, sessions.get(0).getGuest());
     }
 
     @Test
@@ -90,6 +91,41 @@ class AdminAiChatAuditServiceTest {
         assertEquals(15L, detail.getMessages().get(0).getSessionId());
         assertEquals("assistant", detail.getMessages().get(1).getRole());
         assertEquals("qwen-flash", detail.getMessages().get(1).getModelName());
+        assertEquals(Boolean.FALSE, detail.getSession().getGuest());
+    }
+
+    @Test
+    void shouldExposeGuestSessionWithStartIpAndIpAnomaly() {
+        AiChatSessionRepository sessionRepository = mock(AiChatSessionRepository.class);
+        AiChatMessageRepository messageRepository = mock(AiChatMessageRepository.class);
+        AdminAiChatAuditService service = new AdminAiChatAuditService(sessionRepository, messageRepository);
+
+        AiChatSession session = new AiChatSession();
+        session.setId(21L);
+        session.setTitle("访客临时对话");
+        session.setLastMessagePreview("帮我总结一下首页内容");
+        session.setGuestVisitorId("visitor-001");
+        session.setSessionStartIp("203.0.113.10");
+        session.setLatestIp("198.51.100.23");
+        session.setIpChanged(Boolean.TRUE);
+        session.setIpChangedAt(Instant.parse("2026-03-24T08:03:00Z"));
+        session.setCreatedAt(Instant.parse("2026-03-24T08:00:00Z"));
+        session.setUpdatedAt(Instant.parse("2026-03-24T08:05:00Z"));
+        session.setUserVisible(Boolean.TRUE);
+
+        when(sessionRepository.findAllByOrderByUpdatedAtDescIdDesc()).thenReturn(List.of(session));
+
+        List<AdminAiChatSessionDto> sessions = service.listSessions();
+
+        assertEquals(1, sessions.size());
+        assertEquals(Boolean.TRUE, sessions.get(0).getGuest());
+        assertEquals("203.0.113.10", sessions.get(0).getSessionStartIp());
+        assertEquals("198.51.100.23", sessions.get(0).getLatestIp());
+        assertEquals(Boolean.TRUE, sessions.get(0).getIpChanged());
+        assertEquals(Instant.parse("2026-03-24T08:03:00Z"), sessions.get(0).getIpChangedAt());
+        assertEquals("visitor-001", sessions.get(0).getGuestVisitorId());
+        assertEquals("", sessions.get(0).getUsername());
+        assertEquals("", sessions.get(0).getDisplayName());
     }
 
     @Test
