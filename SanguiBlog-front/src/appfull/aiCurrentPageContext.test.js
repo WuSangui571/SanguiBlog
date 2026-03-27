@@ -63,6 +63,22 @@ const validArticle = {
 
 {
   const context = buildAiCurrentPageContext({
+    view: "game",
+    gameId: 12,
+    gameDetail: {
+      title: "JSON 格式化工具",
+      description: "用于格式化和校验 JSON 的工具页",
+    },
+  });
+
+  assert.equal(context.pageType, "tools");
+  assert.equal(context.title, "JSON 格式化工具");
+  assert.equal(context.url, "/tools/12");
+  assert.match(context.content, /当前展示的工具/);
+}
+
+{
+  const context = buildAiCurrentPageContext({
     view: "archive",
   });
 

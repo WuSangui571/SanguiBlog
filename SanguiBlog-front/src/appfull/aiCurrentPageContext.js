@@ -110,6 +110,24 @@ export function buildAiCurrentPageContext({
     );
   }
 
+  if (view === "game") {
+    const detailTitle = trimText(gameDetail?.title);
+    const detailDescription = trimText(gameDetail?.description);
+    const pageTitle = detailTitle || "工具详情页";
+    const pageUrl = gameId ? `/tools/${gameId}` : "/tools";
+    const pageContent = detailDescription
+      ? `这是博客工具详情页，当前展示的工具是“${pageTitle}”。${detailDescription}`
+      : "这是博客工具详情页，用来展示站内某个具体工具的独立页面内容。";
+
+    return buildStaticPageContext(
+      "tools",
+      pageTitle,
+      pageUrl,
+      pageContent,
+      detailDescription
+    );
+  }
+
   if (view === "games") {
     const detailTitle = trimText(gameDetail?.title);
     const detailDescription = trimText(gameDetail?.description);

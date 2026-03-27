@@ -5,6 +5,21 @@
 
 ---
 
+## [2026-03-27] 按 sitemap 复查并补齐 AI 对工具详情页的当前页面解释
+- 背景/需求：用户要求基于当前 `sitemap` 复查所有公开页面，确认 AI 助手是否仍有“不认识当前页面”的遗漏；后台 `/admin` 及其子页面明确排除在外。
+- 修改类型：feat
+- 影响范围：前端当前页面上下文构建、前端回归测试、AI 变更日志
+- 变更摘要：
+  1) 对照 `SitemapService` 生成的公开页面类型后，确认当前剩余缺口是 `/tools/:id` 对应的工具详情页。
+  2) 在前端 `buildAiCurrentPageContext` 中新增 `view === "game"` 的页面上下文生成逻辑，使 AI 在工具详情页也能理解“当前正在看的具体工具”。
+  3) 为工具详情页补充回归测试，校验其页面标题、详情 URL 和说明文案均能正确传给 AI 助手。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.js`
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.test.js`
+- 验证方式：
+  - 前端测试：执行 `node src/appfull/aiCurrentPageContext.test.js` 通过
+  - 前端构建：执行 `cmd /c npm run build` 通过
+
 ## [2026-03-27] AI 助手补齐对登录页与注册页的当前页面解释
 - 背景/需求：用户反馈 AI 助手当前已经能结合首页、归档页、工具页、文章页等站内页面进行解释，但在 `/login` 和 `/register` 页面上仍无法像其他页面一样理解“当前页面是做什么的”。
 - 修改类型：feat
