@@ -342,11 +342,6 @@ export default function RegisterView({ setView, isDarkMode }) {
                   </div>
                 </div>
 
-                {form.avatarPreview ? (
-                  <div className="border-2 border-black bg-[#FFF6D6] px-3 py-2 text-xs font-bold text-black">
-                    已显示本地头像预览，提交注册时才会真正上传。
-                  </div>
-                ) : null}
                 <FieldError message={fieldErrors.avatarFile} />
               </div>
 
