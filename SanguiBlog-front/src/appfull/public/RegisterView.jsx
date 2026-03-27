@@ -281,11 +281,6 @@ export default function RegisterView({ setView, isDarkMode }) {
                     ? `冷却中 ${verifyWaitSeconds}s`
                     : "验证"}
               </PopButton>
-              {verifyCooldownActive ? (
-                <span className={`text-sm font-bold ${subtle}`}>
-                  可再次验证：{verifyWaitSeconds}s
-                </span>
-              ) : null}
             </div>
           </form>
         </section>
