@@ -22,6 +22,15 @@ function FieldError({ message }) {
   return <p className="text-xs font-bold text-red-600">{message}</p>;
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(new Error("头像预览生成失败"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function RegisterView({ setView, isDarkMode }) {
   const [inviteCode, setInviteCode] = useState("");
   const [inviteError, setInviteError] = useState("");
@@ -47,12 +56,6 @@ export default function RegisterView({ setView, isDarkMode }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [clock, setClock] = useState(Date.now());
   const avatarInputRef = useRef(null);
-
-  useEffect(() => () => {
-    if (form.avatarPreview) {
-      URL.revokeObjectURL(form.avatarPreview);
-    }
-  }, [form.avatarPreview]);
 
   useEffect(() => {
     const needsTicker = verifyCooldownUntil > Date.now() || avatarCooldownUntil > Date.now();
@@ -130,7 +133,7 @@ export default function RegisterView({ setView, isDarkMode }) {
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleAvatarPick = (event) => {
+  const handleAvatarPick = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -156,13 +159,18 @@ export default function RegisterView({ setView, isDarkMode }) {
       return;
     }
 
-    if (form.avatarPreview) {
-      URL.revokeObjectURL(form.avatarPreview);
+    try {
+      const preview = await readFileAsDataUrl(file);
+      setForm((prev) => ({ ...prev, avatarFile: file, avatarPreview: preview }));
+      setFieldErrors((prev) => ({ ...prev, avatarFile: "" }));
+    } catch (error) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        avatarFile: error?.message || "头像预览生成失败",
+      }));
+    } finally {
+      event.target.value = "";
     }
-    const preview = URL.createObjectURL(file);
-    setForm((prev) => ({ ...prev, avatarFile: file, avatarPreview: preview }));
-    setFieldErrors((prev) => ({ ...prev, avatarFile: "" }));
-    event.target.value = "";
   };
 
   const handleRegister = async (event) => {
@@ -321,7 +329,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                       选择头像
                     </button>
                     <p className={`text-xs font-medium ${subtle}`}>
-                      最大 2MB
+                      {form.avatarFile ? `本地预览：${form.avatarFile.name}` : "最大 2MB"}
                     </p>
                   </div>
                 </div>
