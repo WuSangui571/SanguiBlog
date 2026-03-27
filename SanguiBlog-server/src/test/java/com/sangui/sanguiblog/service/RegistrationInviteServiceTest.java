@@ -89,4 +89,24 @@ class RegistrationInviteServiceTest {
         assertNotNull(result.getExpiresAt());
         assertNotNull(result.getExpiresAtLabel());
     }
+
+    @Test
+    void shouldReturnLatestInviteForAdminView() {
+        RegistrationInviteRepository inviteRepository = mock(RegistrationInviteRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        RegistrationInviteService service = new RegistrationInviteService(inviteRepository, userRepository);
+
+        RegistrationInvite invite = new RegistrationInvite();
+        invite.setInviteCode("SG-LAST-001");
+        invite.setCreatedAt(Instant.now().minus(Duration.ofMinutes(1)));
+        invite.setExpiresAt(Instant.now().plus(Duration.ofMinutes(4)));
+        when(inviteRepository.findTopByOrderByCreatedAtDesc()).thenReturn(Optional.of(invite));
+
+        AdminRegistrationInviteDto result = service.getLatestInvite();
+
+        assertEquals("SG-LAST-001", result.getInviteCode());
+        assertNotNull(result.getCreatedAt());
+        assertNotNull(result.getExpiresAt());
+        assertNotNull(result.getExpiresAtLabel());
+    }
 }

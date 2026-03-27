@@ -567,6 +567,9 @@ export const adminCreateRegistrationInvite = (payload) =>
     body: JSON.stringify(payload || {}),
   });
 
+export const adminFetchLatestRegistrationInvite = () =>
+  request("/admin/registration-invites/latest");
+
 export const fetchCurrentUser = () => request("/auth/me");
 
 export const fetchComments = (postId) => request(`/posts/${postId}/comments`);

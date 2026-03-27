@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-03-27] 优化注册页 Step1 冷却提示并持久化后台最近邀请码结果
+- 背景/需求：用户反馈注册页邀请码验证失败后的冷却提示像“不可点击的按钮”，且红色提示和倒计时都不会动态变化；同时希望 Step1 排版更简洁、文案更少，并要求后台 `/admin/settings` 中“最近生成结果”在刷新页面后仍然保留。
+- 修改类型：fix / feat
+- 影响范围：前端注册页交互、后台系统设置页邀请码展示、后端邀请码读取接口
+- 变更摘要：
+  1) 重做注册页 Step1 布局，去掉原先偏重的侧边说明区，改成更轻量的单卡片验证入口。
+  2) 将邀请码验证冷却提示改为真实倒计时，红色错误提示与“可再次验证”文案都会按秒动态更新，不再显示成类似按钮的静态块。
+  3) 新增后台接口 `/api/admin/registration-invites/latest`，用于读取最近一次生成的邀请码结果。
+  4) 管理端系统设置页加载时主动读取最近邀请码，因此刷新页面后仍能看到最近生成结果，不再只是前端内存态。
+- 涉及文件：
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/public/RegisterView.jsx`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminRegistrationInviteController.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/RegistrationInviteRepository.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/RegistrationInviteService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/RegistrationInviteServiceTest.java`
+- 验证方式：
+  - 测试：执行 `mvn -q "-Dtest=RegistrationInviteServiceTest,PublicRegistrationServiceTest" test` 通过。
+  - 构建：执行 `cmd /c npm run build` 通过。
+
 ## [2026-03-24] 新增超级管理员注册邀请码生成与公开注册后端闭环
 - 背景/需求：用户要求在 `/admin/settings` 增加超级管理员专用的邀请码生成功能，支持默认 5 分钟以及 1 小时、1 天、10 天等时效选项；生成后自动复制邀请码到剪贴板，并让新用户可在有效期内通过邀请码完成注册。
 - 修改类型：feat

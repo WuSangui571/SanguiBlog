@@ -18,6 +18,11 @@ public class AdminRegistrationInviteController {
 
     private final RegistrationInviteService registrationInviteService;
 
+    @GetMapping("/latest")
+    public ApiResponse<AdminRegistrationInviteDto> latestInvite() {
+        return ApiResponse.ok(registrationInviteService.getLatestInvite());
+    }
+
     @PostMapping
     public ApiResponse<AdminRegistrationInviteDto> createInvite(
             @AuthenticationPrincipal UserPrincipal userPrincipal,

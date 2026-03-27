@@ -48,6 +48,7 @@ import {
     adminFetchAiAssistantSettings,
     adminUpdateAiAssistantSettings,
     adminCreateRegistrationInvite,
+    adminFetchLatestRegistrationInvite,
     adminFetchAbout,
     adminSaveAbout,
     adminFetchComments,
@@ -6320,6 +6321,24 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             setInviteGenerating(false);
         }
     }, [inviteDurationCode, selectedInviteDuration.label, showNotice]);
+
+    const loadLatestRegistrationInvite = useCallback(async () => {
+        try {
+            const res = await adminFetchLatestRegistrationInvite();
+            const data = res?.data || res || null;
+            setLatestInvite(data || null);
+        } catch (err) {
+            if (err?.status === 404) {
+                setLatestInvite(null);
+                return;
+            }
+            setInviteError(err?.message || '加载最近邀请码失败');
+        }
+    }, []);
+
+    useEffect(() => {
+        loadLatestRegistrationInvite();
+    }, [loadLatestRegistrationInvite]);
 
     const formatKnowledgeStatus = useCallback((value) => {
         switch ((value || '').toUpperCase()) {

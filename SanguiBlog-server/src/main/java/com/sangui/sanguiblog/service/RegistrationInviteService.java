@@ -48,6 +48,13 @@ public class RegistrationInviteService {
     }
 
     @Transactional(readOnly = true)
+    public AdminRegistrationInviteDto getLatestInvite() {
+        return registrationInviteRepository.findTopByOrderByCreatedAtDesc()
+                .map(this::toAdminDto)
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
     public PublicRegistrationInviteVerifyDto verifyInvite(String inviteCode) {
         RegistrationInvite invite = registrationInviteRepository.findByInviteCodeIgnoreCase(normalizeInviteCode(inviteCode))
                 .orElseThrow(() -> new IllegalArgumentException("邀请码不存在或已失效"));
@@ -69,9 +76,10 @@ public class RegistrationInviteService {
 
     @Transactional
     public void markConsumed(RegistrationInvite invite, User user) {
+        Instant now = Instant.now();
         invite.setConsumedBy(user);
-        invite.setConsumedAt(Instant.now());
-        invite.setUpdatedAt(Instant.now());
+        invite.setConsumedAt(now);
+        invite.setUpdatedAt(now);
         registrationInviteRepository.save(invite);
     }
 
@@ -79,7 +87,7 @@ public class RegistrationInviteService {
         if (invite.getConsumedAt() != null || invite.getConsumedBy() != null) {
             throw new IllegalArgumentException("邀请码已被使用");
         }
-        if (invite.getExpiresAt() == null || invite.getExpiresAt().isBefore(Instant.now())) {
+        if (invite.getExpiresAt() == null || !invite.getExpiresAt().isAfter(Instant.now())) {
             throw new IllegalArgumentException("邀请码已过期");
         }
     }
@@ -120,6 +128,10 @@ public class RegistrationInviteService {
         return dto;
     }
 
+    private AdminRegistrationInviteDto toAdminDto(RegistrationInvite invite) {
+        return toAdminDto(invite, DurationOption.fromDuration(invite.getCreatedAt(), invite.getExpiresAt()));
+    }
+
     @Getter
     enum DurationOption {
         MINUTES_5("MINUTES_5", "5分钟", Duration.ofMinutes(5)),
@@ -147,6 +159,18 @@ public class RegistrationInviteService {
                 }
             }
             throw new IllegalArgumentException("不支持的邀请码时效选项");
+        }
+
+        static DurationOption fromDuration(Instant createdAt, Instant expiresAt) {
+            if (createdAt != null && expiresAt != null) {
+                Duration actual = Duration.between(createdAt, expiresAt);
+                for (DurationOption option : values()) {
+                    if (Math.abs(option.duration.minus(actual).toSeconds()) <= 1) {
+                        return option;
+                    }
+                }
+            }
+            return MINUTES_5;
         }
     }
 }

@@ -15,6 +15,8 @@ public interface RegistrationInviteRepository extends JpaRepository<Registration
 
     Optional<RegistrationInvite> findByInviteCodeIgnoreCase(String inviteCode);
 
+    Optional<RegistrationInvite> findTopByOrderByCreatedAtDesc();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from RegistrationInvite r where upper(r.inviteCode) = upper(:inviteCode)")
     Optional<RegistrationInvite> findByInviteCodeForUpdate(@Param("inviteCode") String inviteCode);
