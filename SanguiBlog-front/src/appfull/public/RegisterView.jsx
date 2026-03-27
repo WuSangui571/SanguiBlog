@@ -161,7 +161,11 @@ export default function RegisterView({ setView, isDarkMode }) {
 
     try {
       const preview = await readFileAsDataUrl(file);
-      setForm((prev) => ({ ...prev, avatarFile: file, avatarPreview: preview }));
+      setForm((prev) => ({
+        ...prev,
+        avatarFile: file,
+        avatarPreview: preview,
+      }));
       setFieldErrors((prev) => ({ ...prev, avatarFile: "" }));
     } catch (error) {
       setFieldErrors((prev) => ({
@@ -305,14 +309,20 @@ export default function RegisterView({ setView, isDarkMode }) {
             <form className="mt-6 space-y-5" onSubmit={handleRegister}>
               <div className="space-y-2">
                 <label className="text-sm font-black uppercase">头像</label>
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className={`w-20 h-20 border-2 border-black overflow-hidden ${inputBg} flex items-center justify-center`}>
+                <div className="flex flex-wrap items-start gap-4">
+                  <div className={`w-28 h-28 border-2 border-black overflow-hidden ${inputBg} flex items-center justify-center shadow-[4px_4px_0px_0px_#000]`}>
                     {form.avatarPreview ? (
-                      <img src={form.avatarPreview} alt="avatar preview" className="w-full h-full object-cover" />
+                      <img
+                        key={form.avatarPreview}
+                        src={form.avatarPreview}
+                        alt="avatar preview"
+                        className="block w-full h-full object-cover"
+                      />
                     ) : (
-                      <Upload size={22} />
+                      <Upload size={28} />
                     )}
                   </div>
+
                   <div className="space-y-2">
                     <input
                       ref={avatarInputRef}
@@ -328,11 +338,15 @@ export default function RegisterView({ setView, isDarkMode }) {
                     >
                       选择头像
                     </button>
-                    <p className={`text-xs font-medium ${subtle}`}>
-                      {form.avatarFile ? `本地预览：${form.avatarFile.name}` : "最大 2MB"}
-                    </p>
+                    <p className={`text-xs font-medium ${subtle}`}>最大 2MB</p>
                   </div>
                 </div>
+
+                {form.avatarPreview ? (
+                  <div className="border-2 border-black bg-[#FFF6D6] px-3 py-2 text-xs font-bold text-black">
+                    已显示本地头像预览，提交注册时才会真正上传。
+                  </div>
+                ) : null}
                 <FieldError message={fieldErrors.avatarFile} />
               </div>
 
