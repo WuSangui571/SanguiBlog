@@ -84,6 +84,8 @@ public class AiCurrentPageContextService {
             case "archive" -> "归档页";
             case "about" -> "关于页";
             case "tools" -> "工具页";
+            case "login" -> "登录页";
+            case "register" -> "注册页";
             default -> "站内页面";
         };
     }

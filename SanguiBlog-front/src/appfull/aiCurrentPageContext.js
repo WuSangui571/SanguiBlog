@@ -25,7 +25,7 @@ function buildStaticPageContext(pageType, title, url, content, excerpt = "") {
     title: normalizedTitle,
     excerpt: trimText(excerpt),
     content: normalizedContent,
-    url
+    url,
   };
 }
 
@@ -50,7 +50,7 @@ function buildArticleContext(article, articleState) {
     title,
     excerpt,
     content,
-    url: articleId ? `/article/${articleId}` : ""
+    url: articleId ? `/article/${articleId}` : "",
   };
 }
 
@@ -59,7 +59,7 @@ export function buildAiCurrentPageContext({
   article,
   articleState,
   gameDetail,
-  gameId
+  gameId,
 }) {
   if (view === "article") {
     return buildArticleContext(article, articleState);
@@ -89,6 +89,24 @@ export function buildAiCurrentPageContext({
       "关于页",
       "/about",
       "这是博客关于页，主要介绍站长、站点背景或补充说明信息。"
+    );
+  }
+
+  if (view === "login") {
+    return buildStaticPageContext(
+      "login",
+      "登录页",
+      "/login",
+      "这是博客登录页，用于已有账号的用户输入用户名、密码，以及在需要时输入验证码，登录后进入站内功能或后台管理。"
+    );
+  }
+
+  if (view === "register") {
+    return buildStaticPageContext(
+      "register",
+      "注册页",
+      "/register",
+      "这是博客注册页，采用邀请码注册流程。用户需要先验证邀请码，验证通过后再填写头像、用户名、显示名称、密码和确认密码来创建新账号。"
     );
   }
 

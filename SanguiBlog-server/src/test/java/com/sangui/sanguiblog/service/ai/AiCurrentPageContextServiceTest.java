@@ -44,6 +44,23 @@ class AiCurrentPageContextServiceTest {
     }
 
     @Test
+    void shouldUseLoginPageContextWhenQuestionRefersToCurrentPage() {
+        AiCurrentPageContextService service = new AiCurrentPageContextService();
+
+        AiCurrentPageContextDto context = new AiCurrentPageContextDto();
+        context.setPageType("login");
+        context.setTitle("登录页");
+        context.setContent("这是博客登录页，用于已有账号的用户输入用户名、密码和必要时的验证码，登录后进入站内功能。");
+        context.setUrl("/login");
+
+        AiCurrentPageContextService.PageContextAdvice advice = service.advise("当前页面是干什么的？", context);
+
+        assertTrue(advice.useContext());
+        assertTrue(advice.systemContext().contains("/login"));
+        assertTrue(advice.systemContext().contains("登录页"));
+    }
+
+    @Test
     void shouldIgnoreCurrentPageContextForUnrelatedQuestion() {
         AiCurrentPageContextService service = new AiCurrentPageContextService();
 

@@ -5,6 +5,24 @@
 
 ---
 
+## [2026-03-27] AI 助手补齐对登录页与注册页的当前页面解释
+- 背景/需求：用户反馈 AI 助手当前已经能结合首页、归档页、工具页、文章页等站内页面进行解释，但在 `/login` 和 `/register` 页面上仍无法像其他页面一样理解“当前页面是做什么的”。
+- 修改类型：feat
+- 影响范围：前端当前页面上下文构建、后端当前页面上下文提示词生成、相关回归测试
+- 变更摘要：
+  1) 在前端 `buildAiCurrentPageContext` 中新增 `login` 与 `register` 视图的静态页面上下文，统一传给 AI 助手。
+  2) 在后端 `AiCurrentPageContextService` 中新增 `login/register` 页面类型标签，使 AI 能以“登录页 / 注册页”的语义组织回答。
+  3) 为前端页面上下文构建与后端页面上下文服务补充回归测试，覆盖 `/login`、`/register` 的解释链路。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.js`
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.test.js`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiCurrentPageContextService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiCurrentPageContextServiceTest.java`
+- 验证方式：
+  - 前端测试：执行 `node src/appfull/aiCurrentPageContext.test.js` 通过
+  - 后端测试：执行 `mvn -q "-Dtest=AiCurrentPageContextServiceTest,AiAssistantCapabilityServiceTest" test` 通过
+  - 前端构建：执行 `cmd /c npm run build` 通过
+
 ## [2026-03-27] 新增 V2.2.4 Release 文档并同步 README 的发布说明
 - 背景/需求：用户要求基于当前最新版本 `V2.2.4` 生成 release 文档，用于正式发布；同时要求检查根目录 `README.md` 是否因新增 release 文档而出现过时描述，并在不扩散改动的前提下同步更新。
 - 修改类型：docs
