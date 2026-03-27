@@ -268,10 +268,18 @@ export default function RegisterView({ setView, isDarkMode }) {
             <div className="flex items-center gap-4 flex-wrap">
               <PopButton
                 variant="primary"
-                className="min-w-[180px] justify-center"
-                disabled={verifying}
+                className={`min-w-[180px] justify-center ${
+                  verifyCooldownActive
+                    ? "bg-gray-400 text-gray-900 hover:bg-gray-400 cursor-not-allowed opacity-80"
+                    : ""
+                }`}
+                disabled={verifying || verifyCooldownActive}
               >
-                {verifying ? "验证中..." : "验证"}
+                {verifying
+                  ? "验证中..."
+                  : verifyCooldownActive
+                    ? `冷却中 ${verifyWaitSeconds}s`
+                    : "验证"}
               </PopButton>
               {verifyCooldownActive ? (
                 <span className={`text-sm font-bold ${subtle}`}>
