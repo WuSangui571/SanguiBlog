@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-03-27] 首页文章卡片摘要仅在被截断时显示悬停全文
+- 背景/需求：用户反馈首页文章卡片摘要当前只要有内容，鼠标悬停就会显示完整摘要；但对那些本身已完整展示的短摘要，再弹出全文提示没有意义，要求仅在摘要实际被 `line-clamp` 截断时继续显示悬停全文。
+- 修改类型：fix
+- 影响范围：首页文章列表摘要 hover 提示、摘要 tooltip 纯函数测试
+- 变更摘要：
+  1) 为首页摘要 tooltip 工具补充“是否发生溢出截断”的纯函数判定，统一约束 tooltip 只服务于真正被裁切的摘要。
+  2) `ArticleList` 在摘要段落渲染后，基于真实 DOM 的 `scrollHeight/clientHeight` 与 `scrollWidth/clientWidth` 判断是否被截断；仅截断项保留 `cursor-help`、`aria-label` 与自定义悬停浮层。
+  3) 为摘要 tooltip 工具补充最小回归测试，覆盖“未截断不显示 tooltip、截断继续显示、溢出判定阈值”三类场景。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.js`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
+- 检索与复用策略：
+  - 检索关键词：`excerpt` / `ArticleList` / `articleExcerptTooltip` / `line-clamp` / `tooltip`
+  - 找到的候选点：首页摘要展示位于 `ArticleList.jsx`；摘要 tooltip 纯函数位于 `articleExcerptTooltip.js`；已有最小测试位于 `articleExcerptTooltip.test.js`
+  - 最终选择：复用现有首页摘要段落与 tooltip 工具，在原位补充“是否截断”的判断，不新增组件、不新增接口
+- 风险点：
+  - 截断判定依赖浏览器布局测量，当前会在初次渲染后及窗口尺寸变化时刷新；若后续首页摘要样式高度规则再次变化，需要同步复查该测量逻辑。
+- 验证方式：
+  - 测试：执行 `node SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js` 通过
+  - 构建：执行 `cmd /c npm run build` 通过
+
 ## [2026-03-27] 按 sitemap 复查并补齐 AI 对工具详情页的当前页面解释
 - 背景/需求：用户要求基于当前 `sitemap` 复查所有公开页面，确认 AI 助手是否仍有“不认识当前页面”的遗漏；后台 `/admin` 及其子页面明确排除在外。
 - 修改类型：feat

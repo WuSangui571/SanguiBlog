@@ -4,7 +4,10 @@ import PopButton from "../../components/common/PopButton.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
 import StatsStrip from "./StatsStrip.jsx";
-import { getArticleExcerptTooltip } from "./articleExcerptTooltip.js";
+import {
+    getArticleExcerptTooltip,
+    isArticleExcerptOverflowing
+} from "./articleExcerptTooltip.js";
 import { buildAssetUrl } from "../../utils/asset.js";
 import sanitizeHtml from "../../utils/sanitize.js";
 import {
@@ -81,8 +84,10 @@ const ArticleList = ({
     const [activeTag, setActiveTag] = useState('all');
     const [keyword, setKeyword] = useState('');
     const [appliedKeyword, setAppliedKeyword] = useState('');
+    const [excerptOverflowMap, setExcerptOverflowMap] = useState({});
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
     const warningTimerRef = useRef(null);
+    const excerptElementsRef = useRef(new Map());
     const lastSpinAtRef = useRef(0);
     const spinComboRef = useRef(0);
     const lastWarningComboRef = useRef(0);
@@ -131,6 +136,27 @@ const ArticleList = ({
     const currentParentObj = categories.find(c => c.id === activeParent);
     const subCategories = currentParentObj ? currentParentObj.children : [];
     const sourcePosts = Array.isArray(postsPage?.records) ? postsPage.records : [];
+    const registerExcerptElement = useCallback((postId, element) => {
+        if (element) {
+            excerptElementsRef.current.set(postId, element);
+            return;
+        }
+        excerptElementsRef.current.delete(postId);
+    }, []);
+    const measureExcerptOverflow = useCallback(() => {
+        const nextOverflowMap = {};
+        excerptElementsRef.current.forEach((element, postId) => {
+            nextOverflowMap[postId] = isArticleExcerptOverflowing(element);
+        });
+        setExcerptOverflowMap((prev) => {
+            const prevKeys = Object.keys(prev);
+            const nextKeys = Object.keys(nextOverflowMap);
+            if (prevKeys.length === nextKeys.length && nextKeys.every((key) => prev[key] === nextOverflowMap[key])) {
+                return prev;
+            }
+            return nextOverflowMap;
+        });
+    }, []);
     const scrollToPostsTop = useCallback(() => {
         if (onScrollToPosts) {
             onScrollToPosts();
@@ -279,6 +305,14 @@ const ArticleList = ({
     const totalPages = Math.max(1, Math.ceil((Number(postsPage?.total ?? 0) || 0) / pageSize));
     // 筛选/分页触发加载时，隐藏旧文章卡片，避免“加载中卡片 + 旧卡片堆叠”的视觉别扭
     const displayPosts = postsLoading ? [] : sourcePosts;
+    useEffect(() => {
+        const frameId = window.requestAnimationFrame(measureExcerptOverflow);
+        window.addEventListener('resize', measureExcerptOverflow);
+        return () => {
+            window.cancelAnimationFrame(frameId);
+            window.removeEventListener('resize', measureExcerptOverflow);
+        };
+    }, [displayPosts, measureExcerptOverflow]);
     const goToPage = useCallback((page) => {
         const targetPage = Math.min(totalPages, Math.max(1, Number(page) || 1));
         if (targetPage === currentPage) return;
@@ -763,7 +797,7 @@ const ArticleList = ({
                                     const tags = Array.isArray(post.tags) ? post.tags : [];
                                     const accentColor = extractHexFromBgClass(post.color, '#6366F1');
                                     const isNewPost = isPostNew(post.date);
-                                    const excerptTooltip = getArticleExcerptTooltip(post.excerpt);
+                                    const excerptTooltip = getArticleExcerptTooltip(post.excerpt, excerptOverflowMap[post.id]);
                                     return (
                                         <motion.div
                                             key={post.id}
@@ -897,6 +931,7 @@ const ArticleList = ({
                                                         </div>
                                                         <div className="relative mt-0 group/excerpt">
                                                             <p
+                                                                ref={(element) => registerExcerptElement(post.id, element)}
                                                                 aria-label={excerptTooltip ? `文章摘要：${excerptTooltip}` : undefined}
                                                                 className={`text-base md:text-lg font-medium border-l-4 border-gray-300 pl-4 pr-2 ${subText} ${excerptTooltip ? 'cursor-help' : ''}`}
                                                                 style={{
