@@ -218,72 +218,74 @@ export default function RegisterView({ setView, isDarkMode }) {
           </button>
         </div>
 
-        <section className={`${panel} p-6 md:p-8`}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 border-2 border-black bg-black text-white flex items-center justify-center">
-              <Ticket size={18} />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black">Step 1</h2>
-              <p className={`text-sm ${subtle}`}>先验证邀请码</p>
-            </div>
-          </div>
-
-          <form className="mt-6 space-y-4" onSubmit={handleInviteVerify}>
-            <div className="space-y-2">
-              <label className="text-sm font-black uppercase">邀请码</label>
-              <input
-                className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
-                value={inviteCode}
-                autoCapitalize="characters"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="SG-ABCD-EFGH-JKLM"
-                onChange={(event) => {
-                  setInviteCode(normalizeInviteCode(event.target.value));
-                  setInviteError("");
-                  setShowVerifyCooldownError(false);
-                }}
-              />
-            </div>
-
-            {inviteSummary ? (
-              <div className="border-2 border-black bg-[#00E096] p-3 text-sm font-bold text-black">
-                {inviteSummary}
+        {!inviteVerified ? (
+          <section className={`${panel} p-6 md:p-8`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 border-2 border-black bg-black text-white flex items-center justify-center">
+                <Ticket size={18} />
               </div>
-            ) : null}
-
-            {inviteError ? (
-              <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
-                {inviteError}
+              <div>
+                <h2 className="text-2xl font-black">Step 1</h2>
+                <p className={`text-sm ${subtle}`}>先验证邀请码</p>
               </div>
-            ) : null}
-
-            {verifyCooldownMessage ? (
-              <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
-                {verifyCooldownMessage}
-              </div>
-            ) : null}
-
-            <div className="flex items-center gap-4 flex-wrap">
-              <PopButton
-                variant="primary"
-                className={`min-w-[180px] justify-center ${
-                  verifyCooldownActive
-                    ? "bg-gray-400 text-gray-900 hover:bg-gray-400 cursor-not-allowed opacity-80"
-                    : ""
-                }`}
-                disabled={verifying || verifyCooldownActive}
-              >
-                {verifying
-                  ? "验证中..."
-                  : verifyCooldownActive
-                    ? `冷却中 ${verifyWaitSeconds}s`
-                    : "验证"}
-              </PopButton>
             </div>
-          </form>
-        </section>
+
+            <form className="mt-6 space-y-4" onSubmit={handleInviteVerify}>
+              <div className="space-y-2">
+                <label className="text-sm font-black uppercase">邀请码</label>
+                <input
+                  className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+                  value={inviteCode}
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="SG-ABCD-EFGH-JKLM"
+                  onChange={(event) => {
+                    setInviteCode(normalizeInviteCode(event.target.value));
+                    setInviteError("");
+                    setShowVerifyCooldownError(false);
+                  }}
+                />
+              </div>
+
+              {inviteSummary ? (
+                <div className="border-2 border-black bg-[#00E096] p-3 text-sm font-bold text-black">
+                  {inviteSummary}
+                </div>
+              ) : null}
+
+              {inviteError ? (
+                <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
+                  {inviteError}
+                </div>
+              ) : null}
+
+              {verifyCooldownMessage ? (
+                <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
+                  {verifyCooldownMessage}
+                </div>
+              ) : null}
+
+              <div className="flex items-center gap-4 flex-wrap">
+                <PopButton
+                  variant="primary"
+                  className={`min-w-[180px] justify-center ${
+                    verifyCooldownActive
+                      ? "bg-gray-400 text-gray-900 hover:bg-gray-400 cursor-not-allowed opacity-80"
+                      : ""
+                  }`}
+                  disabled={verifying || verifyCooldownActive}
+                >
+                  {verifying
+                    ? "验证中..."
+                    : verifyCooldownActive
+                      ? `冷却中 ${verifyWaitSeconds}s`
+                      : "验证"}
+                </PopButton>
+              </div>
+            </form>
+          </section>
+        ) : null}
 
         {inviteVerified ? (
           <section className={`${panel} p-6 md:p-8`}>
@@ -419,7 +421,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                     setInviteError("");
                   }}
                 >
-                  重新验证
+                  返回重新验证
                 </button>
               </div>
             </form>
