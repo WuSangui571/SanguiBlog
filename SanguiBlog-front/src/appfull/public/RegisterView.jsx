@@ -31,6 +31,15 @@ function readFileAsDataUrl(file) {
   });
 }
 
+function probePreviewSource(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(src);
+    img.onerror = () => reject(new Error("当前图片无法生成预览，请更换图片后重试"));
+    img.src = src;
+  });
+}
+
 export default function RegisterView({ setView, isDarkMode }) {
   const [inviteCode, setInviteCode] = useState("");
   const [inviteError, setInviteError] = useState("");
@@ -56,6 +65,14 @@ export default function RegisterView({ setView, isDarkMode }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [clock, setClock] = useState(Date.now());
   const avatarInputRef = useRef(null);
+  const avatarObjectUrlRef = useRef("");
+
+  useEffect(() => () => {
+    if (avatarObjectUrlRef.current) {
+      URL.revokeObjectURL(avatarObjectUrlRef.current);
+      avatarObjectUrlRef.current = "";
+    }
+  }, []);
 
   useEffect(() => {
     const needsTicker = verifyCooldownUntil > Date.now() || avatarCooldownUntil > Date.now();
@@ -160,7 +177,20 @@ export default function RegisterView({ setView, isDarkMode }) {
     }
 
     try {
-      const preview = await readFileAsDataUrl(file);
+      const objectUrl = URL.createObjectURL(file);
+      let preview = "";
+      try {
+        preview = await probePreviewSource(objectUrl);
+      } catch {
+        URL.revokeObjectURL(objectUrl);
+        const dataUrl = await readFileAsDataUrl(file);
+        preview = await probePreviewSource(dataUrl);
+      }
+
+      if (avatarObjectUrlRef.current && avatarObjectUrlRef.current.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarObjectUrlRef.current);
+      }
+      avatarObjectUrlRef.current = preview.startsWith("blob:") ? preview : "";
       setForm((prev) => ({
         ...prev,
         avatarFile: file,
@@ -310,13 +340,22 @@ export default function RegisterView({ setView, isDarkMode }) {
               <div className="space-y-2">
                 <label className="text-sm font-black uppercase">头像</label>
                 <div className="flex flex-wrap items-start gap-4">
-                  <div className={`w-28 h-28 border-2 border-black overflow-hidden ${inputBg} flex items-center justify-center shadow-[4px_4px_0px_0px_#000]`}>
+                  <div
+                    className={`w-28 h-28 border-2 border-black overflow-hidden ${inputBg} flex items-center justify-center shadow-[4px_4px_0px_0px_#000] bg-[linear-gradient(45deg,#f3f4f6_25%,transparent_25%,transparent_75%,#f3f4f6_75%,#f3f4f6),linear-gradient(45deg,#f3f4f6_25%,transparent_25%,transparent_75%,#f3f4f6_75%,#f3f4f6)] bg-[length:16px_16px] bg-[position:0_0,8px_8px]`}
+                  >
                     {form.avatarPreview ? (
                       <img
                         key={form.avatarPreview}
                         src={form.avatarPreview}
                         alt="avatar preview"
-                        className="block w-full h-full object-cover"
+                        className="block w-full h-full object-contain bg-white"
+                        onError={() => {
+                          setForm((prev) => ({ ...prev, avatarPreview: "" }));
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            avatarFile: "当前图片无法显示预览，请更换图片后重试",
+                          }));
+                        }}
                       />
                     ) : (
                       <Upload size={28} />
