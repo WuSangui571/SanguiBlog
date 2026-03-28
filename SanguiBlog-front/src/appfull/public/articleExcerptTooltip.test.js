@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 
 import {
     getArticleExcerptTooltip,
-    isArticleExcerptOverflowing
+    isArticleExcerptOverflowing,
+    observeArticleExcerptOverflow
 } from './articleExcerptTooltip.js';
 
 assert.equal(
@@ -44,3 +45,75 @@ assert.equal(
     }),
     true
 );
+
+{
+    const observedElements = [];
+    let disconnected = false;
+    let resizeHandler = null;
+    let scheduledFrame = null;
+    let cancelledFrame = null;
+    let fontReadyCallback = null;
+    let measureCount = 0;
+    const elementA = { id: 'a' };
+    const elementB = { id: 'b' };
+    const cleanup = observeArticleExcerptOverflow([elementA, elementB], () => {
+        measureCount += 1;
+    }, {
+        windowObject: {
+            addEventListener(eventName, handler) {
+                if (eventName === 'resize') {
+                    resizeHandler = handler;
+                }
+            },
+            removeEventListener() {},
+            requestAnimationFrame(callback) {
+                scheduledFrame = callback;
+                return 42;
+            },
+            cancelAnimationFrame(frameId) {
+                cancelledFrame = frameId;
+            }
+        },
+        resizeObserverFactory(callback) {
+            return {
+                observe(element) {
+                    observedElements.push(element);
+                },
+                disconnect() {
+                    disconnected = true;
+                },
+                trigger() {
+                    callback();
+                }
+            };
+        },
+        documentObject: {
+            fonts: {
+                ready: {
+                    then(callback) {
+                        fontReadyCallback = callback;
+                    }
+                }
+            }
+        }
+    });
+
+    assert.deepEqual(observedElements, [elementA, elementB]);
+    assert.equal(typeof resizeHandler, 'function');
+    assert.equal(typeof scheduledFrame, 'function');
+
+    scheduledFrame();
+    assert.equal(measureCount, 1);
+
+    fontReadyCallback();
+    scheduledFrame();
+    assert.equal(measureCount, 2);
+
+    resizeHandler();
+    scheduledFrame();
+    assert.equal(measureCount, 3);
+
+    cleanup();
+    assert.ok(cancelledFrame === null || cancelledFrame === 42);
+    assert.equal(disconnected, true);
+}

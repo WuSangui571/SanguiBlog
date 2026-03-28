@@ -6,7 +6,8 @@ import TiltCard from "../ui/TiltCard.jsx";
 import StatsStrip from "./StatsStrip.jsx";
 import {
     getArticleExcerptTooltip,
-    isArticleExcerptOverflowing
+    isArticleExcerptOverflowing,
+    observeArticleExcerptOverflow
 } from "./articleExcerptTooltip.js";
 import { buildAssetUrl } from "../../utils/asset.js";
 import sanitizeHtml from "../../utils/sanitize.js";
@@ -306,12 +307,10 @@ const ArticleList = ({
     // 筛选/分页触发加载时，隐藏旧文章卡片，避免“加载中卡片 + 旧卡片堆叠”的视觉别扭
     const displayPosts = postsLoading ? [] : sourcePosts;
     useEffect(() => {
-        const frameId = window.requestAnimationFrame(measureExcerptOverflow);
-        window.addEventListener('resize', measureExcerptOverflow);
-        return () => {
-            window.cancelAnimationFrame(frameId);
-            window.removeEventListener('resize', measureExcerptOverflow);
-        };
+        return observeArticleExcerptOverflow(
+            Array.from(excerptElementsRef.current.values()),
+            measureExcerptOverflow
+        );
     }, [displayPosts, measureExcerptOverflow]);
     const goToPage = useCallback((page) => {
         const targetPage = Math.min(totalPages, Math.max(1, Number(page) || 1));

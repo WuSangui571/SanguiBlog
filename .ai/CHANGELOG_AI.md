@@ -26,6 +26,28 @@
 - 验证方式：
   - 测试：执行 `node SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
 
+## [2026-03-28] 提升首页摘要截断判定对字体加载和容器回流的稳定性
+- 背景/需求：用户指出首页摘要截断判定当前只在首帧 `requestAnimationFrame` 和 `window.resize` 时重测，遇到异步字体加载、父容器宽度变化或回流时可能长期误判，直到用户手动缩放窗口才恢复。
+- 修改类型：fix
+- 影响范围：首页文章列表摘要截断监听、摘要测量工具、摘要 tooltip 纯函数测试、AI 变更日志
+- 变更摘要：
+  1) 在摘要 tooltip 工具模块中新增统一的摘要溢出观察器，复用现有测量函数并优先使用 `ResizeObserver` 观察摘要节点尺寸变化。
+  2) 观察器在保留 `window.resize` 兜底的同时，补充对 `document.fonts.ready` 的二次测量，降低异步字体加载导致的误判。
+  3) `ArticleList` 的摘要截断重测改为通过该观察器驱动，不再只依赖单次 `requestAnimationFrame + resize`。
+  4) 补充最小回归测试，覆盖“观察摘要节点”和“字体 ready 后再次测量”的行为。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.js`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
+- 检索与复用策略：
+  - 检索关键词：`ResizeObserver` / `requestAnimationFrame` / `ArticleList` / `AdminPanel`
+  - 找到的候选点：首页摘要测量 effect 位于 `ArticleList.jsx`；后台已有 `ResizeObserver` 参考位于 `AdminPanel.jsx`；摘要工具与测试位于 `articleExcerptTooltip.js/.test.js`
+  - 最终选择：复用后台现有 `ResizeObserver` 监听思路，并落在首页现有摘要测量链路中，不新增第二套布局监听实现
+- 风险点：
+  - 当前观察范围是摘要节点本身；若未来摘要显示方式改成跨节点组合布局，需同步复查观察目标是否仍足够覆盖回流来源。
+- 验证方式：
+  - 测试：执行 `node SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
+
 ## [2026-03-27] 首页文章卡片摘要仅在被截断时显示悬停全文
 - 背景/需求：用户反馈首页文章卡片摘要当前只要有内容，鼠标悬停就会显示完整摘要；但对那些本身已完整展示的短摘要，再弹出全文提示没有意义，要求仅在摘要实际被 `line-clamp` 截断时继续显示悬停全文。
 - 修改类型：fix
