@@ -15,7 +15,7 @@ export function isArticleExcerptOverflowing(metrics, tolerance = DEFAULT_OVERFLO
     return (scrollHeight - clientHeight) > tolerance || (scrollWidth - clientWidth) > tolerance;
 }
 
-export function getArticleExcerptTooltip(excerpt, isOverflowing = true) {
+export function getArticleExcerptTooltip(excerpt, isOverflowing = false) {
     if (!isOverflowing || typeof excerpt !== 'string') {
         return '';
     }

@@ -10,6 +10,7 @@ assert.equal(
     '这是摘要首行。 这是摘要次行。'
 );
 
+assert.equal(getArticleExcerptTooltip('  首帧未测量完成的摘要。 '), '');
 assert.equal(getArticleExcerptTooltip('  这是完整显示的摘要。 ', false), '');
 assert.equal(getArticleExcerptTooltip('   ', true), '');
 assert.equal(getArticleExcerptTooltip(null, true), '');

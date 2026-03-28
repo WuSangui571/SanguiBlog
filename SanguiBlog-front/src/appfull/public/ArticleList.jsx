@@ -797,7 +797,7 @@ const ArticleList = ({
                                     const tags = Array.isArray(post.tags) ? post.tags : [];
                                     const accentColor = extractHexFromBgClass(post.color, '#6366F1');
                                     const isNewPost = isPostNew(post.date);
-                                    const excerptTooltip = getArticleExcerptTooltip(post.excerpt, excerptOverflowMap[post.id]);
+                                    const excerptTooltip = getArticleExcerptTooltip(post.excerpt, excerptOverflowMap[post.id] === true);
                                     return (
                                         <motion.div
                                             key={post.id}

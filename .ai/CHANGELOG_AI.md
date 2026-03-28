@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-03-28] 修复首页摘要 tooltip 首帧误显的问题
+- 背景/需求：用户指出首页文章卡片摘要虽然已在上一轮限制为“仅截断时显示 tooltip”，但首次渲染时 `excerptOverflowMap[post.id]` 仍是 `undefined`，而 `getArticleExcerptTooltip` 的默认参数会把它当成允许显示，导致首帧里未截断摘要也短暂带上 tooltip、`cursor-help` 和 `aria-label`。
+- 修改类型：fix
+- 影响范围：首页文章列表摘要 tooltip 首次渲染行为、摘要 tooltip 纯函数测试、AI 变更日志
+- 变更摘要：
+  1) 将 `getArticleExcerptTooltip` 的默认溢出参数改为保守关闭，避免未测量完成时误开 tooltip。
+  2) `ArticleList` 调用处改为显式要求 `excerptOverflowMap[post.id] === true` 才生成摘要 tooltip，进一步消除 `undefined` 首帧闪现。
+  3) 为摘要 tooltip 纯函数测试补充“未显式声明溢出时默认不显示”的回归断言，锁定这次修复。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.js`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
+- 检索与复用策略：
+  - 检索关键词：`getArticleExcerptTooltip` / `excerptOverflowMap` / `ArticleList` / `articleExcerptTooltip`
+  - 找到的候选点：首页摘要调用位于 `ArticleList.jsx`；摘要 tooltip 纯函数位于 `articleExcerptTooltip.js`；最小回归测试位于 `articleExcerptTooltip.test.js`
+  - 最终选择：继续复用现有摘要测量与 tooltip 工具，只修正默认值和调用约束，不新增组件、不新增状态、不新增接口
+- 风险点：
+  - 当前修复聚焦“首帧默认关闭”，后续若首页摘要改成异步字体或动态高度规则，仍需复查 `requestAnimationFrame + resize` 的截断测量时机。
+- 验证方式：
+  - 测试：执行 `node SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
+
 ## [2026-03-27] 首页文章卡片摘要仅在被截断时显示悬停全文
 - 背景/需求：用户反馈首页文章卡片摘要当前只要有内容，鼠标悬停就会显示完整摘要；但对那些本身已完整展示的短摘要，再弹出全文提示没有意义，要求仅在摘要实际被 `line-clamp` 截断时继续显示悬停全文。
 - 修改类型：fix
