@@ -25,6 +25,38 @@ export function getArticleExcerptTooltip(excerpt, isOverflowing = false) {
     return excerpt.replace(/\s+/g, ' ').trim();
 }
 
+export function createArticleExcerptOverflowTracker() {
+    const elements = new Map();
+    let overflowMap = {};
+
+    return {
+        registerElement(postId, element) {
+            if (element) {
+                elements.set(postId, element);
+                return;
+            }
+            elements.delete(postId);
+        },
+        measure() {
+            const nextOverflowMap = {};
+            elements.forEach((element, postId) => {
+                nextOverflowMap[postId] = isArticleExcerptOverflowing(element);
+            });
+            overflowMap = nextOverflowMap;
+            return nextOverflowMap;
+        },
+        getOverflowMap() {
+            return overflowMap;
+        },
+        getElements() {
+            return Array.from(elements.values());
+        },
+        getTooltip(postId, excerpt) {
+            return getArticleExcerptTooltip(excerpt, overflowMap[postId] === true);
+        }
+    };
+}
+
 export function observeArticleExcerptOverflow(elements, onMeasure, options = {}) {
     const elementList = Array.isArray(elements) ? elements.filter(Boolean) : [];
     const measure = typeof onMeasure === 'function' ? onMeasure : noop;

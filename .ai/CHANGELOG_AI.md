@@ -48,6 +48,27 @@
 - 验证方式：
   - 测试：执行 `node SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
 
+## [2026-03-28] 为首页摘要 tooltip 补充组件链路级最小回归测试
+- 背景/需求：用户指出现有测试只覆盖摘要 tooltip 纯函数，没有覆盖 `ArticleList` 中“首次渲染 -> ref 注册 -> 测量后更新 -> tooltip 开关”的真实链路，像首帧误显这类问题仍可能漏网。
+- 修改类型：test
+- 影响范围：首页摘要 tooltip 测试、摘要测量工具、ArticleList 引用方式、AI 变更日志
+- 变更摘要：
+  1) 在摘要 tooltip 工具模块中新增最小 tracker，承接摘要节点注册、溢出测量和 tooltip 派生，供 `ArticleList` 继续复用。
+  2) `ArticleList` 改为通过该 tracker 完成摘要节点注册与测量，不改变现有展示规则，只让状态切换链路可测试。
+  3) 补充“未测量前默认不显示 tooltip，测量为溢出后才显示，再次测量为未溢出后关闭”的最小回归测试。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.js`
+  - `SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
+- 检索与复用策略：
+  - 检索关键词：`articleExcerptTooltip.test.js` / `ArticleList` / `ref` / `excerptOverflowMap`
+  - 找到的候选点：现有纯函数测试位于 `articleExcerptTooltip.test.js`；真实调用链位于 `ArticleList.jsx`；摘要工具位于 `articleExcerptTooltip.js`
+  - 最终选择：不额外引入新的组件测试依赖，而是在现有工具模块内抽出与组件同源的最小状态链路，作为组件行为级回归入口
+- 风险点：
+  - 当前仓库尚无通用 React DOM 组件测试基础设施，因此这次采用的是“组件同源状态链路测试”；若后续引入正式组件测试框架，可再把这条回归升级为真实渲染级测试。
+- 验证方式：
+  - 测试：执行 `node SanguiBlog-front/src/appfull/public/articleExcerptTooltip.test.js`
+
 ## [2026-03-27] 首页文章卡片摘要仅在被截断时显示悬停全文
 - 背景/需求：用户反馈首页文章卡片摘要当前只要有内容，鼠标悬停就会显示完整摘要；但对那些本身已完整展示的短摘要，再弹出全文提示没有意义，要求仅在摘要实际被 `line-clamp` 截断时继续显示悬停全文。
 - 修改类型：fix

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 import {
+    createArticleExcerptOverflowTracker,
     getArticleExcerptTooltip,
     isArticleExcerptOverflowing,
     observeArticleExcerptOverflow
@@ -45,6 +46,32 @@ assert.equal(
     }),
     true
 );
+
+{
+    const tracker = createArticleExcerptOverflowTracker();
+    const excerpt = '  组件链路里的摘要内容。  ';
+    const element = {
+        scrollHeight: 96,
+        clientHeight: 64,
+        scrollWidth: 100,
+        clientWidth: 100
+    };
+
+    tracker.registerElement('post-1', element);
+    assert.equal(tracker.getTooltip('post-1', excerpt), '');
+
+    tracker.measure();
+    assert.equal(tracker.getTooltip('post-1', excerpt), '组件链路里的摘要内容。');
+
+    tracker.registerElement('post-1', {
+        scrollHeight: 64,
+        clientHeight: 64,
+        scrollWidth: 100,
+        clientWidth: 100
+    });
+    tracker.measure();
+    assert.equal(tracker.getTooltip('post-1', excerpt), '');
+}
 
 {
     const observedElements = [];

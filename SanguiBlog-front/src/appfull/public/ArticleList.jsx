@@ -5,8 +5,8 @@ import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
 import StatsStrip from "./StatsStrip.jsx";
 import {
+    createArticleExcerptOverflowTracker,
     getArticleExcerptTooltip,
-    isArticleExcerptOverflowing,
     observeArticleExcerptOverflow
 } from "./articleExcerptTooltip.js";
 import { buildAssetUrl } from "../../utils/asset.js";
@@ -88,7 +88,7 @@ const ArticleList = ({
     const [excerptOverflowMap, setExcerptOverflowMap] = useState({});
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
     const warningTimerRef = useRef(null);
-    const excerptElementsRef = useRef(new Map());
+    const excerptOverflowTracker = useMemo(() => createArticleExcerptOverflowTracker(), []);
     const lastSpinAtRef = useRef(0);
     const spinComboRef = useRef(0);
     const lastWarningComboRef = useRef(0);
@@ -138,17 +138,10 @@ const ArticleList = ({
     const subCategories = currentParentObj ? currentParentObj.children : [];
     const sourcePosts = Array.isArray(postsPage?.records) ? postsPage.records : [];
     const registerExcerptElement = useCallback((postId, element) => {
-        if (element) {
-            excerptElementsRef.current.set(postId, element);
-            return;
-        }
-        excerptElementsRef.current.delete(postId);
-    }, []);
+        excerptOverflowTracker.registerElement(postId, element);
+    }, [excerptOverflowTracker]);
     const measureExcerptOverflow = useCallback(() => {
-        const nextOverflowMap = {};
-        excerptElementsRef.current.forEach((element, postId) => {
-            nextOverflowMap[postId] = isArticleExcerptOverflowing(element);
-        });
+        const nextOverflowMap = excerptOverflowTracker.measure();
         setExcerptOverflowMap((prev) => {
             const prevKeys = Object.keys(prev);
             const nextKeys = Object.keys(nextOverflowMap);
@@ -157,7 +150,7 @@ const ArticleList = ({
             }
             return nextOverflowMap;
         });
-    }, []);
+    }, [excerptOverflowTracker]);
     const scrollToPostsTop = useCallback(() => {
         if (onScrollToPosts) {
             onScrollToPosts();
@@ -308,10 +301,10 @@ const ArticleList = ({
     const displayPosts = postsLoading ? [] : sourcePosts;
     useEffect(() => {
         return observeArticleExcerptOverflow(
-            Array.from(excerptElementsRef.current.values()),
+            excerptOverflowTracker.getElements(),
             measureExcerptOverflow
         );
-    }, [displayPosts, measureExcerptOverflow]);
+    }, [displayPosts, excerptOverflowTracker, measureExcerptOverflow]);
     const goToPage = useCallback((page) => {
         const targetPage = Math.min(totalPages, Math.max(1, Number(page) || 1));
         if (targetPage === currentPage) return;
