@@ -215,9 +215,9 @@ const Navigation = ({
     }, [onProfileClick, setView, scrollNavToTop, onCloseMenu]);
 
     const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
-    const desktopActionClass = 'home-nav-icon-btn inline-flex items-center justify-center rounded-full p-2.5';
+    const desktopActionClass = `home-nav-icon-btn ${heroMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2.5`;
     const desktopAccentActionClass = `${desktopActionClass} home-nav-icon-btn--accent`;
-    const mobileActionClass = 'home-nav-icon-btn inline-flex items-center justify-center rounded-full p-2';
+    const mobileActionClass = `home-nav-icon-btn ${heroMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2`;
 
     return (
         <>
@@ -289,7 +289,7 @@ const Navigation = ({
                             className="inline-flex items-center gap-2"
                             title="后台/个人中心"
                         >
-                            <div className="w-9 h-9 overflow-hidden rounded-full border border-black/10 bg-white/80">
+                            <div className={`w-9 h-9 overflow-hidden rounded-full border ${heroMode ? (isDarkMode ? 'border-white/25 bg-white/10' : 'border-black/10 bg-white/15') : 'border-black/10 bg-white/80'}`}>
                                 <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
                             </div>
                         </button>
@@ -314,11 +314,13 @@ const Navigation = ({
                     type="button"
                     onClick={handleThemeButton}
                     aria-disabled={themeLockActive}
-                    className={`relative p-2 border-2 border-black rounded-full transition-colors ${themeLockActive
-                        ? 'bg-gray-400 text-black cursor-not-allowed opacity-70'
-                        : isDarkMode
-                            ? 'bg-[#FFD700] text-black hover:bg-white'
-                            : 'bg-black text-white hover:bg-[#6366F1]'}`}
+                    className={`relative p-2 border-2 rounded-full transition-colors ${heroMode
+                        ? (isDarkMode ? 'border-white/30 bg-white/10 text-white hover:bg-white hover:text-black' : 'border-black/15 bg-white/15 text-black hover:bg-black hover:text-white')
+                        : themeLockActive
+                            ? 'border-black bg-gray-400 text-black cursor-not-allowed opacity-70'
+                            : isDarkMode
+                                ? 'border-black bg-[#FFD700] text-black hover:bg-white'
+                                : 'border-black bg-black text-white hover:bg-[#6366F1]'}`}
                     title="Toggle Dark Mode"
                 >
                     {themeLockActive ? (

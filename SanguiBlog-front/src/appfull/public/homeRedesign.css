@@ -298,6 +298,13 @@
   transition: transform 0.25s ease, background-color 0.25s ease, color 0.25s ease;
 }
 
+.home-nav-icon-btn--hero {
+  border-width: 1px;
+  border-color: var(--home-border);
+  background: transparent;
+  color: var(--home-text);
+}
+
 .home-redesign-surface.is-dark .home-nav-icon-btn {
   border-color: #000;
   background: #1f2937;
