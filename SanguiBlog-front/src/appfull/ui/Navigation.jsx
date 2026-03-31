@@ -1,14 +1,12 @@
 ﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
-import PopButton from "../../components/common/PopButton.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import { buildAssetUrl } from "../../utils/asset.js";
 import { DEFAULT_AVATAR, PAGE_SIZE_OPTIONS, ROLES } from "../shared.js";
+import '../public/homeRedesign.css';
 import {
     Code,
     ChevronRight,
-    Grid,
-    Home,
     List,
     Lock,
     LogIn,
@@ -19,7 +17,6 @@ import {
     Settings,
     Sparkles,
     Sun,
-    User,
     X
 } from 'lucide-react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
@@ -36,6 +33,7 @@ const Navigation = ({
     user,
     setView,
     currentView,
+    siteVersion,
     handleLogout,
     toggleMenu,
     menuOpen = false,
@@ -68,6 +66,7 @@ const Navigation = ({
     const roleInfo = user ? ROLES[user.role] : null;
     const displayName = user?.displayName || user?.display_name || user?.nickname || user?.username || 'USER';
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
+    const shellThemeClass = `home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`;
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
@@ -189,35 +188,35 @@ const Navigation = ({
     }, [onProfileClick, setView, scrollNavToTop, onCloseMenu]);
 
     const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
+    const desktopActionClass = 'home-nav-icon-btn inline-flex items-center justify-center rounded-full p-2.5';
+    const desktopAccentActionClass = `${desktopActionClass} home-nav-icon-btn--accent`;
+    const mobileActionClass = 'home-nav-icon-btn inline-flex items-center justify-center rounded-full p-2';
 
     return (
         <>
+        <div className={shellThemeClass}>
         <motion.nav
             initial={{ y: -100 }}
             animate={{ y: 0 }}
-            className={`relative w-full h-20 flex items-center justify-between px-4 md:px-8 
-          ${isDarkMode ? 'bg-gray-900 border-b-4 border-gray-700 text-white' : 'bg-white border-b-4 border-black text-black'}
-        `}
+            className="home-nav-shell relative w-full h-20 flex items-center justify-between px-4 md:px-8"
         >
             <div
                 className="flex items-center gap-2 cursor-pointer group"
                 onClick={handleLogoClick}
             >
                 <div
-                    className={`w-12 h-12 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'} flex items-center justify-center border-2 border-black group-hover:bg-[#FFD700] group-hover:text-black transition-colors`}>
-                    <Code size={28} strokeWidth={3} />
+                    className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${isDarkMode ? 'bg-white text-black border border-white/12' : 'bg-black text-white border border-black/10'}`}>
+                    <Code size={22} strokeWidth={2.4} />
                 </div>
-                <div className="flex flex-col">
-                    <span
-                        className={`text-2xl font-black tracking-tighter leading-none italic ${isDarkMode ? 'text-white' : 'text-black'}`}>SANGUI</span>
-                    <span
-                        className={`text-xs font-bold tracking-widest px-1 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>BLOG.OS</span>
+                <div className="home-nav-brand">
+                    <span className="home-nav-brand__title">Sangui Blog</span>
+                    <span className="home-nav-brand__version">{siteVersion || 'Site Online'}</span>
                 </div>
             </div>
 
             <div className="hidden md:flex items-center gap-8">
                 <LayoutGroup id="primary-nav-tabs">
-                    <div className="flex items-center gap-8">
+                    <div className="home-nav-links">
                         {PRIMARY_NAV_ITEMS.map((item) => {
                             const isActive = activeView === item.key;
                             return (
@@ -226,13 +225,13 @@ const Navigation = ({
                                     type="button"
                                     onClick={() => handleNavItemSelect(item.key)}
                                     aria-current={isActive ? 'page' : undefined}
-                                    className={`relative overflow-hidden px-4 py-1 text-lg font-black uppercase tracking-wide rounded-full transition-colors ${isActive ? 'text-black' : (isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
+                                    className={`home-nav-link relative overflow-hidden px-4 py-2 text-sm font-semibold uppercase tracking-[0.18em] transition-colors ${isActive ? 'home-nav-link--active' : (isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black')}`}
                                 >
                                     {isActive && (
                                         <motion.span
                                             layoutId="desktop-nav-highlight"
-                                            className="absolute inset-0 rounded-full border-2 border-black bg-[#FFD700]"
-                                            transition={{ duration: 0.08, ease: 'easeInOut', delay: 0.05 }}
+                                            className="absolute inset-0 rounded-full"
+                                            transition={{ duration: 0.18, ease: 'easeInOut' }}
                                         />
                                     )}
                                     <span className="relative z-10">{item.label}</span>
@@ -244,25 +243,28 @@ const Navigation = ({
 
                 <div className="flex items-center gap-3">
                     {user ? (
-                        <div className="flex items-center gap-4 pl-6 border-l-4 border-black h-12">
+                        <div className={`flex items-center gap-3 pl-4 h-12 border-l ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
                             <div className="flex items-center gap-2 cursor-pointer"
                                 onClick={onProfileClick || (() => setView('admin'))}>
-                                <div className="w-10 h-10 border-2 border-black overflow-hidden rounded-full bg-[#FFD700]">
+                                <div className="w-10 h-10 overflow-hidden rounded-full border border-black/10 bg-white/80">
                                     <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="flex flex-col items-start">
-                                    <span className="font-black text-sm leading-none">{displayName}</span>
-                                    <span className={`text-[10px] ${roleInfo?.color} text-white px-1 w-max mt-1 font-bold`}>
+                                    <span className={`text-sm font-semibold leading-none ${isDarkMode ? 'text-white' : 'text-black'}`}>{displayName}</span>
+                                    <span className={`text-[10px] ${roleInfo?.color} text-white px-1.5 py-0.5 rounded-full w-max mt-1 font-bold`}>
                                         {roleInfo?.label || "USER"}
                                     </span>
                                 </div>
                             </div>
-                            <button onClick={handleLogout} className="p-2 hover:text-[#F97316] transition-colors">
+                            <button onClick={handleLogout} className={desktopActionClass} title="退出登录">
                                 <LogOut size={20} />
                             </button>
                         </div>
                     ) : (
-                        <PopButton onClick={() => setView('login')} icon={LogIn}>前往登录</PopButton>
+                        <button type="button" onClick={() => setView('login')} className={`${desktopAccentActionClass} px-4 text-sm font-semibold tracking-[0.18em] uppercase`}>
+                            <LogIn size={16} />
+                            <span>登录</span>
+                        </button>
                     )}
 
                     {user && (
@@ -270,7 +272,7 @@ const Navigation = ({
                             <button
                                 type="button"
                                 onClick={onNotificationToggle}
-                                className={`relative p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+                                className={`${desktopActionClass} relative`}
                                 title="未读提醒"
                             >
                                 <Mail size={20} />
@@ -285,7 +287,7 @@ const Navigation = ({
 
                     <button
                         onClick={() => setSettingsOpen(true)}
-                        className={`p-2 border-2 border-black rounded-full transition-colors ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+                        className={desktopActionClass}
                         title="系统设定"
                     >
                         <Settings size={20} />
@@ -294,11 +296,9 @@ const Navigation = ({
                         type="button"
                         onClick={handleThemeButton}
                         aria-disabled={themeLockActive}
-                        className={`relative p-2 border-2 border-black rounded-full transition-colors ${themeLockActive
+                        className={`relative rounded-full p-2.5 transition-colors ${themeLockActive
                             ? 'bg-gray-400 text-black cursor-not-allowed opacity-70'
-                            : isDarkMode
-                                ? 'bg-[#FFD700] text-black hover:bg-white'
-                                : 'bg-black text-white hover:bg-[#6366F1]'}`}
+                            : desktopAccentActionClass}`}
                         title="Toggle Dark Mode"
                     >
                         {themeLockActive ? (
@@ -337,7 +337,7 @@ const Navigation = ({
                     <button
                         type="button"
                         onClick={onNotificationToggle}
-                        className={`relative p-2 border-2 border-black shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none rounded-full ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                        className={`${mobileActionClass} relative`}
                         aria-label="未读提醒"
                     >
                         <Mail size={22} />
@@ -349,7 +349,7 @@ const Navigation = ({
                     </button>
                 )}
                 <button
-                    className="p-2 border-2 border-black bg-[#FFD700] shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none rounded-md"
+                    className={`${mobileActionClass} home-nav-icon-btn--accent`}
                     onClick={toggleMenu}
                     aria-label="打开导航菜单"
                     aria-pressed={menuOpen}>
@@ -518,6 +518,7 @@ const Navigation = ({
                 )}
             </AnimatePresence>
         </motion.nav>
+        </div>
 
         <AnimatePresence>
             {menuOpen && (

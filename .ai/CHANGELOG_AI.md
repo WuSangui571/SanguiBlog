@@ -5,6 +5,35 @@
 
 ---
 
+## [2026-03-31] 将首页与导航重设计为 newIndex 同款极简沉浸式风格
+- 背景/需求：用户要求先严格阅读 `.ai/README.md` 并按“项目扫描 → 需求复述 → 验收标准 → 检索报告 → 复用/新建决策”流程执行，然后把根目录 `newIndex` 中的首页设计稿接入到项目真实首页；明确要求版本号同步、适配黑/白模式、支持 `bg.jpg` 背景，且仅改首页与导航条。
+- 修改类型：feat
+- 影响范围：首页首屏视觉、顶部导航视觉、前端静态资源、站点版本号、README、AI 变更日志、项目记忆
+- 变更摘要：
+  1) 检索确认首页真实入口仍为 `AppFull -> HomeView -> Hero/ArticleList`，导航真实入口仍为 `Navigation.jsx`，因此不新建第二套首页或导航，只在现有入口内迁入设计稿视觉。
+  2) 重写 `Hero.jsx`，将 `newIndex` 的极简沉浸式首屏结构接入项目首页，继续复用现有版本号、Hero 文案与“向下阅读”交互链路。
+  3) 新增 `homeRedesign.css` 作为首页与导航共用视觉样式，并把 `newIndex/html/bg.jpg` 复制到前端静态目录 `public/static/home/bg.jpg`，通过现有资源解析方式接入首页背景。
+  4) 改造 `Navigation.jsx` 的桌面导航壳与品牌区样式，继续保留现有登录态、通知、设置、主题切换与移动端菜单逻辑，只替换视觉层。
+  5) 将站点版本从 `V2.2.5` 升级到 `V2.2.6`，同步更新后端 `site.version`、首页兜底版本与 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `SanguiBlog-front/public/static/home/bg.jpg`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `.ai/PROJECT_MEMORY.md`
+- 检索与复用策略：
+  - 检索关键词：`HomeView` / `Hero` / `Navigation` / `site.version` / `isDarkMode` / `newIndex`
+  - 找到的候选点：首页组合视图位于 `HomeView.jsx`；首屏实现位于 `Hero.jsx`；导航实现位于 `Navigation.jsx`；版本统一来源位于 `application.yaml` + `/api/site/meta`
+  - 最终选择：复用现有首页和导航入口做样式迁移，不新建页面组件、不新建版本接口、不复制一份设计稿页面
+- 风险点：
+  - 当前主要重做首屏与桌面导航视觉，首页正文 `ArticleList` 仍保留项目原有信息密度较高的布局；若后续想进一步做到整页风格完全统一，可在下一轮继续只针对首页正文做渐进式重绘
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-03-31] 修复首页文章搜索条因清空按钮显隐导致的宽度抖动
 - 背景/需求：用户反馈首页文章搜索模块在输入框为空和有内容时长度不一致；无内容时会略微缩回去，有内容时又变长，导致整体不协调。
 - 修改类型：fix

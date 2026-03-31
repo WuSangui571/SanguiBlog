@@ -1451,6 +1451,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 user={user}
                                 setView={setView}
                                 currentView={view}
+                                siteVersion={meta?.version}
                                 handleLogout={handleLogout}
                                 toggleMenu={handleToggleMenu}
                                 menuOpen={menuOpen}
