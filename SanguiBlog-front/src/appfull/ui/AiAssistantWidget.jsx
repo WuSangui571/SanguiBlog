@@ -60,6 +60,8 @@ function mapServerMessage(message) {
 const MIN_TEXTAREA_HEIGHT = 54;
 const MAX_TEXTAREA_HEIGHT = 132;
 const WELCOME_INTRO_DURATION_MS = 2400;
+const launcherGlowShapeClass = 'rounded-[24px]';
+const launcherGlowInnerShapeClass = 'rounded-[22px]';
 
 function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }) {
     const [hasError, setHasError] = useState(false);
@@ -1453,7 +1455,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 onClick={() => setIsOpen((prev) => !prev)}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 overflow-visible border-2 border-black rounded-[24px] pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors ${
+                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border-2 border-black ${launcherGlowShapeClass} pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors ${
                     isDarkMode
                         ? 'bg-[#07111F] text-white hover:bg-[#0C1A2D]'
                         : 'bg-[#FFFCEE] text-black hover:bg-white'
@@ -1467,7 +1469,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 <span className="pointer-events-none absolute inset-[-14px] opacity-100">
                     <motion.span
                         aria-hidden="true"
-                        className={`absolute inset-0 rounded-[34px] ${
+                        className={`absolute inset-[10px] ${launcherGlowShapeClass} blur-[12px] ${
                             isDarkMode
                                 ? 'bg-[radial-gradient(circle,_rgba(0,240,255,0.16),_transparent_66%)]'
                                 : 'bg-[radial-gradient(circle,_rgba(0,240,255,0.10),_transparent_66%)]'
@@ -1476,9 +1478,9 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
                     />
                 </span>
-                <span className="pointer-events-none absolute inset-0 opacity-90">
+                <span className={`pointer-events-none absolute inset-0 ${launcherGlowInnerShapeClass} opacity-90`}>
                     <span
-                        className={`absolute inset-0 ${
+                        className={`absolute inset-0 ${launcherGlowInnerShapeClass} ${
                             isDarkMode
                                 ? 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.24),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.10),transparent_48%,rgba(0,240,255,0.14))]'
                                 : 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.14),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.06),transparent_48%,rgba(0,240,255,0.10))]'
@@ -1487,7 +1489,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     {isDarkMode ? (
                         <motion.span
                             aria-hidden="true"
-                            className="absolute inset-[2px] rounded-[22px] border border-[#00F0FF]/18"
+                            className={`absolute inset-[2px] ${launcherGlowInnerShapeClass} border border-[#00F0FF]/18`}
                             animate={{
                                 opacity: [0.18, 0.42, 0.18],
                                 boxShadow: [

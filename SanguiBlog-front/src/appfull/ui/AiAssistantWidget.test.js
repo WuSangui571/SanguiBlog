@@ -9,5 +9,8 @@ const widgetSource = fs.readFileSync(path.join(__dirname, 'AiAssistantWidget.jsx
 
 assert.match(widgetSource, /Beta 测试版/);
 assert.doesNotMatch(widgetSource, /Beta娴嬭瘯/);
+assert.match(widgetSource, /launcherGlowShapeClass = 'rounded-\[24px\]'/);
+assert.match(widgetSource, /launcherGlowInnerShapeClass = 'rounded-\[22px\]'/);
+assert.doesNotMatch(widgetSource, /rounded-\[34px\]/);
 
 console.log('AiAssistantWidget tests passed');

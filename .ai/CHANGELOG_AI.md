@@ -5,6 +5,49 @@
 
 ---
 
+## [2026-03-31] 修复 AI 助理右下角入口亮块与按钮形状不一致的问题
+- 背景/需求：用户反馈首页右下角 AI 助理入口保留了亮块设计，但亮块轮廓更接近外扩矩形，而按钮本体是圆角矩形，导致四角在白天模式下略显突起、夜间模式下尤其违和；要求保留发光氛围，同时让亮块与按钮尽量保持同一种形状。
+- 修改类型：fix
+- 影响范围：前端 AI 助理右下角入口样式、入口最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 在 `AiAssistantWidget.jsx` 中为入口按钮与亮块补充统一的圆角形状常量，避免按钮本体、内层高光和外层亮块各自使用不同圆角。
+  2) 将入口按钮容器改为 `isolate + overflow-hidden`，把原本外扩导致四角凸起的亮块裁切回与按钮一致的圆角矩形轮廓。
+  3) 保留原有发光、渐变和动态效果，但把主发光层收敛为按钮同形状的内发光，不再出现夜间模式下明显外凸的亮块角。
+  4) 补充 `AiAssistantWidget.test.js` 最小源码级回归检查，约束入口发光层继续使用统一圆角形状并防止旧的 `rounded-[34px]` 回流。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `launcher` / `rounded-[24px]` / `rounded-[34px]` / `右下角` / `亮块`
+  - 找到的候选点：`AppFull.jsx` 中 AI 入口挂载点；`AiAssistantWidget.jsx` 中入口按钮与亮块实现；`aiLauncherBadge.js` 中入口文案辅助；历史 AI 入口修改记录位于本日志
+  - 最终选择：继续复用现有 `AiAssistantWidget` 单点修复样式，不新建按钮组件、不新增样式模块，避免形成第二套 AI 入口实现
+- 风险点：
+  - 这次主要修正入口外层轮廓一致性，没有扩大调整内部图标周围的旋转装饰；若后续仍觉得图标局部装饰过于抢眼，可再单独微调图标层动效
+- 验证方式：
+  - 测试：执行 `node SanguiBlog-front/src/appfull/ui/AiAssistantWidget.test.js` 通过
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
+## [2026-03-28] 升级站点版本号到 V2.2.5 并同步首页与 README 说明
+- 背景/需求：用户要求将项目版本从 `V2.2.4` 更新到 `V2.2.5`，不生成 release 文档，只需要同步首页版本展示，并检查根目录 `README.md` 中是否存在与当前版本相关的过时内容后做最小更新；同时要求补充本次 AI 修改日志。
+- 修改类型：chore / docs
+- 影响范围：站点版本元信息、首页版本展示、根目录 README、AI 变更日志
+- 变更摘要：
+  1) 将后端配置中的 `site.version` 从 `V2.2.4` 升级到 `V2.2.5`，继续作为站点统一版本来源。
+  2) 将首页 `HomeView` 中的前端兜底版本同步到 `V2.2.5`，避免接口元信息缺失时仍显示旧版本。
+  3) 检查并更新根目录 `README.md` 中与当前站点版本直接相关的过时描述，同时保持“当前最新现有对外 release 文档”为 `release/V2.2.4.md`，不伪造 `V2.2.5` release 状态。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `README.md`
+- 检索与复用策略：
+  - 检索关键词：`site.version` / `V2.2.4` / `meta?.version` / `README` / `release/V2.2.4`
+  - 找到的候选点：后端统一版本源位于 `application.yaml`；首页版本兜底位于 `HomeView.jsx`；README 顶部与 AI 助理章节维护当前版本说明；已有版本同步脚本位于 `scripts/bump-version.ps1`
+  - 最终选择：复用现有版本链路与文档结构，只做最小文本同步，不新增模块、不新增 release 文档
+- 风险点：
+  - README 中关于“最新现有 release 文档”的描述需继续保持 `V2.2.4`，否则会造成仓库状态与文档不一致。
+- 验证方式：
+  - 检索确认 `site.version`、首页兜底版本与 README 当前版本说明已同步为 `V2.2.5`
+
 ## [2026-03-28] 修复首页摘要 tooltip 首帧误显的问题
 - 背景/需求：用户指出首页文章卡片摘要虽然已在上一轮限制为“仅截断时显示 tooltip”，但首次渲染时 `excerptOverflowMap[post.id]` 仍是 `undefined`，而 `getArticleExcerptTooltip` 的默认参数会把它当成允许显示，导致首帧里未截断摘要也短暂带上 tooltip、`cursor-help` 和 `aria-label`。
 - 修改类型：fix
