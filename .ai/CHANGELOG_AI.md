@@ -5,6 +5,24 @@
 
 ---
 
+## [2026-03-31] 按模板回收首页与导航的偏差实现
+- 背景/需求：用户指出上一版首页改造与 `newIndex` 模板差异仍然较大，包括首页顶部出现彩蛋背景、导航未做到模板式居中分栏、左侧标题样式不对、首页按钮过多、首屏文案重复以及 `Hello, I am Sangui` 被额外拼接版本文案。
+- 修改类型：fix
+- 影响范围：首页首屏结构、导航布局、首页彩蛋背景显示范围、AI 变更日志
+- 变更摘要：
+  1) 首页首屏回收为更贴近模板的结构，只保留 `Hello, I am Sangui`、双行主标题和单个“向下探索内容 ↓”按钮，移除额外副文案、状态胶囊和第二按钮。
+  2) 导航左侧品牌区改为 `三桂博客 + 版本号` 的原模板表达，中间导航改为真正的绝对居中布局，尽量贴近模板的三段结构。
+  3) 全局 `BackgroundEasterEggs` 不再覆盖首页首屏；首页改为仅在 `System Status` 以下的文章区内部渲染彩蛋背景，满足“以下方内容为分界线”的要求。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/appfull/ui/BackgroundEasterEggs.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/AppFull.jsx`
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-03-31] 将首页与导航重设计为 newIndex 同款极简沉浸式风格
 - 背景/需求：用户要求先严格阅读 `.ai/README.md` 并按“项目扫描 → 需求复述 → 验收标准 → 检索报告 → 复用/新建决策”流程执行，然后把根目录 `newIndex` 中的首页设计稿接入到项目真实首页；明确要求版本号同步、适配黑/白模式、支持 `bg.jpg` 背景，且仅改首页与导航条。
 - 修改类型：feat

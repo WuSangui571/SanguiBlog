@@ -1312,7 +1312,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         <PermissionContext.Provider value={permissionContextValue}>
             <LayoutOffsetContext.Provider value={layoutContextValue}>
             <div className={`min-h-screen relative ${globalBg}`}>
-                {backgroundEnabled && <BackgroundEasterEggs isDarkMode={isDarkMode} />}
+                {backgroundEnabled && view !== 'home' && <BackgroundEasterEggs isDarkMode={isDarkMode} />}
                     <div className="relative z-10">
                         <ClickRipple />
                     <ScrollToTop isDarkMode={isDarkMode} />

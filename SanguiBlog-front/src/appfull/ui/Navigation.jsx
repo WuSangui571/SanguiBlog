@@ -201,20 +201,16 @@ const Navigation = ({
             className="home-nav-shell relative w-full h-20 flex items-center justify-between px-4 md:px-8"
         >
             <div
-                className="flex items-center gap-2 cursor-pointer group"
+                className="flex items-center gap-2 cursor-pointer group shrink-0"
                 onClick={handleLogoClick}
             >
-                <div
-                    className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${isDarkMode ? 'bg-white text-black border border-white/12' : 'bg-black text-white border border-black/10'}`}>
-                    <Code size={22} strokeWidth={2.4} />
-                </div>
                 <div className="home-nav-brand">
-                    <span className="home-nav-brand__title">Sangui Blog</span>
-                    <span className="home-nav-brand__version">{siteVersion || 'Site Online'}</span>
+                    <span className="home-nav-brand__title">三桂博客</span>
+                    <span className="home-nav-brand__version">{siteVersion || 'V2.2.6'}</span>
                 </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 <LayoutGroup id="primary-nav-tabs">
                     <div className="home-nav-links">
                         {PRIMARY_NAV_ITEMS.map((item) => {
@@ -240,81 +236,70 @@ const Navigation = ({
                         })}
                     </div>
                 </LayoutGroup>
+            </div>
 
-                <div className="flex items-center gap-3">
-                    {user ? (
-                        <div className={`flex items-center gap-3 pl-4 h-12 border-l ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
-                            <div className="flex items-center gap-2 cursor-pointer"
-                                onClick={onProfileClick || (() => setView('admin'))}>
-                                <div className="w-10 h-10 overflow-hidden rounded-full border border-black/10 bg-white/80">
-                                    <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex flex-col items-start">
-                                    <span className={`text-sm font-semibold leading-none ${isDarkMode ? 'text-white' : 'text-black'}`}>{displayName}</span>
-                                    <span className={`text-[10px] ${roleInfo?.color} text-white px-1.5 py-0.5 rounded-full w-max mt-1 font-bold`}>
-                                        {roleInfo?.label || "USER"}
-                                    </span>
-                                </div>
-                            </div>
-                            <button onClick={handleLogout} className={desktopActionClass} title="退出登录">
-                                <LogOut size={20} />
-                            </button>
-                        </div>
-                    ) : (
-                        <button type="button" onClick={() => setView('login')} className={`${desktopAccentActionClass} px-4 text-sm font-semibold tracking-[0.18em] uppercase`}>
-                            <LogIn size={16} />
-                            <span>登录</span>
-                        </button>
-                    )}
-
-                    {user && (
-                        <div className="relative">
-                            <button
-                                type="button"
-                                onClick={onNotificationToggle}
-                                className={`${desktopActionClass} relative`}
-                                title="未读提醒"
-                            >
-                                <Mail size={20} />
-                                {notificationUnread > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-[2px_2px_0px_0px_#000]">
-                                        {notificationUnread > 99 ? '99+' : notificationUnread}
-                                    </span>
-                                )}
-                            </button>
-                        </div>
-                    )}
-
-                    <button
-                        onClick={() => setSettingsOpen(true)}
-                        className={desktopActionClass}
-                        title="系统设定"
-                    >
-                        <Settings size={20} />
-                    </button>
+            <div className="hidden md:flex items-center gap-3 shrink-0">
+                {user && (
                     <button
                         type="button"
-                        onClick={handleThemeButton}
-                        aria-disabled={themeLockActive}
-                        className={`relative rounded-full p-2.5 transition-colors ${themeLockActive
-                            ? 'bg-gray-400 text-black cursor-not-allowed opacity-70'
-                            : desktopAccentActionClass}`}
-                        title="Toggle Dark Mode"
+                        onClick={onNotificationToggle}
+                        className={`${desktopActionClass} relative`}
+                        title="未读提醒"
                     >
-                        {themeLockActive ? (
-                            <motion.span
-                                initial={{ scale: 0.9 }}
-                                animate={{ scale: [0.9, 1.1, 0.9] }}
-                                transition={{ duration: 1.2, repeat: Infinity }}
-                                className="flex items-center justify-center"
-                            >
-                                <Lock size={18} />
-                            </motion.span>
-                        ) : (
-                            (isDarkMode ? <Sun size={20} /> : <Moon size={20} />)
+                        <Mail size={18} />
+                        {notificationUnread > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-[2px_2px_0px_0px_#000]">
+                                {notificationUnread > 99 ? '99+' : notificationUnread}
+                            </span>
                         )}
                     </button>
-                </div>
+                )}
+                {user ? (
+                    <button
+                        type="button"
+                        onClick={handleProfileEntry}
+                        className="inline-flex items-center gap-2"
+                        title="后台/个人中心"
+                    >
+                        <div className="w-9 h-9 overflow-hidden rounded-full border border-black/10 bg-white/80">
+                            <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
+                        </div>
+                    </button>
+                ) : (
+                    <button type="button" onClick={handleLoginClick} className={`${desktopActionClass} px-4 text-[11px] font-semibold tracking-[0.18em] uppercase`}>
+                        <LogIn size={15} />
+                        <span>登录</span>
+                    </button>
+                )}
+                <button
+                    onClick={() => setSettingsOpen(true)}
+                    className={desktopActionClass}
+                    title="系统设定"
+                >
+                    <Settings size={18} />
+                </button>
+                <button
+                    type="button"
+                    onClick={handleThemeButton}
+                    aria-disabled={themeLockActive}
+                    className={`px-4 rounded-full text-[11px] font-semibold tracking-[0.18em] uppercase transition-colors ${themeLockActive
+                        ? 'bg-gray-400 text-black cursor-not-allowed opacity-70'
+                        : desktopActionClass}`}
+                    title="Toggle Dark Mode"
+                >
+                    {themeLockActive ? (
+                        <motion.span
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: [0.9, 1.1, 0.9] }}
+                            transition={{ duration: 1.2, repeat: Infinity }}
+                            className="flex items-center justify-center"
+                        >
+                            <Lock size={18} />
+                        </motion.span>
+                    ) : (
+                        <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                    )}
+                </button>
             </div>
 
             <AnimatePresence>

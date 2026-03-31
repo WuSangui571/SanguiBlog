@@ -3,6 +3,7 @@ import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import PopButton from "../../components/common/PopButton.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
+import BackgroundEasterEggs from "../ui/BackgroundEasterEggs.jsx";
 import StatsStrip from "./StatsStrip.jsx";
 import {
     createArticleExcerptOverflowTracker,
@@ -485,8 +486,9 @@ const ArticleList = ({
                 </div>
             )}
 
-            <section id="posts" className="px-4 md:px-8 max-w-7xl mx-auto py-16 min-h-screen">
-                <div className="flex flex-col lg:flex-row gap-12">
+            <section id="posts" className="relative px-4 md:px-8 max-w-7xl mx-auto py-16 min-h-screen overflow-hidden">
+                <BackgroundEasterEggs isDarkMode={isDarkMode} fixed={false} />
+                <div className="relative z-10 flex flex-col lg:flex-row gap-12">
                     <div className="hidden lg:block w-full lg:w-1/4 space-y-8">
                         <div
                             className={`${sidebarBg} border-2 border-black p-6 shadow-[8px_8px_0px_0px_#000] text-center relative ${text}`}>

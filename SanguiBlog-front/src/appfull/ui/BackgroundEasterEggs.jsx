@@ -1,5 +1,7 @@
-﻿import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';const BackgroundEasterEggs = ({ isDarkMode }) => {
+import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
+
+const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
     const stars = useMemo(() => Array.from({ length: 80 }, (_, idx) => ({
         top: Math.random() * 90,
         left: Math.random() * 90,
@@ -15,9 +17,13 @@ import { motion } from 'framer-motion';const BackgroundEasterEggs = ({ isDarkMod
         id: idx
     })), []);
 
+    const shellClass = fixed
+        ? 'pointer-events-none fixed inset-0 overflow-hidden z-0'
+        : 'pointer-events-none absolute inset-0 overflow-hidden z-0';
+
     if (!isDarkMode) {
         return (
-            <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+            <div className={shellClass}>
                 <div className="absolute inset-0 bg-gradient-to-b from-[#E6F4FF] via-white to-transparent" />
                 <motion.div
                     className="absolute w-72 h-72 rounded-full bg-gradient-to-br from-[#FFD54F] via-[#FFB703] to-white border border-white/70 shadow-[0_0_80px_rgba(255,213,79,0.9)]"
@@ -35,7 +41,7 @@ import { motion } from 'framer-motion';const BackgroundEasterEggs = ({ isDarkMod
     }
 
     return (
-        <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className={shellClass}>
             <div className="absolute inset-0 bg-gradient-to-b from-[#010512]/95 via-transparent to-transparent" />
             <motion.div
                 className="absolute w-44 h-44 rounded-full bg-gradient-to-br from-white via-slate-200 to-slate-500 shadow-[0_0_90px_rgba(191,219,254,0.7)]"
