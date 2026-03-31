@@ -255,16 +255,21 @@ const Navigation = ({
                     </button>
                 )}
                 {user ? (
-                    <button
-                        type="button"
-                        onClick={handleProfileEntry}
-                        className="inline-flex items-center gap-2"
-                        title="后台/个人中心"
-                    >
-                        <div className="w-9 h-9 overflow-hidden rounded-full border border-black/10 bg-white/80">
-                            <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
-                        </div>
-                    </button>
+                    <div className={`flex items-center gap-3 pl-3 ${isDarkMode ? 'border-l border-white/10' : 'border-l border-black/10'}`}>
+                        <button
+                            type="button"
+                            onClick={handleProfileEntry}
+                            className="inline-flex items-center gap-2"
+                            title="后台/个人中心"
+                        >
+                            <div className="w-9 h-9 overflow-hidden rounded-full border border-black/10 bg-white/80">
+                                <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
+                            </div>
+                        </button>
+                        <button onClick={handleLogout} className={desktopActionClass} title="退出登录">
+                            <LogOut size={18} />
+                        </button>
+                    </div>
                 ) : (
                     <button type="button" onClick={handleLoginClick} className={`${desktopActionClass} px-4 text-[11px] font-semibold tracking-[0.18em] uppercase`}>
                         <LogIn size={15} />
@@ -282,9 +287,11 @@ const Navigation = ({
                     type="button"
                     onClick={handleThemeButton}
                     aria-disabled={themeLockActive}
-                    className={`px-4 rounded-full text-[11px] font-semibold tracking-[0.18em] uppercase transition-colors ${themeLockActive
+                    className={`relative p-2 border-2 border-black rounded-full transition-colors ${themeLockActive
                         ? 'bg-gray-400 text-black cursor-not-allowed opacity-70'
-                        : desktopActionClass}`}
+                        : isDarkMode
+                            ? 'bg-[#FFD700] text-black hover:bg-white'
+                            : 'bg-black text-white hover:bg-[#6366F1]'}`}
                     title="Toggle Dark Mode"
                 >
                     {themeLockActive ? (
@@ -297,7 +304,7 @@ const Navigation = ({
                             <Lock size={18} />
                         </motion.span>
                     ) : (
-                        <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                        (isDarkMode ? <Sun size={20} /> : <Moon size={20} />)
                     )}
                 </button>
             </div>

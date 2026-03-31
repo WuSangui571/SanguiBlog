@@ -1489,12 +1489,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                     }
                                 }}
                             />
-                            <motion.div
-                                initial={false}
-                                animate={{ opacity: notification.isOpen ? 0.85 : 0.65 }}
-                                transition={{ duration: 0.4, ease: 'easeInOut' }}
-                                className="h-1 w-full bg-gradient-to-r from-[#FFD700] via-[#FF0080] to-[#6366F1]"
-                            />
                         </div>
                     </div>
                     <div

@@ -486,9 +486,9 @@ const ArticleList = ({
                 </div>
             )}
 
-            <section id="posts" className="relative px-4 md:px-8 max-w-7xl mx-auto py-16 min-h-screen overflow-hidden">
+            <section id="posts" className="relative w-full py-16 min-h-screen overflow-hidden">
                 <BackgroundEasterEggs isDarkMode={isDarkMode} fixed={false} />
-                <div className="relative z-10 flex flex-col lg:flex-row gap-12">
+                <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 flex flex-col lg:flex-row gap-12">
                     <div className="hidden lg:block w-full lg:w-1/4 space-y-8">
                         <div
                             className={`${sidebarBg} border-2 border-black p-6 shadow-[8px_8px_0px_0px_#000] text-center relative ${text}`}>

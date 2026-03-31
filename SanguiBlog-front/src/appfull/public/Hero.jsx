@@ -1,13 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { buildAssetUrl } from "../../utils/asset.js";
 import './homeRedesign.css';
 
 const HOME_BG_PATH = '/static/home/bg.jpg';
 
 export default function Hero({ onStartReading, isDarkMode }) {
-    const bgUrl = buildAssetUrl(HOME_BG_PATH, HOME_BG_PATH);
-
     const handleStartReading = () => {
         if (typeof onStartReading === 'function') {
             onStartReading();
@@ -23,7 +20,7 @@ export default function Hero({ onStartReading, isDarkMode }) {
             <div
                 aria-hidden="true"
                 className="home-hero__bg"
-                style={{ backgroundImage: `url("${bgUrl}")` }}
+                style={{ backgroundImage: `url('${HOME_BG_PATH}')` }}
             />
             <div aria-hidden="true" className="home-hero__shade" />
             <div aria-hidden="true" className="home-hero__grid" />
@@ -50,26 +47,26 @@ export default function Hero({ onStartReading, isDarkMode }) {
                     Hello, I am Sangui
                 </motion.span>
 
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, ease: 'easeOut', delay: 0.08 }}
+                <motion.h1
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1], delay: 0.2 }}
                     className="home-hero__headline"
                 >
                     <span>在这里把问题想清楚，</span>
                     <span>把代码写简单。</span>
-                </motion.div>
+                </motion.h1>
 
                 <motion.div
-                    initial={{ opacity: 0, y: 28 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.75, ease: 'easeOut', delay: 0.24 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1.2, ease: 'easeOut', delay: 0.8 }}
                     className="home-hero__actions"
                 >
                     <button
                         type="button"
                         onClick={handleStartReading}
-                        className="home-hero__cta home-hero__cta--primary"
+                        className="home-hero__cta"
                     >
                         <span>向下探索内容</span>
                         <span className="home-hero__arrow">↓</span>
