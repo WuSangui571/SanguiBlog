@@ -734,20 +734,27 @@ const ArticleList = ({
                                             placeholder="输入关键词后按回车搜索（标题/摘要模糊匹配）"
                                             className={`flex-1 min-w-0 bg-transparent outline-none text-sm font-semibold placeholder:font-normal placeholder:text-gray-400 ${isDarkMode ? 'text-white' : 'text-black'}`}
                                         />
-                                        {keyword && (
+                                        <div className="flex w-[72px] shrink-0 justify-end">
                                             <button
                                                 type="button"
+                                                disabled={!keyword}
                                                 onClick={() => {
                                                     setKeyword('');
                                                     setAppliedKeyword('');
                                                     setCurrentPage(1);
                                                     scrollToPostsTop();
                                                 }}
-                                                className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-bold px-2 py-1 rounded-none border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-white text-black hover:-translate-y-0.5' : 'bg-black text-white hover:bg-[#FF0080]'}`}
+                                                aria-hidden={!keyword}
+                                                tabIndex={keyword ? 0 : -1}
+                                                className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-bold px-2 py-1 rounded-none border-2 border-black shadow-[2px_2px_0px_0px_#000] transition-opacity ${
+                                                    keyword
+                                                        ? (isDarkMode ? 'bg-white text-black hover:-translate-y-0.5' : 'bg-black text-white hover:bg-[#FF0080]')
+                                                        : 'opacity-0 pointer-events-none'
+                                                }`}
                                             >
                                                 <X size={14} /> 清空
                                             </button>
-                                        )}
+                                        </div>
                                     </div>
                                     <div
                                         className={`text-[11px] font-mono font-black px-3 py-2 border-2 border-black shadow-[3px_3px_0px_0px_#000] rounded-none ${isDarkMode ? 'bg-[#111827] text-gray-100' : 'bg-[#FFD700] text-black'}`}>
