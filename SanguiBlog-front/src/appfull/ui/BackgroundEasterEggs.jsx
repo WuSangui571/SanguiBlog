@@ -20,9 +20,9 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
     const shellClass = fixed
         ? 'pointer-events-none fixed inset-0 overflow-hidden z-0'
         : 'pointer-events-none absolute inset-0 overflow-hidden z-0';
-    const dayCelestialTop = fixed ? '28%' : '12%';
-    const nightCelestialTop = fixed ? '36%' : '16%';
-    const sideOffset = fixed ? 'calc(50% - 58rem)' : 'calc(50% - 52rem)';
+    const dayCelestialTop = fixed ? '24%' : '7%';
+    const nightCelestialTop = fixed ? '31%' : '11%';
+    const sideOffset = fixed ? 'calc(50% - 62rem)' : 'calc(50% - 56rem)';
 
     if (!isDarkMode) {
         return (

@@ -230,15 +230,11 @@
 }
 
 .home-nav-shell--hero {
-  background:
-    linear-gradient(180deg, rgba(248, 248, 250, 0.78), rgba(248, 248, 250, 0.52)),
-    url("/static/home/bg.jpg") center top / cover no-repeat;
+  background: transparent;
 }
 
 .home-redesign-surface.is-dark .home-nav-shell--hero {
-  background:
-    linear-gradient(180deg, rgba(5, 5, 5, 0.72), rgba(5, 5, 5, 0.48)),
-    url("/static/home/bg.jpg") center top / cover no-repeat;
+  background: transparent;
 }
 
 .home-nav-brand {
