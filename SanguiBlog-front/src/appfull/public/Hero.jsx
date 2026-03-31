@@ -1,10 +1,44 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import './homeRedesign.css';
 
 const HOME_BG_PATH = '/static/home/bg.jpg';
 
 export default function Hero({ onStartReading, isDarkMode }) {
+    const heroWrapRef = useRef(null);
+    const bgRef = useRef(null);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+
+        let frameId = 0;
+        const handleMouseMove = (event) => {
+            const x = (window.innerWidth / 2 - event.clientX) / 100;
+            const y = (window.innerHeight / 2 - event.clientY) / 100;
+
+            if (frameId) {
+                window.cancelAnimationFrame(frameId);
+            }
+
+            frameId = window.requestAnimationFrame(() => {
+                if (bgRef.current) {
+                    bgRef.current.style.transform = `scale(1.05) translate(${x}px, ${y}px)`;
+                }
+                if (heroWrapRef.current) {
+                    heroWrapRef.current.style.transform = `translate(${-x}px, ${-y}px)`;
+                }
+            });
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            if (frameId) {
+                window.cancelAnimationFrame(frameId);
+            }
+        };
+    }, []);
+
     const handleStartReading = () => {
         if (typeof onStartReading === 'function') {
             onStartReading();
@@ -18,6 +52,7 @@ export default function Hero({ onStartReading, isDarkMode }) {
     return (
         <section className={`home-redesign-surface home-hero ${isDarkMode ? 'is-dark' : ''}`}>
             <div
+                ref={bgRef}
                 aria-hidden="true"
                 className="home-hero__bg"
                 style={{ backgroundImage: `url('${HOME_BG_PATH}')` }}
@@ -37,11 +72,11 @@ export default function Hero({ onStartReading, isDarkMode }) {
                 transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
             />
 
-            <div className="home-hero__content">
+            <div ref={heroWrapRef} className="home-hero__content">
                 <motion.span
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.7, ease: 'easeOut' }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1.2, ease: 'easeOut' }}
                     className="home-hero__eyebrow"
                 >
                     Hello, I am Sangui
@@ -50,7 +85,7 @@ export default function Hero({ onStartReading, isDarkMode }) {
                 <motion.h1
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1], delay: 0.2 }}
+                    transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1], delay: 0.3 }}
                     className="home-hero__headline"
                 >
                     <span>在这里把问题想清楚，</span>
@@ -60,7 +95,7 @@ export default function Hero({ onStartReading, isDarkMode }) {
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 1.2, ease: 'easeOut', delay: 0.8 }}
+                    transition={{ duration: 1.3, ease: 'easeOut', delay: 0.9 }}
                     className="home-hero__actions"
                 >
                     <button

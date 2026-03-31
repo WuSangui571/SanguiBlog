@@ -64,6 +64,7 @@ const ArticleList = ({
     setActiveSub,
     recentComments,
     onScrollToPosts,
+    backgroundEnabled = true,
     homeQuote,
     pageSize = DEFAULT_PAGE_SIZE
 }) => {
@@ -487,7 +488,7 @@ const ArticleList = ({
             )}
 
             <section id="posts" className="relative w-full py-16 min-h-screen overflow-hidden">
-                <BackgroundEasterEggs isDarkMode={isDarkMode} fixed={false} />
+                {backgroundEnabled && <BackgroundEasterEggs isDarkMode={isDarkMode} fixed={false} />}
                 <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 flex flex-col lg:flex-row gap-12">
                     <div className="hidden lg:block w-full lg:w-1/4 space-y-8">
                         <div

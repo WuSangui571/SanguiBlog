@@ -68,6 +68,7 @@ const Navigation = ({
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
     const shellThemeClass = `home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`;
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [heroMode, setHeroMode] = useState(currentView === 'home');
     const [, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
     const normalizeAvatarPathLocal = (path) => {
@@ -153,6 +154,32 @@ const Navigation = ({
         }
     }, [menuOpen, onCloseNotifications]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+
+        const updateHeroMode = () => {
+            if (currentView !== 'home') {
+                setHeroMode(false);
+                return;
+            }
+            const postsSection = document.getElementById('posts');
+            if (!postsSection) {
+                setHeroMode(window.scrollY < window.innerHeight * 0.55);
+                return;
+            }
+            const threshold = postsSection.offsetTop - (headerHeight || NAVIGATION_HEIGHT) - 12;
+            setHeroMode(window.scrollY < threshold);
+        };
+
+        updateHeroMode();
+        window.addEventListener('scroll', updateHeroMode, { passive: true });
+        window.addEventListener('resize', updateHeroMode);
+        return () => {
+            window.removeEventListener('scroll', updateHeroMode);
+            window.removeEventListener('resize', updateHeroMode);
+        };
+    }, [currentView, headerHeight]);
+
     const handleThemeButton = useCallback((event) => {
         if (typeof onToggleTheme === 'function') {
             onToggleTheme(event);
@@ -198,7 +225,7 @@ const Navigation = ({
         <motion.nav
             initial={{ y: -100 }}
             animate={{ y: 0 }}
-            className="home-nav-shell relative w-full h-20 flex items-center justify-between px-4 md:px-8"
+            className={`home-nav-shell ${heroMode ? 'home-nav-shell--hero' : ''} relative w-full h-20 flex items-center justify-between px-4 md:px-8`}
         >
             <div
                 className="flex items-center gap-2 cursor-pointer group shrink-0"

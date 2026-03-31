@@ -17,6 +17,7 @@ export default function HomeView({
     tagsData,
     recentComments,
     onScrollToPosts,
+    backgroundEnabled,
     activeParent,
     setActiveParent,
     activeSub,
@@ -57,6 +58,7 @@ export default function HomeView({
                 tagsData={tagsData}
                 recentComments={recentComments}
                 onScrollToPosts={onScrollToPosts}
+                backgroundEnabled={backgroundEnabled}
                 stats={meta?.stats}
                 author={meta?.author}
                 activeParent={activeParent}

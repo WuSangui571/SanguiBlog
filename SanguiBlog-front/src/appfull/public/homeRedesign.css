@@ -62,7 +62,8 @@
   background-size: cover;
   filter: grayscale(100%) blur(1px);
   opacity: var(--home-bg-opacity);
-  transform: scale(1.04);
+  transform: scale(1.05);
+  transition: transform 0.1s ease-out;
 }
 
 .home-hero__shade {
@@ -118,6 +119,7 @@
   z-index: 1;
   width: min(100%, 960px);
   text-align: center;
+  transition: transform 0.1s ease-out;
 }
 
 .home-hero__eyebrow {
@@ -212,6 +214,11 @@
   background: var(--home-nav-bg);
   border-bottom: none;
   box-shadow: none;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+.home-nav-shell--hero {
+  background: transparent;
 }
 
 .home-nav-brand {

@@ -1163,6 +1163,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         tagsData={tags}
                         recentComments={recentComments}
                         onScrollToPosts={scrollToPostsTop}
+                        backgroundEnabled={backgroundEnabled}
                         activeParent={activeParent}
                         setActiveParent={setActiveParent}
                         activeSub={activeSub}
