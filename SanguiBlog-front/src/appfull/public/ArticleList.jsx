@@ -406,89 +406,96 @@ const ArticleList = ({
 
     return (
         <>
-            <StatsStrip isDarkMode={isDarkMode} stats={stats} />
-            <AnimatePresence>
-                {showSpinWarning && (
-                    <motion.div
-                        className="fixed inset-0 z-[140] flex items-center justify-center px-4 pointer-events-none"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
+            <div className="relative">
+                {backgroundEnabled && (
+                    <div className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 overflow-hidden">
+                        <BackgroundEasterEggs isDarkMode={isDarkMode} fixed={false} />
+                    </div>
+                )}
+                <div className="relative z-10">
+                    <StatsStrip isDarkMode={isDarkMode} stats={stats} />
+                </div>
+                <AnimatePresence>
+                    {showSpinWarning && (
                         <motion.div
-                            initial={{ scale: 0.85, rotate: -4 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            exit={{ scale: 0.8, rotate: 6, opacity: 0 }}
-                            className="relative max-w-md w-full pointer-events-none"
+                            className="fixed inset-0 z-[140] flex items-center justify-center px-4 pointer-events-none"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#FF0080] via-[#6366F1] to-[#0EA5E9] opacity-60 blur-3xl" />
-                            <div
-                                className={`relative border-4 border-black px-6 py-5 text-center shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-[#050816] text-[#FFD700]' : 'bg-white text-black'}`}>
-                                <div className="text-[10px] font-mono tracking-[0.6em] text-gray-400 uppercase mb-2">
-                                    SPIN ALERT
+                            <motion.div
+                                initial={{ scale: 0.85, rotate: -4 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                exit={{ scale: 0.8, rotate: 6, opacity: 0 }}
+                                className="relative max-w-md w-full pointer-events-none"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#FF0080] via-[#6366F1] to-[#0EA5E9] opacity-60 blur-3xl" />
+                                <div
+                                    className={`relative border-4 border-black px-6 py-5 text-center shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-[#050816] text-[#FFD700]' : 'bg-white text-black'}`}>
+                                    <div className="text-[10px] font-mono tracking-[0.6em] text-gray-400 uppercase mb-2">
+                                        SPIN ALERT
+                                    </div>
+                                    <div className="text-2xl font-black italic leading-snug">{spinWarning}</div>
                                 </div>
-                                <div className="text-2xl font-black italic leading-snug">{spinWarning}</div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                <AnimatePresence>
+                    {megaSpinActive && (
+                        <motion.div
+                            className="fixed inset-0 z-[145] pointer-events-none"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                        >
+                            <motion.div
+                                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 0.8 }}
+                                exit={{ opacity: 0 }}
+                            />
+                            {starField.map((pos, idx) => (
+                                <motion.div
+                                    key={`star-${idx}`}
+                                    className="absolute text-[#FFD700]"
+                                    style={{ top: pos.top, left: pos.left }}
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: [0, 1, 0.4, 1], scale: [0, pos.scale, pos.scale * 0.8, pos.scale] }}
+                                    transition={{ duration: 2 + idx * 0.2, repeat: Infinity, ease: 'easeInOut' }}
+                                >
+                                    <Sparkles size={48} strokeWidth={1.2} />
+                                </motion.div>
+                            ))}
+                            <div className="relative w-full h-full flex flex-col items-center justify-center gap-6 text-white">
+                                <motion.div
+                                    initial={{ scale: 0.8, rotate: -6 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    exit={{ scale: 0.8, rotate: 4, opacity: 0 }}
+                                    className="px-8 py-4 border-4 border-[#FFD700] bg-[#0f172a] text-[#FFD700] text-3xl font-black tracking-widest shadow-[12px_12px_0px_0px_#FF0080]"
+                                >
+                                    眼冒金星模式
+                                </motion.div>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="text-base font-mono tracking-[0.4em]"
+                                >
+                                    SYSTEM COOLING DOWN...
+                                </motion.div>
                             </div>
                         </motion.div>
-                    </motion.div>
+                    )}
+                </AnimatePresence>
+                {konamiActive && (
+                    <div
+                        className="fixed inset-0 z-[100] bg-black mix-blend-difference pointer-events-none animate-pulse flex items-center justify-center">
+                        <h1 className="text-white font-black text-9xl -rotate-12">HACKED!!</h1>
+                    </div>
                 )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {megaSpinActive && (
-                    <motion.div
-                        className="fixed inset-0 z-[145] pointer-events-none"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        <motion.div
-                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.8 }}
-                            exit={{ opacity: 0 }}
-                        />
-                        {starField.map((pos, idx) => (
-                            <motion.div
-                                key={`star-${idx}`}
-                                className="absolute text-[#FFD700]"
-                                style={{ top: pos.top, left: pos.left }}
-                                initial={{ opacity: 0, scale: 0 }}
-                                animate={{ opacity: [0, 1, 0.4, 1], scale: [0, pos.scale, pos.scale * 0.8, pos.scale] }}
-                                transition={{ duration: 2 + idx * 0.2, repeat: Infinity, ease: 'easeInOut' }}
-                            >
-                                <Sparkles size={48} strokeWidth={1.2} />
-                            </motion.div>
-                        ))}
-                        <div className="relative w-full h-full flex flex-col items-center justify-center gap-6 text-white">
-                            <motion.div
-                                initial={{ scale: 0.8, rotate: -6 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                exit={{ scale: 0.8, rotate: 4, opacity: 0 }}
-                                className="px-8 py-4 border-4 border-[#FFD700] bg-[#0f172a] text-[#FFD700] text-3xl font-black tracking-widest shadow-[12px_12px_0px_0px_#FF0080]"
-                            >
-                                眼冒金星模式
-                            </motion.div>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="text-base font-mono tracking-[0.4em]"
-                            >
-                                SYSTEM COOLING DOWN...
-                            </motion.div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            {konamiActive && (
-                <div
-                    className="fixed inset-0 z-[100] bg-black mix-blend-difference pointer-events-none animate-pulse flex items-center justify-center">
-                    <h1 className="text-white font-black text-9xl -rotate-12">HACKED!!</h1>
-                </div>
-            )}
 
-            <section id="posts" className="relative w-full py-16 min-h-screen overflow-hidden">
-                {backgroundEnabled && <BackgroundEasterEggs isDarkMode={isDarkMode} fixed={false} />}
+                <section id="posts" className="relative w-full pt-4 pb-16 min-h-screen overflow-hidden">
                 <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 flex flex-col lg:flex-row gap-12">
                     <div className="hidden lg:block w-full lg:w-1/4 space-y-8">
                         <div
@@ -1085,7 +1092,8 @@ const ArticleList = ({
                         </div>
                     </div>
                 </div>
-            </section>
+                </section>
+            </div>
         </>
     );
 };

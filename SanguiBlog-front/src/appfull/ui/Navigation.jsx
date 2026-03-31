@@ -167,7 +167,7 @@ const Navigation = ({
                 setHeroMode(window.scrollY < window.innerHeight * 0.55);
                 return;
             }
-            const threshold = postsSection.offsetTop - (headerHeight || NAVIGATION_HEIGHT) - 12;
+            const threshold = postsSection.offsetTop - (headerHeight || NAVIGATION_HEIGHT) - 48;
             setHeroMode(window.scrollY < threshold);
         };
 
