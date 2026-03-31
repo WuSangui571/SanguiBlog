@@ -1462,8 +1462,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 }`}
                 style={{
                     boxShadow: isDarkMode
-                        ? '0 0 0 1px rgba(0,240,255,0.15), 0 14px 34px rgba(0,0,0,0.32), 0 0 28px rgba(0,240,255,0.12)'
-                        : '0 0 0 1px rgba(15,118,110,0.12), 0 14px 34px rgba(15,23,42,0.12), 0 0 24px rgba(0,240,255,0.10)'
+                        ? '0 0 0 1px rgba(0,240,255,0.16), 0 16px 36px rgba(0,0,0,0.34), 0 0 32px rgba(0,240,255,0.14)'
+                        : '0 0 0 1px rgba(15,118,110,0.12), 0 16px 36px rgba(15,23,42,0.13), 0 0 28px rgba(0,240,255,0.11)'
                 }}
             >
                 <span className="pointer-events-none absolute inset-[-14px] opacity-100">
@@ -1479,6 +1479,39 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     />
                 </span>
                 <span className={`pointer-events-none absolute inset-0 ${launcherGlowInnerShapeClass} opacity-90`}>
+                    <motion.span
+                        aria-hidden="true"
+                        className={`absolute inset-[1px] ${launcherGlowShapeClass} ${
+                            isDarkMode
+                                ? 'border border-[#00F0FF]/18'
+                                : 'border border-[#0F766E]/12'
+                        }`}
+                        animate={{
+                            boxShadow: isDarkMode
+                                ? [
+                                    'inset 0 0 0 rgba(0,240,255,0), 0 0 0 rgba(0,240,255,0)',
+                                    'inset 0 0 18px rgba(0,240,255,0.10), 0 0 18px rgba(0,240,255,0.12)',
+                                    'inset 0 0 0 rgba(0,240,255,0), 0 0 0 rgba(0,240,255,0)'
+                                ]
+                                : [
+                                    'inset 0 0 0 rgba(15,118,110,0), 0 0 0 rgba(0,240,255,0)',
+                                    'inset 0 0 16px rgba(15,118,110,0.08), 0 0 14px rgba(0,240,255,0.08)',
+                                    'inset 0 0 0 rgba(15,118,110,0), 0 0 0 rgba(0,240,255,0)'
+                                ],
+                            opacity: [0.55, 0.9, 0.55]
+                        }}
+                        transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    <motion.span
+                        aria-hidden="true"
+                        className={`absolute inset-[3px] ${launcherGlowInnerShapeClass} ${
+                            isDarkMode
+                                ? 'bg-[linear-gradient(110deg,transparent_0%,transparent_34%,rgba(0,240,255,0.18)_48%,transparent_62%,transparent_100%)]'
+                                : 'bg-[linear-gradient(110deg,transparent_0%,transparent_34%,rgba(255,255,255,0.48)_48%,transparent_62%,transparent_100%)]'
+                        }`}
+                        animate={{ x: ['-130%', '155%'], opacity: [0, 0.9, 0] }}
+                        transition={{ duration: 5.6, repeat: Infinity, repeatDelay: 1.8, ease: 'easeInOut' }}
+                    />
                     <span
                         className={`absolute inset-0 ${launcherGlowInnerShapeClass} ${
                             isDarkMode
@@ -1503,52 +1536,71 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     ) : (
                         <motion.span
                             aria-hidden="true"
-                            className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent"
-                            animate={{ x: ['-120%', '360%'] }}
-                            transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 1.3, ease: 'easeInOut' }}
+                            className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            animate={{ x: ['-120%', '360%'], opacity: [0, 1, 0] }}
+                            transition={{ duration: 4.4, repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }}
                         />
                     )}
+                    <motion.span
+                        aria-hidden="true"
+                        className={`absolute inset-x-[10px] top-[2px] h-[2px] rounded-full ${
+                            isDarkMode ? 'bg-[#00F0FF]/55' : 'bg-[#0F766E]/25'
+                        }`}
+                        animate={{ opacity: [0.25, 0.7, 0.25], scaleX: [0.82, 1, 0.82] }}
+                        transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
                 </span>
                 <span className="relative flex items-center justify-center w-11 h-11 rounded-[18px] border-2 border-black bg-[#FF0080] text-white overflow-visible">
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-[-9px] rounded-[24px] border border-[#00F0FF]/45"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                        style={{ borderStyle: 'dashed' }}
+                        className="absolute inset-[-7px] rounded-[22px] border border-[#00F0FF]/28"
+                        animate={{
+                            opacity: [0.22, 0.48, 0.22],
+                            boxShadow: [
+                                '0 0 0 rgba(0,240,255,0)',
+                                '0 0 14px rgba(0,240,255,0.18)',
+                                '0 0 0 rgba(0,240,255,0)'
+                            ]
+                        }}
+                        transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-[-14px] rounded-[30px] border border-[#FFD700]/30"
-                        animate={{ rotate: -360 }}
-                        transition={{ duration: 11, repeat: Infinity, ease: 'linear' }}
-                        style={{ borderStyle: 'dotted' }}
+                        className="absolute inset-[-11px] rounded-[26px] border border-[#FFD700]/18"
+                        animate={{ opacity: [0.12, 0.38, 0.12], scale: [0.97, 1.05, 0.97] }}
+                        transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute left-1/2 top-1/2 h-[5px] w-[5px] rounded-full bg-[#00F0FF]"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 3.6, repeat: Infinity, ease: 'linear' }}
-                        style={{ transformOrigin: '0 -20px' }}
+                        className="absolute left-1/2 top-1/2 h-[5px] w-[5px] rounded-full bg-[#00F0FF] shadow-[0_0_8px_rgba(0,240,255,0.8)]"
+                        animate={{ rotate: 360, opacity: [0.45, 1, 0.45] }}
+                        transition={{ rotate: { duration: 6.4, repeat: Infinity, ease: 'linear' }, opacity: { duration: 2.8, repeat: Infinity, ease: 'easeInOut' } }}
+                        style={{ transformOrigin: '0 -18px' }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute left-1/2 top-1/2 h-[4px] w-[4px] rounded-full bg-[#FFD700]"
-                        animate={{ rotate: -360 }}
-                        transition={{ duration: 5.2, repeat: Infinity, ease: 'linear' }}
-                        style={{ transformOrigin: '0 18px' }}
+                        className="absolute left-1/2 top-1/2 h-[4px] w-[4px] rounded-full bg-[#FFD700] shadow-[0_0_8px_rgba(255,215,0,0.65)]"
+                        animate={{ rotate: -360, opacity: [0.3, 0.9, 0.3] }}
+                        transition={{ rotate: { duration: 7.6, repeat: Infinity, ease: 'linear' }, opacity: { duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 } }}
+                        style={{ transformOrigin: '0 16px' }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-[-6px] rounded-[22px] border border-[#00F0FF]/70"
-                        animate={{ scale: [1, 1.18, 1], opacity: [0.65, 0, 0.65] }}
-                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
+                        className="absolute inset-[-4px] rounded-[20px] border border-[#00F0FF]/55"
+                        animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0, 0.3] }}
+                        transition={{ duration: 3.1, repeat: Infinity, ease: 'easeOut' }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-[-11px] rounded-[28px] border border-[#FFD700]/45"
-                        animate={{ scale: [0.96, 1.26, 0.96], opacity: [0, 0.55, 0] }}
-                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut', delay: 0.45 }}
+                        className="absolute inset-[-8px] rounded-[24px] border border-[#FFD700]/30"
+                        animate={{ scale: [0.98, 1.18, 0.98], opacity: [0, 0.42, 0] }}
+                        transition={{ duration: 3.1, repeat: Infinity, ease: 'easeOut', delay: 0.85 }}
+                    />
+                    <motion.span
+                        aria-hidden="true"
+                        className="absolute inset-x-[7px] top-[7px] h-[2px] rounded-full bg-white/35"
+                        animate={{ opacity: [0.12, 0.52, 0.12], scaleX: [0.78, 1, 0.78] }}
+                        transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
                     />
                     <img
                         src={assistantConfig.logoPath}
