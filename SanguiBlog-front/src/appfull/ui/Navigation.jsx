@@ -255,6 +255,7 @@ const Navigation = ({
     }, [onProfileClick, setView, scrollNavToTop, onCloseMenu]);
 
     const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
+    const notificationPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
     const recalledGlassMode = navVisible && !topMode;
     const floatingNavMode = (heroMode || topMode) && !recalledGlassMode;
     const navIconToneClass = floatingNavMode
@@ -455,26 +456,30 @@ const Navigation = ({
                 </button>
             </div>
 
-            <AnimatePresence>
-                {notificationOpen && (
-                    <>
-                        <motion.div
-                            key="notice-backdrop"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.2 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                            className="fixed inset-0 z-[48] bg-black"
-                            onClick={onCloseNotifications}
-                        />
-                        <motion.div
-                            key="notice-panel"
-                            initial={{ opacity: 0, y: -6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.18 }}
-                            className={`absolute right-3 top-20 z-[50] w-[min(500px,calc(100vw-32px))] max-h-[100vh] overflow-hidden rounded-[28px] ${overlayPanelClass}`}
-                        >
+        </motion.nav>
+        </div>
+
+        <AnimatePresence>
+            {notificationOpen && (
+                <>
+                    <motion.div
+                        key="notice-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.2 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="fixed inset-0 z-[108] bg-black"
+                        onClick={onCloseNotifications}
+                    />
+                    <motion.div
+                        key="notice-panel"
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+                        className={`fixed right-3 md:right-6 z-[118] w-[min(500px,calc(100vw-32px))] max-h-[92vh] overflow-hidden rounded-[28px] ${overlayPanelClass}`}
+                        style={{ top: notificationPanelTop }}
+                    >
                         <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b ${overlayDividerClass} ${notificationHeaderClass}`}>
                             <div>
                                 <p className="font-black text-sm">消息通知</p>
@@ -501,7 +506,7 @@ const Navigation = ({
                                 </button>
                             </div>
                         </div>
-                        <div className={`max-h-[calc(100vh-180px)] overflow-y-auto divide-y ${overlayDividerClass}`}>
+                        <div className={`max-h-[calc(92vh-132px)] overflow-y-auto divide-y ${overlayDividerClass}`}>
                             {notificationLoading ? (
                                 <div className="p-4 text-sm font-semibold">加载中...</div>
                             ) : (notifications && notifications.length ? (
@@ -602,20 +607,18 @@ const Navigation = ({
                                     type="button"
                                     disabled={notificationPage >= totalNotificationPages}
                                     onClick={() => {
-                                         onNotificationPageChange && onNotificationPageChange(totalNotificationPages);
-                                     }}
+                                        onNotificationPageChange && onNotificationPageChange(totalNotificationPages);
+                                    }}
                                     className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage >= totalNotificationPages ? overlayDisabledButtonClass : overlayButtonClass}`}
                                 >
                                     尾页
                                 </button>
                             </div>
                         </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-        </motion.nav>
-        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
 
         <AnimatePresence>
             {menuOpen && (
