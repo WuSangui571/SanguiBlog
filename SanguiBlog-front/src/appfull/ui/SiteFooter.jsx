@@ -10,7 +10,7 @@ export default function SiteFooter({
 }) {
     return (
         <footer
-            className={`py-12 text-center mt-12 border-t-8 ${isDarkMode ? 'bg-gray-900 text-white border-[#FF0080]' : 'bg-black text-white border-[#FFD700]'}`}
+            className={`pt-12 pb-12 text-center border-t-8 ${isDarkMode ? 'bg-gray-900 text-white border-[#FF0080]' : 'bg-black text-white border-[#FFD700]'}`}
         >
             <h2 className="text-3xl font-black italic tracking-tighter mb-3">{brand}</h2>
             {copyrightText && (
@@ -34,4 +34,3 @@ export default function SiteFooter({
         </footer>
     );
 }
-
