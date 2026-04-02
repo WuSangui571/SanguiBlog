@@ -6,7 +6,6 @@ import { DEFAULT_AVATAR, PAGE_SIZE_OPTIONS, ROLES } from "../shared.js";
 import '../public/homeRedesign.css';
 import {
     Code,
-    ChevronDown,
     ChevronRight,
     List,
     Lock,
@@ -72,13 +71,9 @@ const Navigation = ({
     const [heroMode, setHeroMode] = useState(currentView === 'home');
     const [topMode, setTopMode] = useState(true);
     const [navVisible, setNavVisible] = useState(true);
-    const [notificationPagePickerOpen, setNotificationPagePickerOpen] = useState(false);
-    const [settingsPageSizePickerOpen, setSettingsPageSizePickerOpen] = useState(false);
     const [, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
     const lastScrollYRef = useRef(0);
-    const notificationPagePickerRef = useRef(null);
-    const settingsPageSizePickerRef = useRef(null);
     const normalizeAvatarPathLocal = (path) => {
         if (!path) return null;
         const trimmed = path.trim();
@@ -213,39 +208,6 @@ const Navigation = ({
     }, [menuOpen, notificationOpen, settingsOpen]);
 
     useEffect(() => {
-        if (!notificationOpen) {
-            setNotificationPagePickerOpen(false);
-        }
-        if (!settingsOpen) {
-            setSettingsPageSizePickerOpen(false);
-        }
-    }, [notificationOpen, settingsOpen]);
-
-    useEffect(() => {
-        if (typeof document === 'undefined') return undefined;
-        const handlePointerDown = (event) => {
-            if (
-                notificationPagePickerOpen &&
-                notificationPagePickerRef.current &&
-                !notificationPagePickerRef.current.contains(event.target)
-            ) {
-                setNotificationPagePickerOpen(false);
-            }
-            if (
-                settingsPageSizePickerOpen &&
-                settingsPageSizePickerRef.current &&
-                !settingsPageSizePickerRef.current.contains(event.target)
-            ) {
-                setSettingsPageSizePickerOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handlePointerDown);
-        return () => {
-            document.removeEventListener('mousedown', handlePointerDown);
-        };
-    }, [notificationPagePickerOpen, settingsPageSizePickerOpen]);
-
-    useEffect(() => {
         if (typeof window === 'undefined') return undefined;
         const handlePointerNearTop = (event) => {
             if (event.clientY <= (headerHeight || NAVIGATION_HEIGHT) + 18) {
@@ -302,8 +264,8 @@ const Navigation = ({
     const desktopAccentActionClass = `${desktopActionClass} home-nav-icon-btn--accent`;
     const mobileActionClass = `home-nav-icon-btn ${navIconToneClass} inline-flex items-center justify-center rounded-full p-2`;
     const overlayPanelClass = isDarkMode
-        ? 'border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.05))] text-white shadow-[0_24px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-3xl'
-        : 'border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.66))] text-black shadow-[0_24px_60px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.82)] backdrop-blur-3xl';
+        ? 'border border-white/12 bg-[linear-gradient(180deg,rgba(14,23,38,0.96),rgba(11,18,31,0.9))] text-white shadow-[0_24px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl'
+        : 'border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(250,252,255,0.9))] text-black shadow-[0_24px_60px_rgba(15,23,42,0.16),inset_0_1px_0_rgba(255,255,255,0.88)] backdrop-blur-3xl';
     const overlayDividerClass = isDarkMode ? 'border-white/10' : 'border-black/10';
     const overlaySoftCardClass = isDarkMode
         ? 'border border-white/10 bg-white/[0.06] shadow-[0_16px_36px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.08)]'
@@ -322,12 +284,9 @@ const Navigation = ({
         : 'border border-black/8 bg-white/45 text-black/35 cursor-not-allowed';
     const overlayMutedTextClass = isDarkMode ? 'text-white/68' : 'text-black/55';
     const overlaySubtleTextClass = isDarkMode ? 'text-white/52' : 'text-black/45';
-    const overlayPanelHeaderClass = isDarkMode
-        ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.86),rgba(15,23,42,0.7))] backdrop-blur-3xl'
-        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.86))] backdrop-blur-3xl';
-    const overlayMenuClass = isDarkMode
-        ? 'border border-white/12 bg-[linear-gradient(180deg,rgba(17,24,39,0.92),rgba(15,23,42,0.82))] text-white shadow-[0_22px_46px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-3xl'
-        : 'border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,255,255,0.82))] text-black shadow-[0_20px_42px_rgba(148,163,184,0.18),inset_0_1px_0_rgba(255,255,255,0.82)] backdrop-blur-3xl';
+    const notificationHeaderClass = isDarkMode
+        ? 'bg-[linear-gradient(180deg,rgba(6,11,21,0.99),rgba(8,14,24,0.96))] backdrop-blur-3xl'
+        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.995),rgba(252,253,255,0.97))] backdrop-blur-3xl';
     const totalNotificationPages = Math.max(1, Math.ceil(notificationTotal / notificationPageSize));
 
     return (
@@ -516,7 +475,7 @@ const Navigation = ({
                             transition={{ duration: 0.18 }}
                             className={`absolute right-3 top-20 z-[50] w-[min(500px,calc(100vw-32px))] max-h-[100vh] overflow-hidden rounded-[28px] ${overlayPanelClass}`}
                         >
-                        <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b ${overlayDividerClass} ${overlayPanelHeaderClass}`}>
+                        <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b ${overlayDividerClass} ${notificationHeaderClass}`}>
                             <div>
                                 <p className="font-black text-sm">消息通知</p>
                                 <p className={`text-xs ${overlayMutedTextClass}`}>
@@ -612,48 +571,25 @@ const Navigation = ({
                                 <span className={`text-[11px] font-bold ${overlayMutedTextClass}`}>
                                     第 {notificationPage} 页 / 共 {totalNotificationPages} 页
                                 </span>
-                                <div className="relative" ref={notificationPagePickerRef}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setNotificationPagePickerOpen((prev) => !prev)}
-                                        className={`inline-flex items-center gap-1.5 text-xs font-black rounded-full px-3 py-1.5 transition ${overlayButtonClass}`}
-                                    >
-                                        <span>跳转页码</span>
-                                        <ChevronDown size={14} className={`transition-transform ${notificationPagePickerOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    <AnimatePresence>
-                                        {notificationPagePickerOpen && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                                                transition={{ duration: 0.16 }}
-                                                className={`absolute right-0 top-[calc(100%+10px)] z-[70] w-44 max-h-64 overflow-y-auto rounded-[22px] p-2 ${overlayMenuClass}`}
-                                            >
-                                                {Array.from({ length: totalNotificationPages }).map((_, idx) => {
-                                                    const num = idx + 1;
-                                                    const active = num === notificationPage;
-                                                    return (
-                                                        <button
-                                                            key={`p-${num}`}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setNotificationPagePickerOpen(false);
-                                                                onNotificationPageChange && onNotificationPageChange(num);
-                                                            }}
-                                                            className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-xs font-black transition ${active
-                                                                ? overlayAccentButtonClass
-                                                                : (isDarkMode ? 'text-white hover:bg-white/[0.08]' : 'text-black hover:bg-white/65')}`}
-                                                        >
-                                                            <span>第 {num} 页</span>
-                                                            {active ? <span className="text-[10px] uppercase tracking-[0.16em]">Now</span> : null}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
+                                <select
+                                    value={notificationPage}
+                                    onChange={(e) => {
+                                        const v = Number(e.target.value);
+                                        if (Number.isFinite(v) && v >= 1) {
+                                            onNotificationPageChange && onNotificationPageChange(v);
+                                        }
+                                    }}
+                                    className={`text-xs font-black rounded-full px-3 py-1.5 transition outline-none ${overlayButtonClass}`}
+                                >
+                                    {Array.from({ length: totalNotificationPages }).map((_, idx) => {
+                                        const num = idx + 1;
+                                        return (
+                                            <option key={`p-${num}`} value={num}>
+                                                跳转到第 {num} 页
+                                            </option>
+                                        );
+                                    })}
+                                </select>
                                 <button
                                     type="button"
                                     disabled={notificationPage >= totalNotificationPages}
@@ -899,8 +835,11 @@ const Navigation = ({
                                     <span
                                         className={`absolute top-1/2 left-1 w-7 h-7 -translate-y-1/2 rounded-full transition-transform ${isDarkMode ? 'border border-white/14 bg-white/90' : 'border border-black/8 bg-white'} ${backgroundEnabled ? 'translate-x-0' : 'translate-x-6'}`}
                                     />
-                                    <span className={`absolute inset-y-0 flex items-center text-[10px] font-black uppercase transition-all ${backgroundEnabled ? 'right-2' : 'left-2'}`}>
-                                        {backgroundEnabled ? 'ON' : 'OFF'}
+                                    <span className={`absolute inset-y-0 left-2 flex items-center text-[10px] font-black uppercase transition-opacity ${backgroundEnabled ? 'opacity-100' : 'opacity-35'}`}>
+                                        ON
+                                    </span>
+                                    <span className={`absolute inset-y-0 right-2 flex items-center text-[10px] font-black uppercase transition-opacity ${backgroundEnabled ? 'opacity-35' : 'opacity-100'}`}>
+                                        OFF
                                     </span>
                                 </button>
                             </div>
@@ -913,46 +852,16 @@ const Navigation = ({
                                     <div className="font-black text-sm">首页每页文章数</div>
                                     <div className={`text-xs ${overlayMutedTextClass}`}>默认 5 条，可选 10 / 20</div>
                                 </div>
-                                <div className="flex flex-col items-end gap-2 relative" ref={settingsPageSizePickerRef}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSettingsPageSizePickerOpen((prev) => !prev)}
-                                        className={`inline-flex min-w-28 items-center justify-between gap-2 p-2.5 rounded-2xl font-black text-sm transition ${overlayButtonClass}`}
+                                <div className="flex flex-col items-end gap-2">
+                                    <select
+                                        value={pageSize}
+                                        onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
+                                        className={`w-28 p-2.5 rounded-2xl font-black text-sm outline-none transition ${overlayButtonClass}`}
                                     >
-                                        <span>{pageSize} 条/页</span>
-                                        <ChevronDown size={15} className={`transition-transform ${settingsPageSizePickerOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    <AnimatePresence>
-                                        {settingsPageSizePickerOpen && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                                                transition={{ duration: 0.16 }}
-                                                className={`absolute right-0 top-[calc(100%+10px)] z-[130] w-32 rounded-[22px] p-2 ${overlayMenuClass}`}
-                                            >
-                                                {pageSizeOptions.map((opt) => {
-                                                    const active = opt === pageSize;
-                                                    return (
-                                                        <button
-                                                            key={opt}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setSettingsPageSizePickerOpen(false);
-                                                                handlePageSizeSelect(opt);
-                                                            }}
-                                                            className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm font-black transition ${active
-                                                                ? overlayAccentButtonClass
-                                                                : (isDarkMode ? 'text-white hover:bg-white/[0.08]' : 'text-black hover:bg-white/65')}`}
-                                                        >
-                                                            <span>{opt} 条</span>
-                                                            {active ? <span className="text-[10px] uppercase tracking-[0.16em]">Now</span> : null}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
+                                        {pageSizeOptions.map((opt) => (
+                                            <option key={opt} value={opt}>{opt} 条/页</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
