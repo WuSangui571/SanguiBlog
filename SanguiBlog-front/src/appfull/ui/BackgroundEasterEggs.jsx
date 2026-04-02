@@ -29,13 +29,7 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
             <div className={shellClass}>
                 <div className="sticky top-0 h-screen overflow-hidden">
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(231,242,255,0.96)_0%,rgba(241,247,255,0.9)_25%,rgba(246,249,255,0.82)_58%,rgba(235,243,255,0.96)_100%)]" />
-                    <div
-                        className="absolute inset-0"
-                        style={{
-                            background:
-                                'radial-gradient(circle at 18% 18%, rgba(255, 222, 124, 0.2), transparent 18%), radial-gradient(circle at 26% 28%, rgba(255, 231, 173, 0.12), transparent 34%)'
-                        }}
-                    />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(255,255,255,0.04)_32%,transparent_68%)]" />
                     <motion.div
                         className="absolute inset-x-0 bottom-0 h-64"
                         style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(255, 239, 186, 0.3) 44%, rgba(251, 226, 144, 0.62) 100%)' }}
@@ -66,13 +60,7 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
             <div className={shellClass}>
                 <div className="sticky top-0 h-screen overflow-hidden">
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,16,31,0.92)_0%,rgba(10,20,38,0.84)_26%,rgba(11,23,42,0.74)_58%,rgba(13,28,49,0.88)_100%)]" />
-                    <div
-                        className="absolute inset-0"
-                        style={{
-                            background:
-                                'radial-gradient(circle at 18% 16%, rgba(188, 210, 255, 0.16), transparent 20%), radial-gradient(circle at 22% 24%, rgba(120, 152, 214, 0.1), transparent 30%)'
-                        }}
-                    />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(163,191,240,0.08)_0%,rgba(163,191,240,0.03)_28%,transparent_70%)]" />
                     {stars.map((star) => (
                         <motion.span
                             key={star.id}
