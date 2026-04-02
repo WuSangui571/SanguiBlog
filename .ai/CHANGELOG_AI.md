@@ -110,6 +110,64 @@
 - 验证方式：
   - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
 
+## [2026-04-02] 修复首页滚动落点改动引入的 layoutContextValue 初始化白屏
+- 背景/需求：用户反馈页面白屏，控制台报错 `Cannot access 'layoutContextValue' before initialization`，定位到 `AppFull.jsx` 中首页滚动函数在 `layoutContextValue` 声明前提前引用了它。
+- 修改类型：fix
+- 影响范围：首页初始化稳定性、首页 CTA 滚动函数、AI 变更日志
+- 变更摘要：
+  1) 根因确认不是首页组件本身，而是 `scrollToPostsTop` 的闭包提前读取了尚未初始化的 `layoutContextValue`。
+  2) 将滚动偏移计算改回直接基于已存在的 `NAVIGATION_HEIGHT + emergencyHeight`，避免对后置 `useMemo` 变量产生 TDZ 引用。
+  3) 保留上一轮“滚到系统状态条本身”的目标不变，只修复初始化时序错误。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+- 检索与复用策略：
+  - 检索关键词：`layoutContextValue` / `scrollToPostsTop` / `headerHeight` / `before initialization`
+  - 找到的候选点：`scrollToPostsTop` 回调定义位置、`layoutContextValue` 的 `useMemo` 声明位置
+  - 最终选择：做最小修复，不搬动大段代码结构
+- 风险点：
+  - 当前问题已定位为 TDZ 初始化顺序错误，不涉及其它首页组件；若后续继续重构该区域，需注意 `const/useMemo` 的声明先后
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
+## [2026-04-02] 进一步收紧首页 CTA 到系统状态条的实际落点
+- 背景/需求：用户反馈虽然头像不再被遮挡，但“向下探索内容”仍没有准确滑到系统状态条本身。
+- 修改类型：fix
+- 影响范围：首页首屏 CTA 滚动精度、系统状态条锚点、AI 变更日志
+- 变更摘要：
+  1) 放弃继续手工猜测 `window.pageYOffset - offset` 的方式，改为让系统状态条自行声明 `scrollMarginTop=headerHeight`。
+  2) `scrollToPostsTop` 改为直接对 `home-status-strip` 执行 `scrollIntoView({ block: 'start' })`，把落点交给浏览器原生滚动锚点处理。
+  3) 保留上一轮给作者卡片增加的顶部留白，因此这次只校准落点，不回退头像防遮挡修复。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
+  - `SanguiBlog-front/src/AppFull.jsx`
+- 检索与复用策略：
+  - 检索关键词：`scrollIntoView` / `scrollMarginTop` / `home-status-strip`
+  - 找到的候选点：系统状态条本身具备 `headerHeight` 上下文，可直接作为锚点声明处；首页 CTA 与筛选回顶继续复用同一个 `scrollToPostsTop`
+  - 最终选择：复用现有滚动链路，改成原生锚点方式，不新增第二套滚动函数
+- 风险点：
+  - 浏览器对 `scroll-margin-top` 的实现总体稳定；若后续还存在极细微差异，再做少量像素级微调即可
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
+## [2026-04-02] 去掉首页系统状态条对隐藏导航的保留顶部距离
+- 背景/需求：用户指出首页 CTA 下滑后，系统状态条上方仍然保留了一段“原本给固定导航预留”的不可见距离；现在导航已隐去，这段距离不应继续存在。
+- 修改类型：fix
+- 影响范围：首页系统状态条吸顶位置、首页 CTA 视觉落点、AI 变更日志
+- 变更摘要：
+  1) 根因确认在 `StatsStrip.jsx`：状态条本身仍按旧规则使用 `top: headerHeight` 与 `scrollMarginTop: headerHeight`。
+  2) 将首页系统状态条改为直接 `top: 0` 吸顶，同时移除滚动锚点的顶部预留，让 CTA 落点和实际吸顶位置保持一致。
+  3) 保留上一轮对作者区增加的顶部留白，因此本次只消除“隐藏导航后仍保留不可见距离”的问题。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
+- 检索与复用策略：
+  - 检索关键词：`top: headerHeight` / `scrollMarginTop` / `home-status-strip`
+  - 找到的候选点：系统状态条自己的 sticky 配置就是额外空距的来源
+  - 最终选择：只修 `StatsStrip.jsx`，不再继续叠加新的滚动补丁
+- 风险点：
+  - 当导航被鼠标唤回时，会覆盖在系统状态条上方；这符合当前“导航浮回覆盖正文”的交互方向
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-03-31] 按模板回收首页与导航的偏差实现
 - 背景/需求：用户指出上一版首页改造与 `newIndex` 模板差异仍然较大，包括首页顶部出现彩蛋背景、导航未做到模板式居中分栏、左侧标题样式不对、首页按钮过多、首屏文案重复以及 `Hello, I am Sangui` 被额外拼接版本文案。
 - 修改类型：fix

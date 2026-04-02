@@ -1,8 +1,6 @@
 ﻿import React from 'react';
-import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import { SITE_STATS } from "../shared.js";
 import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-react';const StatsStrip = ({ isDarkMode, stats }) => {
-    const { headerHeight } = useLayoutOffsets();
     const s = stats || SITE_STATS;
     const items = [
         { label: "文章", value: s.posts, icon: FileText, color: "text-[#6366F1]" },
@@ -27,7 +25,7 @@ import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-reac
         <div
             id="home-status-strip"
             className={`sticky z-40 ${bg} ${text_cls} border-b-4 border-black`}
-            style={{ top: headerHeight }}
+            style={{ top: 0, scrollMarginTop: 0 }}
         >
             <div className="max-w-7xl mx-auto px-4 py-2 sm:py-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:h-14">
                 <div className="flex items-center gap-2 sm:mr-8 flex-shrink-0">
