@@ -25,6 +25,7 @@ import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-reac
 
     return (
         <div
+            id="home-status-strip"
             className={`sticky z-40 ${bg} ${text_cls} border-b-4 border-black`}
             style={{ top: headerHeight }}
         >

@@ -365,16 +365,16 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     );
     const scrollToPostsTop = useCallback(() => {
         if (typeof window === 'undefined') return;
-        const element = document.getElementById('posts');
+        const element = document.getElementById('home-status-strip') || document.getElementById('posts');
         if (!element) return;
-        const headerOffset = 140;
+        const headerOffset = layoutContextValue.headerHeight + 8;
         const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
         const offsetPosition = elementPosition - headerOffset;
         window.scrollTo({
             top: offsetPosition > 0 ? offsetPosition : 0,
             behavior: 'smooth'
         });
-    }, []);
+    }, [layoutContextValue.headerHeight]);
 
     const loadArchiveSummary = useCallback(async () => {
         setArchiveLoading(true);

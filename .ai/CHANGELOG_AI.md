@@ -89,6 +89,27 @@
 - 验证方式：
   - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
 
+## [2026-04-02] 修正首页“向下探索内容”落点并避免系统状态遮住作者头像
+- 背景/需求：用户反馈首页首屏“向下探索内容”按钮的滚动位置不对，期望滚到“系统状态”刚好贴顶的位置；同时指出系统状态条下方的作者头像有一部分被遮住。
+- 修改类型：fix
+- 影响范围：首页首屏 CTA 滚动落点、系统状态条锚点、首页正文起始留白、AI 变更日志
+- 变更摘要：
+  1) 为系统状态条增加独立锚点 `home-status-strip`，不再让首屏 CTA 只对准正文区外层 `#posts`。
+  2) `AppFull.jsx` 中的首页滚动逻辑改为优先滚到系统状态条，并使用实时 `headerHeight` 计算偏移，让“系统状态”更接近“刚好在顶部”的视觉落点。
+  3) 首页正文区上内边距从 `pt-4` 提高到 `pt-12`，给作者卡片顶部头像留出更安全的展示空间，避免被上方 sticky 状态条压住。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+- 检索与复用策略：
+  - 检索关键词：`scrollToPostsTop` / `StatsStrip` / `home-status` / `posts` / `avatar`
+  - 找到的候选点：首屏 CTA 与首页筛选回顶统一复用 `scrollToPostsTop`；系统状态条在 `StatsStrip.jsx`；作者头像在 `ArticleList.jsx` 左侧卡片
+  - 最终选择：继续复用现有首页滚动链路与系统状态组件，只校准锚点和间距，不新增第二套滚动逻辑
+- 风险点：
+  - 当前落点已从“正文外层”改为“系统状态条本身”；若你后续想要更极致的模板感，我们还可以再细调顶部偏移的 8px 余量
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-03-31] 按模板回收首页与导航的偏差实现
 - 背景/需求：用户指出上一版首页改造与 `newIndex` 模板差异仍然较大，包括首页顶部出现彩蛋背景、导航未做到模板式居中分栏、左侧标题样式不对、首页按钮过多、首屏文案重复以及 `Hello, I am Sangui` 被额外拼接版本文案。
 - 修改类型：fix

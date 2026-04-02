@@ -495,7 +495,7 @@ const ArticleList = ({
                     </div>
                 )}
 
-                <section id="posts" className="relative w-full pt-4 pb-16 min-h-screen overflow-hidden">
+                <section id="posts" className="relative w-full pt-12 pb-16 min-h-screen overflow-hidden">
                 <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 flex flex-col lg:flex-row gap-12">
                     <div className="hidden lg:block w-full lg:w-1/4 space-y-8">
                         <div
