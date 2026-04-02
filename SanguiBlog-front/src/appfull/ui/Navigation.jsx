@@ -162,13 +162,23 @@ const Navigation = ({
                 setHeroMode(false);
                 return;
             }
-            const postsSection = document.getElementById('posts');
-            if (!postsSection) {
-                setHeroMode(window.scrollY < window.innerHeight * 0.55);
+
+            const heroSection = document.querySelector('[data-home-hero="true"]');
+            if (heroSection instanceof HTMLElement) {
+                const heroBottom = heroSection.getBoundingClientRect().bottom;
+                const navBottom = (headerHeight || NAVIGATION_HEIGHT) + 24;
+                setHeroMode(heroBottom > navBottom);
                 return;
             }
-            const threshold = postsSection.offsetTop - (headerHeight || NAVIGATION_HEIGHT) - 48;
-            setHeroMode(window.scrollY < threshold);
+
+            const postsSection = document.getElementById('posts');
+            if (postsSection) {
+                const threshold = postsSection.offsetTop - (headerHeight || NAVIGATION_HEIGHT) - 48;
+                setHeroMode(window.scrollY < threshold);
+                return;
+            }
+
+            setHeroMode(window.scrollY < window.innerHeight * 0.55);
         };
 
         updateHeroMode();

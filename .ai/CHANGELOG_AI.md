@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-02] 修复首页顶部导航未与首屏背景融合的问题
+- 背景/需求：用户指出当前首页顶部导航在页面顶部仍表现为一条明显的白色导航条，没有像模板 `新首页设计/html/indexV11.html` 那样与首屏背景图融为一体；要求仅在滚动到下方文章区域后，导航背景才切换为正文背景色。
+- 修改类型：fix
+- 影响范围：首页首屏导航背景切换、首页 Hero 与导航联动、AI 变更日志
+- 变更摘要：
+  1) 检索确认首页与导航真实入口仍是 `HomeView -> Hero.jsx` 与 `Navigation.jsx`，因此继续复用现有实现，不新建第二套首页或导航。
+  2) 在 `Hero.jsx` 为首屏增加稳定标记，供导航基于“真实首屏位置”判断当前是否仍处于背景图区域。
+  3) 重写 `Navigation.jsx` 中的 `heroMode` 判定逻辑，优先根据首屏元素的 `getBoundingClientRect().bottom` 与导航底部位置实时比较，而不是只依赖 `posts` 区块偏移估算，减少首屏阶段误判导致的白底导航条。
+  4) 调整 `homeRedesign.css`：首屏阶段导航壳保持完全透明，与背景图融合；滚动离开首屏后再切到与正文一致的半透明正文底色，并加轻微模糊，让过渡更贴近模板观感。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+- 检索与复用策略：
+  - 检索关键词：`Hero` / `Navigation` / `homeRedesign` / `home-nav-shell` / `home-header-offset` / `posts`
+  - 找到的候选点：`Hero.jsx` 首屏背景与滚动淡出；`Navigation.jsx` 的 `heroMode` 切换；`homeRedesign.css` 的导航壳视觉；模板 `indexV11.html` 的透明导航行为
+  - 最终选择：复用现有首页与导航链路做最小修正，不新增组件、不复制模板页面
+- 风险点：
+  - 本次重点修正的是“首屏顶部导航背景切换时机”，没有扩大调整首页正文区排版；若后续还要继续贴近模板，可再单独优化导航左右操作区的视觉轻量化
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-03-31] 按模板回收首页与导航的偏差实现
 - 背景/需求：用户指出上一版首页改造与 `newIndex` 模板差异仍然较大，包括首页顶部出现彩蛋背景、导航未做到模板式居中分栏、左侧标题样式不对、首页按钮过多、首屏文案重复以及 `Hello, I am Sangui` 被额外拼接版本文案。
 - 修改类型：fix

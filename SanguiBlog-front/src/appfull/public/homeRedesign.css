@@ -222,14 +222,17 @@
 }
 
 .home-nav-shell {
-  backdrop-filter: none;
-  background: var(--home-nav-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--home-nav-bg) 88%, transparent);
   border-bottom: none;
   box-shadow: none;
-  transition: background 0.35s ease, color 0.35s ease;
+  transition: background 0.35s ease, color 0.35s ease, backdrop-filter 0.35s ease;
 }
 
 .home-nav-shell--hero {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   background: transparent;
 }
 

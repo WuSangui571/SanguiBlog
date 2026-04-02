@@ -56,6 +56,7 @@ export default function Hero({ onStartReading, isDarkMode }) {
 
     return (
         <section
+            data-home-hero="true"
             className={`home-redesign-surface home-hero ${isDarkMode ? 'is-dark' : ''}`}
             style={{ '--home-header-offset': `${headerHeight || 80}px` }}
         >
