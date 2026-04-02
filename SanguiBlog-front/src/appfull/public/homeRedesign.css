@@ -251,7 +251,10 @@
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.34);
-  border-bottom: 1px solid color-mix(in srgb, var(--home-border) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--home-border) 82%, transparent);
+  border-radius: 28px;
+  width: calc(100% - 24px);
+  margin: 8px 12px 0;
 }
 
 .home-redesign-surface.is-dark .home-nav-shell--glass {
@@ -261,6 +264,13 @@
   box-shadow:
     0 14px 44px rgba(0, 0, 0, 0.42),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+@media (min-width: 768px) {
+  .home-nav-shell--glass {
+    width: calc(100% - 40px);
+    margin: 10px 20px 0;
+  }
 }
 
 .home-redesign-surface.is-dark .home-nav-shell--hero {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Eye, EyeOff, Ticket, Upload, UserPlus } from "lucide-react";
 
 import PopButton from "../../components/common/PopButton.jsx";
+import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import {
   registerWithInvite,
   verifyRegistrationInvite,
@@ -41,6 +42,7 @@ function probePreviewSource(src) {
 }
 
 export default function RegisterView({ setView, isDarkMode }) {
+  const { headerHeight } = useLayoutOffsets();
   const [inviteCode, setInviteCode] = useState("");
   const [inviteError, setInviteError] = useState("");
   const [inviteVerified, setInviteVerified] = useState(false);
@@ -238,7 +240,10 @@ export default function RegisterView({ setView, isDarkMode }) {
     : "";
 
   return (
-    <div className={`min-h-screen ${bg} ${text}`}>
+    <div
+      className={`${bg} ${text}`}
+      style={{ minHeight: `max(0px, calc(100vh - ${headerHeight || 0}px))` }}
+    >
       <div className="max-w-3xl mx-auto px-4 py-14 md:py-20 space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

@@ -1,8 +1,10 @@
 ﻿import React, { useState } from 'react';
 import { fetchLoginCaptcha } from "../../api";
 import PopButton from "../../components/common/PopButton.jsx";
+import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import { THEME, MOCK_USER } from "../shared.js";
 import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser, isDarkMode, doLogin }) => {
+    const { headerHeight } = useLayoutOffsets();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const usernameComposingRef = React.useRef(false);
@@ -139,7 +141,10 @@ import { Eye, EyeOff } from 'lucide-react';const LoginView = ({ setView, setUser
     const cancelBtnClass = isDarkMode ? 'text-gray-100 border-gray-300 hover:bg-gray-800/60' : 'text-black';
 
     return (
-        <div className={`h-screen flex items-center justify-center ${bg} ${text}`}>
+        <div
+            className={`flex items-center justify-center ${bg} ${text}`}
+            style={{ minHeight: `max(0px, calc(100vh - ${headerHeight || 0}px))` }}
+        >
             <div className={`${surface} p-8 rounded-none border-4 border-black shadow-[8px_8px_0px_0px_#000] w-96`}>
                 <h2 className="text-3xl font-black mb-6 text-center uppercase italic">系统登录</h2>
                 <form onSubmit={handleLogin} className="space-y-6">

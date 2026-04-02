@@ -68,6 +68,27 @@
 - 验证方式：
   - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
 
+## [2026-04-02] 收紧玻璃导航显示方式并修复登录/注册页多余滚动
+- 背景/需求：用户反馈上一版玻璃导航“只有登录页看到了”，并指出登录页出现了不该有的额外下拉空间；希望页面初始保持单屏，只有真正下拉正文后才看到更明显的玻璃导航。
+- 修改类型：fix
+- 影响范围：导航玻璃态可见性、登录/注册页首屏高度、AI 变更日志
+- 变更摘要：
+  1) 将正文区玻璃导航进一步强化为“悬浮玻璃条”而非整条贴满顶部，增加圆角、边框和外边距，让它在下拉后更容易被感知。
+  2) 登录页原先使用 `h-screen`，与顶层固定头部占位叠加后会多出一段可滚动空间；现改为按 `100vh - headerHeight` 计算可视高度。
+  3) 注册页同样从 `min-h-screen` 改为扣除顶部导航占位后的最小高度，避免同类问题继续出现。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/public/LoginView.jsx`
+  - `SanguiBlog-front/src/appfull/public/RegisterView.jsx`
+- 检索与复用策略：
+  - 检索关键词：`h-screen` / `min-h-screen` / `headerHeight` / `home-nav-shell--glass`
+  - 找到的候选点：登录页 `h-screen`、注册页 `min-h-screen`、导航壳玻璃态样式
+  - 最终选择：继续复用现有导航与布局上下文，只修正高度计算和玻璃态视觉，不引入新的布局系统
+- 风险点：
+  - 若后续某些表单页内容本身超过一屏，仍会自然出现滚动；这属于内容真实高度，不再是布局误差造成的空滚动
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-03-31] 按模板回收首页与导航的偏差实现
 - 背景/需求：用户指出上一版首页改造与 `newIndex` 模板差异仍然较大，包括首页顶部出现彩蛋背景、导航未做到模板式居中分栏、左侧标题样式不对、首页按钮过多、首屏文案重复以及 `Hello, I am Sangui` 被额外拼接版本文案。
 - 修改类型：fix
