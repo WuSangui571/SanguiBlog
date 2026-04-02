@@ -27,7 +27,7 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
     if (!fixed && !isDarkMode) {
         return (
             <div className={shellClass}>
-                <div className="absolute inset-0 overflow-hidden">
+                <div className="sticky top-0 h-screen overflow-hidden">
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(231,242,255,0.96)_0%,rgba(241,247,255,0.9)_25%,rgba(246,249,255,0.82)_58%,rgba(235,243,255,0.96)_100%)]" />
                     <div
                         className="absolute inset-0"
@@ -42,26 +42,22 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
                         animate={{ opacity: [0.42, 0.62, 0.42] }}
                         transition={{ duration: 12, repeat: Infinity }}
                     />
-                </div>
-                <div className="absolute inset-0">
-                    <div className="sticky pointer-events-none h-0" style={{ top: dayCelestialTop }}>
-                        <motion.div
-                            className="absolute w-64 h-64 rounded-full bg-gradient-to-br from-[#FFE27A] via-[#FFC43D] to-white border border-white/80 shadow-[0_0_90px_rgba(255,208,107,0.62)]"
-                            style={{ left: sideOffset, top: 0 }}
-                            animate={{ scale: [0.97, 1.04, 0.97], rotate: [0, 10, 0] }}
-                            transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                        <motion.div
-                            className="absolute w-[36rem] h-[36rem] rounded-full blur-[120px]"
-                            style={{
-                                left: `calc(${sideOffset} - 6rem)`,
-                                top: '-7rem',
-                                background: 'radial-gradient(circle, rgba(255, 219, 120, 0.24) 0%, rgba(255, 219, 120, 0.12) 28%, transparent 72%)'
-                            }}
-                            animate={{ opacity: [0.28, 0.42, 0.28] }}
-                            transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                    </div>
+                    <motion.div
+                        className="absolute w-64 h-64 rounded-full bg-gradient-to-br from-[#FFE27A] via-[#FFC43D] to-white border border-white/80 shadow-[0_0_90px_rgba(255,208,107,0.62)]"
+                        style={{ left: sideOffset, top: dayCelestialTop }}
+                        animate={{ scale: [0.97, 1.04, 0.97], rotate: [0, 10, 0] }}
+                        transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    <motion.div
+                        className="absolute w-[36rem] h-[36rem] rounded-full blur-[120px]"
+                        style={{
+                            left: `calc(${sideOffset} - 6rem)`,
+                            top: 'calc(5.75rem - 7rem)',
+                            background: 'radial-gradient(circle, rgba(255, 219, 120, 0.24) 0%, rgba(255, 219, 120, 0.12) 28%, transparent 72%)'
+                        }}
+                        animate={{ opacity: [0.28, 0.42, 0.28] }}
+                        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+                    />
                 </div>
             </div>
         );
@@ -70,7 +66,7 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
     if (!fixed) {
         return (
             <div className={shellClass}>
-                <div className="absolute inset-0 overflow-hidden">
+                <div className="sticky top-0 h-screen overflow-hidden">
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,16,31,0.92)_0%,rgba(10,20,38,0.84)_26%,rgba(11,23,42,0.74)_58%,rgba(13,28,49,0.88)_100%)]" />
                     <div
                         className="absolute inset-0"
@@ -100,26 +96,22 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
                         animate={{ opacity: [0.48, 0.64, 0.48] }}
                         transition={{ duration: 12, repeat: Infinity }}
                     />
-                </div>
-                <div className="absolute inset-0">
-                    <div className="sticky pointer-events-none h-0" style={{ top: nightCelestialTop }}>
-                        <motion.div
-                            className="absolute w-40 h-40 rounded-full bg-gradient-to-br from-white via-slate-100 to-slate-300 shadow-[0_0_45px_rgba(196,216,255,0.28)]"
-                            style={{ left: sideOffset, top: 0 }}
-                            animate={{ rotate: [-4, 4, -4], opacity: [0.82, 0.96, 0.82] }}
-                            transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                        <motion.div
-                            className="absolute w-[32rem] h-[32rem] rounded-full blur-[110px]"
-                            style={{
-                                left: `calc(${sideOffset} - 7rem)`,
-                                top: '-5rem',
-                                background: 'radial-gradient(circle, rgba(154, 186, 255, 0.16) 0%, rgba(154, 186, 255, 0.08) 26%, transparent 68%)'
-                            }}
-                            animate={{ opacity: [0.32, 0.46, 0.32] }}
-                            transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                    </div>
+                    <motion.div
+                        className="absolute w-40 h-40 rounded-full bg-gradient-to-br from-white via-slate-100 to-slate-300 shadow-[0_0_45px_rgba(196,216,255,0.28)]"
+                        style={{ left: sideOffset, top: nightCelestialTop }}
+                        animate={{ rotate: [-4, 4, -4], opacity: [0.82, 0.96, 0.82] }}
+                        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    <motion.div
+                        className="absolute w-[32rem] h-[32rem] rounded-full blur-[110px]"
+                        style={{
+                            left: `calc(${sideOffset} - 7rem)`,
+                            top: 'calc(6.5rem - 5rem)',
+                            background: 'radial-gradient(circle, rgba(154, 186, 255, 0.16) 0%, rgba(154, 186, 255, 0.08) 26%, transparent 68%)'
+                        }}
+                        animate={{ opacity: [0.32, 0.46, 0.32] }}
+                        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+                    />
                 </div>
             </div>
         );
