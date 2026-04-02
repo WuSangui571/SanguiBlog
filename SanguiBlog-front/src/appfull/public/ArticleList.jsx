@@ -408,7 +408,7 @@ const ArticleList = ({
         <>
             <div className={`relative z-20 ${isDarkMode ? 'bg-[#09111d]' : 'bg-[#f8f8fa]'}`}>
                 {backgroundEnabled && (
-                    <div className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 overflow-hidden">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0">
                         <BackgroundEasterEggs isDarkMode={isDarkMode} fixed={false} />
                     </div>
                 )}
