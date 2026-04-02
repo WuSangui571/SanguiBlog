@@ -255,8 +255,8 @@ const Navigation = ({
     }, [onProfileClick, setView, scrollNavToTop, onCloseMenu]);
 
     const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
-    const floatingNavMode = heroMode || topMode;
-    const recalledGlassMode = navVisible && !heroMode && !topMode;
+    const recalledGlassMode = navVisible && !topMode;
+    const floatingNavMode = (heroMode || topMode) && !recalledGlassMode;
     const desktopActionClass = `home-nav-icon-btn ${floatingNavMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2.5`;
     const desktopAccentActionClass = `${desktopActionClass} home-nav-icon-btn--accent`;
     const mobileActionClass = `home-nav-icon-btn ${floatingNavMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2`;
