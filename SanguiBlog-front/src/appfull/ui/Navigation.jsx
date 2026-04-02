@@ -257,9 +257,12 @@ const Navigation = ({
     const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
     const recalledGlassMode = navVisible && !topMode;
     const floatingNavMode = (heroMode || topMode) && !recalledGlassMode;
-    const desktopActionClass = `home-nav-icon-btn ${floatingNavMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2.5`;
+    const navIconToneClass = floatingNavMode
+        ? 'home-nav-icon-btn--hero'
+        : (recalledGlassMode ? 'home-nav-icon-btn--glass' : '');
+    const desktopActionClass = `home-nav-icon-btn ${navIconToneClass} inline-flex items-center justify-center rounded-full p-2.5`;
     const desktopAccentActionClass = `${desktopActionClass} home-nav-icon-btn--accent`;
-    const mobileActionClass = `home-nav-icon-btn ${floatingNavMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2`;
+    const mobileActionClass = `home-nav-icon-btn ${navIconToneClass} inline-flex items-center justify-center rounded-full p-2`;
 
     return (
         <>
@@ -332,7 +335,11 @@ const Navigation = ({
                             className="inline-flex items-center gap-2"
                             title="后台/个人中心"
                         >
-                            <div className={`w-9 h-9 overflow-hidden rounded-full border ${floatingNavMode ? (isDarkMode ? 'border-white/25 bg-white/10' : 'border-black/10 bg-white/15') : 'border-black/10 bg-white/80'}`}>
+                            <div className={`w-9 h-9 overflow-hidden rounded-full border ${floatingNavMode
+                                ? (isDarkMode ? 'border-white/25 bg-white/10' : 'border-black/10 bg-white/15')
+                                : recalledGlassMode
+                                    ? (isDarkMode ? 'border-white/20 bg-white/10 backdrop-blur-md' : 'border-black/10 bg-white/40 backdrop-blur-md')
+                                    : 'border-black/10 bg-white/80'}`}>
                                 <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
                             </div>
                         </button>
@@ -359,6 +366,8 @@ const Navigation = ({
                     aria-disabled={themeLockActive}
                     className={`relative p-2 border-2 rounded-full transition-colors ${floatingNavMode
                         ? (isDarkMode ? 'border-white/30 bg-white/10 text-white hover:bg-white hover:text-black' : 'border-black/15 bg-white/15 text-black hover:bg-black hover:text-white')
+                        : recalledGlassMode
+                            ? (isDarkMode ? 'border-white/20 bg-white/10 text-white hover:bg-white/20' : 'border-black/10 bg-white/45 text-black hover:bg-white/70')
                         : themeLockActive
                             ? 'border-black bg-gray-400 text-black cursor-not-allowed opacity-70'
                             : isDarkMode
