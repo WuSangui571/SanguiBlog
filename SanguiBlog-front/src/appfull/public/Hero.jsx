@@ -10,8 +10,8 @@ export default function Hero({ onStartReading, isDarkMode }) {
     const bgRef = useRef(null);
     const { headerHeight } = useLayoutOffsets();
     const { scrollY } = useScroll();
-    const contentOpacity = useTransform(scrollY, [0, 90, 220], [1, 0.78, 0]);
-    const contentY = useTransform(scrollY, [0, 220], [0, -84]);
+    const contentOpacity = useTransform(scrollY, [0, 80, 220], [1, 0.72, 0]);
+    const contentY = useTransform(scrollY, [0, 220], [0, -168]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
