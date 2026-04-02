@@ -702,16 +702,39 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         await sendCurrentDraft();
     };
 
-    const shellClass = isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black';
+    const shellClass = isDarkMode
+        ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(15,23,42,0.84))] text-white backdrop-blur-2xl'
+        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.72))] text-black backdrop-blur-2xl';
+    const panelBorderClass = isDarkMode ? 'border-white/10' : 'border-black/8';
     const subTextClass = isDarkMode ? 'text-gray-300' : 'text-gray-600';
-    const bubbleButtonClass = isDarkMode
-        ? 'bg-[#FFD700] text-black hover:bg-white'
-        : 'bg-black text-[#FFD700] hover:bg-[#FFD700] hover:text-black';
-    const panelAccentClass = isDarkMode ? 'bg-[#111827]' : 'bg-[#FFF9DB]';
+    const panelAccentClass = isDarkMode
+        ? 'bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]'
+        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0.38))]';
     const emptyStateNoteClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
     const sessionItemClass = isDarkMode
-        ? 'bg-gray-800 text-white hover:bg-gray-700'
-        : 'bg-white text-black hover:bg-[#FFF4BF]';
+        ? 'border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.10]'
+        : 'border-black/10 bg-white/50 text-black hover:bg-white/75';
+    const iconButtonBaseClass = `inline-flex items-center justify-center rounded-[16px] border text-sm transition-all backdrop-blur-xl ${panelBorderClass}`;
+    const neutralIconButtonClass = isDarkMode
+        ? `${iconButtonBaseClass} bg-white/[0.07] text-white hover:bg-white/[0.14]`
+        : `${iconButtonBaseClass} bg-white/58 text-black hover:bg-white/80`;
+    const accentIconButtonClass = isDarkMode
+        ? `${iconButtonBaseClass} bg-[linear-gradient(180deg,rgba(255,215,0,0.92),rgba(255,215,0,0.72))] text-black hover:bg-[#FFE27A]`
+        : `${iconButtonBaseClass} bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.72))] text-[#111827] hover:bg-white`;
+    const disabledIconButtonClass = `${iconButtonBaseClass} cursor-not-allowed bg-gray-200/80 text-gray-500`;
+    const popoverShellClass = isDarkMode
+        ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.94),rgba(15,23,42,0.88))] text-white border-white/12 shadow-[0_20px_50px_rgba(2,6,23,0.42)]'
+        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,250,252,0.82))] text-black border-black/10 shadow-[0_20px_50px_rgba(15,23,42,0.14)]';
+    const viewportGlassClass = isDarkMode
+        ? 'sg-scrollbar-dark bg-[linear-gradient(180deg,rgba(9,15,28,0.86),rgba(11,18,32,0.92))]'
+        : 'sg-scrollbar-light bg-[linear-gradient(180deg,rgba(255,255,255,0.52),rgba(250,250,252,0.72))]';
+    const textareaGlassClass = isDarkMode
+        ? 'sg-scrollbar-dark border-white/10 bg-white/[0.06] text-white placeholder:text-gray-400'
+        : 'sg-scrollbar-light border-black/10 bg-white/70 text-black placeholder:text-gray-500';
+    const modalCardClass = isDarkMode
+        ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.90))] text-white border-white/12 shadow-[0_20px_60px_rgba(2,6,23,0.46)]'
+        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,252,0.88))] text-black border-black/10 shadow-[0_20px_60px_rgba(15,23,42,0.16)]';
+    const modalInsetClass = isDarkMode ? 'bg-white/[0.05] border-white/10' : 'bg-white/72 border-black/8';
 
     return (
         <>
@@ -737,12 +760,12 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 32 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                            className={`fixed z-[83] left-0 right-0 overflow-hidden rounded-none border-t-2 border-black flex flex-col ${shellClass} ${
+                            className={`fixed z-[83] left-0 right-0 overflow-hidden rounded-none border flex flex-col ${shellClass} ${panelBorderClass} ${
                                 isMobileViewport
                                     ? 'border-0 rounded-none'
                                     : isFloating
-                                    ? 'md:border-2'
-                                    : 'md:left-auto md:w-[460px] md:border-l-2 md:border-r-0 md:border-b-0'
+                                    ? 'md:rounded-[30px]'
+                                    : 'md:left-auto md:w-[460px] md:rounded-l-[30px] md:border-r-0'
                             }`}
                             style={panelStyle}
                         >
@@ -784,7 +807,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             )}
                             <div
                                 onPointerDown={handlePanelDragStart}
-                                className={`border-b-2 border-black px-4 py-4 ${panelAccentClass} ${
+                                className={`border-b px-4 py-4 ${panelBorderClass} ${panelAccentClass} ${
                                     isFloating && !isMobileViewport ? 'cursor-move' : ''
                                 }`}
                             >
@@ -813,12 +836,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             onClick={handleStartNewChat}
                                             title={newChatDisabled ? '当前已经是新对话' : '新对话'}
                                             disabled={newChatDisabled}
-                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
+                                            className={`h-10 w-10 ${
                                                 newChatDisabled
-                                                    ? 'cursor-not-allowed bg-gray-200 text-gray-500'
-                                                    : isDarkMode
-                                                        ? 'bg-[#FFD700] text-black hover:bg-white'
-                                                        : 'bg-black text-[#FFD700] hover:bg-[#FFD700] hover:text-black'
+                                                    ? disabledIconButtonClass
+                                                    : accentIconButtonClass
                                             }`}
                                         >
                                             <MessageSquarePlus size={18} />
@@ -828,12 +849,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             onClick={() => !isGuestMode && setHistoryOpen((prev) => !prev)}
                                             title={!isGuestMode ? '历史会话' : '访客模式不保留历史会话'}
                                             disabled={isGuestMode}
-                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
+                                            className={`h-10 w-10 ${
                                                 !isGuestMode
-                                                    ? isDarkMode
-                                                        ? 'bg-gray-800 text-white hover:bg-gray-700'
-                                                        : 'bg-white text-black hover:bg-[#FFF4BF]'
-                                                    : 'cursor-not-allowed bg-gray-200 text-gray-500'
+                                                    ? neutralIconButtonClass
+                                                    : disabledIconButtonClass
                                             }`}
                                         >
                                             <History size={18} />
@@ -842,12 +861,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             type="button"
                                             onClick={handleToggleFloatingMode}
                                             title={isFloating ? '恢复停靠' : '浮动窗口'}
-                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
+                                            className={`h-10 w-10 ${
                                                 isFloating
-                                                    ? 'bg-[#FFD700] text-black'
-                                                    : isDarkMode
-                                                        ? 'bg-gray-800 text-white hover:bg-gray-700'
-                                                        : 'bg-white text-black hover:bg-gray-100'
+                                                    ? accentIconButtonClass
+                                                    : neutralIconButtonClass
                                             }`}
                                         >
                                             {isFloating ? <RotateCcw size={18} /> : <Move size={18} />}
@@ -856,30 +873,24 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             type="button"
                                             onClick={handleCloseAssistant}
                                             title="关闭"
-                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
-                                                isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'
-                                            }`}
+                                            className={`h-10 w-10 ${neutralIconButtonClass}`}
                                         >
                                             <X size={18} />
                                         </button>
                                         {historyOpen && !isGuestMode && (
                                             <div
                                                 ref={historyPopoverRef}
-                                                className={`absolute right-0 top-[calc(100%+10px)] z-[84] w-[300px] rounded-[20px] border-2 border-black p-2 ${
-                                                    isDarkMode ? 'bg-[#111827] text-white' : 'bg-white text-black'
-                                                }`}
+                                                className={`absolute right-0 top-[calc(100%+10px)] z-[84] w-[320px] rounded-[24px] border p-2 backdrop-blur-2xl ${popoverShellClass}`}
                                             >
-                                                <div className="flex items-start justify-between gap-3 border-b border-black/10 px-3 pb-2 pt-1">
+                                                <div className={`flex items-start justify-between gap-3 border-b px-3 pb-2 pt-1 ${panelBorderClass}`}>
                                                     <div className={`text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass}`}>
-                                                        鍘嗗彶浼氳瘽
+                                                        历史会话
                                                     </div>
                                                     <button
                                                         type="button"
                                                         onClick={() => setHistoryOpen(false)}
                                                         title="关闭历史会话窗口"
-                                                        className={`inline-flex h-7 w-7 items-center justify-center rounded-[10px] border border-black transition-colors ${
-                                                            isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'
-                                                        }`}
+                                                        className={`h-7 w-7 ${neutralIconButtonClass}`}
                                                     >
                                                         <X size={14} />
                                                     </button>
@@ -908,12 +919,12 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                                         }}
                                                                         role="button"
                                                                         tabIndex={0}
-                                                                        className={`w-full cursor-pointer rounded-[16px] border-2 border-black px-3 py-3 text-left transition-colors ${
+                                                                        className={`w-full cursor-pointer rounded-[18px] border px-3 py-3 text-left transition-colors backdrop-blur-xl ${
                                                                             active
-                                                                                ? 'bg-[#FFD700] text-black'
-                                                                                : isDarkMode
-                                                                                    ? 'bg-gray-800 text-white hover:bg-gray-700'
-                                                                                    : 'bg-[#FFFBEA] text-black hover:bg-[#FFF4BF]'
+                                                                                ? (isDarkMode
+                                                                                    ? 'border-white/15 bg-[linear-gradient(180deg,rgba(255,215,0,0.92),rgba(255,215,0,0.72))] text-black'
+                                                                                    : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,245,204,0.82))] text-black')
+                                                                                : sessionItemClass
                                                                         }`}
                                                                     >
                                                                         <div className="truncate text-sm font-black">
@@ -930,12 +941,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                                                 onClick={(event) => {
                                                                                     void handleDeleteSession(session, event);
                                                                                 }}
-                                                                                className={`inline-flex h-8 w-8 items-center justify-center rounded-[10px] border border-black transition-colors ${
+                                                                                className={`h-8 w-8 ${
                                                                                     active
-                                                                                        ? 'bg-black/10 text-black hover:bg-black/20'
-                                                                                        : isDarkMode
-                                                                                            ? 'bg-gray-900 text-white hover:bg-gray-950'
-                                                                                            : 'bg-white text-black hover:bg-gray-100'
+                                                                                        ? (isDarkMode ? `${neutralIconButtonClass} bg-black/10 text-black hover:bg-black/20 border-black/10` : `${neutralIconButtonClass} bg-black/10 text-black hover:bg-black/20`)
+                                                                                        : neutralIconButtonClass
                                                                                 }`}
                                                                             >
                                                                                 <Trash2 size={14} />
@@ -966,7 +975,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 />
                             )}
 
-                            <div className={`hidden border-b-2 border-black px-4 py-3 ${isDarkMode ? 'bg-[#0B1220]' : 'bg-[#FFFBEA]'}`}>
+                            <div className={`hidden border-b px-4 py-3 ${panelBorderClass} ${panelAccentClass}`}>
                                 <div className="flex items-center justify-between gap-3">
                                     <div className={`min-w-0 text-[11px] font-bold uppercase tracking-[0.16em] ${subTextClass}`}>
                                         {activeSessionId ? '继续对话' : '新的对话'}
@@ -976,9 +985,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             type="button"
                                             onClick={handleStartNewChat}
                                             title="新对话"
-                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
-                                                isDarkMode ? 'bg-[#FFD700] text-black hover:bg-white' : 'bg-black text-[#FFD700] hover:bg-[#FFD700] hover:text-black'
-                                            }`}
+                                            className={`h-10 w-10 ${accentIconButtonClass}`}
                                         >
                                             <MessageSquarePlus size={18} />
                                         </button>
@@ -987,24 +994,20 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             onClick={() => !isGuestMode && setHistoryOpen((prev) => !prev)}
                                             title={!isGuestMode ? '历史会话' : '访客模式不保留历史会话'}
                                             disabled={isGuestMode}
-                                            className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-2 border-black transition-colors ${
+                                            className={`h-10 w-10 ${
                                                 !isGuestMode
-                                                    ? isDarkMode
-                                                        ? 'bg-gray-800 text-white hover:bg-gray-700'
-                                                        : 'bg-white text-black hover:bg-[#FFF4BF]'
-                                                    : 'cursor-not-allowed bg-gray-200 text-gray-500'
+                                                    ? neutralIconButtonClass
+                                                    : disabledIconButtonClass
                                             }`}
                                         >
                                             <History size={18} />
                                         </button>
                                         {historyOpen && !isGuestMode && (
                                             <div
-                                                className={`absolute right-0 top-[calc(100%+10px)] z-[84] w-[300px] rounded-[20px] border-2 border-black p-2 ${
-                                                    isDarkMode ? 'bg-[#111827] text-white' : 'bg-white text-black'
-                                                }`}
+                                                className={`absolute right-0 top-[calc(100%+10px)] z-[84] w-[320px] rounded-[24px] border p-2 backdrop-blur-2xl ${popoverShellClass}`}
                                             >
-                                                <div className={`border-b border-black/10 px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass}`}>
-                                                    鍘嗗彶浼氳瘽
+                                                <div className={`border-b px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass} ${panelBorderClass}`}>
+                                                    历史会话
                                                 </div>
                                                 <div className="mt-2 max-h-[280px] overflow-y-auto pr-1">
                                                     {sessionsLoading ? (
@@ -1020,12 +1023,12 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                                         key={session.id}
                                                                         type="button"
                                                                         onClick={() => handleSelectSession(session.id)}
-                                                                        className={`w-full rounded-[16px] border-2 border-black px-3 py-3 text-left transition-colors ${
+                                                                        className={`w-full rounded-[18px] border px-3 py-3 text-left transition-colors backdrop-blur-xl ${
                                                                             active
-                                                                                ? 'bg-[#FFD700] text-black'
-                                                                                : isDarkMode
-                                                                                    ? 'bg-gray-800 text-white hover:bg-gray-700'
-                                                                                    : 'bg-[#FFFBEA] text-black hover:bg-[#FFF4BF]'
+                                                                                ? (isDarkMode
+                                                                                    ? 'border-white/15 bg-[linear-gradient(180deg,rgba(255,215,0,0.92),rgba(255,215,0,0.72))] text-black'
+                                                                                    : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,245,204,0.82))] text-black')
+                                                                                : sessionItemClass
                                                                         }`}
                                                                     >
                                                                         <div className="truncate text-sm font-black">
@@ -1069,7 +1072,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                             key={session.id}
                                                             type="button"
                                                             onClick={() => handleSelectSession(session.id)}
-                                                            className={`max-w-[170px] rounded-[16px] border-2 border-black px-3 py-2 text-left transition-colors ${active ? 'bg-[#FFD700] text-black' : sessionItemClass}`}
+                                                            className={`max-w-[170px] rounded-[18px] border px-3 py-2 text-left transition-colors backdrop-blur-xl ${active
+                                                                ? (isDarkMode
+                                                                    ? 'border-white/15 bg-[linear-gradient(180deg,rgba(255,215,0,0.92),rgba(255,215,0,0.72))] text-black'
+                                                                    : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,245,204,0.82))] text-black')
+                                                                : sessionItemClass}`}
                                                         >
                                                             <div className="truncate text-xs font-black">
                                                                 {session.title || '新对话'}
@@ -1088,7 +1095,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
                             <div
                                 ref={viewportRef}
-                                className={`sg-scrollbar flex-1 min-h-0 px-4 py-4 ${isDarkMode ? 'sg-scrollbar-dark bg-[#0F172A]' : 'sg-scrollbar-light bg-[#FFFDF6]'} ${
+                                className={`sg-scrollbar flex-1 min-h-0 px-4 py-4 ${viewportGlassClass} ${
                                     lockAssistantViewport ? 'overflow-hidden' : 'overflow-y-auto'
                                 }`}
                                 style={{ overscrollBehavior: 'contain' }}
@@ -1229,10 +1236,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 )}
                             </div>
 
-                            <form onSubmit={handleSubmit} className={`border-t-2 border-black p-3 ${shellClass}`}>
+                            <form onSubmit={handleSubmit} className={`border-t p-3 ${panelBorderClass} ${shellClass}`}>
                                 <div className="relative">
                                     <label className="block">
-                                        <span className="sr-only">杈撳叆娑堟伅</span>
+                                        <span className="sr-only">输入消息</span>
                                         <textarea
                                             ref={textareaRef}
                                             rows={1}
@@ -1244,20 +1251,18 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                 minHeight: `${MIN_TEXTAREA_HEIGHT}px`,
                                                 maxHeight: `${MAX_TEXTAREA_HEIGHT}px`
                                             }}
-                                            className={`sg-scrollbar w-full resize-none overflow-y-auto rounded-[18px] border-2 border-black px-4 pt-[15px] pb-[15px] pr-[72px] text-sm leading-5 font-semibold outline-none ${
-                                                isDarkMode
-                                                    ? 'sg-scrollbar-dark bg-gray-800 text-white placeholder:text-gray-400'
-                                                    : 'sg-scrollbar-light bg-[#FFF9DB] text-black placeholder:text-gray-500'
-                                            }`}
+                                            className={`sg-scrollbar w-full resize-none overflow-y-auto rounded-[22px] border px-4 pt-[15px] pb-[15px] pr-[72px] text-sm leading-5 font-semibold outline-none backdrop-blur-xl ${textareaGlassClass}`}
                                         />
                                     </label>
                                     <button
                                         type="submit"
                                         disabled={sendDisabled}
-                                        className={`absolute right-3 bottom-3 shrink-0 w-[42px] h-[42px] rounded-[14px] border-2 border-black flex items-center justify-center transition-transform ${
+                                        className={`absolute right-3 bottom-3 shrink-0 w-[42px] h-[42px] rounded-[14px] border flex items-center justify-center transition-transform backdrop-blur-xl ${panelBorderClass} ${
                                             sendDisabled
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                : 'bg-[#FF0080] text-white hover:-translate-y-0.5'
+                                                ? 'bg-gray-300/80 text-gray-500 cursor-not-allowed'
+                                                : isDarkMode
+                                                    ? 'bg-[linear-gradient(180deg,rgba(255,215,0,0.9),rgba(255,215,0,0.74))] text-black hover:-translate-y-0.5'
+                                                    : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.72))] text-[#111827] hover:-translate-y-0.5'
                                         }`}
                                     >
                                         <SendHorizontal size={18} />
@@ -1285,13 +1290,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.96 }}
                                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                                        className={`relative w-full max-w-sm overflow-hidden border-2 border-black shadow-[10px_10px_0px_0px_#000] ${
-                                            isDarkMode ? 'bg-[#111827] text-white' : 'bg-[#FFF9E6] text-black'
-                                        }`}
+                                        className={`relative w-full max-w-sm overflow-hidden rounded-[28px] border backdrop-blur-2xl ${modalCardClass}`}
                                     >
-                                        <div className="flex items-start justify-between gap-3 border-b-2 border-black px-5 py-4">
+                                        <div className={`flex items-start justify-between gap-3 border-b px-5 py-4 ${panelBorderClass}`}>
                                             <div className="space-y-1">
-                                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#00F0FF]">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#3b82f6]">
                                                     访客验证
                                                 </p>
                                                 <h3 className="text-lg font-black">继续提问前，请先完成验证码</h3>
@@ -1299,9 +1302,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             <button
                                                 type="button"
                                                 onClick={closeGuardPrompt}
-                                                className={`inline-flex h-8 w-8 items-center justify-center rounded-[10px] border-2 border-black ${
-                                                    isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
-                                                }`}
+                                                className={`h-8 w-8 ${neutralIconButtonClass}`}
                                             >
                                                 <X size={16} />
                                             </button>
@@ -1315,11 +1316,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                     <img
                                                         src={guardCaptchaImage}
                                                         alt="guard captcha"
-                                                        className="h-14 w-32 border-2 border-black bg-white object-contain"
+                                                        className={`h-14 w-32 rounded-[16px] border object-contain ${isDarkMode ? 'border-white/10 bg-white/90' : 'border-black/10 bg-white/92'}`}
                                                     />
                                                 ) : (
-                                                    <div className={`flex h-14 w-32 items-center justify-center border-2 border-dashed border-black text-xs font-bold ${
-                                                        isDarkMode ? 'bg-gray-900 text-gray-300' : 'bg-white text-gray-500'
+                                                    <div className={`flex h-14 w-32 items-center justify-center rounded-[16px] border border-dashed text-xs font-bold ${
+                                                        isDarkMode ? 'border-white/14 bg-white/[0.05] text-gray-300' : 'border-black/12 bg-white/65 text-gray-500'
                                                     }`}>
                                                         {guardCaptchaLoading ? '加载中...' : '验证码'}
                                                     </div>
@@ -1328,9 +1329,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                     type="button"
                                                     onClick={() => openGuardPrompt('')}
                                                     disabled={guardCaptchaLoading}
-                                                    className={`rounded-full border-2 border-black px-3 py-2 text-xs font-bold ${
-                                                        isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
-                                                    }`}
+                                                    className={`rounded-full border px-3 py-2 text-xs font-bold ${neutralIconButtonClass}`}
                                                 >
                                                     刷新
                                                 </button>
@@ -1340,12 +1339,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                 value={guardCaptchaInput}
                                                 onChange={(event) => setGuardCaptchaInput(event.target.value.trim().slice(0, 4))}
                                                 placeholder="请输入验证码"
-                                                className={`w-full rounded-[16px] border-2 border-black px-4 py-3 text-sm font-bold outline-none ${
-                                                    isDarkMode ? 'bg-gray-900 text-white placeholder:text-gray-500' : 'bg-white text-black placeholder:text-gray-400'
-                                                }`}
+                                                className={`w-full rounded-[18px] border px-4 py-3 text-sm font-bold outline-none backdrop-blur-xl ${textareaGlassClass}`}
                                             />
                                             {guardError && (
-                                                <div className="rounded-[14px] border-2 border-black bg-[#FF5A5F] px-3 py-2 text-sm font-bold text-white">
+                                                <div className="rounded-[16px] border border-[#ef4444]/30 bg-[#ef4444]/88 px-3 py-2 text-sm font-bold text-white backdrop-blur-xl">
                                                     {guardError}
                                                 </div>
                                             )}
@@ -1353,9 +1350,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                 <button
                                                     type="button"
                                                     onClick={closeGuardPrompt}
-                                                    className={`px-4 py-2 rounded-full border-2 border-black text-sm font-bold shadow-[3px_3px_0px_0px_#000] ${
-                                                        isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
-                                                    }`}
+                                                    className={`px-4 py-2 rounded-full border text-sm font-bold ${neutralIconButtonClass}`}
                                                 >
                                                     稍后再说
                                                 </button>
@@ -1363,7 +1358,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                     type="button"
                                                     onClick={handleGuardVerify}
                                                     disabled={guardCaptchaLoading}
-                                                    className="px-4 py-2 rounded-full border-2 border-black bg-[#00B8D9] text-white text-sm font-bold shadow-[3px_3px_0px_0px_#000] hover:bg-[#0098B3] disabled:cursor-not-allowed disabled:opacity-60"
+                                                    className={`px-4 py-2 rounded-full border text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60 ${isDarkMode ? 'border-white/12 bg-[linear-gradient(180deg,rgba(59,130,246,0.92),rgba(59,130,246,0.72))] text-white hover:bg-[#2563eb]' : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(219,234,254,0.92))] text-[#1d4ed8] hover:bg-white'}`}
                                                 >
                                                     {guardCaptchaLoading ? '验证中...' : '完成验证'}
                                                 </button>
@@ -1391,32 +1386,26 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.96 }}
                                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                                        className={`relative w-full max-w-sm overflow-hidden border-2 border-black shadow-[10px_10px_0px_0px_#000] ${
-                                            isDarkMode ? 'bg-[#111827] text-white' : 'bg-[#FFF9E6] text-black'
-                                        }`}
+                                        className={`relative w-full max-w-sm overflow-hidden rounded-[28px] border backdrop-blur-2xl ${modalCardClass}`}
                                     >
-                                        <div className="flex items-start justify-between gap-3 border-b-2 border-black px-5 py-4">
+                                        <div className={`flex items-start justify-between gap-3 border-b px-5 py-4 ${panelBorderClass}`}>
                                             <div className="space-y-1">
                                                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#FF0080]">
-                                                    浼氳瘽鍒犻櫎
+                                                    会话删除
                                                 </p>
                                                 <h3 className="text-lg font-black">{deleteDialog.title}</h3>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => setPendingDeleteSession(null)}
-                                                className={`inline-flex h-8 w-8 items-center justify-center rounded-[10px] border-2 border-black ${
-                                                    isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
-                                                }`}
+                                                className={`h-8 w-8 ${neutralIconButtonClass}`}
                                             >
                                                 <X size={16} />
                                             </button>
                                         </div>
                                         <div className="space-y-4 px-5 py-5">
-                                            <div className={`rounded-2xl border-2 border-black px-4 py-3 ${
-                                                isDarkMode ? 'bg-gray-900/80' : 'bg-white'
-                                            }`}>
-                                                <p className="text-xs font-semibold opacity-70">浼氳瘽鏍囬</p>
+                                            <div className={`rounded-2xl border px-4 py-3 backdrop-blur-xl ${modalInsetClass}`}>
+                                                <p className="text-xs font-semibold opacity-70">会话标题</p>
                                                 <p className="mt-1 text-sm font-black break-words">{deleteDialog.sessionTitle}</p>
                                             </div>
                                             <p className={`text-sm leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -1426,16 +1415,14 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                 <button
                                                     type="button"
                                                     onClick={() => setPendingDeleteSession(null)}
-                                                    className={`px-4 py-2 rounded-full border-2 border-black text-sm font-bold shadow-[3px_3px_0px_0px_#000] ${
-                                                        isDarkMode ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-100'
-                                                    }`}
+                                                    className={`px-4 py-2 rounded-full border text-sm font-bold ${neutralIconButtonClass}`}
                                                 >
                                                     {deleteDialog.cancelText}
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={confirmDeleteSession}
-                                                    className="px-4 py-2 rounded-full border-2 border-black bg-[#FF5A5F] text-white text-sm font-bold shadow-[3px_3px_0px_0px_#000] hover:bg-[#E84B50]"
+                                                    className={`px-4 py-2 rounded-full border text-sm font-bold ${isDarkMode ? 'border-white/12 bg-[linear-gradient(180deg,rgba(239,68,68,0.95),rgba(220,38,38,0.84))] text-white hover:bg-[#dc2626]' : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(254,226,226,0.92))] text-[#b91c1c] hover:bg-white'}`}
                                                 >
                                                     {deleteDialog.confirmText}
                                                 </button>
@@ -1455,15 +1442,15 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 onClick={() => setIsOpen((prev) => !prev)}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border-2 border-black ${launcherGlowShapeClass} pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors ${
+                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border ${launcherGlowShapeClass} pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors backdrop-blur-2xl ${
                     isDarkMode
-                        ? 'bg-[#07111F] text-white hover:bg-[#0C1A2D]'
-                        : 'bg-[#FFFCEE] text-black hover:bg-white'
+                        ? 'border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.86),rgba(15,23,42,0.76))] text-white hover:bg-[rgba(15,23,42,0.92)]'
+                        : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.72))] text-black hover:bg-white/85'
                 }`}
                 style={{
                     boxShadow: isDarkMode
-                        ? '0 0 0 1px rgba(0,240,255,0.16), 0 16px 36px rgba(0,0,0,0.34), 0 0 32px rgba(0,240,255,0.14)'
-                        : '0 0 0 1px rgba(15,118,110,0.12), 0 16px 36px rgba(15,23,42,0.13), 0 0 28px rgba(0,240,255,0.11)'
+                        ? '0 16px 36px rgba(2,6,23,0.32), inset 0 1px 0 rgba(255,255,255,0.10)'
+                        : '0 16px 36px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.58)'
                 }}
             >
                 <span className="pointer-events-none absolute inset-[-14px] opacity-100">
@@ -1471,8 +1458,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         aria-hidden="true"
                         className={`absolute inset-[10px] ${launcherGlowShapeClass} blur-[12px] ${
                             isDarkMode
-                                ? 'bg-[radial-gradient(circle,_rgba(0,240,255,0.16),_transparent_66%)]'
-                                : 'bg-[radial-gradient(circle,_rgba(0,240,255,0.10),_transparent_66%)]'
+                                ? 'bg-[radial-gradient(circle,_rgba(148,163,184,0.18),_transparent_66%)]'
+                                : 'bg-[radial-gradient(circle,_rgba(148,163,184,0.12),_transparent_66%)]'
                         }`}
                         animate={{ scale: [0.94, 1.04, 0.94], opacity: [0.45, 0.8, 0.45] }}
                         transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
@@ -1483,20 +1470,20 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         aria-hidden="true"
                         className={`absolute inset-[1px] ${launcherGlowShapeClass} ${
                             isDarkMode
-                                ? 'border border-[#00F0FF]/18'
-                                : 'border border-[#0F766E]/12'
+                                ? 'border border-white/12'
+                                : 'border border-white/60'
                         }`}
                         animate={{
                             boxShadow: isDarkMode
                                 ? [
-                                    'inset 0 0 0 rgba(0,240,255,0), 0 0 0 rgba(0,240,255,0)',
-                                    'inset 0 0 18px rgba(0,240,255,0.10), 0 0 18px rgba(0,240,255,0.12)',
-                                    'inset 0 0 0 rgba(0,240,255,0), 0 0 0 rgba(0,240,255,0)'
+                                    'inset 0 0 0 rgba(255,255,255,0), 0 0 0 rgba(255,255,255,0)',
+                                    'inset 0 0 18px rgba(255,255,255,0.08), 0 0 18px rgba(255,255,255,0.08)',
+                                    'inset 0 0 0 rgba(255,255,255,0), 0 0 0 rgba(255,255,255,0)'
                                 ]
                                 : [
-                                    'inset 0 0 0 rgba(15,118,110,0), 0 0 0 rgba(0,240,255,0)',
-                                    'inset 0 0 16px rgba(15,118,110,0.08), 0 0 14px rgba(0,240,255,0.08)',
-                                    'inset 0 0 0 rgba(15,118,110,0), 0 0 0 rgba(0,240,255,0)'
+                                    'inset 0 0 0 rgba(255,255,255,0), 0 0 0 rgba(255,255,255,0)',
+                                    'inset 0 0 16px rgba(255,255,255,0.18), 0 0 14px rgba(255,255,255,0.14)',
+                                    'inset 0 0 0 rgba(255,255,255,0), 0 0 0 rgba(255,255,255,0)'
                                 ],
                             opacity: [0.55, 0.9, 0.55]
                         }}
@@ -1506,8 +1493,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         aria-hidden="true"
                         className={`absolute inset-[3px] ${launcherGlowInnerShapeClass} ${
                             isDarkMode
-                                ? 'bg-[linear-gradient(110deg,transparent_0%,transparent_34%,rgba(0,240,255,0.18)_48%,transparent_62%,transparent_100%)]'
-                                : 'bg-[linear-gradient(110deg,transparent_0%,transparent_34%,rgba(255,255,255,0.48)_48%,transparent_62%,transparent_100%)]'
+                                ? 'bg-[linear-gradient(110deg,transparent_0%,transparent_34%,rgba(255,255,255,0.12)_48%,transparent_62%,transparent_100%)]'
+                                : 'bg-[linear-gradient(110deg,transparent_0%,transparent_34%,rgba(255,255,255,0.52)_48%,transparent_62%,transparent_100%)]'
                         }`}
                         animate={{ x: ['-130%', '155%'], opacity: [0, 0.9, 0] }}
                         transition={{ duration: 5.6, repeat: Infinity, repeatDelay: 1.8, ease: 'easeInOut' }}
@@ -1515,20 +1502,20 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     <span
                         className={`absolute inset-0 ${launcherGlowInnerShapeClass} ${
                             isDarkMode
-                                ? 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.24),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.10),transparent_48%,rgba(0,240,255,0.14))]'
-                                : 'bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.14),_transparent_42%),linear-gradient(135deg,rgba(255,0,128,0.06),transparent_48%,rgba(0,240,255,0.10))]'
+                                ? 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.10),_transparent_42%),linear-gradient(135deg,rgba(148,163,184,0.08),transparent_48%,rgba(255,255,255,0.06))]'
+                                : 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.46),_transparent_42%),linear-gradient(135deg,rgba(226,232,240,0.18),transparent_48%,rgba(255,255,255,0.08))]'
                         }`}
                     />
                     {isDarkMode ? (
                         <motion.span
                             aria-hidden="true"
-                            className={`absolute inset-[2px] ${launcherGlowInnerShapeClass} border border-[#00F0FF]/18`}
+                            className={`absolute inset-[2px] ${launcherGlowInnerShapeClass} border border-white/12`}
                             animate={{
                                 opacity: [0.18, 0.42, 0.18],
                                 boxShadow: [
-                                    '0 0 0 rgba(0,240,255,0)',
-                                    '0 0 14px rgba(0,240,255,0.18)',
-                                    '0 0 0 rgba(0,240,255,0)'
+                                    '0 0 0 rgba(255,255,255,0)',
+                                    '0 0 14px rgba(255,255,255,0.12)',
+                                    '0 0 0 rgba(255,255,255,0)'
                                 ]
                             }}
                             transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
@@ -1544,55 +1531,55 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     <motion.span
                         aria-hidden="true"
                         className={`absolute inset-x-[10px] top-[2px] h-[2px] rounded-full ${
-                            isDarkMode ? 'bg-[#00F0FF]/55' : 'bg-[#0F766E]/25'
+                            isDarkMode ? 'bg-white/40' : 'bg-white/55'
                         }`}
                         animate={{ opacity: [0.25, 0.7, 0.25], scaleX: [0.82, 1, 0.82] }}
                         transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
                     />
                 </span>
-                <span className="relative flex items-center justify-center w-11 h-11 rounded-[18px] border-2 border-black bg-[#FF0080] text-white overflow-visible">
+                <span className={`relative flex items-center justify-center w-11 h-11 rounded-[18px] border overflow-visible backdrop-blur-xl ${isDarkMode ? 'border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.06))] text-white' : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.68))] text-[#111827]'}`}>
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-[-7px] rounded-[22px] border border-[#00F0FF]/28"
+                        className="absolute inset-[-7px] rounded-[22px] border border-white/18"
                         animate={{
                             opacity: [0.22, 0.48, 0.22],
                             boxShadow: [
-                                '0 0 0 rgba(0,240,255,0)',
-                                '0 0 14px rgba(0,240,255,0.18)',
-                                '0 0 0 rgba(0,240,255,0)'
+                                '0 0 0 rgba(255,255,255,0)',
+                                '0 0 14px rgba(255,255,255,0.12)',
+                                '0 0 0 rgba(255,255,255,0)'
                             ]
                         }}
                         transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-[-11px] rounded-[26px] border border-[#FFD700]/18"
+                        className="absolute inset-[-11px] rounded-[26px] border border-white/10"
                         animate={{ opacity: [0.12, 0.38, 0.12], scale: [0.97, 1.05, 0.97] }}
                         transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute left-1/2 top-1/2 h-[5px] w-[5px] rounded-full bg-[#00F0FF] shadow-[0_0_8px_rgba(0,240,255,0.8)]"
+                        className="absolute left-1/2 top-1/2 h-[5px] w-[5px] rounded-full bg-white/80 shadow-[0_0_8px_rgba(255,255,255,0.45)]"
                         animate={{ rotate: 360, opacity: [0.45, 1, 0.45] }}
                         transition={{ rotate: { duration: 6.4, repeat: Infinity, ease: 'linear' }, opacity: { duration: 2.8, repeat: Infinity, ease: 'easeInOut' } }}
                         style={{ transformOrigin: '0 -18px' }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute left-1/2 top-1/2 h-[4px] w-[4px] rounded-full bg-[#FFD700] shadow-[0_0_8px_rgba(255,215,0,0.65)]"
+                        className="absolute left-1/2 top-1/2 h-[4px] w-[4px] rounded-full bg-white/55 shadow-[0_0_8px_rgba(255,255,255,0.26)]"
                         animate={{ rotate: -360, opacity: [0.3, 0.9, 0.3] }}
                         transition={{ rotate: { duration: 7.6, repeat: Infinity, ease: 'linear' }, opacity: { duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 } }}
                         style={{ transformOrigin: '0 16px' }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-[-4px] rounded-[20px] border border-[#00F0FF]/55"
+                        className="absolute inset-[-4px] rounded-[20px] border border-white/16"
                         animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0, 0.3] }}
                         transition={{ duration: 3.1, repeat: Infinity, ease: 'easeOut' }}
                     />
                     <motion.span
                         aria-hidden="true"
-                        className="absolute inset-[-8px] rounded-[24px] border border-[#FFD700]/30"
+                        className="absolute inset-[-8px] rounded-[24px] border border-white/12"
                         animate={{ scale: [0.98, 1.18, 0.98], opacity: [0, 0.42, 0] }}
                         transition={{ duration: 3.1, repeat: Infinity, ease: 'easeOut', delay: 0.85 }}
                     />
@@ -1619,14 +1606,14 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         <Bot size={22} strokeWidth={2.8} />
                     </span>
                     <motion.span
-                        className="absolute -top-1 -right-1 z-[3] w-3 h-3 rounded-full bg-[#00E096] border border-black"
+                        className={`absolute -top-1 -right-1 z-[3] w-3 h-3 rounded-full border ${isDarkMode ? 'bg-[#86efac] border-white/16' : 'bg-[#10b981] border-white/60'}`}
                         animate={{ scale: [1, 1.22, 1], opacity: [1, 0.78, 1] }}
                         transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                     />
                 </span>
                 <span className="relative text-left">
                     <span className={`block text-[10px] font-black uppercase tracking-[0.28em] ${
-                        isDarkMode ? 'text-[#00F0FF]' : 'text-[#0F766E]'
+                        isDarkMode ? 'text-white/70' : 'text-slate-500'
                     }`}>
                         {launcherBadge.eyebrow}
                     </span>
