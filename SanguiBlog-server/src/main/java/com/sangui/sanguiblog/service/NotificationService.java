@@ -195,14 +195,17 @@ public class NotificationService {
         String time = notification.getCreatedAt() != null
                 ? TIME_FMT.format(notification.getCreatedAt().atZone(ZoneId.systemDefault()))
                 : "";
-        String avatar = normalizeAvatar(notification.getCommentAuthorAvatar());
-        if ((avatar == null || avatar.isBlank()) && notification.getComment() != null) {
+        String avatar = null;
+        if (notification.getComment() != null) {
             if (notification.getComment().getUser() != null) {
                 avatar = normalizeAvatar(notification.getComment().getUser().getAvatarUrl());
             }
             if ((avatar == null || avatar.isBlank()) && notification.getComment().getAuthorAvatarUrl() != null) {
                 avatar = normalizeAvatar(notification.getComment().getAuthorAvatarUrl());
             }
+        }
+        if (avatar == null || avatar.isBlank()) {
+            avatar = normalizeAvatar(notification.getCommentAuthorAvatar());
         }
         return NotificationDto.builder()
                 .id(notification.getId())
