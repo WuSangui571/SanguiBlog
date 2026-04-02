@@ -69,8 +69,11 @@ const Navigation = ({
     const shellThemeClass = `home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`;
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [heroMode, setHeroMode] = useState(currentView === 'home');
+    const [topMode, setTopMode] = useState(true);
+    const [navVisible, setNavVisible] = useState(true);
     const [, setLogoClicks] = useState(0);
     const [devUnlocked, setDevUnlocked] = useState(false);
+    const lastScrollYRef = useRef(0);
     const normalizeAvatarPathLocal = (path) => {
         if (!path) return null;
         const trimmed = path.trim();
@@ -157,38 +160,65 @@ const Navigation = ({
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
 
-        const updateHeroMode = () => {
+        const updateNavState = () => {
+            const currentScrollY = window.scrollY || 0;
+            setTopMode(currentScrollY <= 24);
+
             if (currentView !== 'home') {
                 setHeroMode(false);
-                return;
+            } else {
+                const heroSection = document.querySelector('[data-home-hero="true"]');
+                if (heroSection instanceof HTMLElement) {
+                    const heroBottom = heroSection.getBoundingClientRect().bottom;
+                    const navBottom = (headerHeight || NAVIGATION_HEIGHT) + 24;
+                    setHeroMode(heroBottom > navBottom);
+                } else {
+                    const postsSection = document.getElementById('posts');
+                    if (postsSection) {
+                        const threshold = postsSection.offsetTop - (headerHeight || NAVIGATION_HEIGHT) - 48;
+                        setHeroMode(currentScrollY < threshold);
+                    } else {
+                        setHeroMode(currentScrollY < window.innerHeight * 0.55);
+                    }
+                }
             }
 
-            const heroSection = document.querySelector('[data-home-hero="true"]');
-            if (heroSection instanceof HTMLElement) {
-                const heroBottom = heroSection.getBoundingClientRect().bottom;
-                const navBottom = (headerHeight || NAVIGATION_HEIGHT) + 24;
-                setHeroMode(heroBottom > navBottom);
-                return;
+            const delta = currentScrollY - lastScrollYRef.current;
+            if (currentScrollY <= 24 || delta < -6) {
+                setNavVisible(true);
+            } else if (delta > 6 && currentScrollY > (headerHeight || NAVIGATION_HEIGHT) + 12) {
+                setNavVisible(false);
             }
-
-            const postsSection = document.getElementById('posts');
-            if (postsSection) {
-                const threshold = postsSection.offsetTop - (headerHeight || NAVIGATION_HEIGHT) - 48;
-                setHeroMode(window.scrollY < threshold);
-                return;
-            }
-
-            setHeroMode(window.scrollY < window.innerHeight * 0.55);
+            lastScrollYRef.current = currentScrollY;
         };
 
-        updateHeroMode();
-        window.addEventListener('scroll', updateHeroMode, { passive: true });
-        window.addEventListener('resize', updateHeroMode);
+        updateNavState();
+        window.addEventListener('scroll', updateNavState, { passive: true });
+        window.addEventListener('resize', updateNavState);
         return () => {
-            window.removeEventListener('scroll', updateHeroMode);
-            window.removeEventListener('resize', updateHeroMode);
+            window.removeEventListener('scroll', updateNavState);
+            window.removeEventListener('resize', updateNavState);
         };
     }, [currentView, headerHeight]);
+
+    useEffect(() => {
+        if (menuOpen || notificationOpen || settingsOpen) {
+            setNavVisible(true);
+        }
+    }, [menuOpen, notificationOpen, settingsOpen]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+        const handlePointerNearTop = (event) => {
+            if (event.clientY <= (headerHeight || NAVIGATION_HEIGHT) + 18) {
+                setNavVisible(true);
+            }
+        };
+        window.addEventListener('mousemove', handlePointerNearTop, { passive: true });
+        return () => {
+            window.removeEventListener('mousemove', handlePointerNearTop);
+        };
+    }, [headerHeight]);
 
     const handleThemeButton = useCallback((event) => {
         if (typeof onToggleTheme === 'function') {
@@ -225,17 +255,19 @@ const Navigation = ({
     }, [onProfileClick, setView, scrollNavToTop, onCloseMenu]);
 
     const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
-    const desktopActionClass = `home-nav-icon-btn ${heroMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2.5`;
+    const floatingNavMode = heroMode || topMode;
+    const desktopActionClass = `home-nav-icon-btn ${floatingNavMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2.5`;
     const desktopAccentActionClass = `${desktopActionClass} home-nav-icon-btn--accent`;
-    const mobileActionClass = `home-nav-icon-btn ${heroMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2`;
+    const mobileActionClass = `home-nav-icon-btn ${floatingNavMode ? 'home-nav-icon-btn--hero' : ''} inline-flex items-center justify-center rounded-full p-2`;
 
     return (
         <>
         <div className={shellThemeClass}>
         <motion.nav
             initial={{ y: -100 }}
-            animate={{ y: 0 }}
-            className={`home-nav-shell ${heroMode ? 'home-nav-shell--hero' : ''} relative w-full h-20 flex items-center justify-between px-4 md:px-8`}
+            animate={{ y: navVisible ? 0 : -((headerHeight || NAVIGATION_HEIGHT) + 24) }}
+            transition={{ duration: 0.26, ease: 'easeInOut' }}
+            className={`home-nav-shell ${heroMode ? 'home-nav-shell--hero' : ''} ${!heroMode && topMode ? 'home-nav-shell--top' : ''} relative w-full h-20 flex items-center justify-between px-4 md:px-8`}
         >
             <div
                 className="flex items-center gap-2 cursor-pointer group shrink-0"
@@ -299,7 +331,7 @@ const Navigation = ({
                             className="inline-flex items-center gap-2"
                             title="后台/个人中心"
                         >
-                            <div className={`w-9 h-9 overflow-hidden rounded-full border ${heroMode ? (isDarkMode ? 'border-white/25 bg-white/10' : 'border-black/10 bg-white/15') : 'border-black/10 bg-white/80'}`}>
+                            <div className={`w-9 h-9 overflow-hidden rounded-full border ${floatingNavMode ? (isDarkMode ? 'border-white/25 bg-white/10' : 'border-black/10 bg-white/15') : 'border-black/10 bg-white/80'}`}>
                                 <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
                             </div>
                         </button>
@@ -324,7 +356,7 @@ const Navigation = ({
                     type="button"
                     onClick={handleThemeButton}
                     aria-disabled={themeLockActive}
-                    className={`relative p-2 border-2 rounded-full transition-colors ${heroMode
+                    className={`relative p-2 border-2 rounded-full transition-colors ${floatingNavMode
                         ? (isDarkMode ? 'border-white/30 bg-white/10 text-white hover:bg-white hover:text-black' : 'border-black/15 bg-white/15 text-black hover:bg-black hover:text-white')
                         : themeLockActive
                             ? 'border-black bg-gray-400 text-black cursor-not-allowed opacity-70'

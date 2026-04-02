@@ -236,6 +236,12 @@
   background: transparent;
 }
 
+.home-nav-shell--top {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--home-nav-bg) 12%, transparent);
+}
+
 .home-redesign-surface.is-dark .home-nav-shell--hero {
   background: transparent;
 }
