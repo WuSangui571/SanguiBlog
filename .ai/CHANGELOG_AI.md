@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-04-04] 将归档页与工具页适配为站点玻璃风格
+- 背景/需求：用户要求按照首页、登录页、注册页同样的玻璃化流程，把 `/archive` 与 `/tools` 页面继续统一到当前站点的 iOS 风格玻璃视觉。
+- 修改类型：fix
+- 影响范围：归档页视觉、工具页视觉、工具详情页操作区、通用玻璃样式复用、AI 变更日志
+- 变更摘要：
+  1) 在 `ArchiveView.jsx` 内复用现有 `home-ios-card` / `home-ios-inner-card` / `home-ios-chip`，将统计卡、月份区块、空态卡、加载卡、快速跳转与文章按钮整体切换到玻璃层次。
+  2) 在 `AppFull.jsx` 的 `renderGamesView` 与 `renderGamePlayer` 中复用同一套玻璃基类，把工具列表页、加载骨架、错误提示、工具卡片、详情页操作按钮与 iframe 容器统一改造成玻璃风格。
+  3) 保持 `/archive`、`/tools`、`/tools/:id` 现有数据流、跳转逻辑与接口调用不变，只做样式层适配，避免重复实现。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArchiveView.jsx`
+  - `SanguiBlog-front/src/AppFull.jsx`
+- 检索与复用策略：
+  - 检索关键词：`ArchiveView` / `renderGamesView` / `renderGamePlayer` / `home-ios-card` / `home-ios-inner-card` / `home-ios-chip`
+  - 候选实现：`ArchiveView.jsx`、`AppFull.jsx` 中工具页列表与详情渲染函数、`homeRedesign.css` 现有玻璃样式体系
+  - 最终选择：复用现有页面入口与玻璃样式基类，在原位改造，不新增新的归档页/工具页组件分支
+- 风险点：
+  - 归档页历史上使用过更强的实体卡片边框，切换到玻璃视觉后白天模式观感更轻，若后续仍觉得不够稳，可以继续微调白天阴影层级。
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）
+
 ## [2026-04-04] 修复登录与注册页导航条与页面玻璃风格不匹配
 - 背景/需求：用户反馈 `/login` 与 `/register` 页顶部导航条显得突兀，和下方玻璃表单页面颜色与材质层级不匹配。
 - 修改类型：fix

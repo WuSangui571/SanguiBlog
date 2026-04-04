@@ -996,26 +996,28 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
 
     const renderGamesView = () => {
         const formatDate = (value) => (value ? new Date(value).toLocaleString() : '--');
+        const glassCard = `home-ios-card ${isDarkMode ? 'home-ios-card--dark' : ''}`;
+        const glassInner = 'home-ios-inner-card';
         const surface = isDarkMode
-            ? 'bg-gray-900 text-gray-100 border-2 border-black shadow-[8px_8px_0px_0px_#000]'
-            : 'bg-white text-gray-900 border-2 border-black shadow-[8px_8px_0px_0px_#000]';
-        const cardSurface = isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900';
+            ? `${glassCard} bg-[#0F172A]/55 text-gray-100`
+            : `${glassCard} bg-white/45 text-gray-900`;
+        const cardSurface = isDarkMode ? 'bg-[#0F172A]/55 text-gray-100' : 'bg-white/45 text-gray-900';
         return (
             <div className="relative pt-28 pb-20 px-4">
                 <div className={`max-w-5xl mx-auto space-y-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    <div className={`${surface} rounded-none p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4`}>
+                    <div className={`${surface} p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4`}>
                         <div className="space-y-2">
                             <p className="text-xs uppercase tracking-[0.2em] text-[#FFD700] font-semibold">Indie Lab</p>
                             <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
                                 <span>工具中心</span>
-                                <span className="text-[11px] px-2 py-1 rounded-none bg-[#FFD700] text-black font-bold shadow-[2px_2px_0px_0px_#000] border-2 border-black">测试</span>
+                                <span className="text-[11px] px-2 py-1 rounded-full bg-[#FFD700]/90 text-black font-bold border border-white/60 shadow-[0_10px_20px_rgba(255,215,0,0.2)]">测试</span>
                             </h1>
                             <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>点击『进入」卡片在新标签打开。</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={loadGameList}
-                                className="px-4 py-2 border-2 border-black bg-white text-black font-bold hover:-translate-y-0.5 transition-transform"
+                                className={`px-4 py-2 rounded-xl font-bold hover:-translate-y-0.5 transition-transform border ${isDarkMode ? 'border-white/14 bg-white/10 text-white hover:bg-white/16' : 'border-black/10 bg-white/78 text-black hover:bg-white/92'}`}
                             >
                                 刷新列表
                             </button>
@@ -1023,15 +1025,15 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     </div>
 
                     {gameListError && (
-                        <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-none">
+                        <div className="px-4 py-3 border border-red-300 bg-red-50/90 text-red-700 font-semibold rounded-xl">
                             {gameListError}
                         </div>
                     )}
 
-                    <div className={`${surface} rounded-none p-6 md:p-8`}>
+                    <div className={`${surface} p-6 md:p-8`}>
                         <div className="grid gap-5 md:grid-cols-2">
                             {gameListLoading && Array.from({ length: 4 }).map((_, idx) => (
-                                <div key={`skeleton-${idx}`} className={`${cardSurface} border-2 border-dashed border-black/60 rounded-none p-4 animate-pulse shadow-[4px_4px_0px_0px_#000]`}>
+                                <div key={`skeleton-${idx}`} className={`${glassInner} ${cardSurface} border border-black/10 rounded-2xl p-4 animate-pulse`}>
                                     <div className="h-4 bg-gray-300/70 rounded-none w-1/2 mb-3"></div>
                                     <div className="h-3 bg-gray-200/70 rounded-none w-2/3 mb-2"></div>
                                     <div className="h-3 bg-gray-200/50 rounded-none w-1/3"></div>
@@ -1039,7 +1041,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                             ))}
 
                             {!gameListLoading && gameList.length === 0 && (
-                                <div className="md:col-span-2 text-center py-12 border-2 border-dashed border-black rounded-none text-sm font-semibold shadow-[4px_4px_0px_0px_#000]">
+                                <div className={`md:col-span-2 text-center py-12 text-sm font-semibold ${glassInner} rounded-2xl`}>
                                     还没有发布的独立页面，敬请期待。
                                 </div>
                             )}
@@ -1053,14 +1055,14 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 return (
                                     <div
                                         key={game.id}
-                                        className={`${cardSurface} border-2 border-black rounded-none p-5 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-200 shadow-[6px_6px_0px_0px_#000]`}
+                                        className={`${glassCard} ${cardSurface} p-5 flex flex-col gap-4 hover:-translate-y-1 transition-transform duration-200`}
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="space-y-2">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs px-2 py-0.5 rounded-none font-bold border-2 border-black bg-white text-black shadow-[2px_2px_0px_0px_#000]">#{game.id}</span>
+                                                    <span className="text-xs px-2 py-0.5 rounded-full font-bold home-ios-chip text-black">#{game.id}</span>
                                                     {game.status && (
-                                                        <span className={`text-[11px] px-2 py-0.5 rounded-none font-bold border-2 border-black ${statusTone} shadow-[2px_2px_0px_0px_#000]`}>
+                                                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold border border-white/50 ${statusTone}`}>
                                                             {game.status}
                                                         </span>
                                                     )}
@@ -1071,7 +1073,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                             </div>
                                             <button
                                                 onClick={() => handleOpenGame(game)}
-                                                className="px-3 py-1.5 border-2 border-black bg-[#FFD700] text-black font-bold rounded-none hover:-translate-y-0.5 transition-transform shadow-[2px_2px_0px_0px_#000]"
+                                                className="px-3 py-1.5 border border-white/60 bg-[#FFD700]/90 text-black font-bold rounded-xl hover:-translate-y-0.5 transition-transform shadow-[0_10px_20px_rgba(255,215,0,0.2)]"
                                             >
                                                 进入
                                             </button>
@@ -1094,6 +1096,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const renderGamePlayer = () => {
         const target = gameDetail || gameList.find((g) => g.id === gameId);
         const src = target?.url ? buildAssetUrl(target.url) : '';
+        const glassCard = `home-ios-card ${isDarkMode ? 'home-ios-card--dark' : ''}`;
         return (
             <div className={`pt-24 pb-10 px-4 md:px-8 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen`}>
                 <div className="flex items-center justify-between gap-3 mb-4">
@@ -1101,7 +1104,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={handleGameBack}
-                                className="px-3 py-1 border-2 border-black bg-white text-black font-bold hover:bg-[#FFD700]"
+                                className={`px-3 py-1 rounded-xl font-bold border ${isDarkMode ? 'border-white/14 bg-white/10 text-white hover:bg-white/16' : 'border-black/10 bg-white/78 text-black hover:bg-[#FFD700]/86'}`}
                             >
                                 ← 返回列表
                             </button>
@@ -1110,7 +1113,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                     href={src}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="px-3 py-1 border-2 border-black bg-black text-white font-bold hover:bg-[#FF0080]"
+                                    className={`px-3 py-1 rounded-xl font-bold border ${isDarkMode ? 'border-white/14 bg-[#FF0080]/65 text-white hover:bg-[#FF0080]/82' : 'border-black/10 bg-black/86 text-white hover:bg-[#FF0080]'}`}
                                 >
                                     新标签打开
                                 </a>
@@ -1121,17 +1124,17 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     </div>
                     <button
                         onClick={() => gameId && loadGameDetail(gameId)}
-                        className="px-3 py-1 border-2 border-black bg-white text-black font-bold"
+                        className={`px-3 py-1 rounded-xl font-bold border ${isDarkMode ? 'border-white/14 bg-white/10 text-white hover:bg-white/16' : 'border-black/10 bg-white/78 text-black hover:bg-white/92'}`}
                     >
                         重新加载
                     </button>
                 </div>
                 {gameDetailError && (
-                    <div className="mb-4 px-4 py-3 border-2 border-red-500 bg-red-50 text-red-700 rounded-lg font-semibold">
+                    <div className="mb-4 px-4 py-3 border border-red-300 bg-red-50/90 text-red-700 rounded-xl font-semibold">
                         {gameDetailError}
                     </div>
                 )}
-                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl overflow-hidden shadow-lg min-h-[70vh]`}>
+                <div className={`${glassCard} ${isDarkMode ? 'bg-gray-800/60' : 'bg-white/55'} overflow-hidden min-h-[70vh]`}>
                     {gameDetailLoading && <div className="p-6 text-center text-sm">加载中…</div>}
                     {!gameDetailLoading && src ? (
                         <iframe title={target?.title || 'game'} src={src} className="w-full min-h-[70vh] border-0"></iframe>
