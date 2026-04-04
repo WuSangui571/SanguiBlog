@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-04-04] 修复首页头像外溢裁切并增强白天玻璃卡层次
+- 背景/需求：用户反馈首页作者头像顶部应“超出卡片”但当前被裁切；同时白天模式下卡片区域偏白偏平，玻璃层次感弱于夜间模式。
+- 修改类型：fix
+- 影响范围：首页作者信息卡溢出表现、首页玻璃卡白天模式视觉层次、AI 变更日志
+- 变更摘要：
+  1) 在 `homeRedesign.css` 增加 `home-ios-card--overflow-visible`，并将作者信息卡挂载该类，恢复头像顶部外溢效果。
+  2) 增强 `home-ios-card` 白天模式的多层阴影与高光内描边，补充更明显的前后景层次。
+  3) 同步增强 `home-ios-inner-card` 在白天模式下的渐变底与阴影，让卡片簇在密集区域更有分层。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+- 检索与复用策略：
+  - 检索关键词：`home-ios-card` / `overflow: hidden` / `absolute -top-6` / `ArticleList` / `avatar`
+  - 候选实现：`homeRedesign.css` 玻璃卡基类、`ArticleList.jsx` 作者卡容器、头像绝对定位节点
+  - 最终选择：复用现有组件结构，仅修正样式裁切与光影参数，不新增任何并行组件
+- 风险点：
+  - 白天阴影已加强，若你后续觉得仍偏淡或偏重，可继续微调阴影透明度与模糊半径。
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）
+
 ## [2026-04-04] 首页卡片统一适配 iOS 26 玻璃组件设计
 - 背景/需求：用户要求对照模板 `新首页设计/html/indexV13.html`，将首页“各种卡片”统一适配为新的 iOS 26 风格组件，且以 HTML 模板为准，避免新增并行实现。
 - 修改类型：fix
