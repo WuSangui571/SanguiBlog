@@ -5,6 +5,25 @@
 
 ---
 
+## [2026-04-04] 修复登录与注册页导航条与页面玻璃风格不匹配
+- 背景/需求：用户反馈 `/login` 与 `/register` 页顶部导航条显得突兀，和下方玻璃表单页面颜色与材质层级不匹配。
+- 修改类型：fix
+- 影响范围：登录页导航视觉、注册页导航视觉、导航状态机分支、AI 变更日志
+- 变更摘要：
+  1) 排查确认认证页当前沿用了 `home-nav-shell--top` 的轻透明顶部样式，这一分支更适合普通正文页顶部，不适合玻璃表单页。
+  2) 在 `Navigation.jsx` 新增认证页判定：`currentView === 'login' || currentView === 'register'`。
+  3) 登录/注册页导航改为直接进入玻璃导航分支，并同步让图标按钮使用玻璃态按钮风格，避免导航和下方页面材质割裂。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+- 检索与复用策略：
+  - 检索关键词：`heroMode` / `topMode` / `recalledGlassMode` / `login` / `register` / `home-nav-shell--top`
+  - 候选实现：`Navigation.jsx` 状态机、`homeRedesign.css` 导航玻璃类、`LoginView/RegisterView` 玻璃页面
+  - 最终选择：复用现有导航单入口，在状态机内为认证页切换样式分支，不新增第二套导航
+- 风险点：
+  - 当前只修认证页导航材质分支，不影响首页/归档/工具等页面既有导航逻辑。
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）
+
 ## [2026-04-04] 将登录与注册页面适配为站点玻璃风格
 - 背景/需求：用户要求把 `/login` 与 `/register` 两个页面的视觉统一到当前首页/导航使用的玻璃风格。
 - 修改类型：fix
