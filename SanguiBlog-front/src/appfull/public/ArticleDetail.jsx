@@ -1294,7 +1294,7 @@ const ArticleDetail = ({
             <div ref={articleShellRef} className="max-w-4xl mx-auto">
 
                 <div
-                    className={`${glassCard} ${isDarkMode ? 'bg-[#0F172A]/54' : 'bg-white/48'} p-8 md:p-12 relative overflow-hidden`}>
+                    className={`${glassCard} home-ios-card--static ${isDarkMode ? 'bg-[#0F172A]/54' : 'bg-white/48'} p-8 md:p-12 relative overflow-hidden`}>
                     <div
                         className={`absolute top-0 right-0 w-64 h-64 ${post.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 pointer-events-none`}></div>
 

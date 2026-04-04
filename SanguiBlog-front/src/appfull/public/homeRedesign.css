@@ -475,6 +475,15 @@
   border-radius: 26px;
 }
 
+.home-ios-card--static:hover {
+  transform: none;
+  box-shadow:
+    0 2px 10px rgba(148, 163, 184, 0.2),
+    0 14px 34px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.78);
+}
+
 .home-ios-card--shimmer {
   border-color: rgba(0, 102, 204, 0.28);
   box-shadow: 0 0 24px rgba(0, 102, 204, 0.1), 0 8px 32px rgba(0, 0, 0, 0.06);
@@ -484,6 +493,13 @@
 .home-ios-card--dark.home-ios-card--shimmer {
   border-color: rgba(0, 210, 255, 0.28);
   box-shadow: 0 0 26px rgba(0, 210, 255, 0.14), 0 10px 36px rgba(0, 0, 0, 0.36);
+}
+
+.home-redesign-surface.is-dark .home-ios-card--static:hover,
+.home-ios-card--dark.home-ios-card--static:hover {
+  transform: none;
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.36);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .home-ios-card--shimmer::after {

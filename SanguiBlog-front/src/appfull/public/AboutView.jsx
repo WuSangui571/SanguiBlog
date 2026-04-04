@@ -156,7 +156,7 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
                     </div>
                 </div>
 
-                <div className={`${glassCard} ${isDarkMode ? 'bg-[#0F172A]/56' : 'bg-white/48'} p-6 md:p-10 ${text}`}>
+                <div className={`${glassCard} home-ios-card--static ${isDarkMode ? 'bg-[#0F172A]/56' : 'bg-white/48'} p-6 md:p-10 ${text}`}>
                     {about && about.contentMd ? (
                         <article className={`prose prose-xl max-w-none prose-headings:font-black prose-p:font-medium prose-code:before:content-none prose-code:after:content-none prose-pre:p-0 prose-pre:bg-transparent ${isDarkMode ? 'prose-invert' : ''}`}>
                             <ReactMarkdown
