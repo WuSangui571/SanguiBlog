@@ -1,4 +1,5 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import { buildAssetUrl } from "../../utils/asset.js";
@@ -20,6 +21,7 @@ import {
     X
 } from 'lucide-react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import { claimOverlayStackBase, OVERLAY_STACK_BASE } from './overlayStack.js';
 
 export const NAVIGATION_HEIGHT = 80;
 const PRIMARY_NAV_ITEMS = [
@@ -68,6 +70,8 @@ const Navigation = ({
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
     const shellThemeClass = `home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`;
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [notificationOverlayBase, setNotificationOverlayBase] = useState(OVERLAY_STACK_BASE);
+    const [settingsOverlayBase, setSettingsOverlayBase] = useState(OVERLAY_STACK_BASE);
     const [heroMode, setHeroMode] = useState(currentView === 'home');
     const [topMode, setTopMode] = useState(true);
     const [navVisible, setNavVisible] = useState(true);
@@ -254,6 +258,36 @@ const Navigation = ({
         }
     }, [onProfileClick, setView, scrollNavToTop, onCloseMenu]);
 
+    const portalTarget = typeof document !== 'undefined' ? document.body : null;
+    const raiseNotificationOverlay = useCallback(() => {
+        setNotificationOverlayBase(claimOverlayStackBase());
+    }, []);
+    const raiseSettingsOverlay = useCallback(() => {
+        setSettingsOverlayBase(claimOverlayStackBase());
+    }, []);
+    const handleNotificationEntry = useCallback(() => {
+        if (!notificationOpen) {
+            raiseNotificationOverlay();
+        }
+        onNotificationToggle?.();
+    }, [notificationOpen, onNotificationToggle, raiseNotificationOverlay]);
+    const openSettingsPanel = useCallback(() => {
+        raiseSettingsOverlay();
+        setSettingsOpen(true);
+    }, [raiseSettingsOverlay]);
+
+    useEffect(() => {
+        if (notificationOpen) {
+            raiseNotificationOverlay();
+        }
+    }, [notificationOpen, raiseNotificationOverlay]);
+
+    useEffect(() => {
+        if (settingsOpen) {
+            raiseSettingsOverlay();
+        }
+    }, [settingsOpen, raiseSettingsOverlay]);
+
     const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
     const notificationPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
     const authPageMode = currentView === 'login' || currentView === 'register';
@@ -303,6 +337,266 @@ const Navigation = ({
         ? 'bg-[linear-gradient(180deg,rgba(6,11,21,0.99),rgba(8,14,24,0.96))] backdrop-blur-3xl'
         : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.995),rgba(252,253,255,0.97))] backdrop-blur-3xl';
     const totalNotificationPages = Math.max(1, Math.ceil(notificationTotal / notificationPageSize));
+    const notificationOverlay = (
+        <>
+            <motion.div
+                key="notice-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.2 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 bg-black"
+                style={{ zIndex: notificationOverlayBase }}
+                onClick={onCloseNotifications}
+            />
+            <motion.div
+                key="notice-panel"
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+                className={`fixed right-3 md:right-6 w-[min(500px,calc(100vw-32px))] max-h-[92vh] overflow-hidden rounded-[28px] ${overlayPanelClass}`}
+                style={{ top: notificationPanelTop, zIndex: notificationOverlayBase + 2 }}
+                onPointerDownCapture={raiseNotificationOverlay}
+            >
+                <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b ${overlayDividerClass} ${notificationHeaderClass}`}>
+                    <div>
+                        <p className="font-black text-sm">消息通知</p>
+                        <p className={`text-xs ${overlayMutedTextClass}`}>
+                            {notificationUnread > 0 ? `未读 ${notificationUnread} 条 · 共 ${notificationTotal || 0} 条` : `共 ${notificationTotal || 0} 条`}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={onNotificationMarkAll}
+                            disabled={!notificationTotal}
+                            className={`px-2.5 py-1.5 text-[11px] font-black rounded-full transition ${notificationTotal ? overlayAccentButtonClass : overlayDisabledButtonClass}`}
+                        >
+                            全部已读
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onCloseNotifications}
+                            className={`p-2 rounded-full transition ${overlayButtonClass}`}
+                            aria-label="关闭通知"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                </div>
+                <div className={`max-h-[calc(92vh-132px)] overflow-y-auto divide-y ${overlayDividerClass}`}>
+                    {notificationLoading ? (
+                        <div className="p-4 text-sm font-semibold">加载中...</div>
+                    ) : (notifications && notifications.length ? (
+                        notifications.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => onNotificationClick && onNotificationClick(item)}
+                                className={`w-full text-left px-4 py-3 flex gap-3 transition ${isDarkMode ? 'hover:bg-white/[0.07]' : 'hover:bg-white/45'}`}
+                            >
+                                <div className={`w-10 h-10 rounded-full font-black flex items-center justify-center shrink-0 overflow-hidden ${overlayIconWrapClass}`}>
+                                    <img
+                                        src={buildAssetUrl(normalizeAvatarPathLocal(item.avatar) || DEFAULT_AVATAR, DEFAULT_AVATAR)}
+                                        alt={item.from || '访客'}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-black text-sm truncate">{item.from || '访客'}</p>
+                                        <span className={`text-[11px] truncate ${overlaySubtleTextClass}`}>{item.createdAt || ''}</span>
+                                    </div>
+                                    <p className="mt-1 text-sm font-semibold leading-5 break-words">
+                                        {item.commentContent || '收到一条新的评论通知'}
+                                    </p>
+                                    <p className={`text-xs mt-1 truncate ${overlaySubtleTextClass}`}>{item.postTitle || '文章'}</p>
+                                </div>
+                                {item.read ? null : (
+                                    <span className="self-start text-[10px] font-black text-red-500 border border-red-400/60 bg-red-500/10 px-1.5 py-0.5 rounded-full">未读</span>
+                                )}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="p-4 text-sm font-semibold">暂无通知</div>
+                    ))}
+                </div>
+                <div className={`px-4 py-3 flex items-center justify-between border-t ${overlayDividerClass}`}>
+                    <div className="flex items-center gap-2">
+                        {notificationCanBackfill && (
+                            <button
+                                type="button"
+                                onClick={() => onBackfill && onBackfill()}
+                                className={`text-xs font-black px-3 py-1.5 rounded-full transition ${overlayButtonClass}`}
+                            >
+                                补全历史
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex flex-1 items-center justify-center gap-2 flex-wrap">
+                        <button
+                            type="button"
+                            disabled={notificationPage <= 1}
+                            onClick={() => onNotificationPageChange && onNotificationPageChange(1)}
+                            className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage <= 1 ? overlayDisabledButtonClass : overlayButtonClass}`}
+                        >
+                            首页
+                        </button>
+                        <button
+                            type="button"
+                            disabled={notificationPage <= 1}
+                            onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage - 1)}
+                            className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage <= 1 ? overlayDisabledButtonClass : overlayButtonClass}`}
+                        >
+                            上一页
+                        </button>
+                        <span className={`text-[11px] font-bold ${overlayMutedTextClass}`}>
+                            第 {notificationPage} 页 / 共 {totalNotificationPages} 页
+                        </span>
+                        <select
+                            value={notificationPage}
+                            onChange={(e) => {
+                                const v = Number(e.target.value);
+                                if (Number.isFinite(v) && v >= 1) {
+                                    onNotificationPageChange && onNotificationPageChange(v);
+                                }
+                            }}
+                            className={`text-xs font-black rounded-full px-3 py-1.5 transition outline-none ${overlayButtonClass}`}
+                        >
+                            {Array.from({ length: totalNotificationPages }).map((_, idx) => {
+                                const page = idx + 1;
+                                return (
+                                    <option key={page} value={page}>
+                                        第 {page} 页
+                                    </option>
+                                );
+                            })}
+                        </select>
+                        <button
+                            type="button"
+                            disabled={notificationPage >= totalNotificationPages}
+                            onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage + 1)}
+                            className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage >= totalNotificationPages ? overlayDisabledButtonClass : overlayButtonClass}`}
+                        >
+                            下一页
+                        </button>
+                        <button
+                            type="button"
+                            disabled={notificationPage >= totalNotificationPages}
+                            onClick={() => {
+                                onNotificationPageChange && onNotificationPageChange(totalNotificationPages);
+                            }}
+                            className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage >= totalNotificationPages ? overlayDisabledButtonClass : overlayButtonClass}`}
+                        >
+                            尾页
+                        </button>
+                    </div>
+                </div>
+            </motion.div>
+        </>
+    );
+    const settingsOverlay = (
+        <>
+            <motion.div
+                key="settings-mask"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.16 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="fixed inset-0 bg-black"
+                style={{ zIndex: settingsOverlayBase }}
+                onClick={() => setSettingsOpen(false)}
+            />
+            <motion.div
+                key="settings-panel"
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+                role="dialog"
+                aria-modal="true"
+                className={`fixed right-3 md:right-6 w-[min(500px,calc(100vw-32px))] max-h-[92vh] overflow-hidden rounded-[28px] ${overlayPanelClass}`}
+                style={{ top: settingsPanelTop, zIndex: settingsOverlayBase + 2 }}
+                onPointerDownCapture={raiseSettingsOverlay}
+            >
+                <div className={`flex items-center justify-between px-4 py-3 border-b ${overlayDividerClass}`}>
+                    <div className="flex items-center gap-3">
+                        <span className={`w-10 h-10 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
+                            <Settings size={18} />
+                        </span>
+                        <div className="leading-tight">
+                            <div className="font-black text-sm uppercase tracking-wide">系统设置</div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setSettingsOpen(false)}
+                            className={`p-2 rounded-full transition ${overlayButtonClass}`}
+                            aria-label="关闭设置"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-4 space-y-3 max-h-[calc(92vh-64px)] overflow-y-auto">
+                    <div className={`flex items-center gap-3 p-4 rounded-[24px] ${overlaySoftCardClass}`}>
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
+                            {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                            <div className="font-black text-sm">彩蛋背景</div>
+                            <div className={`text-xs ${overlayMutedTextClass}`}>显示或隐藏太阳与月亮动画</div>
+                        </div>
+                        <button
+                            onClick={() => onToggleBackground && onToggleBackground()}
+                            className={`relative w-16 h-9 rounded-full transition-all ${backgroundEnabled ? overlayAccentButtonClass : overlayButtonClass}`}
+                            aria-pressed={backgroundEnabled}
+                            aria-label="切换彩蛋背景"
+                        >
+                            <span
+                                className={`absolute top-1/2 left-1 w-7 h-7 -translate-y-1/2 rounded-full transition-transform ${isDarkMode ? 'border border-white/14 bg-white/90' : 'border border-black/8 bg-white'} ${backgroundEnabled ? 'translate-x-0' : 'translate-x-6'}`}
+                            />
+                            <span className={`absolute inset-y-0 left-2 flex items-center text-[10px] font-black uppercase transition-opacity ${backgroundEnabled ? 'opacity-100' : 'opacity-35'}`}>
+                                ON
+                            </span>
+                            <span className={`absolute inset-y-0 right-2 flex items-center text-[10px] font-black uppercase transition-opacity ${backgroundEnabled ? 'opacity-35' : 'opacity-100'}`}>
+                                OFF
+                            </span>
+                        </button>
+                    </div>
+
+                    <div className={`flex items-start gap-3 p-4 rounded-[24px] ${overlaySoftCardClass}`}>
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
+                            <List size={18} />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                            <div className="font-black text-sm">首页每页文章数</div>
+                            <div className={`text-xs ${overlayMutedTextClass}`}>默认 5 条，可选 10 / 20</div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                            <select
+                                value={pageSize}
+                                onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
+                                className={`w-28 p-2.5 rounded-2xl font-black text-sm outline-none transition ${overlayButtonClass}`}
+                            >
+                                {pageSizeOptions.map((opt) => (
+                                    <option key={opt} value={opt}>{opt} 条/页</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-[20px] text-[11px] font-semibold ${overlaySoftCardClass} ${overlayMutedTextClass}`}>
+                        <Sparkles size={14} className="text-[#F97316]" />
+                        <span>设置仅存于本地浏览器</span>
+                    </div>
+                </div>
+            </motion.div>
+        </>
+    );
 
     return (
         <>
@@ -355,7 +649,7 @@ const Navigation = ({
                 {user && (
                     <button
                         type="button"
-                        onClick={onNotificationToggle}
+                        onClick={handleNotificationEntry}
                         className={`${desktopActionClass} relative`}
                         title="未读提醒"
                     >
@@ -394,7 +688,7 @@ const Navigation = ({
                     </button>
                 )}
                 <button
-                    onClick={() => setSettingsOpen(true)}
+                    onClick={openSettingsPanel}
                     className={desktopActionClass}
                     title="系统设定"
                 >
@@ -449,7 +743,7 @@ const Navigation = ({
                 {user && (
                     <button
                         type="button"
-                        onClick={onNotificationToggle}
+                        onClick={handleNotificationEntry}
                         className={`${mobileActionClass} relative`}
                         aria-label="未读提醒"
                     >
@@ -471,166 +765,9 @@ const Navigation = ({
             </div>
 
         </motion.nav>
-        </div>
-
-        <AnimatePresence>
+        </div>        <AnimatePresence>
             {notificationOpen && (
-                <>
-                    <motion.div
-                        key="notice-backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.2 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="fixed inset-0 z-[108] bg-black"
-                        onClick={onCloseNotifications}
-                    />
-                    <motion.div
-                        key="notice-panel"
-                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                        transition={{ type: 'spring', stiffness: 240, damping: 20 }}
-                        className={`fixed right-3 md:right-6 z-[118] w-[min(500px,calc(100vw-32px))] max-h-[92vh] overflow-hidden rounded-[28px] ${overlayPanelClass}`}
-                        style={{ top: notificationPanelTop }}
-                    >
-                        <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b ${overlayDividerClass} ${notificationHeaderClass}`}>
-                            <div>
-                                <p className="font-black text-sm">消息通知</p>
-                                <p className={`text-xs ${overlayMutedTextClass}`}>
-                                    {notificationUnread > 0 ? `未读 ${notificationUnread} 条 · 共 ${notificationTotal || 0} 条` : `共 ${notificationTotal || 0} 条`}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={onNotificationMarkAll}
-                                    disabled={!notificationTotal}
-                                    className={`px-2.5 py-1.5 text-[11px] font-black rounded-full transition ${notificationTotal ? overlayAccentButtonClass : overlayDisabledButtonClass}`}
-                                >
-                                    全部已读
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onCloseNotifications}
-                                    className={`p-2 rounded-full transition ${overlayButtonClass}`}
-                                    aria-label="关闭通知"
-                                >
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        </div>
-                        <div className={`max-h-[calc(92vh-132px)] overflow-y-auto divide-y ${overlayDividerClass}`}>
-                            {notificationLoading ? (
-                                <div className="p-4 text-sm font-semibold">加载中...</div>
-                            ) : (notifications && notifications.length ? (
-                                notifications.map((item) => (
-                                    <button
-                                        key={item.id}
-                                        type="button"
-                                        onClick={() => onNotificationClick && onNotificationClick(item)}
-                                        className={`w-full text-left px-4 py-3 flex gap-3 transition ${isDarkMode ? 'hover:bg-white/[0.07]' : 'hover:bg-white/45'}`}
-                                    >
-                                        <div className={`w-10 h-10 rounded-full font-black flex items-center justify-center shrink-0 overflow-hidden ${overlayIconWrapClass}`}>
-                                            <img
-                                                src={buildAssetUrl(normalizeAvatarPathLocal(item.avatar) || DEFAULT_AVATAR, DEFAULT_AVATAR)}
-                                                alt={item.from || '访客'}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
-                                            />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-black text-sm truncate">{item.from || '访客'}</p>
-                                                <span className={`text-[11px] truncate ${overlaySubtleTextClass}`}>{item.createdAt || ''}</span>
-                                            </div>
-                                            <p className="mt-1 text-sm font-semibold leading-5 break-words">
-                                                {item.commentContent || '收到一条新的评论通知'}
-                                            </p>
-                                            <p className={`text-xs mt-1 truncate ${overlaySubtleTextClass}`}>{item.postTitle || '文章'}</p>
-                                        </div>
-                                        {item.read ? null : (
-                                            <span className="self-start text-[10px] font-black text-red-500 border border-red-400/60 bg-red-500/10 px-1.5 py-0.5 rounded-full">未读</span>
-                                        )}
-                                    </button>
-                                ))
-                            ) : (
-                                <div className="p-4 text-sm font-semibold">暂无通知</div>
-                            ))}
-                        </div>
-                        <div className={`px-4 py-3 flex items-center justify-between border-t ${overlayDividerClass}`}>
-                            <div className="flex items-center gap-2">
-                                {notificationCanBackfill && (
-                                    <button
-                                        type="button"
-                                        onClick={() => onBackfill && onBackfill()}
-                                        className={`text-xs font-black px-3 py-1.5 rounded-full transition ${overlayButtonClass}`}
-                                    >
-                                        补全历史
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex flex-1 items-center justify-center gap-2 flex-wrap">
-                                <button
-                                    type="button"
-                                    disabled={notificationPage <= 1}
-                                    onClick={() => onNotificationPageChange && onNotificationPageChange(1)}
-                                    className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage <= 1 ? overlayDisabledButtonClass : overlayButtonClass}`}
-                                >
-                                    首页
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={notificationPage <= 1}
-                                    onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage - 1)}
-                                    className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage <= 1 ? overlayDisabledButtonClass : overlayButtonClass}`}
-                                >
-                                    上一页
-                                </button>
-                                <span className={`text-[11px] font-bold ${overlayMutedTextClass}`}>
-                                    第 {notificationPage} 页 / 共 {totalNotificationPages} 页
-                                </span>
-                                <select
-                                    value={notificationPage}
-                                    onChange={(e) => {
-                                        const v = Number(e.target.value);
-                                        if (Number.isFinite(v) && v >= 1) {
-                                            onNotificationPageChange && onNotificationPageChange(v);
-                                        }
-                                    }}
-                                    className={`text-xs font-black rounded-full px-3 py-1.5 transition outline-none ${overlayButtonClass}`}
-                                >
-                                    {Array.from({ length: totalNotificationPages }).map((_, idx) => {
-                                        const num = idx + 1;
-                                        return (
-                                            <option key={`p-${num}`} value={num}>
-                                                跳转到第 {num} 页
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-                                <button
-                                    type="button"
-                                    disabled={notificationPage >= totalNotificationPages}
-                                    onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage + 1)}
-                                    className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage >= totalNotificationPages ? overlayDisabledButtonClass : overlayButtonClass}`}
-                                >
-                                    下一页
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={notificationPage >= totalNotificationPages}
-                                    onClick={() => {
-                                        onNotificationPageChange && onNotificationPageChange(totalNotificationPages);
-                                    }}
-                                    className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage >= totalNotificationPages ? overlayDisabledButtonClass : overlayButtonClass}`}
-                                >
-                                    尾页
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                </>
+                portalTarget ? createPortal(notificationOverlay, portalTarget) : notificationOverlay
             )}
         </AnimatePresence>
 
@@ -781,110 +918,9 @@ const Navigation = ({
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
-
-        <AnimatePresence>
+        </AnimatePresence>        <AnimatePresence>
             {settingsOpen && (
-                <>
-                    <motion.div
-                        key="settings-mask"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.16 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.18 }}
-                        className="fixed inset-0 z-[110] bg-black"
-                        onClick={() => setSettingsOpen(false)}
-                    />
-                    <motion.div
-                        key="settings-panel"
-                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                        transition={{ type: 'spring', stiffness: 240, damping: 20 }}
-                        role="dialog"
-                        aria-modal="true"
-                        className={`fixed right-3 md:right-6 z-[120] w-[min(500px,calc(100vw-32px))] max-h-[92vh] overflow-hidden rounded-[28px] ${overlayPanelClass}`}
-                        style={{ top: settingsPanelTop }}
-                    >
-                        <div className={`flex items-center justify-between px-4 py-3 border-b ${overlayDividerClass}`}>
-                            <div className="flex items-center gap-3">
-                                <span className={`w-10 h-10 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
-                                    <Settings size={18} />
-                                </span>
-                                <div className="leading-tight">
-                                    <div className="font-black text-sm uppercase tracking-wide">系统设置</div>
-                                    {/*<div className="text-[11px] font-semibold opacity-70">位置与信箱一致，纯白基底</div>*/}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {/*<span className={`text-[11px] font-black px-2 py-1 rounded-full border border-black ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>*/}
-                                {/*    即时生效*/}
-                                {/*</span>*/}
-                                <button
-                                    onClick={() => setSettingsOpen(false)}
-                                    className={`p-2 rounded-full transition ${overlayButtonClass}`}
-                                    aria-label="关闭设置"
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="p-4 space-y-3 max-h-[calc(92vh-64px)] overflow-y-auto">
-                            <div className={`flex items-center gap-3 p-4 rounded-[24px] ${overlaySoftCardClass}`}>
-                                <div className={`w-11 h-11 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
-                                    {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
-                                </div>
-                                <div className="flex-1 space-y-1">
-                                    <div className="font-black text-sm">彩蛋背景</div>
-                                    <div className={`text-xs ${overlayMutedTextClass}`}>显示或隐藏太阳与月亮动画</div>
-                                </div>
-                                <button
-                                    onClick={() => onToggleBackground && onToggleBackground()}
-                                    className={`relative w-16 h-9 rounded-full transition-all ${backgroundEnabled ? overlayAccentButtonClass : overlayButtonClass}`}
-                                    aria-pressed={backgroundEnabled}
-                                    aria-label="切换彩蛋背景"
-                                >
-                                    <span
-                                        className={`absolute top-1/2 left-1 w-7 h-7 -translate-y-1/2 rounded-full transition-transform ${isDarkMode ? 'border border-white/14 bg-white/90' : 'border border-black/8 bg-white'} ${backgroundEnabled ? 'translate-x-0' : 'translate-x-6'}`}
-                                    />
-                                    <span className={`absolute inset-y-0 left-2 flex items-center text-[10px] font-black uppercase transition-opacity ${backgroundEnabled ? 'opacity-100' : 'opacity-35'}`}>
-                                        ON
-                                    </span>
-                                    <span className={`absolute inset-y-0 right-2 flex items-center text-[10px] font-black uppercase transition-opacity ${backgroundEnabled ? 'opacity-35' : 'opacity-100'}`}>
-                                        OFF
-                                    </span>
-                                </button>
-                            </div>
-
-                            <div className={`flex items-start gap-3 p-4 rounded-[24px] ${overlaySoftCardClass}`}>
-                                <div className={`w-11 h-11 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
-                                    <List size={18} />
-                                </div>
-                                <div className="flex-1 space-y-1">
-                                    <div className="font-black text-sm">首页每页文章数</div>
-                                    <div className={`text-xs ${overlayMutedTextClass}`}>默认 5 条，可选 10 / 20</div>
-                                </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <select
-                                        value={pageSize}
-                                        onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
-                                        className={`w-28 p-2.5 rounded-2xl font-black text-sm outline-none transition ${overlayButtonClass}`}
-                                    >
-                                        {pageSizeOptions.map((opt) => (
-                                            <option key={opt} value={opt}>{opt} 条/页</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className={`flex items-center gap-2 px-3 py-2 rounded-[20px] text-[11px] font-semibold ${overlaySoftCardClass} ${overlayMutedTextClass}`}>
-                                <Sparkles size={14} className="text-[#F97316]" />
-                                <span>设置仅存于本地浏览器</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                </>
+                portalTarget ? createPortal(settingsOverlay, portalTarget) : settingsOverlay
             )}
         </AnimatePresence>
     </>

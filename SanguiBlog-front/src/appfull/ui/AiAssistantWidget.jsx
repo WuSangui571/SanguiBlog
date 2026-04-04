@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, History, MessageSquarePlus, Move, RotateCcw, SendHorizontal, Trash2, X } from 'lucide-react';
@@ -37,6 +37,7 @@ import { isIdleNewSession, shouldCloseHistoryPopover } from './aiSessionToolbar.
 import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
 import { buildAiLauncherBadge } from './aiLauncherBadge.js';
 import { buildAiGuestAccessNotice } from './aiGuestAccessNotice.js';
+import { claimOverlayStackBase, OVERLAY_STACK_BASE } from './overlayStack.js';
 import {
     buildAiWelcomeIntroLines,
     shouldPlayAiWelcomeIntro
@@ -97,6 +98,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         typeof window !== 'undefined' ? window.innerWidth < 768 : false
     );
     const [isOpen, setIsOpen] = useState(false);
+    const [overlayBaseZ, setOverlayBaseZ] = useState(OVERLAY_STACK_BASE);
     const [draft, setDraft] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [sessions, setSessions] = useState([]);
@@ -125,6 +127,15 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const dragStateRef = useRef(null);
     const resizeStateRef = useRef(null);
     const isGuestMode = isAiAssistantGuest(user);
+    const raiseAssistantOverlay = useCallback(() => {
+        setOverlayBaseZ(claimOverlayStackBase());
+    }, []);
+
+    useEffect(() => {
+        if (isOpen) {
+            raiseAssistantOverlay();
+        }
+    }, [isOpen, raiseAssistantOverlay]);
 
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
@@ -396,6 +407,13 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         setIsOpen(false);
     };
 
+    const handleLauncherToggle = () => {
+        if (!isOpen) {
+            raiseAssistantOverlay();
+        }
+        setIsOpen((prev) => !prev);
+    };
+
     const handleSelectSession = async (sessionId) => {
         if (!sessionId || sessionId === activeSessionId) return;
         setActiveSessionId(sessionId);
@@ -535,6 +553,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             return;
         }
 
+        raiseAssistantOverlay();
+
         const target = event.target;
         const isInteractiveTarget = Boolean(
             target?.closest?.('button, textarea, input, a, [data-no-drag="true"]')
@@ -561,6 +581,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             return;
         }
 
+        raiseAssistantOverlay();
         event.preventDefault();
         event.stopPropagation();
 
@@ -736,6 +757,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.90))] text-white border-white/12 shadow-[0_20px_60px_rgba(2,6,23,0.46)]'
         : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,252,0.88))] text-black border-black/10 shadow-[0_20px_60px_rgba(15,23,42,0.16)]';
     const modalInsetClass = isDarkMode ? 'bg-white/[0.05] border-white/10' : 'bg-white/72 border-black/8';
+    const assistantBackdropZ = overlayBaseZ;
+    const assistantLauncherZ = isOpen ? overlayBaseZ + 1 : 89;
+    const assistantPanelZ = overlayBaseZ + 2;
+    const assistantModalZ = overlayBaseZ + 10;
 
     const portalTarget = typeof document !== 'undefined' ? document.body : null;
     const assistantLayer = (
@@ -751,6 +776,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.16 }}
                                 className="fixed inset-0 z-[90] bg-transparent touch-none"
+                                style={{ zIndex: assistantBackdropZ }}
                             />
                         )}
                         <motion.section
@@ -769,7 +795,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                     ? 'md:rounded-[30px]'
                                     : 'md:left-auto md:w-[460px] md:rounded-l-[30px] md:border-r-0'
                             }`}
-                            style={panelStyle}
+                            style={{ ...panelStyle, zIndex: assistantPanelZ }}
+                            onPointerDownCapture={raiseAssistantOverlay}
                         >
                             {isFloating && !isMobileViewport && (
                                 <>
@@ -1279,6 +1306,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
+                                    style={{ zIndex: assistantModalZ }}
                                 >
                                     <div
                                         className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
@@ -1375,6 +1403,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
+                                    style={{ zIndex: assistantModalZ }}
                                 >
                                     <div
                                         className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
@@ -1441,7 +1470,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             <motion.button
                 type="button"
                 aria-label={isOpen ? '三桂博客AI助理已打开' : '打开三桂博客AI助理'}
-                onClick={() => setIsOpen((prev) => !prev)}
+                onClick={handleLauncherToggle}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 className={`fixed z-[89] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border ${launcherGlowShapeClass} pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors backdrop-blur-2xl ${
@@ -1450,6 +1479,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.72))] text-black hover:bg-white/85'
                 }`}
                 style={{
+                    zIndex: assistantLauncherZ,
                     boxShadow: isDarkMode
                         ? '0 16px 36px rgba(2,6,23,0.32), inset 0 1px 0 rgba(255,255,255,0.10)'
                         : '0 16px 36px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.58)'
