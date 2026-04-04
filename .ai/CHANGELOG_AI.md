@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-04] 适配手机版菜单玻璃风格并优化首页 CTA 按钮
+- 背景/需求：用户反馈移动端打开菜单仍是旧风格，不符合新版玻璃设计；首页“向下探索内容”按钮在手机上过宽且箭头为纯文本符号，观感不佳。
+- 修改类型：fix
+- 影响范围：移动端导航抽屉视觉、首页 Hero CTA 移动端尺寸、CTA 箭头图标表现、AI 变更日志
+- 变更摘要：
+  1) `Navigation.jsx` 为移动端抽屉新增并复用玻璃风格类映射（面板、卡片、按钮、强调按钮），将旧版粗描边黑框样式替换为玻璃态层次。
+  2) 移动端菜单中的导航项、用户信息卡、登录/退出/主题/背景按钮、每页数量选择器统一切换为玻璃风格。
+  3) `Hero.jsx` 将 CTA 右侧文本箭头 `↓` 替换为 Lucide `ChevronDown` 图标。
+  4) `homeRedesign.css` 下调移动端 CTA 宽度策略：取消 `width: 100%`，改为 `auto + max-width`，并收紧内边距与间距。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+- 检索与复用策略：
+  - 检索关键词：`menuOpen` / `md:hidden` / `home-hero__cta` / `home-hero__arrow` / `home-nav-icon-btn`
+  - 候选实现：移动抽屉在 `Navigation.jsx` 单入口、CTA 在 `Hero.jsx`、移动端尺寸规则在 `homeRedesign.css`
+  - 最终选择：复用现有入口做样式升级，不新增第二套移动菜单组件
+- 风险点：
+  - 移动端 CTA 宽度已收紧为自适应，若你希望更紧凑可继续把 `max-width` 下调到 280~300px。
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）
+
 ## [2026-04-04] 修复首页头像外溢裁切并增强白天玻璃卡层次
 - 背景/需求：用户反馈首页作者头像顶部应“超出卡片”但当前被裁切；同时白天模式下卡片区域偏白偏平，玻璃层次感弱于夜间模式。
 - 修改类型：fix

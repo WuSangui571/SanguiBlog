@@ -285,6 +285,18 @@ const Navigation = ({
         : 'border border-black/8 bg-white/45 text-black/35 cursor-not-allowed';
     const overlayMutedTextClass = isDarkMode ? 'text-white/68' : 'text-black/55';
     const overlaySubtleTextClass = isDarkMode ? 'text-white/52' : 'text-black/45';
+    const mobileDrawerPanelClass = isDarkMode
+        ? 'border border-white/14 bg-[linear-gradient(180deg,rgba(10,18,30,0.96),rgba(8,14,24,0.92))] text-white shadow-[0_24px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl'
+        : 'border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(250,252,255,0.9))] text-black shadow-[0_24px_60px_rgba(15,23,42,0.16),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-3xl';
+    const mobileDrawerSoftCardClass = isDarkMode
+        ? 'border border-white/12 bg-white/[0.06] shadow-[0_12px_30px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]'
+        : 'border border-black/10 bg-white/75 shadow-[0_12px_30px_rgba(148,163,184,0.16),inset_0_1px_0_rgba(255,255,255,0.8)]';
+    const mobileDrawerButtonClass = isDarkMode
+        ? 'border border-white/12 bg-white/[0.07] text-white hover:bg-white/[0.14] shadow-[0_10px_22px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]'
+        : 'border border-black/10 bg-white/78 text-black hover:bg-white/92 shadow-[0_10px_22px_rgba(148,163,184,0.15),inset_0_1px_0_rgba(255,255,255,0.84)]';
+    const mobileDrawerAccentClass = isDarkMode
+        ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(255,215,0,0.34),rgba(255,196,0,0.2))] text-white hover:bg-[linear-gradient(180deg,rgba(255,215,0,0.42),rgba(255,196,0,0.28))] shadow-[0_14px_26px_rgba(255,196,0,0.18),inset_0_1px_0_rgba(255,255,255,0.2)]'
+        : 'border border-[#d9a200]/28 bg-[linear-gradient(180deg,rgba(255,232,145,0.92),rgba(255,217,92,0.72))] text-black hover:bg-[linear-gradient(180deg,rgba(255,236,165,0.96),rgba(255,220,110,0.82))] shadow-[0_14px_26px_rgba(255,215,0,0.16),inset_0_1px_0_rgba(255,255,255,0.65)]';
     const notificationHeaderClass = isDarkMode
         ? 'bg-[linear-gradient(180deg,rgba(6,11,21,0.99),rgba(8,14,24,0.96))] backdrop-blur-3xl'
         : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.995),rgba(252,253,255,0.97))] backdrop-blur-3xl';
@@ -641,12 +653,12 @@ const Navigation = ({
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-                        className={`absolute right-0 top-0 h-full w-[88vw] max-w-sm flex flex-col border-l-4 border-black shadow-[8px_0_0_0_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                        className={`absolute right-0 top-0 h-full w-[88vw] max-w-sm flex flex-col rounded-l-[28px] ${mobileDrawerPanelClass}`}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black">
+                        <div className={`flex items-center justify-between px-4 py-3 border-b ${overlayDividerClass}`}>
                             <div className="flex items-center gap-3">
-                                <div className={`w-11 h-11 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'} flex items-center justify-center border-2 border-black`}>
+                                <div className={`w-11 h-11 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
                                     <Code size={22} strokeWidth={3} />
                                 </div>
                                 <div className="flex flex-col leading-tight">
@@ -657,7 +669,7 @@ const Navigation = ({
                             <button
                                 type="button"
                                 onClick={onCloseMenu}
-                                className={`p-2 border-2 border-black rounded-full ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`}
+                                className={`p-2 rounded-full transition ${mobileDrawerButtonClass}`}
                                 aria-label="关闭导航菜单"
                             >
                                 <X size={18} />
@@ -673,11 +685,7 @@ const Navigation = ({
                                             key={item.key}
                                             type="button"
                                             onClick={() => handleNavItemSelect(item.key)}
-                                            className={`flex items-center justify-between px-4 py-3 border-2 border-black rounded-xl text-base font-black shadow-[4px_4px_0px_0px_#000] transition-transform active:translate-y-0.5 ${isActive
-                                                ? 'bg-[#FFD700] text-black'
-                                                : isDarkMode
-                                                    ? 'bg-gray-800 text-white hover:bg-gray-700'
-                                                    : 'bg-gray-100 text-black hover:bg-white'}`}
+                                            className={`flex items-center justify-between px-4 py-3 rounded-2xl text-base font-black transition-transform active:translate-y-0.5 ${isActive ? mobileDrawerAccentClass : mobileDrawerButtonClass}`}
                                         >
                                             <span>{item.label}</span>
                                             <ChevronRight size={18} />
@@ -686,11 +694,11 @@ const Navigation = ({
                                 })}
                             </div>
 
-                            <div className="h-px bg-gradient-to-r from-transparent via-black to-transparent opacity-30" />
+                            <div className={`h-px bg-gradient-to-r from-transparent ${isDarkMode ? 'via-white/40' : 'via-black/30'} to-transparent`} />
 
                             {user ? (
-                                <div className={`flex items-center gap-3 p-3 border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-black bg-[#FFD700]">
+                                <div className={`flex items-center gap-3 p-3 rounded-2xl ${mobileDrawerSoftCardClass}`}>
+                                    <div className="w-12 h-12 rounded-full overflow-hidden border border-white/50 bg-[#FFD700]">
                                     <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
                                 </div>
                                     <div className="flex-1 min-w-0">
@@ -704,7 +712,7 @@ const Navigation = ({
                                             <button
                                                 type="button"
                                                 onClick={handleProfileEntry}
-                                                className="flex-1 px-3 py-2 text-xs font-black border-2 border-black rounded-lg bg-[#FFD700] text-black shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 transition-transform"
+                                                className={`flex-1 px-3 py-2 text-xs font-black rounded-xl hover:-translate-y-0.5 transition-transform ${mobileDrawerAccentClass}`}
                                             >
                                                 后台/个人中心
                                             </button>
@@ -714,7 +722,7 @@ const Navigation = ({
                                                     handleLogout?.();
                                                     onCloseMenu?.();
                                                 }}
-                                                className={`px-3 py-2 text-xs font-black border-2 border-black rounded-lg shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                                                className={`px-3 py-2 text-xs font-black rounded-xl ${mobileDrawerButtonClass}`}
                                             >
                                                 退出
                                             </button>
@@ -725,7 +733,7 @@ const Navigation = ({
                                 <button
                                     type="button"
                                     onClick={handleLoginClick}
-                                    className="w-full px-4 py-3 border-2 border-black rounded-xl text-base font-black bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000] hover:-translate-y-0.5 transition-transform"
+                                    className={`w-full px-4 py-3 rounded-2xl text-base font-black hover:-translate-y-0.5 transition-transform ${mobileDrawerAccentClass}`}
                                 >
                                     前往登录
                                 </button>
@@ -737,28 +745,28 @@ const Navigation = ({
                                     onClick={handleThemeButton}
                                     disabled={themeLockActive}
                                     aria-disabled={themeLockActive}
-                                    className={`px-3 py-3 border-2 border-black rounded-xl font-black shadow-[3px_3px_0px_0px_#000] transition ${themeLockActive
+                                    className={`px-3 py-3 rounded-xl font-black transition ${themeLockActive
                                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-80'
-                                        : (isDarkMode ? 'bg-white text-black' : 'bg-black text-white')}`}
+                                        : mobileDrawerButtonClass}`}
                                 >
                                     {themeLockActive ? '冷却中' : (isDarkMode ? '切到亮色' : '切到暗色')}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => onToggleBackground && onToggleBackground()}
-                                    className={`px-3 py-3 border-2 border-black rounded-xl font-black shadow-[3px_3px_0px_0px_#000] ${backgroundEnabled ? 'bg-[#00E096] text-black' : (isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-black')}`}
+                                    className={`px-3 py-3 rounded-xl font-black ${backgroundEnabled ? mobileDrawerAccentClass : mobileDrawerButtonClass}`}
                                 >
                                     {backgroundEnabled ? '关闭彩蛋背景' : '开启彩蛋背景'}
                                 </button>
                             </div>
 
-                            <div className={`p-3 border-2 border-dashed border-black rounded-xl ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                            <div className={`p-3 rounded-2xl ${mobileDrawerSoftCardClass}`}>
                                 <div className="text-xs font-semibold uppercase tracking-[0.2em] mb-2">首页每页</div>
                                 <div className="flex items-center gap-2">
                                     <select
                                         value={pageSize}
                                         onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
-                                        className={`flex-1 p-2 border-2 border-black rounded-lg text-sm font-black shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                                        className={`flex-1 p-2 rounded-xl text-sm font-black ${mobileDrawerButtonClass}`}
                                     >
                                         {pageSizeOptions.map((opt) => (
                                             <option key={opt} value={opt}>{opt} 条</option>

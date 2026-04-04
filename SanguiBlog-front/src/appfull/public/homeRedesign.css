@@ -213,7 +213,9 @@
 }
 
 .home-hero__arrow {
-  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
   transition: transform 0.35s ease;
 }
@@ -574,6 +576,10 @@
 
   .home-hero__cta {
     justify-content: center;
-    width: 100%;
+    width: auto;
+    max-width: min(88vw, 320px);
+    padding: 0.88rem 1.4rem;
+    gap: 0.65rem;
+    letter-spacing: 0.04em;
   }
 }

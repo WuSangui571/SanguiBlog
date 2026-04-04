@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import './homeRedesign.css';
 
@@ -117,7 +118,9 @@ export default function Hero({ onStartReading, isDarkMode }) {
                             className="home-hero__cta"
                         >
                             <span>向下探索内容</span>
-                            <span className="home-hero__arrow">↓</span>
+                            <span className="home-hero__arrow" aria-hidden="true">
+                                <ChevronDown size={17} strokeWidth={2.4} />
+                            </span>
                         </button>
                     </motion.div>
                 </div>
