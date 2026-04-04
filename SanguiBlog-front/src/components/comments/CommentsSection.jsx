@@ -34,6 +34,9 @@ const CommentsSection = ({
     const accentButton = isDarkMode
         ? 'border-white/14 bg-[#FFD700]/88 text-black hover:bg-[#FFE27A]'
         : 'border-white/60 bg-[#FFD700]/92 text-black hover:bg-[#FFE27A]';
+    const actionButtonBase = 'px-4 py-3 rounded-2xl border text-sm font-black inline-flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-0.5';
+    const primaryActionButton = `${actionButtonBase} ${accentButton}`;
+    const secondaryActionButton = `${actionButtonBase} ${softButton}`;
     const resolvedAuthorName = currentUser?.displayName || currentUser?.nickname || currentUser?.username || '访客';
     const resolvedAvatar = currentUser?.avatarUrl || currentUser?.avatar;
     const normalizedList = Array.isArray(list) ? list : [];
@@ -76,35 +79,36 @@ const CommentsSection = ({
         setReplyTarget(null);
     };
 
-    const renderComment = (c, depth = 0) => {
-        const replies = Array.isArray(c.replies) ? c.replies : [];
-        const avatarSrc = getAvatarSrc(c.avatar);
-        const isReplying = replyTarget?.comment?.id === c.id;
+    const renderComment = (comment, depth = 0) => {
+        const replies = Array.isArray(comment.replies) ? comment.replies : [];
+        const avatarSrc = getAvatarSrc(comment.avatar);
+        const isReplying = replyTarget?.comment?.id === comment.id;
         const canReply = depth < 2;
-        const isOwnComment = currentUser && c.userId === currentUser.id;
+        const isOwnComment = currentUser && comment.userId === currentUser.id;
         const allowEdit = currentUser && (isOwnComment || canReviewComments);
         const allowDelete = currentUser && (isOwnComment || canDeleteComments);
         const visualDepth = depth > 0 ? 1 : 0;
+        const displayAuthor = comment.authorName || comment.user || '匿名用户';
 
         return (
             <div
-                id={c.id ? `comment-${c.id}` : undefined}
-                key={c.id || `${depth}-${c.authorName || c.user || 'comment'}`}
+                id={comment.id ? `comment-${comment.id}` : undefined}
+                key={comment.id || `${depth}-${displayAuthor}`}
                 className={`flex gap-4 ${visualDepth > 0 ? `ml-8 border-l pl-6 ${isDarkMode ? 'border-white/10' : 'border-black/10'}` : ''}`}
             >
                 <div
                     className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center font-bold overflow-hidden border ${isDarkMode ? 'border-white/12 bg-white/10 text-white' : 'border-black/10 bg-white/78 text-black'}`}
                 >
                     {avatarSrc ? (
-                        <img src={avatarSrc} alt={c.authorName} className="w-full h-full object-cover" />
+                        <img src={avatarSrc} alt={displayAuthor} className="w-full h-full object-cover" />
                     ) : (
-                        (c.authorName || c.user || 'U').toString().slice(0, 2)
+                        displayAuthor.toString().slice(0, 2)
                     )}
                 </div>
                 <div className="flex-1">
                     <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-                        <span className="font-black text-lg">{c.authorName || c.user}</span>
-                        {postAuthorName && (c.authorName === postAuthorName || c.user === postAuthorName) && (
+                        <span className="font-black text-lg">{displayAuthor}</span>
+                        {postAuthorName && displayAuthor === postAuthorName && (
                             <span
                                 className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black border rounded-full ${isDarkMode ? 'border-white/12 bg-[#FF0080]/70 text-white' : 'border-white/60 bg-[#FFD700]/92 text-black'}`}
                             >
@@ -112,12 +116,13 @@ const CommentsSection = ({
                                 博主
                             </span>
                         )}
-                        <span className="text-xs font-bold text-gray-500">{c.time || ''}</span>
-                        <div className="ml-auto flex gap-2">
+                        <span className="text-xs font-bold text-gray-500">{comment.time || ''}</span>
+                        <div className="ml-auto flex gap-2 flex-wrap">
                             {currentUser && canReply && (
                                 <button
+                                    type="button"
                                     onClick={() => {
-                                        setReplyTarget({ comment: c, depth });
+                                        setReplyTarget({ comment, depth });
                                         setReplyContent('');
                                     }}
                                     className={`text-xs font-bold px-2 py-1 border rounded-xl transition-colors ${softButton}`}
@@ -127,9 +132,10 @@ const CommentsSection = ({
                             )}
                             {currentUser && allowEdit && (
                                 <button
+                                    type="button"
                                     onClick={() => {
-                                        setEditingCommentId(c.id);
-                                        setEditContent(c.content);
+                                        setEditingCommentId(comment.id);
+                                        setEditContent(comment.content || comment.text || '');
                                     }}
                                     className={`text-xs font-bold px-2 py-1 border rounded-xl transition-colors ${softButton}`}
                                 >
@@ -138,7 +144,8 @@ const CommentsSection = ({
                             )}
                             {currentUser && allowDelete && (
                                 <button
-                                    onClick={() => setDeleteConfirm(c.id)}
+                                    type="button"
+                                    onClick={() => setDeleteConfirm(comment.id)}
                                     className={`text-xs font-bold px-2 py-1 border rounded-xl transition-colors ${softButton}`}
                                 >
                                     删除
@@ -146,7 +153,8 @@ const CommentsSection = ({
                             )}
                         </div>
                     </div>
-                    {editingCommentId === c.id ? (
+
+                    {editingCommentId === comment.id ? (
                         <div className={`${glassInner} p-4 rounded-2xl space-y-2`}>
                             <textarea
                                 value={editContent}
@@ -156,8 +164,9 @@ const CommentsSection = ({
                             />
                             <div className="flex gap-2">
                                 <button
+                                    type="button"
                                     onClick={() => {
-                                        onUpdateComment && onUpdateComment(c.id, editContent);
+                                        onUpdateComment && onUpdateComment(comment.id, editContent);
                                         setEditingCommentId(null);
                                     }}
                                     className={`px-3 py-1 font-bold rounded-xl border ${accentButton}`}
@@ -165,6 +174,7 @@ const CommentsSection = ({
                                     保存
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={() => setEditingCommentId(null)}
                                     className={`px-3 py-1 font-bold rounded-xl border ${softButton}`}
                                 >
@@ -174,17 +184,18 @@ const CommentsSection = ({
                         </div>
                     ) : (
                         <div className={`${glassInner} ${commentBg} p-4`}>
-                            <p className="font-medium">{c.content || c.text}</p>
+                            <p className="font-medium">{comment.content || comment.text}</p>
                         </div>
                     )}
 
-                    {deleteConfirm === c.id && (
+                    {deleteConfirm === comment.id && (
                         <div className={`mt-2 p-3 rounded-2xl border ${isDarkMode ? 'border-red-400/40 bg-red-500/10' : 'border-red-300 bg-red-50/90'}`}>
                             <p className="font-bold text-sm mb-2">确认删除这条评论？</p>
                             <div className="flex gap-2">
                                 <button
+                                    type="button"
                                     onClick={() => {
-                                        onDeleteComment && onDeleteComment(c.id);
+                                        onDeleteComment && onDeleteComment(comment.id);
                                         setDeleteConfirm(null);
                                     }}
                                     className="px-3 py-1 bg-red-500 text-white font-bold border border-red-400 rounded-xl text-xs"
@@ -192,6 +203,7 @@ const CommentsSection = ({
                                     确认删除
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={() => setDeleteConfirm(null)}
                                     className={`px-3 py-1 font-bold border rounded-xl text-xs ${softButton}`}
                                 >
@@ -207,11 +219,12 @@ const CommentsSection = ({
                                 value={replyContent}
                                 onChange={(e) => setReplyContent(e.target.value)}
                                 className={`w-full p-3 rounded-2xl border font-bold focus:outline-none min-h-[100px] ${inputBg}`}
-                                placeholder={`回复 ${c.authorName || c.user || 'Ta'}...`}
+                                placeholder={`回复 ${displayAuthor}...`}
                             />
                             <div className="flex gap-2 mt-2">
                                 <PopButton onClick={handleReplySubmit}>发送回复</PopButton>
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         setReplyTarget(null);
                                         setReplyContent('');
@@ -242,7 +255,7 @@ const CommentsSection = ({
                     {!currentUser && (
                         <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                             <User size={12} />
-                            <span>登录后可享受更多特权</span>
+                            <span>登录后可解锁更多互动能力</span>
                         </p>
                     )}
                 </div>
@@ -258,18 +271,24 @@ const CommentsSection = ({
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     className={`w-full p-4 rounded-2xl border font-bold focus:outline-none min-h-[140px] ${inputBg}`}
-                    placeholder="写点什么..."
+                    placeholder="写点什么…"
                 />
-                <div className="flex gap-2">
-                    <PopButton onClick={handleSubmit}>发布评论</PopButton>
+                <div className={`flex flex-wrap gap-3 rounded-2xl ${glassInner} p-3`}>
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className={primaryActionButton}
+                    >
+                        发布评论
+                    </button>
                     {currentUser && (
-                        <PopButton
-                            variant="secondary"
+                        <button
+                            type="button"
                             onClick={() => setView && setView('admin')}
-                            className={`${isDarkMode ? '!bg-gray-100 !text-black' : '!bg-white !text-black'} shadow-[2px_2px_0px_0px_#000]`}
+                            className={secondaryActionButton}
                         >
                             后台管理
-                        </PopButton>
+                        </button>
                     )}
                 </div>
             </div>

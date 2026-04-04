@@ -1193,10 +1193,30 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 if (articleState?.status === 'loading' || articleState?.status === 'idle') {
                     return (
                         <div className="max-w-4xl mx-auto px-4 pt-32">
-                            <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-10 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
-                                <div className="text-2xl font-black">加载中…</div>
-                                <div className={`mt-3 text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    正在从北极数据中心把文章雪橇运过来（别担心，不会给你塞一篇“最新文章”冒充）。
+                            <div className={`home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark bg-[#0F172A]/54 text-white' : 'bg-white/48 text-black'} p-8 md:p-10`}>
+                                <div className="flex items-center gap-3">
+                                    <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] rounded-full border ${isDarkMode ? 'border-white/12 bg-white/10 text-gray-100' : 'border-black/10 bg-white/78 text-black'}`}>
+                                        文章载入中
+                                    </span>
+                                    <div className={`h-px flex-1 ${isDarkMode ? 'bg-white/10' : 'bg-black/10'}`}></div>
+                                </div>
+
+                                <div className="mt-6 space-y-4 animate-pulse">
+                                    <div className={`h-4 w-32 rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-black/8'}`}></div>
+                                    <div className={`h-14 w-4/5 rounded-[28px] ${isDarkMode ? 'bg-white/12' : 'bg-white/78 border border-black/6'}`}></div>
+                                    <div className={`h-5 w-1/2 rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-black/8'}`}></div>
+                                    <div className={`home-ios-inner-card ${isDarkMode ? 'bg-[#0F172A]/62 border-white/10' : 'bg-white/62 border-black/10'} p-4 md:p-5 space-y-3`}>
+                                        <div className={`h-4 w-11/12 rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-black/8'}`}></div>
+                                        <div className={`h-4 w-10/12 rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-black/8'}`}></div>
+                                        <div className={`h-4 w-7/12 rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-black/8'}`}></div>
+                                    </div>
+                                </div>
+
+                                <div className={`mt-6 home-ios-inner-card ${isDarkMode ? 'bg-[#0F172A]/62 text-gray-200 border-white/10' : 'bg-white/64 text-gray-700 border-black/10'} p-4 md:p-5`}>
+                                    <div className="text-xl font-black">加载中…</div>
+                                    <div className="mt-2 text-sm font-semibold">
+                                        正在整理文章内容、目录与评论数据，请稍候片刻。
+                                    </div>
                                 </div>
                             </div>
                         </div>
