@@ -5136,3 +5136,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   1) 新增前台共享浮层层级分配器 `overlayStack.js`，为 AI 助手、通知面板、设置面板统一提供全局顶层基准，避免继续各写各的固定 z-index。
   2) 将导航条的通知面板与设置面板改为通过 `createPortal` 挂载到 `document.body`，彻底脱离导航所在内容层的 stacking context。
   3) 为 AI 助手、通知面板、设置面板接入同一套动态层级规则，并在打开/交互时提升自身层级，实现“后打开在上、交互后也可回到最上层”的行为。
+## [2026-04-04] 修复导航通知与设置面板因 portal 包裹顺序错误而无法打开
+- 背景/需求：上一轮统一导航浮层与 AI 助手顶层规则后，用户反馈导航条上的“信件”和“设置”面板无法打开。
+- 修改类型：fix
+- 变更摘要：
+  1) 排查确认问题不是按钮状态切换失效，而是 `Navigation.jsx` 中把 `createPortal(...)` 放在了 `AnimatePresence` 内部，导致通知和设置浮层没有像 AI 助手那样被正确渲染。
+  2) 将导航浮层改成与 AI 助手一致的结构：先准备 `notificationOverlayLayer / settingsOverlayLayer`，再整体 portal 到 `document.body`。
+  3) 保留上一轮共享层级分配器逻辑不变，只修正导航浮层的 portal 包裹顺序，恢复“能打开 + 顶层显示”的行为。

@@ -597,6 +597,16 @@ const Navigation = ({
             </motion.div>
         </>
     );
+    const notificationOverlayLayer = (
+        <AnimatePresence>
+            {notificationOpen && notificationOverlay}
+        </AnimatePresence>
+    );
+    const settingsOverlayLayer = (
+        <AnimatePresence>
+            {settingsOpen && settingsOverlay}
+        </AnimatePresence>
+    );
 
     return (
         <>
@@ -765,11 +775,8 @@ const Navigation = ({
             </div>
 
         </motion.nav>
-        </div>        <AnimatePresence>
-            {notificationOpen && (
-                portalTarget ? createPortal(notificationOverlay, portalTarget) : notificationOverlay
-            )}
-        </AnimatePresence>
+        </div>
+        {portalTarget ? createPortal(notificationOverlayLayer, portalTarget) : notificationOverlayLayer}
 
         <AnimatePresence>
             {menuOpen && (
@@ -918,11 +925,8 @@ const Navigation = ({
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>        <AnimatePresence>
-            {settingsOpen && (
-                portalTarget ? createPortal(settingsOverlay, portalTarget) : settingsOverlay
-            )}
         </AnimatePresence>
+        {portalTarget ? createPortal(settingsOverlayLayer, portalTarget) : settingsOverlayLayer}
     </>
     );
 };
