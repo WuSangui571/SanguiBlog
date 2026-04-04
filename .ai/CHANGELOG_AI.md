@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-04] 首页卡片统一适配 iOS 26 玻璃组件设计
+- 背景/需求：用户要求对照模板 `新首页设计/html/indexV13.html`，将首页“各种卡片”统一适配为新的 iOS 26 风格组件，且以 HTML 模板为准，避免新增并行实现。
+- 修改类型：fix
+- 影响范围：首页卡片视觉体系（文章卡、系统状态卡、侧栏卡、搜索卡、空态/错误卡、分页按钮）、首页共享样式、AI 变更日志
+- 变更摘要：
+  1) 在 `homeRedesign.css` 新增首页玻璃卡片基类（标准玻璃卡、闪耀卡、内嵌子卡、胶囊标签），并补充 dark/light 对应样式与流光动画。
+  2) 重构 `TiltCard.jsx` 为可选 `variant` 模式，首页文章卡复用同一组件切换为 `glass` 变体，保留原有 3D 轻倾斜交互，不新增第二套文章卡组件。
+  3) 调整 `ArticleList.jsx`：将作者卡、分类导航卡、最新评论卡、标签卡、文章搜索卡、文章主卡正文区、空态与错误态卡片、分页按钮统一收拢到玻璃风格。
+  4) 重写 `StatsStrip.jsx` 的外层表现，改为玻璃状态卡 + 胶囊指标项，保留原有数据来源与日期 tooltip 交互。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/ui/TiltCard.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
+- 检索与复用策略：
+  - 检索关键词：`HomeView` / `ArticleList` / `StatsStrip` / `TiltCard` / `homeRedesign` / `glass-panel` / `shimmering` / `inner-panel`
+  - 候选实现：`ArticleList.jsx`、`StatsStrip.jsx`、`TiltCard.jsx`、`homeRedesign.css`
+  - 最终选择：复用现有首页入口与组件链路做样式升级，不新增第二套首页或卡片模块
+- 风险点：
+  - 本次只改视觉层与 class 结构，未改接口与数据逻辑；少量细节（如不同浏览器下 `backdrop-filter` 观感）可能仍需后续微调。
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）
+
 ## [2026-04-02] 修复首页顶部导航未与首屏背景融合的问题
 - 背景/需求：用户指出当前首页顶部导航在页面顶部仍表现为一条明显的白色导航条，没有像模板 `新首页设计/html/indexV11.html` 那样与首屏背景图融为一体；要求仅在滚动到下方文章区域后，导航背景才切换为正文背景色。
 - 修改类型：fix

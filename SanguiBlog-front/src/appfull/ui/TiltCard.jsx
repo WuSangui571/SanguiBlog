@@ -1,7 +1,15 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 
-const TiltCard = ({ children, className = "", onClick, isNew = false, accentColor = '#22D3EE' }) => {
+const TiltCard = ({
+    children,
+    className = "",
+    onClick,
+    isNew = false,
+    accentColor = '#22D3EE',
+    variant = 'default',
+    isDarkMode = false
+}) => {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
     const rotateX = useTransform(y, [0, 1], [5, -5]);
@@ -12,6 +20,14 @@ const TiltCard = ({ children, className = "", onClick, isNew = false, accentColo
         x.set((event.clientX - rect.left) / rect.width);
         y.set((event.clientY - rect.top) / rect.height);
     }
+
+    const containerClass = variant === 'glass'
+        ? `home-ios-card home-ios-card--article ${isDarkMode ? 'home-ios-card--dark' : ''}`
+        : `
+            relative bg-white border-2 border-black p-0
+            shadow-[8px_8px_0px_0px_#000] hover:shadow-[12px_12px_0px_0px_#000]
+            transition-shadow duration-300 cursor-pointer perspective-1000
+          `;
 
     return (
         <motion.div
@@ -24,12 +40,7 @@ const TiltCard = ({ children, className = "", onClick, isNew = false, accentColo
             whileHover={{ y: -6, rotate: -1 }}
             transition={{ type: 'spring', stiffness: 320, damping: 24 }}
             onClick={onClick}
-            className={`
-        relative bg-white border-2 border-black p-0 
-        shadow-[8px_8px_0px_0px_#000] hover:shadow-[12px_12px_0px_0px_#000] 
-        transition-shadow duration-300 cursor-pointer perspective-1000
-        ${className}
-      `}
+            className={`cursor-pointer perspective-1000 ${containerClass} ${className}`}
         >
             {isNew && (
                 <>

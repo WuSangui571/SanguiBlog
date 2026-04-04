@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三桂博客 - 进阶玻璃拟物UI版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600;800;900&family=Noto+Sans+SC:wght@100;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 默认白天模式：冷调纸张感 */
+            --bg-color: #f8f8fa;
+            --text-main: #121212;
+            --text-dim: rgba(0, 0, 0, 0.4);
+            --accent: #000000;
+            --nav-item-hover: #0066cc;
+            --btn-border: rgba(0, 0, 0, 0.15);
+            --img-opacity: 0.06;
+            
+            /* UI组件库专属变量 - 白天 */
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+            --glass-highlight: rgba(255, 255, 255, 0.6);
+            --shimmer-color: rgba(255, 255, 255, 0.8); /* 流光颜色 */
+            
+            --transition: all 0.6s cubic-bezier(0.2, 1, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            /* 黑夜模式：极致纯黑 */
+            --bg-color: #050505;
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.4);
+            --accent: #ffffff;
+            --nav-item-hover: #00d2ff;
+            --btn-border: rgba(255, 255, 255, 0.2);
+            --img-opacity: 0.08;
+
+            /* UI组件库专属变量 - 黑夜 */
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --glass-highlight: rgba(255, 255, 255, 0.05);
+            --shimmer-color: rgba(255, 255, 255, 0.15); /* 流光颜色 */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            transition: background-color 0.8s ease, color 0.8s ease;
+            overflow-x: hidden;
+        }
+
+        /* --- 背景图片层 --- */
+        .bg-image-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-color: #888; /* 占位色，若有实际背景图请改为 url('...') */
+            background-size: cover; background-position: center;
+            filter: grayscale(100%) blur(2px);
+            opacity: var(--img-opacity);
+            z-index: 0; pointer-events: none;
+            transition: opacity 0.8s ease;
+        }
+
+        /* --- 柔和环境光斑 --- */
+        .orb {
+            position: fixed; width: 60vw; height: 60vw;
+            max-width: 600px; max-height: 600px;
+            background: radial-gradient(circle, var(--nav-item-hover) 0%, transparent 70%);
+            opacity: 0.05; filter: blur(80px); z-index: 1; pointer-events: none;
+            animation: orbFloat 20s infinite alternate ease-in-out;
+            top: 20%; left: 20%;
+        }
+        @keyframes orbFloat { 
+            0% { transform: translate(-10%, -10%) scale(1); } 
+            100% { transform: translate(20%, 20%) scale(1.2); } 
+        }
+
+        /* --- 优雅导航条 --- */
+        nav {
+            position: fixed; top: 0; width: 100%;
+            padding: 40px 60px; display: flex; justify-content: space-between; align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
+        .nav-brand h2 { font-size: 1.1rem; font-weight: 800; color: var(--text-main); letter-spacing: 2px; }
+        .version { font-size: 0.65rem; color: var(--text-dim); font-family: monospace; }
+
+        .nav-links { display: flex; gap: 40px; list-style: none; }
+        .nav-links a {
+            text-decoration: none; color: var(--text-dim); font-size: 0.85rem;
+            font-weight: 400; letter-spacing: 1px; transition: var(--transition);
+            position: relative; padding-bottom: 5px;
+        }
+        .nav-links a:hover, .nav-links a.active { color: var(--text-main); }
+        .nav-links a.active::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 4px; height: 4px; border-radius: 50%; background: var(--nav-item-hover);
+        }
+
+        .theme-toggle {
+            cursor: pointer; background: var(--glass-bg); border: 1px solid var(--btn-border);
+            color: var(--text-main); padding: 7px 18px; border-radius: 20px;
+            font-size: 0.7rem; font-weight: 600; transition: var(--transition);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .theme-toggle:hover { border-color: var(--text-main); transform: scale(1.05); }
+
+        /* --- Hero Section --- */
+        .hero {
+            position: relative; height: 100vh; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            z-index: 10; padding: 0 20px;
+        }
+        .hero-inner { transition: transform 0.1s ease-out; }
+
+        .intro-text {
+            font-size: 0.9rem; font-weight: 200; color: var(--text-dim);
+            letter-spacing: 8px; text-transform: uppercase; margin-bottom: 25px;
+            display: block; opacity: 0; animation: fadeIn 1.2s ease forwards;
+        }
+
+        h1 {
+            font-size: clamp(2.2rem, 6vw, 4.2rem); font-weight: 900; line-height: 1.2;
+            letter-spacing: -2px; opacity: 0; transform: translateY(30px);
+            animation: fadeInUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards 0.3s;
+        }
+        h1 span {
+            display: block; background: linear-gradient(180deg, var(--text-main) 30%, var(--text-dim) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .explore-btn-wrap { margin-top: 80px; opacity: 0; animation: fadeIn 1.5s ease forwards 1s; }
+
+        .explore-btn {
+            position: relative; display: inline-flex; align-items: center; gap: 15px;
+            padding: 16px 40px; border: 1px solid var(--btn-border); border-radius: 50px;
+            text-decoration: none; color: var(--text-main); font-size: 0.9rem;
+            font-weight: 500; letter-spacing: 1px; overflow: hidden;
+            transition: var(--transition);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .explore-btn span { position: relative; z-index: 2; }
+        .explore-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: var(--text-main); transition: var(--transition); z-index: 1;
+        }
+        .explore-btn:hover { color: var(--bg-color); transform: translateY(-5px); border-color: var(--text-main); }
+        .explore-btn:hover::before { left: 0; }
+        .arrow-icon { display: inline-block; font-size: 1.2rem; transition: transform 0.4s ease; position: relative; z-index: 2; }
+        .explore-btn:hover .arrow-icon { transform: translateY(5px); }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 内容区域基底 --- */
+        #content {
+            position: relative; min-height: 100vh; 
+            background: transparent; 
+            z-index: 20; padding: 120px 80px; border-top: 1px solid var(--btn-border);
+        }
+
+        /* ==========================================
+           iOS 26 玻璃质感 UI 组件库样式开始
+           ========================================== */
+
+        .ui-showcase-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 50px; border-bottom: 1px solid var(--btn-border); padding-bottom: 20px;
+        }
+
+        .ui-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        /* --- 核心玻璃面板基类 --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255,255,255,0.2); 
+            border-left: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: var(--glass-shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-panel::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100%;
+            background: linear-gradient(180deg, var(--glass-highlight) 0%, transparent 20%);
+            pointer-events: none; opacity: 0.5;
+        }
+        .glass-panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            border-color: var(--text-dim);
+        }
+        [data-theme="dark"] .glass-panel:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+
+        .panel-title {
+            font-size: 0.8rem; font-weight: 800; color: var(--text-dim);
+            letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px;
+        }
+
+        /* === 新增特征 1：闪耀的卡片 (Shimmering Card) === */
+        .glass-panel.shimmering {
+            border-color: rgba(0, 102, 204, 0.3);
+            /* 轻微的常驻发光 */
+            box-shadow: 0 0 25px rgba(0, 102, 204, 0.1), var(--glass-shadow);
+        }
+        [data-theme="dark"] .glass-panel.shimmering {
+            border-color: rgba(0, 210, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.1), var(--glass-shadow);
+        }
+        /* 流光扫过动画效果 */
+        .glass-panel.shimmering::after {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, var(--shimmer-color), transparent);
+            transform: skewX(-20deg);
+            animation: shimmerSweep 4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 10;
+        }
+        @keyframes shimmerSweep {
+            0% { left: -100%; }
+            20% { left: 200%; } /* 快速扫过 */
+            100% { left: 200%; } /* 停留等待下一轮回 */
+        }
+
+        /* === 新增特征 2：卡片堆叠/嵌套 (Nested Cards) === */
+        .glass-panel .inner-panel {
+            /* 在已有模糊层之上建立新的物理层级 */
+            background: var(--glass-highlight); 
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 15px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            transition: var(--transition);
+            /* 内层卡片不宜过度模糊，以免失真，保留轻微玻璃感即可 */
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        [data-theme="dark"] .glass-panel .inner-panel {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .glass-panel .inner-panel:hover {
+            transform: translateY(-2px);
+            border-color: var(--text-dim);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] .glass-panel .inner-panel:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+
+        /* --- 卡片内部常规元素 --- */
+        .card-image-placeholder {
+            width: 100%; height: 140px; border-radius: 12px; margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--btn-border) 0%, transparent 100%);
+            position: relative; overflow: hidden;
+        }
+        .card-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 10px; }
+        .card-desc { font-size: 0.9rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 20px; }
+        
+        .compact-module {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; border-radius: 16px;
+            background: var(--glass-highlight);
+            border: 1px solid var(--glass-border);
+            margin-top: 15px;
+        }
+        .avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; background: var(--text-main); opacity: 0.1; }
+
+        /* --- 按钮组件 --- */
+        .glass-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            transition: var(--transition);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .glass-btn:hover { background: var(--text-main); color: var(--bg-color); transform: scale(1.02); }
+        .glass-btn.primary { background: var(--text-main); color: var(--bg-color); border: none; }
+        .glass-btn.primary:hover { opacity: 0.8; box-shadow: 0 5px 15px var(--btn-border); }
+
+        /* --- 交互元素 --- */
+        .interaction-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+
+        .glass-toggle {
+            width: 54px; height: 30px; border-radius: 30px;
+            background: var(--btn-border); position: relative; cursor: pointer;
+            transition: var(--transition); border: 1px solid var(--glass-border);
+            box-sizing: content-box;
+        }
+        .glass-toggle::after {
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--bg-color); box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: var(--transition);
+        }
+        .glass-toggle.active { background: var(--nav-item-hover); border-color: var(--nav-item-hover); }
+        .glass-toggle.active::after { transform: translateX(24px); background: #ffffff; }
+
+        /* 状态计数器 */
+        .status-badge {
+            padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+            background: var(--glass-highlight); border: 1px solid var(--glass-border);
+            color: var(--text-main);
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 30px; }
+            .nav-links { display: none; }
+            h1 { font-size: 2.2rem; }
+            #content { padding: 60px 20px; }
+            .ui-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="bg-image-layer" id="bg-img"></div>
+    <div class="orb"></div>
+
+    <nav>
+        <a href="#" class="nav-brand">
+            <h2>三桂博客</h2>
+            <span class="version">V2.3.0</span>
+        </a>
+        
+        <ul class="nav-links">
+            <li><a href="#" class="active">首页</a></li>
+            <li><a href="#content">UI库</a></li>
+            <li><a href="#">工具</a></li>
+            <li><a href="#">关于</a></li>
+        </ul>
+
+        <button class="theme-toggle" id="theme-btn">DARK MODE</button>
+    </nav>
+
+    <main class="hero">
+        <div class="hero-inner" id="hero-wrap">
+            <span class="intro-text">Hello, I am Sangui</span>
+            <h1>
+                <span>在这里把问题想清楚，</span>
+                <span>把代码写简单。</span>
+            </h1>
+
+            <div class="explore-btn-wrap">
+                <a href="#content" class="explore-btn">
+                    <span>向下探索 UI 组件</span>
+                    <span class="arrow-icon">↓</span>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <section id="content">
+        <div class="ui-showcase-header">
+            <div>
+                <h2 style="font-weight: 900; letter-spacing: 1px; font-size: 2rem;">UIKIT SHOWCASE</h2>
+                <p style="color: var(--text-dim); margin-top: 10px;">包含闪耀动画与堆叠嵌套特性的 iOS 26 风格组件库。</p>
+            </div>
+            <div class="status-badge" id="click-counter">操作计数: 0</div>
+        </div>
+
+        <div class="ui-grid">
+            
+            <div class="glass-panel interactive-target">
+                <div class="panel-title">01. Standard Card / 常规卡片</div>
+                <div class="card-image-placeholder"></div>
+                <h3 class="card-title">探索架构的本质</h3>
+                <p class="card-desc">设计不仅是视觉的堆砌，更是逻辑的延展。基础的毛玻璃面板展示。</p>
+                <button class="glass-btn primary">阅读全文 →</button>
+            </div>
+
+            <div class="glass-panel shimmering interactive-target">
+                <div class="panel-title" style="color: var(--nav-item-hover);">02. Featured / 闪耀卡片</div>
+                <h3 class="card-title">置顶：2026 技术展望</h3>
+                <p class="card-desc">引人注目的高光扫过效果与微发光边框，适合用于置顶文章、重要公告或特殊状态展示。</p>
+                
+                <div class="compact-module" style="background: transparent; border-color: var(--btn-border);">
+                    <div class="avatar-placeholder"></div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">三桂 Sangui</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">刚刚发布</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel interactive-target">
+                <div class="panel-title">03. Stacked / 卡片堆叠</div>
+                <p class="card-desc" style="margin-bottom: 0;">在主容器内嵌套子卡片，构建清晰的信息层级（例如评论区、复杂表单等区块）。</p>
+                
+                <div class="inner-panel">
+                    <div style="font-weight: 800; margin-bottom: 5px;">子层级：系统通知</div>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">这是内层包裹的内容，拥有独立的物理边界和弱化的环境光反射。</p>
+                </div>
+
+                <div class="inner-panel">
+                    <div class="interaction-row" style="margin-bottom: 0;">
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.9rem;">深色模式跟随系统</div>
+                            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">自动切换UI主题</div>
+                        </div>
+                        <div class="glass-toggle" id="demo-toggle-1"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <script>
+        // 1. 主题切换逻辑
+        const themeBtn = document.getElementById('theme-btn');
+        let currentTheme = 'light';
+        themeBtn.addEventListener('click', () => {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', currentTheme);
+            themeBtn.innerText = currentTheme === 'light' ? 'DARK MODE' : 'LIGHT MODE';
+        });
+
+        // 2. 极其细微的鼠标视差
+        const heroWrap = document.getElementById('hero-wrap');
+        const bgImg = document.getElementById('bg-img');
+
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth / 2 - e.clientX) / 100;
+            const y = (window.innerHeight / 2 - e.clientY) / 100;
+            bgImg.style.transform = `scale(1.05) translate(${x}px, ${y}px)`;
+            heroWrap.style.transform = `translate(${-x}px, ${-y}px)`;
+        });
+
+        // 3. 滚动监听
+        window.addEventListener('scroll', () => {
+            const scroll = window.scrollY;
+            const opacity = 1 - scroll / 500;
+            if (opacity >= 0) {
+                heroWrap.style.opacity = opacity;
+                heroWrap.style.transform = `translateY(${scroll * 0.15}px)`;
+            }
+        });
+
+        // 4. UI 组件交互逻辑
+        const toggles = document.querySelectorAll('.glass-toggle');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation(); // 防止触发父级点击
+                this.classList.toggle('active');
+            });
+        });
+
+        // 演示用计数器
+        let interactionCount = 0;
+        const counterDisplay = document.getElementById('click-counter');
+        const interactiveTargets = document.querySelectorAll('.glass-btn, .glass-toggle, .inner-panel');
+        
+        interactiveTargets.forEach(target => {
+            target.addEventListener('click', () => {
+                interactionCount++;
+                counterDisplay.innerText = `操作计数: ${interactionCount}`;
+                counterDisplay.style.transform = 'scale(1.1)';
+                setTimeout(() => counterDisplay.style.transform = 'scale(1)', 200);
+            });
+        });
+    </script>
+</body>
+</html>

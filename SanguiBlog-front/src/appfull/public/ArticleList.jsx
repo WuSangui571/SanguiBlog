@@ -361,7 +361,9 @@ const ArticleList = ({
     const cardBg = isDarkMode ? 'bg-gray-800' : 'bg-white';
     const text = isDarkMode ? 'text-gray-100' : 'text-black';
     const subText = isDarkMode ? 'text-gray-400' : 'text-gray-600';
-    const hoverBg = isDarkMode ? 'hover:bg-gray-900' : 'hover:bg-[#FFFAF0]';
+    const hoverBg = isDarkMode ? 'hover:bg-gray-900/45' : 'hover:bg-white/35';
+    const glassSurface = `home-ios-card ${isDarkMode ? 'home-ios-card--dark' : ''}`;
+    const glassInner = 'home-ios-inner-card';
 
     // Use API author data if available, otherwise fallback to MOCK_USER
     const displayAuthor = author || MOCK_USER;
@@ -406,7 +408,7 @@ const ArticleList = ({
 
     return (
         <>
-            <div className={`relative z-20 ${isDarkMode ? 'bg-[#09111d]' : 'bg-[#f8f8fa]'}`}>
+            <div className={`relative z-20 home-redesign-surface ${isDarkMode ? 'bg-[#09111d] is-dark' : 'bg-[#f8f8fa]'}`}>
                 {backgroundEnabled && (
                     <div className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0">
                         <BackgroundEasterEggs isDarkMode={isDarkMode} fixed={false} />
@@ -499,12 +501,12 @@ const ArticleList = ({
                 <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 flex flex-col lg:flex-row gap-12">
                     <div className="hidden lg:block w-full lg:w-1/4 space-y-8">
                         <div
-                            className={`${sidebarBg} border-2 border-black p-6 shadow-[8px_8px_0px_0px_#000] text-center relative ${text}`}>
+                            className={`${sidebarBg} ${glassSurface} p-6 text-center relative ${text}`}>
                             <motion.div
                                 animate={spinLockActive ? { rotate: [0, -8, 8, -5, 5, 0] } : { rotate: avatarClicks * 360 }}
                                 transition={spinLockActive ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.5 }}
                                 onClick={handleAvatarClick}
-                                className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 bg-[#FFD700] rounded-full border-2 border-black flex items-center justify-center cursor-pointer"
+                                className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 bg-[#FFD700] rounded-full border border-white/60 flex items-center justify-center cursor-pointer shadow-[0_8px_20px_rgba(0,0,0,0.16)]"
                             >
                                 <img src={authorAvatar} className="w-full h-full object-cover rounded-full" />
                                 {spinLockActive && (
@@ -573,12 +575,12 @@ const ArticleList = ({
                                     <div key={cat.id} className="group">
                                         <button
                                             onClick={() => handleParentClick(cat.id)}
-                                            className={`w-full text-left p-3 font-bold border-2 border-black transition-all flex justify-between items-center
+                                            className={`w-full text-left p-3 font-bold transition-all flex justify-between items-center rounded-2xl border
                           ${activeParent === cat.id
                                                     ? (isDarkMode
-                                                        ? 'bg-[#FFD700] text-black border-[#FFD700] shadow-[4px_4px_0px_0px_#000] -translate-y-1'
-                                                        : 'bg-[#6366F1] text-white shadow-[4px_4px_0px_0px_#000] -translate-y-1')
-                                                    : `${sidebarBg} ${text} ${isDarkMode ? 'hover:bg-gray-700 hover:text-white' : 'hover:bg-gray-100'}`}
+                                                        ? 'bg-[#FFD700]/90 text-black border-[#FFD700]/90 shadow-[0_12px_28px_rgba(255,215,0,0.28)] -translate-y-0.5'
+                                                        : 'bg-[#6366F1]/85 text-white border-[#8B90FF]/70 shadow-[0_10px_24px_rgba(99,102,241,0.24)] -translate-y-0.5')
+                                                    : `${glassInner} ${text} ${isDarkMode ? 'hover:bg-gray-700/40 hover:text-white' : 'hover:bg-white/60'}`}
                         `}
                                         >
                                             {cat.label}
@@ -589,14 +591,14 @@ const ArticleList = ({
                                             {activeParent === cat.id && cat.children.length > 0 && (
                                                 <motion.div
                                                     initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
-                                                    className={`overflow-hidden border-l-4 border-black ml-4 ${sidebarBg}`}
+                                                    className={`overflow-hidden ml-4 rounded-xl ${glassInner}`}
                                                 >
                                                     {cat.children.map(sub => (
                                                         <button
                                                             key={sub.id}
                                                             onClick={() => handleSubClick(sub.id)}
-                                                            className={`block w-full text-left px-4 py-2 text-sm font-bold ${isDarkMode ? 'border-gray-700' : 'border-black'} border-b last:border-0
-                                   ${activeSub === sub.id ? 'bg-[#FFD700] text-black' : `${subText} hover:bg-black/10`}
+                                                            className={`block w-full text-left px-4 py-2 text-sm font-bold border-b last:border-0 ${isDarkMode ? 'border-white/10' : 'border-black/10'}
+                                   ${activeSub === sub.id ? 'bg-[#FFD700]/85 text-black' : `${subText} hover:bg-black/10`}
                                  `}
                                                         >
                                                             {sub.label}
@@ -611,7 +613,7 @@ const ArticleList = ({
                         </div>
 
 
-                        <div className={`${sidebarBg} border-2 border-black p-5 shadow-[6px_6px_0px_0px_#000]`}>
+                        <div className={`${sidebarBg} ${glassSurface} p-5`}>
                             <div className="flex items-center justify-between gap-3">
                                 <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
                                     <MessageCircle size={18} className={isDarkMode ? 'text-white' : 'text-black'} /> 最新评论
@@ -629,10 +631,10 @@ const ArticleList = ({
                                     };
                                     return (
                                         <div key={comment.id || `recent-${comment.postId || 'post'}-${index}`}
-                                            className={`border-2 border-black p-3 rounded-xl ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-[4px_4px_0px_0px_#000]`}>
+                                            className={`${glassInner} p-3 rounded-xl ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                                             <div className="flex items-center gap-3">
                                                 <img src={avatar} alt={comment.authorName || '访客'}
-                                                    className="w-10 h-10 rounded-full border-2 border-black object-cover bg-[#FFD700]" />
+                                                    className="w-10 h-10 rounded-full border border-white/70 object-cover bg-[#FFD700]" />
                                                 <div>
                                                     <p className="font-black text-sm">{comment.authorName || '访客'}</p>
                                                     <p className="text-[11px] text-gray-500">{comment.time || ''}</p>
@@ -653,7 +655,7 @@ const ArticleList = ({
                             </div>
                         </div>
 
-                        <div className={`${sidebarBg} border-2 border-black p-5 shadow-[6px_6px_0px_0px_#000]`}>
+                        <div className={`${sidebarBg} ${glassSurface} p-5`}>
                             <div className="flex items-center justify-between gap-3">
                                 <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
                                     <Hash size={18} className={isDarkMode ? 'text-white' : 'text-black'} /> 全部标签
@@ -670,7 +672,7 @@ const ArticleList = ({
                                             setActiveTag('all');
                                             scrollToPostsTop();
                                         }}
-                                        className={`px-2 py-1 border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 transition-transform ${isDarkMode ? 'bg-[#111827] text-white' : 'bg-white text-black'}`}
+                                        className={`px-2 py-1 border border-white/60 hover:-translate-y-0.5 transition-transform rounded-xl ${isDarkMode ? 'bg-[#111827]/60 text-white' : 'bg-white/75 text-black'}`}
                                     >
                                         清除筛选
                                     </button>
@@ -687,7 +689,7 @@ const ArticleList = ({
                                                     key={tag}
                                                     onClick={() => handleTagClick(tag)}
                                                     aria-pressed={isActive}
-                                                    className={`relative overflow-hidden px-3 py-1 text-xs font-black border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] transition-transform hover:-translate-y-0.5 bg-transparent ${isActive ? 'text-black' : tagAccentClass}`}
+                                                    className={`relative overflow-hidden px-3 py-1 text-xs font-black rounded-full transition-transform hover:-translate-y-0.5 bg-transparent home-ios-chip ${isActive ? 'text-black' : tagAccentClass}`}
                                                 >
                                                     {isActive && (
                                                         <motion.span
@@ -710,7 +712,7 @@ const ArticleList = ({
                             {hasMoreTags && (
                                 <button
                                     onClick={() => setExpandedTags(prev => !prev)}
-                                    className="mt-3 w-full text-xs font-black border-2 border-black px-3 py-2 shadow-[3px_3px_0px_0px_#000] bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform"
+                                    className="mt-3 w-full text-xs font-black border border-white/70 px-3 py-2 rounded-xl bg-[#FFD700]/90 text-black hover:-translate-y-0.5 transition-transform shadow-[0_10px_20px_rgba(255,215,0,0.22)]"
                                 >
                                     {expandedTags ? '收起标签' : '展开全部标签'}
                                 </button>
@@ -720,7 +722,7 @@ const ArticleList = ({
 
                     <div className="flex-1 flex flex-col">
                         <div
-                            className={`mb-8 border-2 border-black rounded-none shadow-[6px_6px_0px_0px_#000] overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+                            className={`mb-8 ${glassSurface} overflow-hidden ${isDarkMode ? 'text-white' : 'text-black'}`}>
                             <div className="flex flex-col md:flex-row md:items-center gap-3 px-5 py-4">
                                 <div className="flex items-center gap-2 font-black text-lg tracking-tight">
                                     <Search size={18} />
@@ -728,7 +730,7 @@ const ArticleList = ({
                                 </div>
                                 <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
                                     <div
-                                        className={`flex items-center gap-2 flex-1 min-w-0 px-3 py-2 border-2 border-black rounded-none shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+                                        className={`flex items-center gap-2 flex-1 min-w-0 px-3 py-2 rounded-xl border ${glassInner} ${isDarkMode ? 'text-white' : 'text-black'}`}>
                                         <Search size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
                                         <input
                                             type="text"
@@ -756,7 +758,7 @@ const ArticleList = ({
                                                 }}
                                                 aria-hidden={!keyword}
                                                 tabIndex={keyword ? 0 : -1}
-                                                className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-bold px-2 py-1 rounded-none border-2 border-black shadow-[2px_2px_0px_0px_#000] transition-opacity ${
+                                                className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-bold px-2 py-1 rounded-xl border border-white/70 transition-opacity ${
                                                     keyword
                                                         ? (isDarkMode ? 'bg-white text-black hover:-translate-y-0.5' : 'bg-black text-white hover:bg-[#FF0080]')
                                                         : 'opacity-0 pointer-events-none'
@@ -767,7 +769,7 @@ const ArticleList = ({
                                         </div>
                                     </div>
                                     <div
-                                        className={`text-[11px] font-mono font-black px-3 py-2 border-2 border-black shadow-[3px_3px_0px_0px_#000] rounded-none ${isDarkMode ? 'bg-[#111827] text-gray-100' : 'bg-[#FFD700] text-black'}`}>
+                                        className={`text-[11px] font-mono font-black px-3 py-2 border border-white/70 rounded-xl ${isDarkMode ? 'bg-[#111827]/75 text-gray-100' : 'bg-[#FFD700]/90 text-black'}`}>
                                         {(() => {
                                             const hasFilters = Boolean(selectedCategoryId || selectedTagId || keywordText);
                                             const total = Number(postsPage?.total ?? 0) || 0;
@@ -781,12 +783,12 @@ const ArticleList = ({
                         </div>
                         <div className="space-y-8">
                             {postsLoading && (
-                                <div className={`p-10 border-4 border-black text-center ${cardBg}`}>
+                                <div className={`p-10 text-center ${glassSurface} ${cardBg}`}>
                                     <p className={`text-xl font-black ${subText}`}>文章加载中…</p>
                                 </div>
                             )}
                             {!postsLoading && postsError && (
-                                <div className={`p-10 border-4 border-black text-center ${cardBg}`}>
+                                <div className={`p-10 text-center ${glassSurface} ${cardBg}`}>
                                     <p className={`text-xl font-black ${subText}`}>文章加载失败</p>
                                     <p className={`mt-3 text-sm font-bold ${subText}`}>{postsError}</p>
                                     <PopButton
@@ -815,7 +817,7 @@ const ArticleList = ({
                                             transition={{ delay: idx * 0.1, duration: 0.5 }}
                                             whileHover="hover"
                                         >
-                                            <TiltCard isNew={isNewPost} accentColor={accentColor} onClick={() => {
+                                            <TiltCard variant="glass" isDarkMode={isDarkMode} isNew={isNewPost} accentColor={accentColor} onClick={() => {
                                                 setArticleId(post.id);
                                                 setView('article');
                                             }}>
@@ -892,22 +894,22 @@ const ArticleList = ({
                                                         </div>
                                                     </div>
 
-                                                    <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg} flex flex-col`} style={{ minHeight: '360px' }}>
+                                                    <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg} flex flex-col rounded-r-[24px]`} style={{ minHeight: '360px' }}>
                                                         <div className="flex flex-wrap items-center gap-2 mb-3">
-                                                            <span className={`px-2 py-1 text-[11px] font-black border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-700'}`}>
+                                                            <span className={`px-2 py-1 text-[11px] font-black rounded-full home-ios-chip ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                                                                 {post.parentCategory}
                                                             </span>
                                                             <ChevronRight size={12} className={isDarkMode ? 'text-gray-400' : 'text-gray-600'} />
-                                                            <span className={`px-2 py-1 text-[11px] font-black border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                                                            <span className={`px-2 py-1 text-[11px] font-black rounded-full home-ios-chip ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                                                                 {post.category}
                                                             </span>
                                                             <div className="flex flex-wrap gap-1 ml-auto">
                                                                 {tags.slice(0, 3).map(t => (
                                                                     <span key={t}
-                                                                        className={`px-2 py-0.5 border border-black text-[11px] font-black rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-white'} shadow-[2px_2px_0px_0px_#000]`}>#{t}</span>
+                                                                        className={`px-2 py-0.5 text-[11px] font-black rounded-full home-ios-chip ${isDarkMode ? 'text-gray-200' : ''}`}>#{t}</span>
                                                                 ))}
                                                                 {tags.length > 3 && (
-                                                                    <span className="text-[11px] font-black px-2 py-0.5 border border-black rounded-full bg-black text-white shadow-[2px_2px_0px_0px_#000]">+{tags.length - 3}</span>
+                                                                    <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-black/80 text-white border border-white/35">+{tags.length - 3}</span>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -928,7 +930,7 @@ const ArticleList = ({
                                                             </h2>
                                                             {isNewPost && (
                                                                 <motion.span
-                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest border-2 border-black bg-[#FF0080] text-white shadow-[2px_2px_0px_0px_#000]"
+                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest border border-white/65 rounded-full bg-[#FF0080]/88 text-white shadow-[0_10px_22px_rgba(255,0,128,0.3)]"
                                                                     initial={{ scale: 0.95, opacity: 0.9 }}
                                                                     animate={{ scale: [0.95, 1.08, 1], opacity: [0.9, 1, 0.95] }}
                                                                     transition={{ duration: 2, repeat: 1, ease: 'easeInOut' }}
@@ -955,7 +957,7 @@ const ArticleList = ({
                                                             </p>
                                                             {excerptTooltip && (
                                                                 <div className="pointer-events-none absolute left-0 right-0 top-full z-30 mt-3 opacity-0 translate-y-1 transition-all duration-200 group-hover/excerpt:opacity-100 group-hover/excerpt:translate-y-0">
-                                                                    <div className={`relative border-2 border-black p-3 text-sm font-medium leading-6 shadow-[4px_4px_0px_0px_#000] whitespace-normal break-words ${isDarkMode ? 'bg-[#111827] text-gray-100' : 'bg-[#FFF7E8] text-black'}`}>
+                                                                    <div className={`relative border border-white/65 p-3 text-sm font-medium leading-6 shadow-[0_12px_24px_rgba(0,0,0,0.14)] whitespace-normal break-words rounded-xl ${isDarkMode ? 'bg-[#111827]/88 text-gray-100' : 'bg-[#FFF7E8]/92 text-black'}`}>
                                                                         {excerptTooltip}
                                                                     </div>
                                                                 </div>
@@ -991,7 +993,7 @@ const ArticleList = ({
                                     );
                                 })
                             ) : (
-                                <div className={`p-12 border-4 border-black border-dashed text-center ${cardBg}`}>
+                                    <div className={`p-12 text-center ${glassSurface} ${cardBg}`}>
                                     <p className={`text-2xl font-black ${subText}`}>
                                         {(selectedCategoryId || selectedTagId || keywordText) ? '未找到匹配的文章，换个筛选条件试试？' : 'NO DATA FOUND'}
                                     </p>
@@ -1022,9 +1024,9 @@ const ArticleList = ({
                                         type="button"
                                         disabled={control.disabled}
                                         onClick={() => goToPage(control.target)}
-                                        className={`h-10 ${control.wide ? 'px-4 min-w-[72px]' : 'w-10'} border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000] ${control.disabled
-                                            ? (isDarkMode ? 'bg-gray-900 text-gray-500 cursor-not-allowed shadow-none' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none')
-                                            : (isDarkMode ? 'bg-gray-700 text-white hover:bg-[#6366F1] hover:text-white' : 'bg-white text-black hover:bg-[#6366F1] hover:text-white')
+                                        className={`h-10 ${control.wide ? 'px-4 min-w-[72px]' : 'w-10'} border border-white/65 rounded-xl font-black transition-all ${control.disabled
+                                            ? (isDarkMode ? 'bg-gray-900/70 text-gray-500 cursor-not-allowed shadow-none' : 'bg-gray-100/70 text-gray-400 cursor-not-allowed shadow-none')
+                                            : (isDarkMode ? 'bg-gray-700/65 text-white hover:bg-[#6366F1] hover:text-white shadow-[0_10px_20px_rgba(99,102,241,0.2)]' : 'bg-white/75 text-black hover:bg-[#6366F1] hover:text-white shadow-[0_10px_20px_rgba(0,0,0,0.12)]')
                                         }`}
                                     >
                                         {control.label}
@@ -1035,9 +1037,9 @@ const ArticleList = ({
                                         return (
                                             <span
                                                 key={`${item}-${idx}`}
-                                                className={`h-9 px-3 inline-flex items-center justify-center rounded-full text-xs font-black border-2 border-black shadow-[3px_3px_0px_0px_#000] opacity-80 hover:opacity-90 transition-opacity ${isDarkMode
-                                                    ? 'bg-gray-900 text-gray-200'
-                                                    : 'bg-white text-gray-700'}`}
+                                                className={`h-9 px-3 inline-flex items-center justify-center rounded-full text-xs font-black border border-white/65 opacity-80 hover:opacity-90 transition-opacity ${isDarkMode
+                                                    ? 'bg-gray-900/70 text-gray-200'
+                                                    : 'bg-white/75 text-gray-700'}`}
                                             >
                                                 <span className="flex items-center gap-1">
                                                     <span className="w-1.25 h-1.25 rounded-full bg-current opacity-80 shadow-[0.8px_0.8px_0px_0px_#000]" />
@@ -1053,8 +1055,8 @@ const ArticleList = ({
                                             key={item}
                                             type="button"
                                             onClick={() => goToPage(item)}
-                                            className={`w-10 h-10 border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000]
-                          ${isActive ? 'bg-black text-white -translate-y-1 shadow-[6px_6px_0px_0px_#FF0080]' : `${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'} hover:bg-[#6366F1] hover:text-white`}
+                                            className={`w-10 h-10 border border-white/65 rounded-xl font-black transition-all
+                          ${isActive ? 'bg-black/90 text-white -translate-y-0.5 shadow-[0_12px_24px_rgba(255,0,128,0.28)]' : `${isDarkMode ? 'bg-gray-700/65 text-white' : 'bg-white/75'} hover:bg-[#6366F1] hover:text-white shadow-[0_10px_18px_rgba(0,0,0,0.12)]`}
                         `}
                                         >
                                             {item}
@@ -1069,9 +1071,9 @@ const ArticleList = ({
                                         type="button"
                                         disabled={control.disabled}
                                         onClick={() => goToPage(control.target)}
-                                        className={`h-10 ${control.wide ? 'px-4 min-w-[72px]' : 'w-10'} border-2 border-black font-black transition-all shadow-[4px_4px_0px_0px_#000] ${control.disabled
-                                            ? (isDarkMode ? 'bg-gray-900 text-gray-500 cursor-not-allowed shadow-none' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none')
-                                            : (isDarkMode ? 'bg-gray-700 text-white hover:bg-[#6366F1] hover:text-white' : 'bg-white text-black hover:bg-[#6366F1] hover:text-white')
+                                        className={`h-10 ${control.wide ? 'px-4 min-w-[72px]' : 'w-10'} border border-white/65 rounded-xl font-black transition-all ${control.disabled
+                                            ? (isDarkMode ? 'bg-gray-900/70 text-gray-500 cursor-not-allowed shadow-none' : 'bg-gray-100/70 text-gray-400 cursor-not-allowed shadow-none')
+                                            : (isDarkMode ? 'bg-gray-700/65 text-white hover:bg-[#6366F1] hover:text-white shadow-[0_10px_20px_rgba(99,102,241,0.2)]' : 'bg-white/75 text-black hover:bg-[#6366F1] hover:text-white shadow-[0_10px_20px_rgba(0,0,0,0.12)]')
                                         }`}
                                     >
                                         {control.label}
@@ -1083,9 +1085,7 @@ const ArticleList = ({
                         <div className="py-12 text-center mt-8">
                             <div className="inline-block relative">
                                 <div
-                                    className="absolute inset-0 bg-[#FFD700] transform translate-x-2 translate-y-2 border-2 border-black"></div>
-                                <div
-                                    className={`relative border-2 border-black px-8 py-4 text-2xl font-black italic ${cardBg} ${text}`}>
+                                    className={`relative px-8 py-4 text-2xl font-black italic rounded-2xl ${glassSurface} ${cardBg} ${text}`}>
                                     {endingQuote ? `“${endingQuote}”` : ''}
                                 </div>
                             </div>

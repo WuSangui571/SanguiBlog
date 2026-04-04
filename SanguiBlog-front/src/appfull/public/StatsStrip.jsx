@@ -1,6 +1,8 @@
-﻿import React from 'react';
+import React from 'react';
+import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-react';
 import { SITE_STATS } from "../shared.js";
-import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-react';const StatsStrip = ({ isDarkMode, stats }) => {
+
+const StatsStrip = ({ isDarkMode, stats }) => {
     const s = stats || SITE_STATS;
     const items = [
         { label: "文章", value: s.posts, icon: FileText, color: "text-[#6366F1]" },
@@ -16,48 +18,51 @@ import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-reac
             isDate: true,
         },
     ];
-    const bg = isDarkMode ? 'bg-gray-900' : 'bg-black';
-    const text_cls = isDarkMode ? 'text-white' : 'text-white';
-    const tooltipBg = isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-black text-black';
-    const tooltipArrow = isDarkMode ? 'border-b-gray-800' : 'border-b-black';
+    const textClass = isDarkMode ? 'text-white' : 'text-black';
+    const subClass = isDarkMode ? 'text-gray-300' : 'text-gray-700';
+    const tooltipBg = isDarkMode ? 'bg-[#0f172a]/92 border-white/20 text-gray-100' : 'bg-white/92 border-white/75 text-black';
+    const tooltipArrow = isDarkMode ? 'border-b-[#0f172a]' : 'border-b-white';
+    const glassClass = `home-ios-card ${isDarkMode ? 'home-ios-card--dark' : ''}`;
 
     return (
         <div
             id="home-status-strip"
-            className={`sticky z-40 ${bg} ${text_cls} border-b-4 border-black`}
+            className="sticky z-40 px-3 pt-2 md:px-5 md:pt-3"
             style={{ top: 0, scrollMarginTop: 0 }}
         >
-            <div className="max-w-7xl mx-auto px-4 py-2 sm:py-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:h-14">
-                <div className="flex items-center gap-2 sm:mr-8 flex-shrink-0">
-                    <Activity className="text-[#00E096] animate-pulse" />
-                    <span className="font-black tracking-widest uppercase">System Status</span>
-                </div>
+            <div className={`${glassClass} max-w-7xl mx-auto px-4 py-3 sm:py-2`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className={`flex items-center gap-2 sm:mr-8 flex-shrink-0 ${textClass}`}>
+                        <Activity className="text-[#00E096] animate-pulse" />
+                        <span className="font-black tracking-widest uppercase">System Status</span>
+                    </div>
 
-                <div className="flex items-center gap-6 md:gap-12 overflow-x-auto sm:overflow-visible w-full sm:w-auto pb-1 sm:pb-0 pr-1 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
-                    {items.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 flex-shrink-0 group cursor-default relative snap-start">
-                            <item.icon size={16}
-                                className={`${item.color} group-hover:scale-125 transition-transform`} />
+                    <div className="flex items-center gap-3 md:gap-4 overflow-x-auto sm:overflow-visible w-full sm:w-auto pb-1 sm:pb-0 pr-1 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
+                        {items.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className={`flex items-center gap-2 flex-shrink-0 group cursor-default relative snap-start ${subClass} home-ios-chip px-2.5 py-1.5`}
+                            >
+                                <item.icon size={15} className={`${item.color} group-hover:scale-125 transition-transform`} />
 
-                            {item.isDate ? (
-                                <div className="relative group/date">
-                                    <span
-                                        className={`font-mono font-bold text-lg cursor-help border-b border-dashed ${isDarkMode ? 'border-gray-400' : 'border-gray-500'}`}>{item.value}</span>
-                                    <div
-                                        className={`absolute top-full left-1/2 -translate-x-1/2 mt-4 ${tooltipBg} border-2 px-3 py-2 text-sm font-bold whitespace-nowrap opacity-0 group-hover/date:opacity-100 transition-opacity pointer-events-none z-[100] shadow-[4px_4px_0px_0px_#000]`}>
-                                        <div
-                                            className={`absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 ${tooltipArrow}`}></div>
-                                        {item.fullValue}
+                                {item.isDate ? (
+                                    <div className="relative group/date">
+                                        <span className={`font-mono font-bold text-sm cursor-help border-b border-dashed ${isDarkMode ? 'border-gray-400' : 'border-gray-500'}`}>
+                                            {item.value}
+                                        </span>
+                                        <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-4 ${tooltipBg} border px-3 py-2 text-sm font-bold whitespace-nowrap opacity-0 group-hover/date:opacity-100 transition-opacity pointer-events-none z-[100] rounded-xl shadow-[0_12px_24px_rgba(0,0,0,0.16)]`}>
+                                            <div className={`absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 ${tooltipArrow}`} />
+                                            {item.fullValue}
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <span className="font-mono font-bold text-lg">{item.value}</span>
-                            )}
+                                ) : (
+                                    <span className="font-mono font-bold text-sm">{item.value}</span>
+                                )}
 
-                            <span
-                                className={`text-[12px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>{item.label}</span>
-                        </div>
-                    ))}
+                                <span className={`text-[11px] font-bold ${subClass}`}>{item.label}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
