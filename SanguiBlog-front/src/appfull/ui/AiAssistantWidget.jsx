@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, History, MessageSquarePlus, Move, RotateCcw, SendHorizontal, Trash2, X } from 'lucide-react';
 import {
@@ -736,7 +737,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,252,0.88))] text-black border-black/10 shadow-[0_20px_60px_rgba(15,23,42,0.16)]';
     const modalInsetClass = isDarkMode ? 'bg-white/[0.05] border-white/10' : 'bg-white/72 border-black/8';
 
-    return (
+    const portalTarget = typeof document !== 'undefined' ? document.body : null;
+    const assistantLayer = (
         <>
             <AnimatePresence>
                 {isOpen && (
@@ -748,7 +750,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.16 }}
-                                className="fixed inset-0 z-[82] bg-transparent touch-none"
+                                className="fixed inset-0 z-[90] bg-transparent touch-none"
                             />
                         )}
                         <motion.section
@@ -760,7 +762,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 32 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                            className={`fixed z-[83] left-0 right-0 overflow-hidden rounded-none border flex flex-col ${shellClass} ${panelBorderClass} ${
+                            className={`fixed z-[91] left-0 right-0 overflow-hidden rounded-none border flex flex-col ${shellClass} ${panelBorderClass} ${
                                 isMobileViewport
                                     ? 'border-0 rounded-none'
                                     : isFloating
@@ -1273,7 +1275,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         <AnimatePresence>
                             {guardPromptOpen && (
                                 <motion.div
-                                    className="fixed inset-0 z-[85] flex items-center justify-center px-4"
+                                    className="fixed inset-0 z-[96] flex items-center justify-center px-4"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
@@ -1369,7 +1371,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             )}
                             {pendingDeleteSession && (
                                 <motion.div
-                                    className="fixed inset-0 z-[85] flex items-center justify-center px-4"
+                                    className="fixed inset-0 z-[96] flex items-center justify-center px-4"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
@@ -1442,7 +1444,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 onClick={() => setIsOpen((prev) => !prev)}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className={`fixed z-[81] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border ${launcherGlowShapeClass} pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors backdrop-blur-2xl ${
+                className={`fixed z-[89] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border ${launcherGlowShapeClass} pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors backdrop-blur-2xl ${
                     isDarkMode
                         ? 'border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.86),rgba(15,23,42,0.76))] text-white hover:bg-[rgba(15,23,42,0.92)]'
                         : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.72))] text-black hover:bg-white/85'
@@ -1624,5 +1626,6 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             </motion.button>
         </>
     );
+    return portalTarget ? createPortal(assistantLayer, portalTarget) : assistantLayer;
 }
 

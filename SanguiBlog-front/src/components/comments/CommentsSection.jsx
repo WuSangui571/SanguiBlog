@@ -273,7 +273,7 @@ const CommentsSection = ({
                     className={`w-full p-4 rounded-2xl border font-bold focus:outline-none min-h-[140px] ${inputBg}`}
                     placeholder="写点什么…"
                 />
-                <div className={`flex flex-wrap gap-3 rounded-2xl ${glassInner} p-3`}>
+                <div className="flex flex-wrap items-center gap-3 pt-1">
                     <button
                         type="button"
                         onClick={handleSubmit}
