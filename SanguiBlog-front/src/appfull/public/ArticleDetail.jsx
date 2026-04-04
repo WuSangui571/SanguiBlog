@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import sanitizeHtml from "../../utils/sanitize.js";
@@ -37,6 +38,13 @@ import {
     Tag,
     X
 } from 'lucide-react';
+
+const DESKTOP_TOC_WIDTH = 216;
+const FLOATING_ACTION_WIDTH = 100;
+const FLOATING_ACTION_HEIGHT = 38;
+const FLOATING_ACTION_GAP = 28;
+const FLOATING_ACTION_RAIL_GAP = 28;
+
 const ArticleDetail = ({
     id,
     setView,
@@ -153,6 +161,7 @@ const ArticleDetail = ({
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const pageBackground = 'bg-transparent';
     const articleContentRef = useRef(null);
+    const articleShellRef = useRef(null);
     const { headerHeight } = useLayoutOffsets();
     const fixedTopOffset = headerHeight + 16;
     const [previewImage, setPreviewImage] = useState(null);
@@ -181,6 +190,8 @@ const ArticleDetail = ({
     const tocDrawerRestoreFocusRef = useRef(null);
     const [tocCollapsed, setTocCollapsed] = useState(false);
     const [tocLeft, setTocLeft] = useState(null);
+    const [articleRailOffset, setArticleRailOffset] = useState(16);
+    const [commentRailOffset, setCommentRailOffset] = useState(16);
     const [entryReady, setEntryReady] = useState(false);
     const commentJumpRef = useRef(null);
     const tocScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar';
@@ -812,8 +823,9 @@ const ArticleDetail = ({
     }, [id]);
     useEffect(() => {
         if (!entryReady || typeof window === 'undefined') return;
-        const tocWidth = 256;
-        const margin = 16;
+        const minViewportGap = 8;
+        const fallbackArticleWidth = 896;
+        const minRailGap = 8;
         const scheduleTimers = (fn) => {
             tocPositionTimersRef.current.forEach((timer) => clearTimeout(timer));
             tocPositionTimersRef.current = [];
@@ -822,18 +834,42 @@ const ArticleDetail = ({
             tocPositionTimersRef.current.push(setTimeout(fn, 320));
         };
         const updatePosition = () => {
-            const target = commentJumpRef.current;
-            if (!target) return;
-            const rect = target.getBoundingClientRect();
-            let nextLeft = rect.left;
-            const maxLeft = window.innerWidth - tocWidth - margin;
-            nextLeft = Math.max(margin, Math.min(nextLeft, maxLeft));
-            setTocLeft(nextLeft);
+            const viewportWidth = window.innerWidth;
+            const articleRect = articleShellRef.current?.getBoundingClientRect?.();
+            const hasMeasuredArticle = Boolean(articleRect && articleRect.width > 0);
+            const articleLeft = hasMeasuredArticle
+                ? Math.max(articleRect.left, minViewportGap)
+                : Math.max((viewportWidth - fallbackArticleWidth) / 2, minViewportGap);
+            const articleRight = hasMeasuredArticle
+                ? Math.min(articleRect.right, viewportWidth - minViewportGap)
+                : viewportWidth - articleLeft;
+            const availableRightRailGap = viewportWidth - minViewportGap - DESKTOP_TOC_WIDTH - articleRight;
+            const canDockDesktopToc = availableRightRailGap >= minRailGap;
+            const resolvedRailGap = canDockDesktopToc
+                ? Math.min(FLOATING_ACTION_RAIL_GAP, availableRightRailGap)
+                : FLOATING_ACTION_RAIL_GAP;
+            const nextCommentRailOffset = canDockDesktopToc
+                ? articleRight + resolvedRailGap
+                : Math.min(
+                    viewportWidth - FLOATING_ACTION_WIDTH - minViewportGap,
+                    articleRight + FLOATING_ACTION_RAIL_GAP
+                );
+            const nextArticleRailOffset = Math.max(
+                minViewportGap,
+                articleLeft - FLOATING_ACTION_WIDTH - resolvedRailGap
+            );
+
+            setArticleRailOffset(nextArticleRailOffset);
+            setCommentRailOffset(nextCommentRailOffset);
+            setTocLeft(canDockDesktopToc ? nextCommentRailOffset : null);
         };
         const mediaQuery = window.matchMedia ? window.matchMedia('(min-width: 1280px)') : null;
+        let resizeObserver = null;
         const handleViewportChange = () => {
             if (mediaQuery && !mediaQuery.matches) {
                 setTocLeft(null);
+                setArticleRailOffset(minViewportGap);
+                setCommentRailOffset(minViewportGap);
                 return;
             }
             scheduleTimers(updatePosition);
@@ -842,6 +878,10 @@ const ArticleDetail = ({
         window.addEventListener('resize', handleViewportChange);
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', handleViewportChange);
+        }
+        if (typeof ResizeObserver !== 'undefined' && articleShellRef.current) {
+            resizeObserver = new ResizeObserver(() => scheduleTimers(updatePosition));
+            resizeObserver.observe(articleShellRef.current);
         }
         if (mediaQuery) {
             if (mediaQuery.addEventListener) {
@@ -855,6 +895,7 @@ const ArticleDetail = ({
             if (window.visualViewport) {
                 window.visualViewport.removeEventListener('resize', handleViewportChange);
             }
+            resizeObserver?.disconnect?.();
             if (mediaQuery) {
                 if (mediaQuery.removeEventListener) {
                     mediaQuery.removeEventListener('change', handleViewportChange);
@@ -946,6 +987,7 @@ const ArticleDetail = ({
     const avatarSrc = getAvatarUrl(post.authorAvatar);
 
     const articleTopPadding = Math.max(16, fixedTopOffset - headerHeight);
+    const floatingActionTop = Math.max(headerHeight + 48, fixedTopOffset + 8);
     const renderNavCard = (meta, direction) => {
         const isPrev = direction === 'prev';
         const label = isPrev ? '上一篇' : '下一篇';
@@ -1005,6 +1047,132 @@ const ArticleDetail = ({
         );
     };
 
+    const desktopTocCard = (
+        <div className={`w-[216px] p-4 ${navSurface}`}>
+            <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-[0.3em]">目录</span>
+                <button
+                    type="button"
+                    onClick={() => setTocCollapsed((prev) => !prev)}
+                    className={`px-2 py-1 border rounded-xl text-xs font-black transition-transform hover:-translate-y-0.5 ${softButton}`}
+                >
+                    {tocCollapsed ? '展开' : '收起'}
+                </button>
+            </div>
+            {!tocCollapsed && (
+                <div ref={tocDesktopListRef} className={`mt-3 space-y-2 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2 ${tocScrollbarClass}`}>
+                    {tocItems.map((item) => {
+                        const isActive = item.id === activeTocId;
+                        const activeBg = isDarkMode ? 'bg-white/10' : 'bg-black/5';
+                        const activeRing = isDarkMode ? 'ring-2 ring-white/15' : 'ring-2 ring-black/10';
+                        return (
+                            <button
+                                key={`toc-${item.id}`}
+                                type="button"
+                                onClick={() => handleTocJump(item.id)}
+                                data-toc-id={item.id}
+                                aria-current={isActive ? 'location' : undefined}
+                                className={`w-full text-left py-1 px-1 rounded-md transition-colors ${isActive ? `${activeBg} ${activeRing}` : ''} ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
+                            >
+                                <div className="flex items-start gap-2">
+                                    <TocTreeGutter level={item.level} />
+                                    <span className={`block flex-1 leading-snug ${tocTextClass(item.level)} ${isActive ? (isDarkMode ? 'text-white opacity-100' : 'text-black opacity-100') : ''}`}>
+                                        {item.text}
+                                    </span>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+
+    const floatingActionButtons = typeof document !== 'undefined'
+        ? createPortal(
+            <div
+                className="fixed left-0 right-0 z-[65] pointer-events-none"
+                style={{ top: floatingActionTop }}
+            >
+                <motion.button
+                    onClick={() => {
+                        if (onBackToPrevious) {
+                            onBackToPrevious();
+                        } else {
+                            setView('home');
+                            scrollHomeAfterReturn();
+                        }
+                    }}
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    whileHover={{ scale: 1.05 }}
+                    className={`pointer-events-auto absolute px-4 font-black inline-flex items-center justify-center transition-all ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white hover:bg-[#162033]/78' : 'bg-white/82 text-black hover:bg-white/95'}`}
+                    style={{
+                        top: 0,
+                        left: articleRailOffset,
+                        width: FLOATING_ACTION_WIDTH,
+                        height: FLOATING_ACTION_HEIGHT
+                    }}
+                >
+                    <ChevronRight size={20} className="rotate-180" />
+                    <span>首页</span>
+                </motion.button>
+                {tocLeft === null && (
+                    <motion.button
+                        onClick={scrollToComments}
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.05 }}
+                        ref={commentJumpRef}
+                        className={`pointer-events-auto absolute px-4 font-black inline-flex items-center justify-center transition-all z-[66] ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/82 text-white hover:bg-[#162033]/88' : 'bg-white/90 text-black hover:bg-white'}`}
+                        style={{
+                            top: 0,
+                            right: 16,
+                            width: FLOATING_ACTION_WIDTH,
+                            height: FLOATING_ACTION_HEIGHT
+                        }}
+                    >
+                        <MessageCircle size={18} />
+                        <span>评论</span>
+                    </motion.button>
+                )}
+                {tocItems.length > 0 && tocLeft !== null && (
+                    <div
+                        className="pointer-events-none absolute z-40"
+                        style={{
+                            top: 0,
+                            left: commentRailOffset,
+                            width: DESKTOP_TOC_WIDTH
+                        }}
+                    >
+                        <motion.button
+                            onClick={scrollToComments}
+                            initial={{ opacity: 0, y: -24 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ scale: 1.05 }}
+                            ref={commentJumpRef}
+                            className={`pointer-events-auto px-4 font-black inline-flex items-center justify-center transition-all z-[66] ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/82 text-white hover:bg-[#162033]/88' : 'bg-white/90 text-black hover:bg-white'}`}
+                            style={{
+                                width: FLOATING_ACTION_WIDTH,
+                                height: FLOATING_ACTION_HEIGHT
+                            }}
+                        >
+                            <MessageCircle size={18} />
+                            <span>评论</span>
+                        </motion.button>
+                        <div
+                            className="pointer-events-auto"
+                            style={{ marginTop: FLOATING_ACTION_GAP }}
+                        >
+                            {desktopTocCard}
+                        </div>
+                    </div>
+                )}
+            </div>,
+            document.body
+        )
+        : null;
+
     return (
         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -1027,53 +1195,16 @@ const ArticleDetail = ({
                 )}
             </AnimatePresence>
 
-            {tocItems.length > 0 && (
+            {tocItems.length > 0 && tocLeft === null && (
                 <div
                     className="hidden xl:block fixed z-40"
                     style={{
-                        top: fixedTopOffset + 80,
+                        top: floatingActionTop + FLOATING_ACTION_HEIGHT + FLOATING_ACTION_GAP,
                         left: tocLeft ?? 'auto',
-                        right: tocLeft === null ? '1.5rem' : 'auto'
+                        right: tocLeft === null ? 16 : 'auto'
                     }}
                 >
-                    <div className={`w-64 p-4 ${navSurface}`}>
-                        <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-black uppercase tracking-[0.3em]">目录</span>
-                            <button
-                                type="button"
-                                onClick={() => setTocCollapsed((prev) => !prev)}
-                                className={`px-2 py-1 border rounded-xl text-xs font-black transition-transform hover:-translate-y-0.5 ${softButton}`}
-                            >
-                                {tocCollapsed ? '展开' : '收起'}
-                            </button>
-                        </div>
-                        {!tocCollapsed && (
-                            <div ref={tocDesktopListRef} className={`mt-3 space-y-2 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2 ${tocScrollbarClass}`}>
-                                {tocItems.map((item) => {
-                                    const isActive = item.id === activeTocId;
-                                    const activeBg = isDarkMode ? 'bg-white/10' : 'bg-black/5';
-                                    const activeRing = isDarkMode ? 'ring-2 ring-white/15' : 'ring-2 ring-black/10';
-                                    return (
-                                        <button
-                                            key={`toc-${item.id}`}
-                                            type="button"
-                                            onClick={() => handleTocJump(item.id)}
-                                            data-toc-id={item.id}
-                                            aria-current={isActive ? 'location' : undefined}
-                                            className={`w-full text-left py-1 px-1 rounded-md transition-colors ${isActive ? `${activeBg} ${activeRing}` : ''} ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
-                                        >
-                                            <div className="flex items-start gap-2">
-                                                <TocTreeGutter level={item.level} />
-                                                <span className={`block flex-1 leading-snug ${tocTextClass(item.level)} ${isActive ? (isDarkMode ? 'text-white opacity-100' : 'text-black opacity-100') : ''}`}>
-                                                    {item.text}
-                                                </span>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
+                    {desktopTocCard}
                 </div>
             )}
 
@@ -1155,51 +1286,12 @@ const ArticleDetail = ({
                             </div>
                         </motion.div>
                     </motion.div>
-                )}
+            )}
             </AnimatePresence>
 
-            {/* Floating Back Button - Aligned with article content */}
-            <div
-                className="fixed left-0 right-0 z-30 pointer-events-none"
-                style={{ top: fixedTopOffset }}
-            >
-                <div className="max-w-4xl mx-auto px-4 md:px-0 relative">
-                    <motion.button
-                        onClick={() => {
-                            if (onBackToPrevious) {
-                                onBackToPrevious();
-                            } else {
-                                setView('home');
-                                scrollHomeAfterReturn();
-                            }
-                        }}
-                        initial={{ opacity: 0, x: -50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        whileHover={{ scale: 1.05 }}
-                        className={`pointer-events-auto absolute -left-6 md:-left-40 px-4 py-2 font-black transition-all ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white hover:bg-[#162033]/78' : 'bg-white/82 text-black hover:bg-white/95'}`}
-                    >
-                        <div className="flex items-center gap-2">
-                            <ChevronRight size={20} className="rotate-180" />
-                            <span>首页</span>
-                        </div>
-                    </motion.button>
-                    <motion.button
-                        onClick={scrollToComments}
-                        initial={{ opacity: 0, x: 50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        whileHover={{ scale: 1.05 }}
-                        ref={commentJumpRef}
-                        className={`pointer-events-auto absolute -right-6 md:-right-40 px-4 py-2 font-black transition-all ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white hover:bg-[#162033]/78' : 'bg-white/82 text-black hover:bg-white/95'}`}
-                    >
-                        <div className="flex items-center gap-2">
-                            <MessageCircle size={18} />
-                            <span>评论</span>
-                        </div>
-                    </motion.button>
-                </div>
-            </div>
+            {floatingActionButtons}
 
-            <div className="max-w-4xl mx-auto">
+            <div ref={articleShellRef} className="max-w-4xl mx-auto">
 
                 <div
                     className={`${glassCard} ${isDarkMode ? 'bg-[#0F172A]/54' : 'bg-white/48'} p-8 md:p-12 relative overflow-hidden`}>
