@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PopButton from "../../components/common/PopButton.jsx";
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import { ARCHIVE_MONTH_LABELS } from "../shared.js";
@@ -63,7 +63,7 @@ const ArchiveView = ({
                 .filter((month) => month.anchorId)
                 .map((month) => ({
                     id: month.anchorId,
-                    label: `${yearBlock.year}年${month.label}`
+                    label: `${yearBlock.year}年 ${month.label}`
                 }))
         ))
     ), [timelineData]);
@@ -187,16 +187,12 @@ const ArchiveView = ({
     };
 
     return (
-        <section className="relative min-h-screen pt-32 pb-20 overflow-hidden">
-            <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-[#020617]/80 via-transparent to-[#020617]/70' : 'bg-gradient-to-b from-white/80 via-white/30 to-white/70'} backdrop-blur-[2px]`} />
+        <section className="relative min-h-screen pt-32 pb-20">
             <div className={`relative z-10 max-w-6xl mx-auto px-4 md:px-8 ${sectionText}`}>
                 <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
                     <div>
                         <p className="text-xs tracking-[0.4em] uppercase text-gray-500">ARCHIVE // TIMELINE</p>
                         <h1 className="text-4xl md:text-5xl font-black mt-3">归档时间线</h1>
-                        <p className={`mt-4 text-base md:text-lg ${secondaryText} max-w-2xl`}>
-                            将所有文章按年份与月份折叠成一条可追溯的时间轴，方便快速定位历史输出。点击任意条目即可跳转至文章详情。
-                        </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
                         <PopButton variant="accent" onClick={onBackHome} className="shadow-[6px_6px_0px_0px_#000]">
@@ -417,3 +413,5 @@ const ArchiveView = ({
 };
 
 export default ArchiveView;
+
+
