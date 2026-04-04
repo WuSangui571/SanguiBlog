@@ -1,31 +1,39 @@
-import React, {useState} from 'react';
-import {PenTool, User} from 'lucide-react';
-import {usePermissionContext} from '../../contexts/PermissionContext.jsx';
+import React, { useState } from 'react';
+import { PenTool, User } from 'lucide-react';
+import { usePermissionContext } from '../../contexts/PermissionContext.jsx';
 import PopButton from '../common/PopButton.jsx';
-import {buildAssetUrl} from '../../utils/asset.js';
+import { buildAssetUrl } from '../../utils/asset.js';
 
 const CommentsSection = ({
-                              list = [],
-                              isDarkMode,
-                              onSubmit,
-                              currentUser,
-                              setView,
-                              onDeleteComment,
-                              onUpdateComment,
-                              postAuthorName
-                          }) => {
-    const {hasPermission} = usePermissionContext();
-    const [content, setContent] = useState("");
+    list = [],
+    isDarkMode,
+    onSubmit,
+    currentUser,
+    setView,
+    onDeleteComment,
+    onUpdateComment,
+    postAuthorName
+}) => {
+    const { hasPermission } = usePermissionContext();
+    const [content, setContent] = useState('');
     const [editingCommentId, setEditingCommentId] = useState(null);
-    const [editContent, setEditContent] = useState("");
+    const [editContent, setEditContent] = useState('');
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [replyTarget, setReplyTarget] = useState(null);
-    const [replyContent, setReplyContent] = useState("");
+    const [replyContent, setReplyContent] = useState('');
     const canReviewComments = currentUser ? hasPermission('COMMENT_REVIEW') : false;
     const canDeleteComments = currentUser ? hasPermission('COMMENT_DELETE') : false;
 
-    const inputBg = isDarkMode ? 'bg-gray-800 text-white' : 'bg-[#F0F0F0] text-black';
-    const commentBg = isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-black';
+    const inputBg = isDarkMode ? 'bg-[#0F172A]/70 text-white border-white/10' : 'bg-white/72 text-black border-black/10';
+    const commentBg = isDarkMode ? 'bg-[#0F172A]/62 text-gray-300 border-white/10' : 'bg-white/68 text-black border-black/10';
+    const glassCard = `home-ios-card ${isDarkMode ? 'home-ios-card--dark' : ''}`;
+    const glassInner = `home-ios-inner-card ${isDarkMode ? 'bg-[#0F172A]/62 text-gray-100 border-white/10' : 'bg-white/60 text-black border-black/10'}`;
+    const softButton = isDarkMode
+        ? 'border-white/14 bg-white/10 text-white hover:bg-white/16'
+        : 'border-black/10 bg-white/78 text-black hover:bg-white/92';
+    const accentButton = isDarkMode
+        ? 'border-white/14 bg-[#FFD700]/88 text-black hover:bg-[#FFE27A]'
+        : 'border-white/60 bg-[#FFD700]/92 text-black hover:bg-[#FFE27A]';
     const resolvedAuthorName = currentUser?.displayName || currentUser?.nickname || currentUser?.username || '访客';
     const resolvedAvatar = currentUser?.avatarUrl || currentUser?.avatar;
     const normalizedList = Array.isArray(list) ? list : [];
@@ -42,7 +50,7 @@ const CommentsSection = ({
             avatarUrl: resolvedAvatar,
             content: content.trim(),
         });
-        setContent("");
+        setContent('');
     };
 
     const handleReplySubmit = () => {
@@ -64,7 +72,7 @@ const CommentsSection = ({
             payload.parentId = baseParentId;
         }
         onSubmit && onSubmit(payload);
-        setReplyContent("");
+        setReplyContent('');
         setReplyTarget(null);
     };
 
@@ -82,11 +90,13 @@ const CommentsSection = ({
             <div
                 id={c.id ? `comment-${c.id}` : undefined}
                 key={c.id || `${depth}-${c.authorName || c.user || 'comment'}`}
-                className={`flex gap-4 ${visualDepth > 0 ? 'ml-8 border-l-2 border-dashed border-black/30 pl-6' : ''}`}>
+                className={`flex gap-4 ${visualDepth > 0 ? `ml-8 border-l pl-6 ${isDarkMode ? 'border-white/10' : 'border-black/10'}` : ''}`}
+            >
                 <div
-                    className={`w-12 h-12 border-2 border-black rounded-full shrink-0 flex items-center justify-center font-bold overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-200 text-black'}`}>
+                    className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center font-bold overflow-hidden border ${isDarkMode ? 'border-white/12 bg-white/10 text-white' : 'border-black/10 bg-white/78 text-black'}`}
+                >
                     {avatarSrc ? (
-                        <img src={avatarSrc} alt={c.authorName} className="w-full h-full object-cover"/>
+                        <img src={avatarSrc} alt={c.authorName} className="w-full h-full object-cover" />
                     ) : (
                         (c.authorName || c.user || 'U').toString().slice(0, 2)
                     )}
@@ -96,8 +106,9 @@ const CommentsSection = ({
                         <span className="font-black text-lg">{c.authorName || c.user}</span>
                         {postAuthorName && (c.authorName === postAuthorName || c.user === postAuthorName) && (
                             <span
-                                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black border border-black rounded shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-pink-600 text-white' : 'bg-yellow-400 text-black'}`}>
-                                <PenTool size={10} strokeWidth={3}/>
+                                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black border rounded-full ${isDarkMode ? 'border-white/12 bg-[#FF0080]/70 text-white' : 'border-white/60 bg-[#FFD700]/92 text-black'}`}
+                            >
+                                <PenTool size={10} strokeWidth={3} />
                                 博主
                             </span>
                         )}
@@ -106,10 +117,10 @@ const CommentsSection = ({
                             {currentUser && canReply && (
                                 <button
                                     onClick={() => {
-                                        setReplyTarget({comment: c, depth});
-                                        setReplyContent("");
+                                        setReplyTarget({ comment: c, depth });
+                                        setReplyContent('');
                                     }}
-                                    className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-purple-500 hover:text-white' : 'hover:bg-purple-100'}`}
+                                    className={`text-xs font-bold px-2 py-1 border rounded-xl transition-colors ${softButton}`}
                                 >
                                     回复
                                 </button>
@@ -120,7 +131,7 @@ const CommentsSection = ({
                                         setEditingCommentId(c.id);
                                         setEditContent(c.content);
                                     }}
-                                    className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-blue-500 hover:text-white' : 'hover:bg-blue-100'}`}
+                                    className={`text-xs font-bold px-2 py-1 border rounded-xl transition-colors ${softButton}`}
                                 >
                                     编辑
                                 </button>
@@ -128,7 +139,7 @@ const CommentsSection = ({
                             {currentUser && allowDelete && (
                                 <button
                                     onClick={() => setDeleteConfirm(c.id)}
-                                    className={`text-xs font-bold px-2 py-1 border-2 border-black transition-colors ${isDarkMode ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-red-100'}`}
+                                    className={`text-xs font-bold px-2 py-1 border rounded-xl transition-colors ${softButton}`}
                                 >
                                     删除
                                 </button>
@@ -136,11 +147,11 @@ const CommentsSection = ({
                         </div>
                     </div>
                     {editingCommentId === c.id ? (
-                        <div className="space-y-2">
+                        <div className={`${glassInner} p-4 rounded-2xl space-y-2`}>
                             <textarea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
-                                className={`w-full p-2 border-2 border-black ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white'}`}
+                                className={`w-full p-3 rounded-2xl border font-bold focus:outline-none ${inputBg}`}
                                 rows={3}
                             />
                             <div className="flex gap-2">
@@ -149,26 +160,26 @@ const CommentsSection = ({
                                         onUpdateComment && onUpdateComment(c.id, editContent);
                                         setEditingCommentId(null);
                                     }}
-                                    className="px-3 py-1 bg-green-500 text-white font-bold border-2 border-black"
+                                    className={`px-3 py-1 font-bold rounded-xl border ${accentButton}`}
                                 >
                                     保存
                                 </button>
                                 <button
                                     onClick={() => setEditingCommentId(null)}
-                                    className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black"
+                                    className={`px-3 py-1 font-bold rounded-xl border ${softButton}`}
                                 >
                                     取消
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div className={`${commentBg} border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]`}>
+                        <div className={`${glassInner} ${commentBg} p-4`}>
                             <p className="font-medium">{c.content || c.text}</p>
                         </div>
                     )}
 
                     {deleteConfirm === c.id && (
-                        <div className={`mt-2 p-3 border-2 border-red-500 ${isDarkMode ? 'bg-red-900' : 'bg-red-50'}`}>
+                        <div className={`mt-2 p-3 rounded-2xl border ${isDarkMode ? 'border-red-400/40 bg-red-500/10' : 'border-red-300 bg-red-50/90'}`}>
                             <p className="font-bold text-sm mb-2">确认删除这条评论？</p>
                             <div className="flex gap-2">
                                 <button
@@ -176,13 +187,13 @@ const CommentsSection = ({
                                         onDeleteComment && onDeleteComment(c.id);
                                         setDeleteConfirm(null);
                                     }}
-                                    className="px-3 py-1 bg-red-500 text-white font-bold border-2 border-black text-xs"
+                                    className="px-3 py-1 bg-red-500 text-white font-bold border border-red-400 rounded-xl text-xs"
                                 >
                                     确认删除
                                 </button>
                                 <button
                                     onClick={() => setDeleteConfirm(null)}
-                                    className="px-3 py-1 bg-gray-500 text-white font-bold border-2 border-black text-xs"
+                                    className={`px-3 py-1 font-bold border rounded-xl text-xs ${softButton}`}
                                 >
                                     取消
                                 </button>
@@ -191,11 +202,11 @@ const CommentsSection = ({
                     )}
 
                     {isReplying && currentUser && (
-                        <div className={`mt-4 border-2 border-black p-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                        <div className={`mt-4 p-4 rounded-2xl ${glassInner}`}>
                             <textarea
                                 value={replyContent}
                                 onChange={(e) => setReplyContent(e.target.value)}
-                                className={`w-full p-3 border-2 border-black font-bold focus:outline-none min-h-[100px] ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}
+                                className={`w-full p-3 rounded-2xl border font-bold focus:outline-none min-h-[100px] ${inputBg}`}
                                 placeholder={`回复 ${c.authorName || c.user || 'Ta'}...`}
                             />
                             <div className="flex gap-2 mt-2">
@@ -203,11 +214,9 @@ const CommentsSection = ({
                                 <button
                                     onClick={() => {
                                         setReplyTarget(null);
-                                        setReplyContent("");
+                                        setReplyContent('');
                                     }}
-                                    className={`px-3 py-1 border-2 border-black font-bold shadow-[2px_2px_0px_0px_#000] transition-colors ${
-                                        isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-gray-200 text-black hover:bg-gray-300'
-                                    }`}
+                                    className={`px-3 py-1 border font-bold rounded-xl transition-colors ${softButton}`}
                                 >
                                     取消
                                 </button>
@@ -226,14 +235,14 @@ const CommentsSection = ({
     };
 
     return (
-        <div className="mt-16">
+        <div className={`mt-16 ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/46' : 'bg-white/42'} p-6 md:p-8`}>
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-2xl font-black">评论 {totalComments > 0 ? `(${totalComments})` : ''}</h3>
                     {!currentUser && (
                         <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                            <User size={12}/>
-                            <span>登录后可享更多特权</span>
+                            <User size={12} />
+                            <span>登录后可享受更多特权</span>
                         </p>
                     )}
                 </div>
@@ -248,7 +257,7 @@ const CommentsSection = ({
                 <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    className={`w-full p-4 border-2 border-black font-bold focus:outline-none min-h-[140px] ${inputBg}`}
+                    className={`w-full p-4 rounded-2xl border font-bold focus:outline-none min-h-[140px] ${inputBg}`}
                     placeholder="写点什么..."
                 />
                 <div className="flex gap-2">

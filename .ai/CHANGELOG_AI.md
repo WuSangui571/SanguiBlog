@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-04-04] 将文章详情页外层结构适配为站点玻璃风格
+- 背景/需求：用户要求继续按统一流程把 `/article/:id` 页面适配为玻璃风格，并明确说明“不要适配那个 md 格式的渲染”。
+- 修改类型：fix
+- 影响范围：文章详情页头图区、目录卡、前后篇导航、返回/评论快捷按钮、评论区外观、AI 变更日志
+- 变更摘要：
+  1) 在 `ArticleDetail.jsx` 中复用 `home-ios-card` / `home-ios-inner-card`，将文章页外层壳、目录浮层、分享提示、作者信息区、相关推荐与上一篇/下一篇导航切换到玻璃风格。
+  2) 保持 `ReactMarkdown`、`prose`、`sg-article-markdown`、代码高亮与 Markdown 正文渲染逻辑不变，只调整正文外部容器和非 Markdown 信息卡。
+  3) 将 `CommentsSection.jsx` 统一改为玻璃卡视觉，并顺手修复该组件中多处用户可见中文乱码，保留评论发布、回复、编辑、删除逻辑不变。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/components/comments/CommentsSection.jsx`
+- 检索与复用策略：
+  - 检索关键词：`ArticleDetail` / `CommentsSection` / `prose` / `sg-article-markdown` / `home-ios-card`
+  - 候选实现：`ArticleDetail.jsx` 页面壳层、目录与前后篇导航，`CommentsSection.jsx` 评论区卡片与输入区，`homeRedesign.css` 玻璃样式基类
+  - 最终选择：复用现有文章详情单入口与评论组件，只改外围容器和评论区外观，不新建文章页实现，也不动 Markdown 渲染链
+- 风险点：
+  - 本次未改 Markdown 渲染本体，因此正文内容的字体、排版与代码块观感仍按现有逻辑输出。
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）
+
 ## [2026-04-04] 将关于页适配为站点玻璃风格并移除头部说明文案
 - 背景/需求：用户要求按与首页、归档页、工具页相同的思路，将 `/about` 适配为站点当前玻璃视觉，并去掉“由超级管理员维护的单页介绍，访客与管理员均可阅读。”这句说明。
 - 修改类型：fix

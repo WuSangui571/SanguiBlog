@@ -255,8 +255,16 @@ const ArticleDetail = ({
     const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
     const proseClass = `prose prose-xl prose-headings:font-black prose-p:font-medium max-w-none prose-code:before:content-none prose-code:after:content-none ${isDarkMode ? 'prose-invert' : ''}`;
     const shouldRenderMarkdown = Boolean(contentMd && contentMd.trim());
-    const navSurface = isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-black';
+    const glassCard = `home-ios-card ${isDarkMode ? 'home-ios-card--dark' : ''}`;
+    const glassInner = `home-ios-inner-card ${isDarkMode ? 'bg-[#0F172A]/60 text-gray-100 border-white/10' : 'bg-white/60 text-black border-black/10'}`;
+    const navSurface = `${glassCard} ${isDarkMode ? 'bg-[#0F172A]/58 text-gray-100' : 'bg-white/52 text-black'}`;
     const navMuted = isDarkMode ? 'text-gray-400' : 'text-gray-600';
+    const softButton = isDarkMode
+        ? 'border-white/14 bg-white/10 text-white hover:bg-white/16'
+        : 'border-black/10 bg-white/78 text-black hover:bg-white/92';
+    const accentButton = isDarkMode
+        ? 'border-white/14 bg-[#FFD700]/88 text-black hover:bg-[#FFE27A]'
+        : 'border-white/60 bg-[#FFD700]/92 text-black hover:bg-[#FFE27A]';
 
     const CodeBlockWithCopy = ({ textContent, className }) => {
         const [copied, setCopied] = useState(false);
@@ -898,7 +906,7 @@ const ArticleDetail = ({
                 type="button"
                 onClick={() => handleOpenRelated(item)}
                 title={`跳转文章：${title}`}
-                className={`w-full text-left border-2 border-black rounded-none p-4 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] ${navSurface}`}
+                className={`w-full text-left p-4 transition-all hover:-translate-y-0.5 ${navSurface}`}
             >
                 <h4 className="text-lg font-black leading-snug line-clamp-2">{title}</h4>
                 <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold ${navMuted}`}>
@@ -951,14 +959,14 @@ const ArticleDetail = ({
                 disabled={disabled}
                 onClick={() => handleOpenSibling(meta)}
                 title={disabled ? `暂无${label}` : `跳转${label}：${meta.title}`}
-                className={`border-2 border-black rounded-none p-5 shadow-[6px_6px_0px_0px_#000] transition-all h-full flex flex-col text-left ${
+                className={`p-5 transition-all h-full flex flex-col text-left ${
                     disabled
                         ? 'opacity-50 cursor-not-allowed'
-                        : `hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'hover:bg-gray-800/60' : 'hover:bg-[#FFF7E1]'}`
+                        : `hover:-translate-y-0.5 ${isDarkMode ? 'hover:bg-[#162033]/72' : 'hover:bg-white/68'}`
                 } ${navSurface}`}
             >
                 <div className="flex items-center justify-between">
-                    <span className={`inline-flex items-center gap-2 px-2 py-1 text-[10px] font-black uppercase tracking-[0.3em] border-2 border-black ${badgeClass}`}>
+                    <span className={`inline-flex items-center gap-2 px-2 py-1 text-[10px] font-black uppercase tracking-[0.3em] rounded-full border ${badgeClass}`}>
                         {label}
                     </span>
                 </div>
@@ -1011,7 +1019,7 @@ const ArticleDetail = ({
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         exit={{ opacity: 0, y: -50, x: '-50%' }}
                         style={{ top: fixedTopOffset }}
-                        className={`fixed left-1/2 z-[60] px-6 py-3 border-2 border-black shadow-[4px_4px_0px_0px_#000] flex items-center gap-3 ${isDarkMode ? 'bg-green-600 text-white' : 'bg-green-400 text-black'}`}
+                        className={`fixed left-1/2 z-[60] px-6 py-3 flex items-center gap-3 ${glassCard} ${isDarkMode ? 'bg-emerald-500/85 text-white' : 'bg-emerald-400/90 text-black'}`}
                     >
                         <CheckCircle size={24} strokeWidth={3} />
                         <span className="font-black text-lg">链接已复制！</span>
@@ -1028,13 +1036,13 @@ const ArticleDetail = ({
                         right: tocLeft === null ? '1.5rem' : 'auto'
                     }}
                 >
-                    <div className={`w-64 border-2 border-black rounded-none p-4 shadow-[6px_6px_0px_0px_#000] ${navSurface}`}>
+                    <div className={`w-64 p-4 ${navSurface}`}>
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-black uppercase tracking-[0.3em]">目录</span>
                             <button
                                 type="button"
                                 onClick={() => setTocCollapsed((prev) => !prev)}
-                                className={`px-2 py-1 border-2 border-black text-xs font-black ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                className={`px-2 py-1 border rounded-xl text-xs font-black transition-transform hover:-translate-y-0.5 ${softButton}`}
                             >
                                 {tocCollapsed ? '展开' : '收起'}
                             </button>
@@ -1074,7 +1082,7 @@ const ArticleDetail = ({
                     type="button"
                     onClick={() => setTocDrawerOpen(true)}
                     aria-label="打开目录"
-                    className={`md:hidden fixed bottom-24 right-4 z-[60] px-4 py-2 border-2 border-black font-black shadow-[4px_4px_0px_0px_#000] inline-flex items-center gap-2 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                    className={`md:hidden fixed bottom-24 right-4 z-[60] px-4 py-2 font-black inline-flex items-center gap-2 ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white' : 'bg-white/82 text-black'}`}
                 >
                     <List size={16} />
                     目录
@@ -1104,9 +1112,9 @@ const ArticleDetail = ({
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', stiffness: 240, damping: 28 }}
-                            className={`absolute right-0 top-0 h-full w-[80vw] max-w-xs border-l-2 border-black ${navSurface}`}
+                            className={`absolute right-0 top-0 h-full w-[80vw] max-w-xs border-l ${isDarkMode ? 'border-white/10' : 'border-black/10'} ${navSurface}`}
                         >
-                            <div className={`flex items-center justify-between px-4 py-3 border-b-2 border-black ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                            <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'bg-[#0B1221]/88 border-white/10' : 'bg-white/72 border-black/10'}`}>
                                 <div className="flex items-center gap-2 font-black">
                                     <List size={16} />
                                     目录
@@ -1116,7 +1124,7 @@ const ArticleDetail = ({
                                     onClick={() => setTocDrawerOpen(false)}
                                     aria-label="关闭目录"
                                     ref={tocDrawerCloseBtnRef}
-                                    className={`p-2 border-2 border-black ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                                    className={`p-2 border rounded-xl ${softButton}`}
                                 >
                                     <X size={14} />
                                 </button>
@@ -1168,7 +1176,7 @@ const ArticleDetail = ({
                         initial={{ opacity: 0, x: -50 }}
                         animate={{ opacity: 1, x: 0 }}
                         whileHover={{ scale: 1.05 }}
-                        className={`pointer-events-auto absolute -left-6 md:-left-40 px-4 py-2 font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                        className={`pointer-events-auto absolute -left-6 md:-left-40 px-4 py-2 font-black transition-all ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white hover:bg-[#162033]/78' : 'bg-white/82 text-black hover:bg-white/95'}`}
                     >
                         <div className="flex items-center gap-2">
                             <ChevronRight size={20} className="rotate-180" />
@@ -1181,7 +1189,7 @@ const ArticleDetail = ({
                         animate={{ opacity: 1, x: 0 }}
                         whileHover={{ scale: 1.05 }}
                         ref={commentJumpRef}
-                        className={`pointer-events-auto absolute -right-6 md:-right-40 px-4 py-2 font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                        className={`pointer-events-auto absolute -right-6 md:-right-40 px-4 py-2 font-black transition-all ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white hover:bg-[#162033]/78' : 'bg-white/82 text-black hover:bg-white/95'}`}
                     >
                         <div className="flex items-center gap-2">
                             <MessageCircle size={18} />
@@ -1194,21 +1202,21 @@ const ArticleDetail = ({
             <div className="max-w-4xl mx-auto">
 
                 <div
-                    className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-8 md:p-12 ${surface} relative overflow-hidden`}>
+                    className={`${glassCard} ${isDarkMode ? 'bg-[#0F172A]/54' : 'bg-white/48'} p-8 md:p-12 relative overflow-hidden`}>
                     <div
                         className={`absolute top-0 right-0 w-64 h-64 ${post.color} rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2 pointer-events-none`}></div>
 
                     <div
-                        className={`flex items-center gap-2 mb-6 border-b-4 ${isDarkMode ? 'border-gray-700' : 'border-black'} pb-6`}>
+                        className={`flex items-center gap-2 mb-6 border-b pb-6 ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
                         <span
                             onClick={() => onCategoryClick && onCategoryClick(post.parentCategory)}
-                            className={`bg-black text-white px-3 py-1 font-bold text-sm cursor-pointer transition-transform hover:scale-105 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'hover:bg-gray-800'}`}
+                            className={`home-ios-chip px-3 py-1 font-bold text-sm cursor-pointer transition-transform hover:scale-105 text-black`}
                         >{post.parentCategory}</span>
                         <ChevronRight size={16} className={`${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}
                             strokeWidth={3} />
                         <span
                             onClick={() => onCategoryClick && onCategoryClick(post.parentCategory, post.category)}
-                            className={`px-3 py-1 font-bold text-sm border-2 border-black ${post.color} text-white shadow-[2px_2px_0px_0px_#000] cursor-pointer transition-transform hover:scale-105`}
+                            className={`px-3 py-1 font-bold text-sm rounded-full border ${isDarkMode ? 'border-white/12 bg-white/10 text-white' : 'border-black/10 bg-white/72 text-black'} cursor-pointer transition-transform hover:scale-105`}
                         >{post.category}</span>
                     </div>
 
@@ -1239,10 +1247,10 @@ const ArticleDetail = ({
                     </div>
 
                     <div
-                        className={`flex flex-wrap items-center gap-4 p-4 border-2 border-black mb-12 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                        className={`flex flex-wrap items-center gap-4 p-4 mb-12 ${glassInner}`}>
                         <div className="flex items-center gap-3">
                             <div
-                                className="w-12 h-12 border-2 border-black rounded-full bg-white overflow-hidden flex items-center justify-center">
+                                className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center border ${isDarkMode ? 'border-white/12 bg-white/10' : 'border-black/10 bg-white/78'}`}>
                                 <img
                                     src={avatarSrc}
                                     alt={post.authorName}
@@ -1256,7 +1264,7 @@ const ArticleDetail = ({
                             <div>
                                 <p className="font-black text-lg leading-none">{post.authorName}</p>
                                 <span
-                                    className={`inline-block mt-1 px-2 py-0.5 text-xs font-black border-2 border-black shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-pink-600 text-white' : 'bg-yellow-400 text-black'}`}>
+                                    className={`inline-block mt-1 px-2 py-0.5 text-xs font-black rounded-full border ${isDarkMode ? 'border-white/12 bg-[#FF0080]/70 text-white' : 'border-white/60 bg-[#FFD700]/92 text-black'}`}>
                                     {post.authorTitle ? post.authorTitle.toUpperCase() : '博主'}
                                 </span>
                             </div>
@@ -1267,7 +1275,7 @@ const ArticleDetail = ({
                                 {articleTags.map((tag) => (
                                     <span
                                         key={`article-tag-${tag}`}
-                                        className={`px-2.5 py-1 text-[11px] font-black border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000] ${isDarkMode ? 'bg-gray-700 text-gray-100 border-gray-600' : 'bg-[#FFF5C0] text-black'}`}
+                                        className="px-2.5 py-1 text-[11px] font-black rounded-full home-ios-chip text-black"
                                     >
                                         #{tag}
                                     </span>
@@ -1279,7 +1287,7 @@ const ArticleDetail = ({
                             {isSuperAdmin && (
                                 <button
                                     onClick={handleAdminEdit}
-                                    className={`px-3 py-2 text-xs font-black border-2 border-black shadow-[4px_4px_0px_0px_#000] inline-flex items-center gap-2 ${isDarkMode ? 'bg-pink-600 text-white hover:bg-pink-500' : 'bg-[#FFD700] text-black hover:-translate-y-0.5'} transition-all`}
+                                    className={`px-3 py-2 text-xs font-black inline-flex items-center gap-2 rounded-xl border transition-all hover:-translate-y-0.5 ${accentButton}`}
                                     title="跳转后台编辑此文章"
                                 >
                                     <Edit size={16} /> 后台编辑
@@ -1287,7 +1295,7 @@ const ArticleDetail = ({
                             )}
                             <button
                                 onClick={handleShare}
-                                className={`p-2 border-2 border-black shadow-[4px_4px_0px_0px_#000] transition-all hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
+                                className={`p-2 rounded-xl border transition-transform hover:-translate-y-0.5 ${softButton}`}
                                 title="复制链接"
                             >
                                 <Share2 size={20} />
@@ -1328,7 +1336,7 @@ const ArticleDetail = ({
                     <div className="mt-10 mb-8">
                         <div className="flex items-center gap-4">
                             <div className={`h-[2px] flex-1 ${isDarkMode ? 'bg-gray-700' : 'bg-black'}`}></div>
-                            <span className={`px-4 py-1 border-2 border-black text-xs font-black uppercase tracking-[0.4em] ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-black'}`}>
+                            <span className={`px-4 py-1 text-xs font-black uppercase tracking-[0.4em] rounded-full border ${isDarkMode ? 'bg-white/10 text-gray-100 border-white/12' : 'bg-white/78 text-black border-black/10'}`}>
                                 正文到此结束
                             </span>
                             <div className={`h-[2px] flex-1 ${isDarkMode ? 'bg-gray-700' : 'bg-black'}`}></div>
@@ -1338,7 +1346,7 @@ const ArticleDetail = ({
                     {relatedPosts.length > 0 && (
                         <div className="mt-8">
                             <div className="flex items-center gap-3">
-                                <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] border-2 border-black ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-black text-white'}`}>
+                                <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] rounded-full border ${isDarkMode ? 'bg-white/10 text-gray-100 border-white/12' : 'bg-white/78 text-black border-black/10'}`}>
                                     同分类推荐
                                 </span>
                                 <span className={`text-xs font-semibold ${navMuted}`}>继续阅读别的精彩内容</span>
@@ -1351,7 +1359,7 @@ const ArticleDetail = ({
 
                     <div className="mt-10">
                         <div className="flex items-center gap-3">
-                            <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] border-2 border-black ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-black text-white'}`}>
+                            <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] rounded-full border ${isDarkMode ? 'bg-white/10 text-gray-100 border-white/12' : 'bg-white/78 text-black border-black/10'}`}>
                                 继续阅读
                             </span>
                             <span className={`text-xs font-semibold ${navMuted}`}>前后篇快速跳转</span>
