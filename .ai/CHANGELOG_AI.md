@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-04-04] 将登录与注册页面适配为站点玻璃风格
+- 背景/需求：用户要求把 `/login` 与 `/register` 两个页面的视觉统一到当前首页/导航使用的玻璃风格。
+- 修改类型：fix
+- 影响范围：登录页视觉、注册页视觉、输入组件外观、操作按钮外观、AI 变更日志
+- 变更摘要：
+  1) 登录页 `LoginView` 从旧黑框像素风卡片改为 `home-ios-card` 玻璃面板，输入框、验证码区、错误提示与主次按钮统一玻璃化。
+  2) 注册页 `RegisterView` 的邀请码验证与资料填写两步卡片统一切换为玻璃面板，头像选择区、表单输入、密码显隐按钮、提交/返回按钮全部改为玻璃态。
+  3) `/login` 与 `/register` 路由入口保持不变，继续复用 `AppFull` 现有视图链路，不新增并行页面实现。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/LoginView.jsx`
+  - `SanguiBlog-front/src/appfull/public/RegisterView.jsx`
+- 检索与复用策略：
+  - 检索关键词：`LoginView` / `RegisterView` / `/login` / `/register` / `AppFull` / `home-ios-card`
+  - 候选实现：`LoginView.jsx`、`RegisterView.jsx`、`pages/Login.jsx`、`pages/Register.jsx`
+  - 最终选择：复用现有登录/注册页面组件做样式层改造，不变更路由与行为
+- 风险点：
+  - 本次主要是样式层替换，交互逻辑未改；若后续想继续统一动效节奏，可再做一次动画细调。
+- 验证方式：
+  - 构建：执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）
+
 ## [2026-04-04] 适配手机版菜单玻璃风格并优化首页 CTA 按钮
 - 背景/需求：用户反馈移动端打开菜单仍是旧风格，不符合新版玻璃设计；首页“向下探索内容”按钮在手机上过宽且箭头为纯文本符号，观感不佳。
 - 修改类型：fix

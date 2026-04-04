@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Eye, EyeOff, Ticket, Upload, UserPlus } from "lucide-react";
 
-import PopButton from "../../components/common/PopButton.jsx";
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
 import {
   registerWithInvite,
   verifyRegistrationInvite,
 } from "../../api";
-import { THEME } from "../shared.js";
 import {
   normalizeAsciiInput,
   normalizeInviteCode,
@@ -91,12 +89,19 @@ export default function RegisterView({ setView, isDarkMode }) {
     }
   }, [clock, verifyCooldownUntil]);
 
-  const bg = isDarkMode ? THEME.colors.bgDark : "bg-[#F3F0E8]";
-  const surface = isDarkMode ? THEME.colors.surfaceDark : "bg-white";
+  const bg = isDarkMode ? "bg-[#050505]" : "bg-[#f8f8fa]";
   const text = isDarkMode ? "text-gray-100" : "text-gray-900";
-  const inputBg = isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black";
+  const inputBg = isDarkMode ? "bg-gray-800/70 text-white border-white/18" : "bg-white/72 text-black border-white/75";
   const subtle = isDarkMode ? "text-gray-300" : "text-gray-600";
-  const panel = `${surface} border-4 border-black shadow-[8px_8px_0px_0px_#000]`;
+  const pageThemeClass = `home-redesign-surface ${isDarkMode ? "is-dark" : ""}`;
+  const panel = `home-ios-card ${isDarkMode ? "home-ios-card--dark" : ""}`;
+  const fieldClass = `w-full border p-3 rounded-xl font-bold outline-none transition-shadow ${inputBg} focus:shadow-[0_12px_22px_rgba(99,102,241,0.22)]`;
+  const actionBtnClass = isDarkMode
+    ? "border border-white/12 bg-white/[0.07] text-white hover:bg-white/[0.14] shadow-[0_10px_22px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]"
+    : "border border-black/10 bg-white/78 text-black hover:bg-white/92 shadow-[0_10px_22px_rgba(148,163,184,0.15),inset_0_1px_0_rgba(255,255,255,0.84)]";
+  const accentBtnClass = isDarkMode
+    ? "border border-white/10 bg-[linear-gradient(180deg,rgba(255,215,0,0.34),rgba(255,196,0,0.2))] text-white hover:bg-[linear-gradient(180deg,rgba(255,215,0,0.42),rgba(255,196,0,0.28))] shadow-[0_14px_26px_rgba(255,196,0,0.18),inset_0_1px_0_rgba(255,255,255,0.2)]"
+    : "border border-[#d9a200]/28 bg-[linear-gradient(180deg,rgba(255,232,145,0.92),rgba(255,217,92,0.72))] text-black hover:bg-[linear-gradient(180deg,rgba(255,236,165,0.96),rgba(255,220,110,0.82))] shadow-[0_14px_26px_rgba(255,215,0,0.16),inset_0_1px_0_rgba(255,255,255,0.65)]";
 
   const verifyWaitSeconds = Math.max(0, Math.ceil((verifyCooldownUntil - clock) / 1000));
   const avatarWaitSeconds = Math.max(0, Math.ceil((avatarCooldownUntil - clock) / 1000));
@@ -241,13 +246,13 @@ export default function RegisterView({ setView, isDarkMode }) {
 
   return (
     <div
-      className={`${bg} ${text}`}
+      className={`${bg} ${text} ${pageThemeClass}`}
       style={{ minHeight: `max(0px, calc(100vh - ${headerHeight || 0}px))` }}
     >
       <div className="max-w-3xl mx-auto px-4 py-14 md:py-20 space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 border-2 border-black bg-[#FFD700] flex items-center justify-center">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${accentBtnClass}`}>
               <UserPlus size={22} />
             </div>
             <div>
@@ -268,7 +273,7 @@ export default function RegisterView({ setView, isDarkMode }) {
         {!inviteVerified ? (
           <section className={`${panel} p-6 md:p-8`}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-black bg-black text-white flex items-center justify-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${actionBtnClass}`}>
                 <Ticket size={18} />
               </div>
               <div>
@@ -281,7 +286,7 @@ export default function RegisterView({ setView, isDarkMode }) {
               <div className="space-y-2">
                 <label className="text-sm font-black uppercase">邀请码</label>
                 <input
-                  className={`w-full border-2 border-black p-3 font-bold outline-none focus:shadow-[4px_4px_0px_0px_#FFD700] transition-shadow ${inputBg}`}
+                  className={fieldClass}
                   value={inviteCode}
                   autoCapitalize="characters"
                   autoCorrect="off"
@@ -296,30 +301,30 @@ export default function RegisterView({ setView, isDarkMode }) {
               </div>
 
               {inviteSummary ? (
-                <div className="border-2 border-black bg-[#00E096] p-3 text-sm font-bold text-black">
+                <div className={`border p-3 text-sm font-bold rounded-xl ${isDarkMode ? "border-white/15 bg-[#00E096]/70 text-black" : "border-black/12 bg-[#00E096]/78 text-black"}`}>
                   {inviteSummary}
                 </div>
               ) : null}
 
               {inviteError ? (
-                <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
+                <div className="border border-black/15 bg-red-500 p-3 text-sm font-bold text-white rounded-xl">
                   {inviteError}
                 </div>
               ) : null}
 
               {verifyCooldownMessage ? (
-                <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
+                <div className="border border-black/15 bg-red-500 p-3 text-sm font-bold text-white rounded-xl">
                   {verifyCooldownMessage}
                 </div>
               ) : null}
 
               <div className="flex items-center gap-4 flex-wrap">
-                <PopButton
-                  variant="primary"
-                  className={`min-w-[180px] justify-center ${
+                <button
+                  type="submit"
+                  className={`min-w-[180px] px-4 py-3 rounded-xl font-black transition ${
                     verifyCooldownActive
-                      ? "bg-gray-400 text-gray-900 hover:bg-gray-400 cursor-not-allowed opacity-80"
-                      : ""
+                      ? "bg-gray-400 text-gray-900 cursor-not-allowed opacity-80"
+                      : accentBtnClass
                   }`}
                   disabled={verifying || verifyCooldownActive}
                 >
@@ -328,7 +333,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                     : verifyCooldownActive
                       ? `冷却中 ${verifyWaitSeconds}s`
                       : "验证"}
-                </PopButton>
+                </button>
               </div>
             </form>
           </section>
@@ -346,7 +351,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                 <label className="text-sm font-black uppercase">头像</label>
                 <div className="flex flex-wrap items-start gap-4">
                   <div
-                    className={`w-28 h-28 border-2 border-black overflow-hidden ${inputBg} flex items-center justify-center shadow-[4px_4px_0px_0px_#000] bg-[linear-gradient(45deg,#f3f4f6_25%,transparent_25%,transparent_75%,#f3f4f6_75%,#f3f4f6),linear-gradient(45deg,#f3f4f6_25%,transparent_25%,transparent_75%,#f3f4f6_75%,#f3f4f6)] bg-[length:16px_16px] bg-[position:0_0,8px_8px]`}
+                  className={`w-28 h-28 border overflow-hidden rounded-xl ${inputBg} flex items-center justify-center shadow-[0_12px_24px_rgba(0,0,0,0.14)] bg-[linear-gradient(45deg,#f3f4f6_25%,transparent_25%,transparent_75%,#f3f4f6_75%,#f3f4f6),linear-gradient(45deg,#f3f4f6_25%,transparent_25%,transparent_75%,#f3f4f6_75%,#f3f4f6)] bg-[length:16px_16px] bg-[position:0_0,8px_8px]`}
                   >
                     {form.avatarPreview ? (
                       <img
@@ -377,7 +382,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                     />
                     <button
                       type="button"
-                      className="px-4 py-2 border-2 border-black font-bold bg-[#6366F1] text-white"
+                      className={`px-4 py-2 rounded-xl font-bold ${actionBtnClass}`}
                       onClick={() => avatarInputRef.current?.click()}
                     >
                       选择头像
@@ -393,7 +398,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                 <div className="space-y-2">
                   <label className="text-sm font-black uppercase">用户名</label>
                   <input
-                    className={`w-full border-2 border-black p-3 font-bold outline-none ${inputBg}`}
+                    className={fieldClass}
                     value={form.username}
                     autoComplete="username"
                     onChange={(event) => updateAsciiField("username", event.target.value)}
@@ -403,7 +408,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                 <div className="space-y-2">
                   <label className="text-sm font-black uppercase">显示名称</label>
                   <input
-                    className={`w-full border-2 border-black p-3 font-bold outline-none ${inputBg}`}
+                    className={fieldClass}
                     value={form.displayName}
                     onChange={(event) => {
                       setForm((prev) => ({ ...prev, displayName: event.target.value }));
@@ -419,7 +424,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                   <label className="text-sm font-black uppercase">密码</label>
                   <div className="relative">
                     <input
-                      className={`w-full border-2 border-black p-3 pr-14 font-bold outline-none ${inputBg}`}
+                      className={`${fieldClass} pr-14`}
                       type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
                       value={form.password}
@@ -427,7 +432,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                     />
                     <button
                       type="button"
-                      className={`absolute inset-y-0 right-3 my-auto h-9 w-10 inline-flex items-center justify-center border-2 ${isDarkMode ? "border-gray-300 bg-gray-800 text-gray-100" : "border-black bg-white text-black"}`}
+                      className={`absolute inset-y-0 right-3 my-auto h-9 w-10 inline-flex items-center justify-center rounded-xl border ${isDarkMode ? "border-white/18 bg-white/10 text-gray-100" : "border-black/10 bg-white/75 text-black"}`}
                       onClick={() => setShowPassword((prev) => !prev)}
                       aria-label={showPassword ? "隐藏密码" : "显示密码"}
                     >
@@ -440,7 +445,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                   <label className="text-sm font-black uppercase">确认密码</label>
                   <div className="relative">
                     <input
-                      className={`w-full border-2 border-black p-3 pr-14 font-bold outline-none ${inputBg}`}
+                      className={`${fieldClass} pr-14`}
                       type={showConfirmPassword ? "text" : "password"}
                       autoComplete="new-password"
                       value={form.confirmPassword}
@@ -448,7 +453,7 @@ export default function RegisterView({ setView, isDarkMode }) {
                     />
                     <button
                       type="button"
-                      className={`absolute inset-y-0 right-3 my-auto h-9 w-10 inline-flex items-center justify-center border-2 ${isDarkMode ? "border-gray-300 bg-gray-800 text-gray-100" : "border-black bg-white text-black"}`}
+                      className={`absolute inset-y-0 right-3 my-auto h-9 w-10 inline-flex items-center justify-center rounded-xl border ${isDarkMode ? "border-white/18 bg-white/10 text-gray-100" : "border-black/10 bg-white/75 text-black"}`}
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
                       aria-label={showConfirmPassword ? "隐藏确认密码" : "显示确认密码"}
                     >
@@ -460,22 +465,18 @@ export default function RegisterView({ setView, isDarkMode }) {
               </div>
 
               {submitError ? (
-                <div className="border-2 border-black bg-red-500 p-3 text-sm font-bold text-white">
+                <div className="border border-black/15 bg-red-500 p-3 text-sm font-bold text-white rounded-xl">
                   {submitError}
                 </div>
               ) : null}
 
               <div className="flex gap-4 flex-wrap">
-                <PopButton
-                  variant="primary"
-                  className="min-w-[180px] justify-center"
-                  disabled={submitting}
-                >
+                <button type="submit" className={`min-w-[180px] px-4 py-3 rounded-xl font-black ${accentBtnClass}`} disabled={submitting}>
                   {submitting ? "提交中..." : "提交注册"}
-                </PopButton>
+                </button>
                 <button
                   type="button"
-                  className="px-4 py-3 border-2 border-black font-bold"
+                  className={`px-4 py-3 rounded-xl font-bold ${actionBtnClass}`}
                   onClick={() => {
                     setInviteVerified(false);
                     setInviteMeta(null);
