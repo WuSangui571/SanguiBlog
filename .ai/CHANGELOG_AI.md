@@ -5143,3 +5143,10 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   1) 排查确认问题不是按钮状态切换失效，而是 `Navigation.jsx` 中把 `createPortal(...)` 放在了 `AnimatePresence` 内部，导致通知和设置浮层没有像 AI 助手那样被正确渲染。
   2) 将导航浮层改成与 AI 助手一致的结构：先准备 `notificationOverlayLayer / settingsOverlayLayer`，再整体 portal 到 `document.body`。
   3) 保留上一轮共享层级分配器逻辑不变，只修正导航浮层的 portal 包裹顺序，恢复“能打开 + 顶层显示”的行为。
+## [2026-04-04] 去掉文章页自定义代码块的右下黑色投影
+- 背景/需求：用户希望具体文章页面中 Markdown 代码块保留现有自定义外观，但去掉外框右侧和下方那层黑色投影，其他样式不变。
+- 修改类型：fix
+- 变更摘要：
+  1) 检索确认文章详情页实际使用的是 `ArticleDetail.jsx` 内部的 `CodeBlockWithCopy`，而不是通用 `MarkdownCodeBlock.js`。
+  2) 仅移除文章页代码块外层容器上的 `shadow-[6px_6px_0px_0px_#000]` 类。
+  3) 保留代码块的边框、圆角、标题栏、三色圆点、复制按钮和内容区样式不变，不扩大影响范围。

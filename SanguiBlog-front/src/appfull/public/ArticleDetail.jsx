@@ -292,7 +292,7 @@ const ArticleDetail = ({
 
         return (
             <div
-                className={`not-prose my-6 rounded-2xl border-2 border-black overflow-hidden shadow-[6px_6px_0px_0px_#000] ${isDarkMode ? 'border-gray-600' : ''}`}>
+                className={`not-prose my-6 rounded-2xl border-2 border-black overflow-hidden ${isDarkMode ? 'border-gray-600' : ''}`}>
                 <div
                     className={`flex items-center gap-2 px-4 py-2 border-b-2 border-black ${isDarkMode ? 'bg-[#0B1221] text-gray-200 border-gray-700' : 'bg-gray-100 text-gray-600'}`}>
                     <div className="flex items-center gap-2">
