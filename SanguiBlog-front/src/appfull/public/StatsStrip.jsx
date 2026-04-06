@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-react';
 import { SITE_STATS } from "../shared.js";
 
@@ -70,3 +70,4 @@ const StatsStrip = ({ isDarkMode, stats }) => {
 };
 
 export default StatsStrip;
+

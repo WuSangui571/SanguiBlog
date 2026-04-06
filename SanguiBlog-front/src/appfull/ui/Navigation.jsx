@@ -650,7 +650,7 @@ const Navigation = ({
                                     type="button"
                                     onClick={() => handleNavItemSelect(item.key)}
                                     aria-current={isActive ? 'page' : undefined}
-                                    className={`home-nav-link relative overflow-hidden px-4 py-2 text-sm font-semibold uppercase tracking-[0.18em] transition-colors ${isActive ? 'home-nav-link--active' : (isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black')}`}
+                                    className={`home-nav-link relative overflow-hidden px-4 py-2 text-[13px] font-medium uppercase tracking-[0.12em] transition-colors ${isActive ? 'home-nav-link--active' : (isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black')}`}
                                 >
                                     {isActive && (
                                         <motion.span

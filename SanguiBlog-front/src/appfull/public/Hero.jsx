@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
@@ -128,3 +128,4 @@ export default function Hero({ onStartReading, isDarkMode }) {
         </section>
     );
 }
+

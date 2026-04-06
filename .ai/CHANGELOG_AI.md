@@ -5200,3 +5200,12 @@ eserve ???slug ????????????????? /uploads/posts/<slug>/ ???????
   1) 将 StatsStrip.jsx 的外层玻璃卡切换为 home-ios-card--static，仅禁用 System Status 外壳的 hover 上移。
   2) 保留内部 home-ios-chip 状态项的视觉与交互反馈，不影响其他首页卡片。
   3) 重新执行前端构建验证，确认首页其余卡片 hover 效果不受影响。
+
+## [2026-04-06] 收敛首页亮色质感与 Hero 排版层级
+- 背景/需求：用户认为当前首页相较参考模板 
+ewIndex/html/indexV11.html 质感不足，希望重点从亮色模式冷调、导航与首页大卡玻璃减薄、Hero 字体层级三方面提升高级感。
+- 修改类型：fix
+- 变更摘要：
+  1) 调整 homeRedesign.css 的亮色变量为更冷、更薄的纸感底色，并减弱背景光斑、网格、明亮高光与亮色模式阴影厚度。
+  2) 将首页导航玻璃壳、图标按钮玻璃态和 home-ios-card/home-ios-inner-card 的边框、高光、模糊与阴影整体削弱约 20%~30%，让容器存在感后退。
+  3) 重新收敛 Hero 与导航的字体系统：引入 Inter + Noto Sans SC 组合，调整标题字重、字距、行高与明暗渐变层级，并顺手修复首页 Hero、System Status 与站点标题的 UTF-8 中文显示。
