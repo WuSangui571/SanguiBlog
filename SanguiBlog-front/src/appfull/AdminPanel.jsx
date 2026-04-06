@@ -1073,7 +1073,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const copyToastTimer = useRef(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [deleting, setDeleting] = useState(false);
-    const [hideRobotsAndSitemap, setHideRobotsAndSitemap] = useState(false);
+    const [hideRobotsAndSitemap, setHideRobotsAndSitemap] = useState(true);
     const [filtersDraft, setFiltersDraft] = useState({
         keyword: '',
         ip: '',
