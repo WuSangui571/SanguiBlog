@@ -87,6 +87,7 @@ import {
     extractHexFromBgClass
 } from "./shared.js";
 import { shouldShowInlineImageUpload } from "./createPostInlineImageVisibility.js";
+import './public/homeRedesign.css';
 
 const decodeMaybeUrlEncoded = (value) => {
     if (!value || typeof value !== 'string') return value;
@@ -6486,7 +6487,46 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         loadEmptyFolders();
     }, [scanUnusedAssets, loadEmptyFolders]);
 
-    const surface = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
+    const surface = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark text-gray-100 shadow-[0_18px_44px_rgba(0,0,0,0.32)]' : 'text-slate-900 shadow-[0_16px_38px_rgba(148,163,184,0.14)]'}`;
+    const tabWrapClass = `${surface} rounded-[28px] px-4 py-3 flex flex-wrap items-center gap-2`;
+    const tabButtonClass = (active) => `px-4 py-2 rounded-full text-sm font-semibold border backdrop-blur-xl transition-all duration-300 ${
+        active
+            ? (isDarkMode
+                ? 'bg-white/[0.14] text-white border-white/14 shadow-[0_12px_28px_rgba(0,0,0,0.28)]'
+                : 'bg-white/85 text-slate-900 border-white/80 shadow-[0_12px_28px_rgba(99,102,241,0.14)]')
+            : (isDarkMode
+                ? 'bg-white/[0.04] text-gray-200 border-white/10 hover:bg-white/[0.08] hover:text-white'
+                : 'bg-white/60 text-slate-700 border-white/75 hover:bg-white/80 hover:text-slate-900')
+    }`;
+    const chipClass = `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-xl ${
+        isDarkMode ? 'border-white/12 bg-white/[0.06] text-gray-100' : 'border-white/75 bg-white/80 text-slate-700'
+    }`;
+    const softPanelClass = `home-ios-inner-card rounded-[24px] border px-4 py-4 ${
+        isDarkMode ? 'border-white/10 bg-white/[0.05]' : 'border-white/80 bg-white/75'
+    }`;
+    const formPanelClass = `rounded-[24px] border p-5 space-y-4 backdrop-blur-2xl ${
+        isDarkMode ? 'border-white/10 bg-white/[0.04]' : 'border-white/70 bg-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.58)]'
+    }`;
+    const dashedPanelClass = `rounded-[24px] border border-dashed overflow-hidden ${
+        isDarkMode ? 'border-white/12 bg-white/[0.03]' : 'border-white/70 bg-white/50'
+    }`;
+    const inputClass = `w-full rounded-2xl border px-3 py-2.5 text-sm outline-none backdrop-blur-xl transition ${
+        isDarkMode
+            ? 'border-white/10 bg-white/[0.05] text-gray-100 placeholder:text-gray-500 focus:border-sky-400/40 focus:bg-white/[0.07]'
+            : 'border-white/80 bg-white/80 text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white/90'
+    }`;
+    const fileInputClass = `w-full rounded-2xl border px-3 py-2.5 text-sm backdrop-blur-xl file:mr-3 file:px-3 file:py-1.5 file:border-0 file:rounded-full ${
+        isDarkMode
+            ? 'border-white/10 bg-white/[0.05] text-gray-100 file:bg-white/[0.1] file:text-white'
+            : 'border-white/80 bg-white/80 text-slate-900 file:bg-slate-900 file:text-white'
+    }`;
+    const checkboxClass = `h-4 w-4 rounded accent-indigo-500 ${isDarkMode ? 'border-white/20 bg-white/[0.06]' : 'border-white/70 bg-white/90'}`;
+    const buttonBaseClass = 'inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed';
+    const primaryButtonClass = `${buttonBaseClass} ${isDarkMode ? 'border-white/12 bg-white/[0.07] text-white hover:bg-white/[0.1]' : 'border-white/80 bg-white/80 text-slate-900 hover:bg-white'}`;
+    const accentButtonClass = `${buttonBaseClass} ${isDarkMode ? 'border-sky-400/30 bg-sky-400/18 text-sky-100 hover:bg-sky-400/24' : 'border-indigo-200 bg-indigo-500/12 text-indigo-700 hover:bg-indigo-500/18'}`;
+    const successButtonClass = `${buttonBaseClass} ${isDarkMode ? 'border-emerald-400/28 bg-emerald-400/18 text-emerald-100 hover:bg-emerald-400/24' : 'border-emerald-200 bg-emerald-500/14 text-emerald-700 hover:bg-emerald-500/20'}`;
+    const warningButtonClass = `${buttonBaseClass} ${isDarkMode ? 'border-amber-400/28 bg-amber-400/18 text-amber-100 hover:bg-amber-400/24' : 'border-amber-200 bg-amber-400/18 text-amber-700 hover:bg-amber-400/24'}`;
+    const dangerButtonClass = `${buttonBaseClass} ${isDarkMode ? 'border-red-400/24 bg-red-500/18 text-red-100 hover:bg-red-500/24' : 'border-red-200 bg-red-500/14 text-red-700 hover:bg-red-500/20'}`;
 
     const formatBytes = useCallback((bytes) => {
         if (!bytes || Number.isNaN(bytes)) return '0 B';
@@ -6536,9 +6576,9 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     return (
         <>
             <AdminNoticeBar notice={notice} onClose={hideNotice} />
-            <div className="space-y-6">
+            <div className={`space-y-6 home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`}>
             {/* 顶部子页切换 */}
-            <div className={`${isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'} rounded-2xl shadow-sm px-4 py-3 flex flex-wrap items-center gap-2`}>
+            <div className={tabWrapClass}>
                 <span className="text-sm font-semibold mr-2">设置分组：</span>
                 <div className="flex flex-wrap gap-2">
                     {SETTINGS_TABS.map((tab) => (
@@ -6546,11 +6586,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             key={tab.key}
                             type="button"
                             onClick={() => setActiveSettingsTab(tab.key)}
-                            className={`px-4 py-2 rounded-full text-sm font-bold border-2 transition-all ${
-                                activeSettingsTab === tab.key
-                                    ? 'bg-black text-white border-black shadow-[3px_3px_0px_0px_#000]'
-                                    : `${isDarkMode ? 'bg-gray-800 text-gray-200 border-gray-700 hover:border-gray-500' : 'bg-white text-gray-800 border-black hover:-translate-y-0.5'}`
-                            }`}
+                            className={tabButtonClass(activeSettingsTab === tab.key)}
                         >
                             {tab.label}
                         </button>
@@ -6560,18 +6596,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
             {/* 广播管理 */}
             <div
-                className={`rounded-2xl border-2 shadow-xl overflow-hidden ${
-                    isDarkMode
-                        ? 'bg-gray-950 border-gray-700 text-gray-50'
-                        : 'bg-white border-gray-200 text-gray-900'
-                } ${activeSettingsTab === 'broadcast' ? '' : 'hidden'}`}
+                className={`${surface} rounded-[30px] overflow-hidden ${activeSettingsTab === 'broadcast' ? '' : 'hidden'}`}
             >
                 <div className="p-6 pb-4 flex flex-wrap items-center gap-3 justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                        <div className={`h-10 w-10 rounded-2xl flex items-center justify-center border backdrop-blur-xl ${
                             isDarkMode
-                                ? 'bg-gray-800 text-amber-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.45)]'
-                                : 'bg-black text-white shadow-[4px_4px_0px_0px_#000]'
+                                ? 'border-white/12 bg-white/[0.08] text-amber-200'
+                                : 'border-white/80 bg-white/90 text-slate-900'
                         }`}>
                             <Megaphone size={18} />
                         </div>
@@ -6581,15 +6613,11 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full border ${
-                            isDarkMode
-                                ? 'border-gray-600 bg-gray-800 text-gray-100'
-                                : 'border-black/30 bg-white text-gray-800'
-                        }`}>仅 SUPER_ADMIN</span>
+                        <span className={chipClass}>仅 SUPER_ADMIN</span>
                         <label className="flex items-center gap-2 text-sm font-semibold">
                             <input
                                 type="checkbox"
-                                className="h-4 w-4 border-2 border-black rounded"
+                                className={checkboxClass}
                                 checked={broadcastDraft.active}
                                 onChange={(e) => setBroadcastDraft((prev) => ({ ...prev, active: e.target.checked }))}
                             />
@@ -6599,7 +6627,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={() => handleBroadcastSave(broadcastDraft.active)}
                             disabled={broadcastSaving}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={successButtonClass}
                         >
                             {broadcastSaving ? '保存中…' : '保存设置'}
                         </button>
@@ -6607,7 +6635,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={() => handleBroadcastSave(false)}
                             disabled={broadcastSaving}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={primaryButtonClass}
                         >
                             停用广播
                         </button>
@@ -6635,11 +6663,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 value={broadcastDraft.content}
                                 onChange={(e) => handleBroadcastContentChange(e.target.value)}
                                 rows={5}
-                                className={`w-full border-2 px-3 py-3 rounded-xl focus:outline-none focus:ring-4 ${
-                                    isDarkMode
-                                        ? 'border-gray-700 bg-gray-900/80 text-gray-100 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.45)] focus:ring-indigo-300/40'
-                                        : 'border-gray-900 bg-white text-gray-900 shadow-[6px_6px_0px_0px_#000] focus:ring-amber-200/80'
-                                }`}
+                                className={`${inputClass} min-h-[140px] px-3 py-3 rounded-2xl focus:ring-4 ${isDarkMode ? 'focus:ring-sky-400/12' : 'focus:ring-indigo-200/60'}`}
                                 placeholder="例如：系统将在今晚 23:30 维护；或“祝大家节日快乐，福利已上线！”"
                             />
                             <div className={`pointer-events-none absolute inset-0 rounded-xl border ${isDarkMode ? 'border-white/5' : 'border-black/10'}`}></div>
@@ -6675,7 +6699,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                                 </div>
                                             </div>
                                         </div>
-                                        {active && <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-black text-white">当前</span>}
+                                        {active && <span className={`absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full ${chipClass}`}>当前</span>}
                                     </button>
                                 );
                             })}
@@ -6733,14 +6757,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={() => loadKnowledgeDocuments()}
                             disabled={knowledgeLoading}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={primaryButtonClass}
                         >
                             {knowledgeLoading ? '刷新中...' : '刷新列表'}
                         </button>
                         <button
                             type="button"
                             onClick={() => resetKnowledgeForm()}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000]"
+                            className={successButtonClass}
                         >
                             {knowledgeEditingId ? '退出编辑' : '新建导入'}
                         </button>
@@ -6759,9 +6783,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     </div>
                 )}
 
-                <div className={`rounded-2xl border-2 p-5 space-y-4 ${
-                    isDarkMode ? 'border-gray-700 bg-gray-950/60' : 'border-black bg-white'
-                }`}>
+                <div className={formPanelClass}>
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -6785,7 +6807,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         <label className="flex items-center gap-3 text-sm font-medium">
                             <input
                                 type="checkbox"
-                                className="h-4 w-4 border-2 border-black rounded"
+                                className={checkboxClass}
                                 checked={aiAssistantEnabled}
                                 disabled={aiAssistantLoading || aiAssistantSaving}
                                 onChange={(e) => setAiAssistantEnabled(e.target.checked)}
@@ -6796,7 +6818,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={() => handleAiAssistantToggleSave(aiAssistantEnabled)}
                             disabled={aiAssistantLoading || aiAssistantSaving}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-black text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={accentButtonClass}
                         >
                             {aiAssistantSaving ? '保存中...' : '保存开关'}
                         </button>
@@ -6804,7 +6826,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={() => handleAiAssistantToggleSave(false)}
                             disabled={aiAssistantLoading || aiAssistantSaving || !aiAssistantEnabled}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000] disabled:opacity-60"
+                            className={primaryButtonClass}
                         >
                             一键关闭 AI
                         </button>
@@ -6812,7 +6834,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={() => handleAiAssistantToggleSave(true)}
                             disabled={aiAssistantLoading || aiAssistantSaving || aiAssistantEnabled}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={successButtonClass}
                         >
                             一键开启 AI
                         </button>
@@ -6832,9 +6854,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             <input
                                 value={knowledgeForm.title}
                                 onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, title: e.target.value }))}
-                                className={`w-full border-2 px-3 py-2 rounded-xl ${
-                                    isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
-                                }`}
+                                className={inputClass}
                                 placeholder="可选，不填则默认使用文件名"
                             />
                         </div>
@@ -6846,9 +6866,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                     type="file"
                                     accept=".txt,.md,.markdown,text/plain,text/markdown"
                                     onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
-                                    className={`w-full border-2 px-3 py-2 rounded-xl file:mr-3 file:px-3 file:py-1 file:border-0 file:rounded-full file:bg-black file:text-white ${
-                                        isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
-                                    }`}
+                                    className={fileInputClass}
                                 />
                                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     支持 `.txt`、`.md`、`.markdown`，最大 2MB。
@@ -6859,7 +6877,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         <label className="flex items-center gap-3 text-sm font-medium">
                             <input
                                 type="checkbox"
-                                className="h-4 w-4 border-2 border-black rounded"
+                                className={checkboxClass}
                                 checked={knowledgeForm.enabled}
                                 onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, enabled: e.target.checked }))}
                             />
@@ -6873,9 +6891,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                     value={knowledgeForm.contentText}
                                     onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, contentText: e.target.value }))}
                                     rows={14}
-                                    className={`w-full border-2 px-3 py-3 rounded-xl ${
-                                        isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
-                                    }`}
+                                    className={`${inputClass} min-h-[280px] px-3 py-3`}
                                     placeholder="编辑知识库正文后，保存会自动重建向量索引"
                                 />
                             </div>
@@ -6886,14 +6902,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 type="button"
                                 onClick={handleKnowledgeSubmit}
                                 disabled={knowledgeSaving}
-                                className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-black text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                                className={accentButtonClass}
                             >
                                 {knowledgeSaving ? '保存中...' : (knowledgeEditingId ? '保存知识库' : '导入知识库')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => resetKnowledgeForm()}
-                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                                className={primaryButtonClass}
                             >
                                 重置
                             </button>
@@ -6912,22 +6928,20 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 <input
                                     value={knowledgeKeyword}
                                     onChange={(e) => setKnowledgeKeyword(e.target.value)}
-                                    className={`border-2 px-3 py-2 rounded-full text-sm ${
-                                        isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
-                                    }`}
+                                    className={`${inputClass} min-w-[220px] rounded-full py-2`}
                                     placeholder="按标题或文件名搜索"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => loadKnowledgeDocuments(knowledgeKeyword)}
-                                    className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[3px_3px_0px_0px_#000]"
+                                    className={warningButtonClass}
                                 >
                                     搜索
                                 </button>
                             </div>
                         </div>
 
-                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden">
+                        <div className={dashedPanelClass}>
                             {knowledgeLoading ? (
                                 <div className="p-6 text-sm text-gray-500">加载中，请稍候...</div>
                             ) : knowledgeList.length === 0 ? (
@@ -6940,7 +6954,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                                 <div className="min-w-0 space-y-1">
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         <span className="text-sm font-bold break-all">{item.title}</span>
-                                                        <span className="text-[11px] px-2 py-0.5 rounded-full border border-black/30 bg-white text-black font-bold">
+                                                        <span className={chipClass}>
                                                             {formatKnowledgeStatus(item.syncStatus)}
                                                         </span>
                                                         <span className={`text-[11px] px-2 py-0.5 rounded-full border ${item.enabled ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-400 text-gray-500 bg-gray-100'}`}>
@@ -6960,7 +6974,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                                     <button
                                                         type="button"
                                                         onClick={() => handleKnowledgeEdit(item)}
-                                                        className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black hover:-translate-y-0.5 transition-transform"
+                                                        className={`${primaryButtonClass} px-3 py-1 text-xs`}
                                                     >
                                                         编辑
                                                     </button>
@@ -6968,7 +6982,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                                         type="button"
                                                         onClick={() => handleKnowledgeDelete(item.id)}
                                                         disabled={knowledgeDeletingId === item.id}
-                                                        className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-red-500 text-white hover:-translate-y-0.5 transition-transform disabled:opacity-60"
+                                                        className={`${dangerButtonClass} px-3 py-1 text-xs`}
                                                     >
                                                         {knowledgeDeletingId === item.id ? '删除中...' : '删除'}
                                                     </button>
@@ -6991,11 +7005,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             仅超级管理员可生成一次性注册邀请码。邀请码会在指定时效后失效，且只能成功注册一个新账号。
                         </p>
                     </div>
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full border ${
-                        isDarkMode
-                            ? 'border-gray-600 bg-gray-800 text-gray-100'
-                            : 'border-black/30 bg-white text-gray-800'
-                    }`}>仅 SUPER_ADMIN</span>
+                    <span className={chipClass}>仅 SUPER_ADMIN</span>
                 </div>
 
                 {inviteError && (
@@ -7004,9 +7014,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     </div>
                 )}
 
-                <div className={`rounded-2xl border-2 p-5 space-y-4 ${
-                    isDarkMode ? 'border-gray-700 bg-gray-950/60' : 'border-black bg-white'
-                }`}>
+                <div className={formPanelClass}>
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -7020,25 +7028,21 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         <button
                             type="button"
                             onClick={handleOpenInviteDialog}
-                            className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000]"
+                            className={warningButtonClass}
                         >
                             生成邀请码
                         </button>
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
-                        <div className={`rounded-xl border p-4 ${
-                            isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'
-                        }`}>
+                        <div className={softPanelClass}>
                             <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">默认时效</div>
                             <div className="mt-2 text-2xl font-black">{selectedInviteDuration.label}</div>
                             <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 可在确认框中切换为 1 小时、1 天或 10 天。
                             </div>
                         </div>
-                        <div className={`rounded-xl border p-4 ${
-                            isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'
-                        }`}>
+                        <div className={softPanelClass}>
                             <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">使用规则</div>
                             <ul className={`mt-2 space-y-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                 <li>邀请码过期后不可再验证或注册。</li>
@@ -7049,9 +7053,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     </div>
                 </div>
 
-                <div className={`rounded-2xl border-2 p-5 space-y-4 ${
-                    isDarkMode ? 'border-gray-700 bg-gray-950/60' : 'border-black bg-white'
-                }`}>
+                <div className={formPanelClass}>
                     <div className="flex items-center gap-2">
                         <Copy size={18} />
                         <span className="text-lg font-bold">最近生成结果</span>
@@ -7062,15 +7064,15 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         </p>
                     ) : (
                         <div className="grid gap-4 md:grid-cols-3">
-                            <div className={`rounded-xl border p-4 ${isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'}`}>
+                            <div className={softPanelClass}>
                                 <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">邀请码</div>
                                 <div className="mt-2 font-mono text-lg font-black break-all">{latestInvite.inviteCode}</div>
                             </div>
-                            <div className={`rounded-xl border p-4 ${isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'}`}>
+                            <div className={softPanelClass}>
                                 <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">时效</div>
                                 <div className="mt-2 text-lg font-black">{latestInvite.durationLabel || '--'}</div>
                             </div>
-                            <div className={`rounded-xl border p-4 ${isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'}`}>
+                            <div className={softPanelClass}>
                                 <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">失效时间</div>
                                 <div className="mt-2 text-base font-bold">{latestInvite.expiresAtLabel || formatDateTime(latestInvite.expiresAt)}</div>
                             </div>
@@ -7090,14 +7092,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={loadGames}
                             disabled={gameLoading}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={primaryButtonClass}
                         >
                             {gameLoading ? '刷新中...' : '刷新列表'}
                         </button>
                         <button
                             type="button"
                             onClick={() => resetGameForm()}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000]"
+                            className={warningButtonClass}
                         >
                             {gameEditingId ? '退出编辑' : '新建页面'}
                         </button>
@@ -7113,19 +7115,19 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                 <div className="grid md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-semibold">标题</label>
-                        <input
-                            value={gameForm.title}
-                            onChange={(e) => setGameForm((prev) => ({ ...prev, title: e.target.value }))}
-                            className="border-2 border-black px-3 py-2 rounded"
-                            placeholder="例如：像素跑酷 / H5 Demo"
-                        />
+                            <input
+                                value={gameForm.title}
+                                onChange={(e) => setGameForm((prev) => ({ ...prev, title: e.target.value }))}
+                                className={inputClass}
+                                placeholder="例如：像素跑酷 / H5 Demo"
+                            />
                     </div>
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-semibold">状态</label>
                         <select
                             value={gameForm.status}
                             onChange={(e) => setGameForm((prev) => ({ ...prev, status: e.target.value }))}
-                            className="border-2 border-black px-3 py-2 rounded"
+                            className={inputClass}
                         >
                             <option value="ACTIVE">ACTIVE - 对所有人可见</option>
                             <option value="DISABLED">DISABLED - 仅管理端可见</option>
@@ -7138,7 +7140,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             value={gameForm.description}
                             onChange={(e) => setGameForm((prev) => ({ ...prev, description: e.target.value }))}
                             rows={3}
-                            className="border-2 border-black px-3 py-2 rounded"
+                            className={`${inputClass} px-3 py-2`}
                             placeholder="一句话给运营或访客的提示"
                         />
                     </div>
@@ -7148,7 +7150,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="number"
                             value={gameForm.sortOrder ?? 0}
                             onChange={(e) => setGameForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))}
-                            className="border-2 border-black px-3 py-2 rounded"
+                            className={inputClass}
                         />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -7158,11 +7160,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="file"
                             accept=".html,.htm,text/html"
                             onChange={(e) => setGameForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
-                            className={`px-3 py-2 rounded text-sm ${
-                                isDarkMode
-                                    ? 'border-2 border-gray-700 bg-gray-800 text-gray-100 file:text-gray-100 file:bg-gray-800 file:border-0'
-                                    : 'border-2 border-black bg-white text-gray-900 file:text-gray-900 file:bg-white file:border-0'
-                            }`}
+                            className={fileInputClass}
                         />
                         {gameForm.file && <span className="text-xs text-gray-500">已选择：{gameForm.file.name}</span>}
                     </div>
@@ -7173,14 +7171,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         type="button"
                         onClick={handleGameSubmit}
                         disabled={gameSaving}
-                        className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-black text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                        className={accentButtonClass}
                     >
                         {gameSaving ? '保存中...' : (gameEditingId ? '保存修改' : '上传页面')}
                     </button>
                     <button
                         type="button"
                         onClick={() => resetGameForm()}
-                        className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                        className={primaryButtonClass}
                     >
                         重置表单
                     </button>
@@ -7208,7 +7206,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             {gameList.map((game) => (
                                 <div
                                     key={game.id}
-                                    className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-black'} border-2 rounded-xl p-4 space-y-3 shadow-[4px_6px_0px_rgba(0,0,0,0.25)]`}
+                                    className={softPanelClass}
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="space-y-1">
@@ -7217,20 +7215,20 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                             <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm line-clamp-2`}>{game.description || '暂无描述'}</p>
                                             <p className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>状态：{game.status || '--'} · 更新：{formatDateTime(game.updatedAt || game.createdAt)}</p>
                                         </div>
-                                        <span className="text-[11px] px-2 py-0.5 rounded-full border border-black/40 bg-white/70 text-black font-bold">{game.status || '--'}</span>
+                                        <span className={chipClass}>{game.status || '--'}</span>
                                     </div>
                                     <div className="flex flex-wrap gap-3">
                                         <button
                                             type="button"
                                             onClick={() => handleGameOpen(game)}
-                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-[#FFD700] text-black hover:-translate-y-0.5 transition-transform"
+                                            className={`${warningButtonClass} px-3 py-1 text-xs`}
                                         >
                                             预览
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleGameEdit(game)}
-                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-white text-black hover:-translate-y-0.5 transition-transform"
+                                            className={`${primaryButtonClass} px-3 py-1 text-xs`}
                                         >
                                             编辑
                                         </button>
@@ -7238,7 +7236,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                             type="button"
                                             onClick={() => handleGameDelete(game.id)}
                                             disabled={gameDeletingId === game.id}
-                                            className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold bg-red-500 text-white hover:-translate-y-0.5 transition-transform disabled:opacity-60"
+                                            className={`${dangerButtonClass} px-3 py-1 text-xs`}
                                         >
                                             {gameDeletingId === game.id ? '删除中...' : '删除'}
                                         </button>
@@ -7263,7 +7261,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={scanUnusedAssets}
                             disabled={assetLoading}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={primaryButtonClass}
                         >
                             {assetLoading ? '扫描中...' : '重新扫描'}
                         </button>
@@ -7271,7 +7269,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={toggleSelectAllAssets}
                             disabled={!assets.length}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={successButtonClass}
                         >
                             {selectedAssets.size === assets.length && assets.length ? '取消全选' : '全选'}
                         </button>
@@ -7279,7 +7277,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={handleDeleteSelectedAssets}
                             disabled={!selectedAssets.size}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={dangerButtonClass}
                         >
                             {selectedAssets.size ? `删除选中（${selectedAssets.size}）` : '删除选中'}
                         </button>
@@ -7297,7 +7295,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>预计可释放 {formatBytes(assetTotalSize)}</span>
                 </div>
 
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden">
+                <div className={dashedPanelClass}>
                     {assetLoading ? (
                         <div className="p-6 text-sm text-gray-500">扫描中，请稍候...</div>
                     ) : assets.length === 0 ? (
@@ -7325,7 +7323,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                         )}
                                         <input
                                             type="checkbox"
-                                            className="h-4 w-4 border-2 border-black rounded"
+                                            className={checkboxClass}
                                             checked={selectedAssets.has(asset.path)}
                                             onChange={() => toggleSelectAsset(asset.path)}
                                         />
@@ -7364,7 +7362,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={loadEmptyFolders}
                             disabled={emptyLoading}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={primaryButtonClass}
                         >
                             {emptyLoading ? '扫描中...' : '重新扫描'}
                         </button>
@@ -7372,7 +7370,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={toggleSelectAllEmpty}
                             disabled={!emptyFolders.length}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#C7F36B] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={successButtonClass}
                         >
                             {emptySelected.size === emptyFolders.length && emptyFolders.length ? '取消全选' : '全选'}
                         </button>
@@ -7380,7 +7378,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             type="button"
                             onClick={handleDeleteEmptyFolders}
                             disabled={!emptySelected.size}
-                            className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                            className={dangerButtonClass}
                         >
                             {emptySelected.size ? `删除选中（${emptySelected.size}）` : '删除选中'}
                         </button>
@@ -7393,7 +7391,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     </div>
                 )}
 
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden">
+                <div className={dashedPanelClass}>
                     {emptyLoading ? (
                         <div className="p-6 text-sm text-gray-500">扫描中，请稍候...</div>
                     ) : emptyFolders.length === 0 ? (
@@ -7405,13 +7403,13 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                     <div className="flex items-center gap-3 min-w-0">
                                         <input
                                             type="checkbox"
-                                            className="h-4 w-4 border-2 border-black rounded"
+                                            className={checkboxClass}
                                             checked={emptySelected.has(path)}
                                             onChange={() => toggleSelectEmpty(path)}
                                         />
                                         <div className="font-mono text-sm break-all">{path}</div>
                                     </div>
-                                    <span className="text-xs px-2 py-1 rounded-full border border-black/30 bg-white text-gray-700 dark:text-gray-100">
+                                    <span className={chipClass}>
                                         空目录
                                     </span>
                                 </label>
@@ -7446,9 +7444,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             <select
                                 value={inviteDurationCode}
                                 onChange={(e) => setInviteDurationCode(e.target.value)}
-                                className={`w-full border-2 px-3 py-3 rounded-xl ${
-                                    isDarkMode ? 'bg-gray-950 border-gray-700 text-gray-100' : 'bg-white border-black text-gray-900'
-                                }`}
+                                className={`${inputClass} px-3 py-3`}
                             >
                                 {REGISTRATION_INVITE_DURATION_OPTIONS.map((option) => (
                                     <option key={option.code} value={option.code}>{option.label}</option>
@@ -7456,9 +7452,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             </select>
                         </div>
 
-                        <div className={`rounded-xl border p-4 ${
-                            isDarkMode ? 'border-gray-700 bg-gray-900/80' : 'border-black/20 bg-gray-50'
-                        }`}>
+                        <div className={softPanelClass}>
                             <div className="text-sm font-bold">即将生成</div>
                             <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                 一次性注册邀请码，默认角色为普通用户，当前时效：{selectedInviteDuration.label}。
@@ -7469,7 +7463,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             <button
                                 type="button"
                                 onClick={handleCloseInviteDialog}
-                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                                className={primaryButtonClass}
                             >
                                 取消
                             </button>
@@ -7477,7 +7471,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 type="button"
                                 onClick={handleCreateRegistrationInvite}
                                 disabled={inviteGenerating}
-                                className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-[#FFD700] text-black shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                                className={warningButtonClass}
                             >
                                 {inviteGenerating ? '生成中...' : '确认生成'}
                             </button>
@@ -7508,7 +7502,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         <label className="flex items-center gap-3 text-sm font-medium">
                             <input
                                 type="checkbox"
-                                className="h-4 w-4 border-2 border-black rounded"
+                                className={checkboxClass}
                                 checked={confirmChecked}
                                 onChange={(e) => setConfirmChecked(e.target.checked)}
                             />
@@ -7539,7 +7533,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             <button
                                 type="button"
                                 onClick={() => setConfirmOpen(false)}
-                                className="px-4 py-2 border-2 border-black rounded-full text-sm font-bold bg-white text-black shadow-[3px_3px_0px_0px_#000]"
+                                className={primaryButtonClass}
                             >
                                 取消
                             </button>
@@ -7547,7 +7541,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 type="button"
                                 disabled={!confirmChecked || assetDeleting}
                                 onClick={handleConfirmDeleteAssets}
-                                className="px-5 py-2 border-2 border-black rounded-full text-sm font-bold bg-red-500 text-white shadow-[4px_4px_0px_0px_#000] disabled:opacity-60"
+                                className={dangerButtonClass}
                             >
                                 {assetDeleting ? '删除中...' : '确认删除'}
                             </button>
@@ -7661,11 +7655,31 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
 
     const activeLabel = tabs.find(t => t.key === activeTab)?.label || tabs[0]?.label || '仪表盘';
 
-    const bgClass = isDarkMode ? THEME.colors.bgDark : 'bg-gray-100';
-    const sidebarBg = isDarkMode ? 'bg-gray-900' : 'bg-white';
-    const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
-    const sidebarBorder = isDarkMode ? 'border-gray-700' : 'border-gray-200';
-    const topbarBg = isDarkMode ? 'bg-gray-900' : 'bg-white';
+    const bgClass = isDarkMode
+        ? 'bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_rgba(10,15,30,0.98)_42%,_rgba(3,6,18,1)_100%)]'
+        : 'bg-[radial-gradient(circle_at_top,_rgba(129,140,248,0.18),_rgba(249,251,255,0.98)_38%,_rgba(232,238,252,0.96)_100%)]';
+    const textClass = isDarkMode ? 'text-gray-100' : 'text-slate-800';
+    const sidebarBorder = isDarkMode ? 'border-white/10' : 'border-white/70';
+    const adminSurfaceClass = `home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`;
+    const sidebarBg = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark bg-white/[0.035] text-gray-100 shadow-[0_24px_48px_rgba(0,0,0,0.34)]' : 'bg-white/70 text-slate-800 shadow-[0_20px_48px_rgba(148,163,184,0.2)]'} rounded-none border-r ${sidebarBorder}`;
+    const topbarBg = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark bg-white/[0.035] shadow-[0_18px_40px_rgba(0,0,0,0.28)]' : 'bg-white/65 shadow-[0_16px_38px_rgba(148,163,184,0.16)]'} rounded-none border-b ${sidebarBorder}`;
+    const panelTitleClass = isDarkMode ? 'text-gray-400' : 'text-slate-500';
+    const panelGroupClass = isDarkMode ? 'pl-3 border-l border-white/10' : 'pl-3 border-l border-white/60';
+    const navItemBaseClass = 'group w-full text-left pl-3.5 pr-3.5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-3 transition-all duration-300 border backdrop-blur-xl';
+    const activeNavItemClass = isDarkMode
+        ? `${navItemBaseClass} bg-white/[0.14] text-white border-white/14 shadow-[0_14px_32px_rgba(0,0,0,0.28)]`
+        : `${navItemBaseClass} bg-white/85 text-slate-900 border-white/80 shadow-[0_14px_32px_rgba(99,102,241,0.14)]`;
+    const inactiveNavItemClass = isDarkMode
+        ? `${navItemBaseClass} text-gray-300 border-transparent hover:bg-white/[0.06] hover:border-white/10 hover:text-white`
+        : `${navItemBaseClass} text-slate-700 border-transparent hover:bg-white/60 hover:border-white/70 hover:text-slate-900`;
+    const ghostButtonClass = `inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold backdrop-blur-xl transition-all duration-300 ${
+        isDarkMode
+            ? 'border-white/10 bg-white/[0.04] text-gray-100 hover:bg-white/[0.08]'
+            : 'border-white/70 bg-white/70 text-slate-800 hover:bg-white/85'
+    }`;
+    const roleBadgeClass = isDarkMode
+        ? 'border border-white/12 bg-white/[0.08] text-white'
+        : 'border border-white/75 bg-white/80 text-slate-800';
     const handleToggleAdminNav = useCallback(() => {
         setAdminNavOpen((prev) => !prev);
     }, []);
@@ -7731,20 +7745,17 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                 {navSections.map((section, idx) => (
                     <div key={section.title || `section-${idx}`} className="space-y-2">
                         {section.title && (
-                            <div className={`px-2 text-[11px] font-semibold uppercase tracking-[0.08em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <div className={`px-2 text-[11px] font-semibold uppercase tracking-[0.08em] ${panelTitleClass}`}>
                                 {section.title}
                             </div>
                         )}
-                        <div className={`space-y-1 ${section.title ? (isDarkMode ? 'pl-2 border-l border-gray-800' : 'pl-2 border-l border-gray-200') : ''}`}>
+                        <div className={`space-y-1 ${section.title ? panelGroupClass : ''}`}>
                             {section.items.map(({ key, label, icon: Icon }) => (
                                 <Link
                                     key={key}
                                     to={key === 'dashboard' ? '/admin' : `/admin/${key}`}
                                     onClick={handleCloseAdminNav}
-                                    className={`group w-full text-left pl-3 pr-3 py-2 rounded text-sm font-medium flex items-center gap-3 transition-colors ${activeTab === key
-                                        ? 'bg-indigo-500 text-white shadow-lg'
-                                        : `hover:bg-indigo-100 hover:text-indigo-600 ${isDarkMode ? 'text-gray-300 hover:bg-gray-800 hover:text-white' : 'text-gray-800'}`
-                                        }`}
+                                    className={activeTab === key ? activeNavItemClass : inactiveNavItemClass}
                                 >
                                     <Icon size={18} className="shrink-0" />
                                     <span>{label}</span>
@@ -7760,7 +7771,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                         setView('home');
                         handleCloseAdminNav();
                     }}
-                    className="text-sm text-gray-500 hover:text-black flex items-center gap-2"
+                    className={`${ghostButtonClass} w-full justify-center`}
                 >
                     <LogOut size={14} /> 返回前台
                 </button>
@@ -7769,10 +7780,10 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     );
 
     return (
-        <div className={`min-h-screen flex ${bgClass} ${textClass}`}>
+        <div className={`min-h-screen flex ${adminSurfaceClass} ${bgClass} ${textClass}`}>
             {/* Sidebar (Desktop) */}
             <aside
-                className={`hidden md:flex w-64 flex-shrink-0 ${sidebarBg} border-r ${sidebarBorder} flex-col fixed h-full z-40 transition-colors`}>
+                className={`hidden md:flex w-64 flex-shrink-0 ${sidebarBg} flex-col fixed h-full z-40 transition-colors`}>
                 {adminNavContent}
             </aside>
 
@@ -7798,11 +7809,11 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-                            className={`absolute left-0 top-0 h-full w-[78vw] max-w-xs flex flex-col ${sidebarBg} border-r ${sidebarBorder} shadow-[8px_0_0_0_#000]`}
+                            className={`absolute left-0 top-0 h-full w-[78vw] max-w-xs flex flex-col ${sidebarBg} rounded-r-[28px] border-r ${sidebarBorder}`}
                         >
                             <div className={`flex items-center justify-between px-4 py-3 border-b ${sidebarBorder}`}>
                                 <div className="flex items-center gap-2">
-                                    <div className={`w-9 h-9 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'} flex items-center justify-center border-2 border-black`}>
+                                    <div className={`w-9 h-9 rounded-2xl border flex items-center justify-center backdrop-blur-xl ${isDarkMode ? 'border-white/12 bg-white/[0.1] text-white' : 'border-white/75 bg-white/80 text-slate-900'}`}>
                                         <Shield size={16} />
                                     </div>
                                     <div className="font-black">后台菜单</div>
@@ -7810,7 +7821,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                                 <button
                                     type="button"
                                     onClick={handleCloseAdminNav}
-                                    className={`p-2 border-2 border-black rounded-full ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`}
+                                    className={`${ghostButtonClass} p-2`}
                                     aria-label="关闭后台菜单"
                                 >
                                     <X size={16} />
@@ -7826,13 +7837,13 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             <div className="flex-1 md:ml-64 ml-0 flex flex-col min-w-0">
                 {/* Top Bar */}
                 <header
-                    className={`sticky z-30 h-16 flex items-center justify-between px-4 md:px-8 ${topbarBg} border-b ${sidebarBorder} shadow-sm`}
+                    className={`sticky z-30 h-16 flex items-center justify-between px-4 md:px-8 ${topbarBg}`}
                     style={{ top: headerHeight }}>
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
                             onClick={handleToggleAdminNav}
-                            className={`md:hidden p-2 border-2 border-black rounded-full shadow-[3px_3px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
+                            className={`md:hidden ${ghostButtonClass} p-2`}
                             aria-label="打开后台菜单"
                         >
                             <Menu size={18} />
@@ -7840,11 +7851,11 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                         <h1 className="text-lg md:text-xl font-bold">{activeLabel}</h1>
                     </div>
                     <div className="flex items-center space-x-4">
-                        <span className={`text-xs px-3 py-1 rounded font-bold text-white ${ROLES[user.role].color}`}>
+                        <span className={`text-xs px-3 py-1 rounded-full font-bold ${roleBadgeClass}`}>
                             {ROLES[user.role].label}
                         </span>
                         <button onClick={handleLogout}
-                            className="text-sm text-gray-500 hover:text-red-500 flex items-center gap-1">
+                            className={ghostButtonClass}>
                             <LogOut size={16} /> 退出登录
                         </button>
                     </div>

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 const FieldLabel = ({ icon: Icon, children }) => (
-  <label className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">
+  <label className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-500 dark:text-gray-400">
     {Icon && <Icon size={14} />}
     {children}
   </label>
@@ -29,12 +29,12 @@ const FieldLabel = ({ icon: Icon, children }) => (
 const InfoBadge = ({ label, value, isDarkMode }) => {
   const labelClass = isDarkMode ? "text-gray-300" : "text-gray-700";
   const valueClass = isDarkMode
-    ? "bg-gray-800 text-white border-gray-600"
-    : "bg-gray-50 text-gray-900 border-gray-300";
+    ? "border-white/12 bg-white/[0.06] text-white"
+    : "border-white/80 bg-white/80 text-slate-900";
   return (
     <div className="flex flex-col gap-1">
       <span className={`text-xs font-semibold ${labelClass}`}>{label}</span>
-      <span className={`px-3 py-2 border-2 rounded text-sm font-mono ${valueClass}`}>
+      <span className={`px-3 py-2 rounded-2xl border text-sm font-mono backdrop-blur-xl ${valueClass}`}>
         {value || "—"}
       </span>
     </div>
@@ -210,34 +210,49 @@ export default function AdminProfile({ isDarkMode = false }) {
     }
   };
 
-  const cardClass = isDarkMode
-    ? "bg-gray-900 border border-gray-700 text-gray-100"
-    : "bg-white border border-gray-200 text-gray-900";
-  const inputClass = `w-full px-4 py-3 border-2 rounded font-medium transition-colors ${
-    isDarkMode
-      ? "bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500 focus:border-[#6366F1]"
-      : "bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-[#6366F1]"
+  const pageClass = isDarkMode
+    ? "home-redesign-surface is-dark bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.16),_rgba(12,16,32,0.98)_42%,_rgba(4,7,18,1)_100%)] text-gray-100"
+    : "home-redesign-surface bg-[radial-gradient(circle_at_top,_rgba(129,140,248,0.18),_rgba(248,250,255,0.98)_38%,_rgba(236,241,252,0.96)_100%)] text-slate-900";
+  const cardClass = `home-ios-card home-ios-card--static ${isDarkMode ? "home-ios-card--dark" : ""} rounded-[30px] p-6 text-inherit`;
+  const innerPanelClass = `home-ios-inner-card rounded-[24px] border ${
+    isDarkMode ? "border-white/10 bg-white/[0.05]" : "border-white/80 bg-white/80"
   }`;
-
+  const inputClass = `w-full px-4 py-3 rounded-2xl border font-medium backdrop-blur-xl transition-colors ${
+    isDarkMode
+      ? "border-white/10 bg-white/[0.05] text-gray-100 placeholder:text-gray-500 focus:border-sky-400/40"
+      : "border-white/80 bg-white/80 text-slate-900 placeholder:text-slate-400 focus:border-indigo-300"
+  }`;
+  const accentButtonClass = `inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3 font-semibold backdrop-blur-xl transition-all duration-300 disabled:opacity-50 ${
+    isDarkMode
+      ? "border-sky-400/28 bg-sky-400/18 text-sky-100 hover:bg-sky-400/24"
+      : "border-indigo-200 bg-indigo-500/14 text-indigo-700 hover:bg-indigo-500/20"
+  }`;
+  const pinkButtonClass = `inline-flex items-center justify-center gap-2 rounded-full border px-10 py-3 font-semibold backdrop-blur-xl transition-all duration-300 disabled:opacity-50 ${
+    isDarkMode
+      ? "border-fuchsia-400/28 bg-fuchsia-400/18 text-fuchsia-100 hover:bg-fuchsia-400/24"
+      : "border-fuchsia-200 bg-fuchsia-500/14 text-fuchsia-700 hover:bg-fuchsia-500/20"
+  }`;
   return (
-    <div className={`p-6 md:p-10 ${isDarkMode ? "bg-gray-950 text-gray-100" : "bg-gray-50 text-gray-900"}`}>
+    <div className={`p-6 md:p-10 ${pageClass}`}>
       <header className="mb-8 flex items-center gap-3">
-        <div className="w-12 h-12 border-2 border-black rounded-full flex items-center justify-center bg-gradient-to-br from-[#FF0080] to-[#FFD700] text-white">
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border backdrop-blur-xl ${
+          isDarkMode ? "border-white/12 bg-white/[0.08] text-white" : "border-white/80 bg-white/90 text-slate-900"
+        }`}>
           <User />
         </div>
         <div>
           <h1 className="text-3xl font-black tracking-tight">个人资料管理</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">在此更新头像、基本信息及账户安全设置。</p>
+          <p className="text-sm text-slate-500 dark:text-gray-400">在此更新头像、基本信息及账户安全设置。</p>
         </div>
       </header>
 
       {status.text && (
         <div
           ref={statusRef}
-          className={`mb-6 flex items-center gap-3 border-l-4 p-4 ${
+          className={`mb-6 flex items-center gap-3 rounded-[24px] border p-4 backdrop-blur-xl ${
             status.type === "success"
-              ? "border-green-500 bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-200"
-              : "border-red-500 bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-200"
+              ? (isDarkMode ? "border-emerald-400/24 bg-emerald-500/12 text-emerald-100" : "border-emerald-200 bg-emerald-500/12 text-emerald-700")
+              : (isDarkMode ? "border-red-400/24 bg-red-500/12 text-red-100" : "border-red-200 bg-red-500/12 text-red-700")
           }`}
         >
           {status.type === "success" ? <CheckCircle /> : <AlertTriangle />}
@@ -246,14 +261,16 @@ export default function AdminProfile({ isDarkMode = false }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        <section className={`${cardClass} rounded-2xl shadow-lg p-6`}>
+        <section className={cardClass}>
           <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
             <Image size={18} />
             头像设置
           </h2>
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="relative">
-              <div className="w-32 h-32 rounded-full border-4 border-black overflow-hidden bg-gray-200 dark:bg-gray-700">
+              <div className={`w-32 h-32 rounded-full border overflow-hidden backdrop-blur-xl ${
+                isDarkMode ? "border-white/12 bg-white/[0.08]" : "border-white/80 bg-white/90"
+              }`}>
                 {avatarPreview ? (
                   <ImageWithFallback src={avatarPreview} alt="头像预览" className="w-full h-full object-cover" />
                 ) : (
@@ -274,7 +291,7 @@ export default function AdminProfile({ isDarkMode = false }) {
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="px-6 py-3 bg-[#6366F1] text-white font-black border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition disabled:opacity-50"
+                className={accentButtonClass}
               >
                 {uploadingAvatar ? "上传中..." : "上传新头像"}
               </button>
@@ -288,7 +305,7 @@ export default function AdminProfile({ isDarkMode = false }) {
           </div>
         </section>
 
-        <section className={`${cardClass} rounded-2xl shadow-lg p-6`}>
+        <section className={cardClass}>
           <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
             <FileText size={18} />
             基本信息
@@ -327,12 +344,12 @@ export default function AdminProfile({ isDarkMode = false }) {
           </div>
         </section>
 
-        <section className={`${cardClass} rounded-2xl shadow-lg p-6`}>
+        <section className={cardClass}>
           <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
             <Lock size={18} />
             修改密码
           </h2>
-          <div className={`p-4 rounded-xl ${isDarkMode ? "bg-gray-800/60" : "bg-yellow-50 border border-yellow-200"}`}>
+          <div className={`${innerPanelClass} p-4`}>
             <p className="text-sm text-gray-600 dark:text-gray-300">更改密码前请先验证原密码，验证成功后即可输入新密码。</p>
           </div>
           <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -362,7 +379,7 @@ export default function AdminProfile({ isDarkMode = false }) {
                 type="button"
                 onClick={handleVerifyPassword}
                 disabled={!form.oldPassword || passwordVerified || verifying}
-                className="w-full px-4 py-3 font-black border-2 border-black rounded-full bg-[#FFD700] text-black hover:-translate-y-0.5 transition disabled:opacity-50"
+                className={`w-full ${accentButtonClass}`}
               >
                 {passwordVerified ? "已验证" : verifying ? "验证中..." : "验证原密码"}
               </button>
@@ -403,9 +420,7 @@ export default function AdminProfile({ isDarkMode = false }) {
         </section>
 
         <section
-          className={`rounded-2xl shadow-lg p-6 border-2 ${
-            isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
-          }`}
+          className={cardClass}
         >
           <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
             <Shield size={18} />
@@ -423,7 +438,7 @@ export default function AdminProfile({ isDarkMode = false }) {
           <button
             type="submit"
             disabled={loading}
-            className="px-10 py-3 bg-[#FF0080] text-white font-black border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition disabled:opacity-50"
+            className={pinkButtonClass}
           >
             {loading ? "保存中..." : "保存修改"}
           </button>
