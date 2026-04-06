@@ -6,6 +6,7 @@ import { DEFAULT_HERO_TAGLINE, DEFAULT_HOME_QUOTE } from '../shared.js';
 
 export default function HomeView({
     meta,
+    metaLoaded,
     setView,
     setArticleId,
     isDarkMode,
@@ -46,6 +47,7 @@ export default function HomeView({
                 onStartReading={onScrollToPosts}
                 version={siteVersion}
                 tagline={heroTagline}
+                backgroundResolved={metaLoaded}
                 backgroundUrl={homeBackgroundUrl}
             />
             <ArticleList

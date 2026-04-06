@@ -68,6 +68,7 @@ const LazyAdminPanel = lazy(() =>
 export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, initialGameId = null, onViewChange }) {
     const {
         meta,
+        metaLoaded,
         categories,
         tags,
         postsPage,
@@ -1150,6 +1151,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 return (
                     <HomeView
                         meta={meta}
+                        metaLoaded={metaLoaded}
                         setView={setView}
                         setArticleId={setArticleId}
                         isDarkMode={isDarkMode}

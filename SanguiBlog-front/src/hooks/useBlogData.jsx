@@ -18,6 +18,19 @@ import logger from "../utils/logger.js";
 
 const BlogContext = createContext(null);
 const ENABLE_POSTS_DEBUG = import.meta.env.VITE_ENABLE_POSTS_DEBUG === "true";
+const SITE_META_CACHE_KEY = "sg_site_meta_cache";
+
+const readCachedMeta = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(SITE_META_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+};
 
 export const BlogProvider = ({ children }) => {
   const value = useProvideBlog();
@@ -27,7 +40,8 @@ export const BlogProvider = ({ children }) => {
 export const useBlog = () => useContext(BlogContext);
 
 function useProvideBlog() {
-  const [meta, setMeta] = useState(null);
+  const [meta, setMeta] = useState(() => readCachedMeta());
+  const [metaLoaded, setMetaLoaded] = useState(() => Boolean(readCachedMeta()));
   const [categories, setCategories] = useState([]);
   const [postsPage, setPostsPage] = useState({ records: [], total: 0, page: 1, size: 10 });
   const [postsLoading, setPostsLoading] = useState(false);
@@ -56,10 +70,19 @@ function useProvideBlog() {
       const res = await fetchSiteMeta();
       const data = res.data || res;
       setMeta(data);
+      if (typeof window !== "undefined") {
+        try {
+          window.sessionStorage.setItem(SITE_META_CACHE_KEY, JSON.stringify(data || null));
+        } catch {
+          // ignore storage failure
+        }
+      }
       applyAssetOrigin(data?.assetBaseUrl);
       // if (data?.author) setUser(data.author);
     } catch (e) {
       logger.warn("load meta failed", e);
+    } finally {
+      setMetaLoaded(true);
     }
   }, [applyAssetOrigin]);
 
@@ -230,6 +253,7 @@ function useProvideBlog() {
   return useMemo(
     () => ({
       meta,
+      metaLoaded,
       categories,
       tags,
       postsPage,
@@ -252,6 +276,6 @@ function useProvideBlog() {
       doLogin,
       logout,
     }),
-    [meta, categories, tags, postsPage, postsLoading, postsError, article, articleState, comments, recentComments, about, user, loadMeta, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
+    [meta, metaLoaded, categories, tags, postsPage, postsLoading, postsError, article, articleState, comments, recentComments, about, user, loadMeta, loadPosts, loadArticle, submitComment, removeComment, editComment, loadRecentComments, loadAbout, doLogin, logout]
   );
 }

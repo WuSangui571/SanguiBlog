@@ -7,7 +7,7 @@ import './homeRedesign.css';
 
 const HOME_BG_PATH = '/static/home/bg.jpg';
 
-export default function Hero({ onStartReading, isDarkMode, backgroundUrl }) {
+export default function Hero({ onStartReading, isDarkMode, backgroundResolved = false, backgroundUrl }) {
     const heroParallaxRef = useRef(null);
     const bgRef = useRef(null);
     const { headerHeight } = useLayoutOffsets();
@@ -16,7 +16,7 @@ export default function Hero({ onStartReading, isDarkMode, backgroundUrl }) {
     const contentY = useTransform(scrollY, [0, 220], [0, -168]);
     const resolvedBackgroundUrl = backgroundUrl
         ? (backgroundUrl.startsWith('/uploads/') ? buildAssetUrl(backgroundUrl, HOME_BG_PATH) : backgroundUrl)
-        : HOME_BG_PATH;
+        : (backgroundResolved ? HOME_BG_PATH : null);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
@@ -69,7 +69,7 @@ export default function Hero({ onStartReading, isDarkMode, backgroundUrl }) {
                 ref={bgRef}
                 aria-hidden="true"
                 className="home-hero__bg"
-                style={{ backgroundImage: `url('${resolvedBackgroundUrl}')` }}
+                style={{ backgroundImage: resolvedBackgroundUrl ? `url('${resolvedBackgroundUrl}')` : 'none' }}
             />
             <div aria-hidden="true" className="home-hero__shade" />
             <div aria-hidden="true" className="home-hero__grid" />
