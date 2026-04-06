@@ -10,7 +10,7 @@ SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backen
 
 ## 1. Directory Index
 
-- Release notes directory: `release/` (the latest existing external release document in this repository is `release/V2.2.4.md`)
+- Release notes directory: `release/` (the latest existing external release document in this repository is `release/V2.2.6.md`)
 - Nginx reverse proxy example: `fake-nginx-config/nginx.conf`
 - Environment switching notes: `ChangeEnv.md`
 - Database initialization script: `sanguiblog_db.sql`
@@ -21,7 +21,7 @@ SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backen
 ├─ SanguiBlog-server/      # Spring Boot backend service (REST API, auth, sitemap, etc.)
 ├─ SanguiBlog-front/       # React single-page app (public site + admin UI)
 ├─ uploads/                # Default upload directory (mount to persistent storage in production)
-├─ release/                # Release notes (for example V2.1.287 / V2.2.0, current latest document is V2.2.4)
+├─ release/                # Release notes (for example V2.1.287 / V2.2.0, current latest document is V2.2.6)
 ├─ sanguiblog_db.sql       # Database bootstrap script (schema + seed data)
 └─ README.md               # This document
 ```
