@@ -232,6 +232,116 @@ const AdminNoticeBar = ({ notice, onClose }) => {
     );
 };
 
+const AdminConfirmDialog = ({ isDarkMode, open, title, description, confirmText, cancelText, onCancel, onConfirm }) => {
+    if (!open) return null;
+
+    const surfaceClass = isDarkMode
+        ? 'bg-gray-950 text-gray-100 border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.55)]'
+        : 'bg-white text-gray-900 border border-black/10 shadow-[0_24px_80px_rgba(15,23,42,0.18)]';
+    const subtleTextClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    const panelClass = isDarkMode ? 'border-white/10 bg-white/[0.04]' : 'border-black/10 bg-slate-50';
+    const cancelButtonClass = isDarkMode
+        ? 'border-white/12 bg-white/[0.05] text-gray-100 hover:bg-white/[0.09]'
+        : 'border-black/10 bg-white text-slate-700 hover:bg-slate-100';
+    const confirmButtonClass = isDarkMode
+        ? 'border-white/12 bg-[linear-gradient(180deg,rgba(239,68,68,0.95),rgba(220,38,38,0.84))] text-white hover:bg-[#dc2626]'
+        : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(254,226,226,0.92))] text-[#b91c1c] hover:bg-white';
+
+    return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 px-4 backdrop-blur-[2px]">
+            <div className={`w-full max-w-md rounded-[28px] p-6 ${surfaceClass}`}>
+                <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-rose-500">确认操作</p>
+                        <h3 className="text-xl font-black">{title}</h3>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className={`h-9 w-9 rounded-full border text-sm transition-colors ${cancelButtonClass}`}
+                        aria-label="关闭确认弹层"
+                    >
+                        <X size={16} className="mx-auto" />
+                    </button>
+                </div>
+                <div className={`mt-4 rounded-[22px] border px-4 py-4 text-sm leading-6 ${panelClass}`}>
+                    <p>{description}</p>
+                    <p className={`mt-2 text-xs ${subtleTextClass}`}>这次操作将通过站内弹层确认，不会再触发浏览器原生阻塞弹窗。</p>
+                </div>
+                <div className="mt-5 flex items-center justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className={`rounded-full border px-4 py-2 text-sm font-bold transition-colors ${cancelButtonClass}`}
+                    >
+                        {cancelText}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onConfirm}
+                        className={`rounded-full border px-4 py-2 text-sm font-bold transition-colors ${confirmButtonClass}`}
+                    >
+                        {confirmText}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const useAdminConfirmDialog = (isDarkMode) => {
+    const resolverRef = useRef(null);
+    const [dialogState, setDialogState] = useState({
+        open: false,
+        title: '请确认操作',
+        description: '',
+        confirmText: '确认',
+        cancelText: '取消',
+    });
+
+    const resolveDialog = useCallback((result) => {
+        if (resolverRef.current) {
+            resolverRef.current(result);
+            resolverRef.current = null;
+        }
+    }, []);
+
+    const closeDialog = useCallback((result) => {
+        setDialogState((prev) => ({ ...prev, open: false }));
+        resolveDialog(result);
+    }, [resolveDialog]);
+
+    const confirm = useCallback((options = {}) => new Promise((resolve) => {
+        resolverRef.current = resolve;
+        setDialogState({
+            open: true,
+            title: options.title || '请确认操作',
+            description: options.description || options.message || '确认继续执行当前操作吗？',
+            confirmText: options.confirmText || '确认',
+            cancelText: options.cancelText || '取消',
+        });
+    }), []);
+
+    useEffect(() => () => {
+        resolveDialog(false);
+    }, [resolveDialog]);
+
+    const confirmDialog = (
+        <AdminConfirmDialog
+            isDarkMode={isDarkMode}
+            open={dialogState.open}
+            title={dialogState.title}
+            description={dialogState.description}
+            confirmText={dialogState.confirmText}
+            cancelText={dialogState.cancelText}
+            onCancel={() => closeDialog(false)}
+            onConfirm={() => closeDialog(true)}
+        />
+    );
+
+    return { confirm, confirmDialog };
+};
+
 export const AnalyticsSummaryContext = React.createContext({
     summary: null,
     loading: false,
@@ -977,6 +1087,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const startDateInputRef = useRef(null);
     const endDateInputRef = useRef(null);
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    const { confirm, confirmDialog } = useAdminConfirmDialog(isDarkMode);
 
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const border = isDarkMode ? 'border border-gray-700' : 'border border-gray-200';
@@ -1242,7 +1353,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     const handleClearLogs = async () => {
         if (!isSuperAdmin) return;
-        if (!window.confirm('确定要删除你在本站的所有访问日志吗？')) return;
+        const confirmed = await confirm({
+            title: '清理我的访问日志',
+            description: '确定要删除你在本站的所有访问日志吗？该操作仅影响当前登录账户，删除后不可恢复。',
+            confirmText: '确认清理'
+        });
+        if (!confirmed) return;
         setClearing(true);
         setActionMessage('');
         try {
@@ -1279,7 +1395,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     const handleDeleteOne = async (id) => {
         if (!isSuperAdmin || !id) return;
-        if (!window.confirm('确认删除这条访问日志吗？')) return;
+        const confirmed = await confirm({
+            title: '删除访问日志',
+            description: '确认删除这条访问日志吗？删除后无法从后台恢复。',
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         setDeleting(true);
         setActionMessage('');
         try {
@@ -1297,7 +1418,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
 
     const handleBatchDelete = async () => {
         if (!isSuperAdmin || !selectedIds.length) return;
-        if (!window.confirm(`确认删除选中的 ${selectedIds.length} 条访问日志吗？`)) return;
+        const confirmed = await confirm({
+            title: '批量删除访问日志',
+            description: `确认删除选中的 ${selectedIds.length} 条访问日志吗？该批量操作不可恢复。`,
+            confirmText: '确认批量删除'
+        });
+        if (!confirmed) return;
         setDeleting(true);
         setActionMessage('');
         try {
@@ -1331,7 +1457,9 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     };
 
     return (
-        <div className="space-y-6">
+        <>
+            {confirmDialog}
+            <div className="space-y-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h2 className="text-3xl font-black flex items-center gap-2"><TrendingUp /> 实时访问日志</h2>
@@ -1724,6 +1852,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 
@@ -1755,6 +1884,7 @@ const CreatePostView = ({ isDarkMode }) => {
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
     const [showInlineImageUpload, setShowInlineImageUpload] = useState(false);
+    const { confirm, confirmDialog } = useAdminConfirmDialog(isDarkMode);
     const markdownFileInputRef = useRef(null);
     const markdownEditorRef = useRef(null);
     const inlineImageInputRef = useRef(null);
@@ -2083,8 +2213,13 @@ const CreatePostView = ({ isDarkMode }) => {
         }
     };
 
-    const handleResetForm = () => {
-        if (!window.confirm("确定要清空当前所有输入吗？此操作不可撤销。")) return;
+    const handleResetForm = async () => {
+        const confirmed = await confirm({
+            title: '清空发布表单',
+            description: '确定要清空当前所有输入吗？草稿、封面、标签与资源目录信息都会被重置。',
+            confirmText: '确认清空'
+        });
+        if (!confirmed) return;
         const firstParentId = normalizedCategories[0]?.id ?? null;
         const firstChildId = normalizedCategories[0]?.children?.[0]?.id ?? null;
         setTitle("");
@@ -2119,7 +2254,9 @@ const CreatePostView = ({ isDarkMode }) => {
     };
 
     return (
-        <div className="space-y-8">
+        <>
+            {confirmDialog}
+            <div className="space-y-8">
             {publishBanner && (
                 <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
                     <div className="px-6 py-3 rounded-2xl border-2 border-black bg-gradient-to-r from-emerald-400 to-amber-300 shadow-[6px_6px_0px_0px_#000] text-black text-lg font-extrabold tracking-tight">
@@ -2454,7 +2591,8 @@ const CreatePostView = ({ isDarkMode }) => {
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 };
 
@@ -2472,6 +2610,7 @@ const TaxonomyView = ({ isDarkMode }) => {
     const [size, setSize] = useState(10);
     const [total, setTotal] = useState(0);
     const { notice, showNotice, hideNotice } = useTimedNotice(4200);
+    const { confirm, confirmDialog } = useAdminConfirmDialog(isDarkMode);
 
     const loadTags = useCallback(async () => {
         setLoading(true);
@@ -2551,7 +2690,12 @@ const TaxonomyView = ({ isDarkMode }) => {
     };
 
     const handleDelete = async (tagId) => {
-        if (!window.confirm("确定要删除该标签吗？")) return;
+        const confirmed = await confirm({
+            title: '删除标签',
+            description: '确定要删除该标签吗？请先确认没有文章仍在依赖它，删除后不可恢复。',
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         try {
             await adminDeleteTag(tagId);
             if (editingId === tagId) cancelEdit();
@@ -2574,6 +2718,7 @@ const TaxonomyView = ({ isDarkMode }) => {
 
     return (
         <>
+            {confirmDialog}
             <AdminNoticeBar notice={notice} onClose={hideNotice} />
             <div className="space-y-8">
             <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
@@ -2803,6 +2948,7 @@ const CategoriesView = ({ isDarkMode }) => {
     const [size, setSize] = useState(10);
     const [total, setTotal] = useState(0);
     const { notice, showNotice, hideNotice } = useTimedNotice(4200);
+    const { confirm, confirmDialog } = useAdminConfirmDialog(isDarkMode);
 
     const loadParentOptions = useCallback(async () => {
         try {
@@ -2905,7 +3051,12 @@ const CategoriesView = ({ isDarkMode }) => {
     };
 
     const handleDelete = async (categoryId) => {
-        if (!window.confirm("确定要删除该分类吗？删除前请确保没有子分类。")) return;
+        const confirmed = await confirm({
+            title: '删除分类',
+            description: '确定要删除该分类吗？删除前请确保它没有子分类，也没有文章仍在引用。',
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         try {
             await adminDeleteCategory(categoryId);
             if (editingId === categoryId) cancelEdit();
@@ -2927,6 +3078,7 @@ const CategoriesView = ({ isDarkMode }) => {
 
     return (
         <>
+            {confirmDialog}
             <AdminNoticeBar notice={notice} onClose={hideNotice} />
             <div className="space-y-8">
             <div className={`${cardBg} p-6 rounded-lg shadow-lg`}>
@@ -4639,7 +4791,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                     )}
                 </section>
             </div>
-        </div>
+            </div>
     );
 };
 
@@ -4676,6 +4828,7 @@ const CommentsAdminView = ({ isDarkMode }) => {
     const [formError, setFormError] = useState('');
     const [formSuccess, setFormSuccess] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const { confirm, confirmDialog } = useAdminConfirmDialog(isDarkMode);
     const [replyTarget, setReplyTarget] = useState(null);
 
     const [editingId, setEditingId] = useState(null);
@@ -4849,7 +5002,12 @@ const CommentsAdminView = ({ isDarkMode }) => {
 
     const handleDeleteComment = async (comment) => {
         if (!canDelete) return;
-        if (!window.confirm(`确认删除评论 #${comment.id} 吗？`)) return;
+        const confirmed = await confirm({
+            title: '删除评论',
+            description: `确认删除评论 #${comment.id} 吗？该评论删除后将无法恢复。`,
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         setDeletingId(comment.id);
         try {
             await adminDeleteComment(comment.id);
@@ -4875,7 +5033,9 @@ const CommentsAdminView = ({ isDarkMode }) => {
     }
 
     return (
-        <div className="space-y-8">
+        <>
+            {confirmDialog}
+            <div className="space-y-8">
             <div className={`${cardBg} p-6 rounded-2xl shadow-lg space-y-4`}>
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
@@ -5226,7 +5386,8 @@ const CommentsAdminView = ({ isDarkMode }) => {
                     </form>
                 </div>
             )}
-        </div>
+            </div>
+        </>
     );
 };
 
@@ -5263,6 +5424,7 @@ const UserManagementView = ({ isDarkMode }) => {
     const avatarInputRef = useRef(null);
     const usersFetchTokenRef = useRef(0);
     const [avatarUploading, setAvatarUploading] = useState(false);
+    const { confirm, confirmDialog } = useAdminConfirmDialog(isDarkMode);
     const scrollFormIntoView = useCallback(() => {
         requestAnimationFrame(() => {
             formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -5419,7 +5581,12 @@ const UserManagementView = ({ isDarkMode }) => {
     };
 
     const handleDelete = async (user) => {
-        if (!window.confirm(`确认删除 ${user.username} 吗？`)) return;
+        const confirmed = await confirm({
+            title: '删除用户',
+            description: `确认删除 ${user.username} 吗？删除账号后，该用户将无法再登录后台。`,
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         try {
             await adminDeleteUser(user.id);
             if (selectedUserId === user.id) {
@@ -5484,7 +5651,9 @@ const UserManagementView = ({ isDarkMode }) => {
     const avatarPreviewSrc = resolveMediaUrl(form.avatarUrl);
 
     return (
-        <div className="space-y-8">
+        <>
+            {confirmDialog}
+            <div className="space-y-8">
             <div className={`${cardBg} rounded-xl p-6 shadow-lg`}>
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                     <div>
@@ -5771,7 +5940,8 @@ const UserManagementView = ({ isDarkMode }) => {
                     </div>
                 </form>
             </div>
-        </div>
+            </div>
+        </>
     );
 };
 
@@ -6043,6 +6213,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const { hasPermission } = usePermissionContext();
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
     const { notice, showNotice, hideNotice } = useTimedNotice(4200);
+    const { confirm, confirmDialog } = useAdminConfirmDialog(isDarkMode);
 
     useEffect(() => {
         setBroadcastDraft({
@@ -6150,8 +6321,12 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     const handleGameDelete = useCallback(async (id) => {
         if (!id) return;
-        const ok = typeof window !== 'undefined' ? window.confirm('确认删除该 HTML 页面吗？此操作不可恢复。') : true;
-        if (!ok) return;
+        const confirmed = await confirm({
+            title: '删除 HTML 页面',
+            description: '确认删除该 HTML 页面吗？删除后静态资源入口会立即失效，且操作不可恢复。',
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         setGameDeletingId(id);
         setGameError('');
         try {
@@ -6164,7 +6339,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         } finally {
             setGameDeletingId(null);
         }
-    }, [loadGames, onGameChanged, gameEditingId, resetGameForm]);
+    }, [confirm, loadGames, onGameChanged, gameEditingId, resetGameForm]);
 
     const handleGameOpen = useCallback((game) => {
         if (!game) return;
@@ -6230,10 +6405,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     const handleDeleteHomeBackground = useCallback(async (item) => {
         if (!item?.id) return;
-        const ok = typeof window !== 'undefined'
-            ? window.confirm(item.current ? '确认删除当前首页背景图吗？删除后会自动回退到上一张或默认背景。' : '确认删除这张历史首页背景图吗？此操作不可恢复。')
-            : true;
-        if (!ok) return;
+        const confirmed = await confirm({
+            title: item.current ? '删除当前首页背景图' : '删除历史首页背景图',
+            description: item.current
+                ? '确认删除当前首页背景图吗？删除后会自动回退到上一张可用背景或默认背景。'
+                : '确认删除这张历史首页背景图吗？删除后将无法恢复。',
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         setHomeBackgroundDeletingId(item.id);
         setHomeBackgroundError('');
         try {
@@ -6246,7 +6425,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         } finally {
             setHomeBackgroundDeletingId(null);
         }
-    }, [loadHomeBackgrounds, onHomeBackgroundChanged, showNotice]);
+    }, [confirm, loadHomeBackgrounds, onHomeBackgroundChanged, showNotice]);
 
     const loadKnowledgeDocuments = useCallback(async (keyword = '') => {
         setKnowledgeLoading(true);
@@ -6333,8 +6512,12 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     const handleKnowledgeDelete = useCallback(async (id) => {
         if (!id) return;
-        const ok = typeof window !== 'undefined' ? window.confirm('确认删除该知识库吗？删除后会同时移除对应向量索引。') : true;
-        if (!ok) return;
+        const confirmed = await confirm({
+            title: '删除知识库',
+            description: '确认删除该知识库吗？删除后会同时移除对应的 AI 检索向量索引。',
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         setKnowledgeDeletingId(id);
         setKnowledgeError('');
         try {
@@ -6347,7 +6530,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         } finally {
             setKnowledgeDeletingId(null);
         }
-    }, [knowledgeEditingId, loadKnowledgeDocuments, resetKnowledgeForm, showNotice]);
+    }, [confirm, knowledgeEditingId, loadKnowledgeDocuments, resetKnowledgeForm, showNotice]);
 
     const handleAiAssistantToggleSave = useCallback(async (enabled) => {
         setAiAssistantSaving(true);
@@ -6554,10 +6737,12 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     const handleDeleteEmptyFolders = useCallback(async () => {
         if (!emptySelected.size) return;
-        const ok = typeof window !== 'undefined'
-            ? window.confirm(`确认删除选中的 ${emptySelected.size} 个空目录吗？此操作不可恢复。`)
-            : true;
-        if (!ok) return;
+        const confirmed = await confirm({
+            title: '删除空目录',
+            description: `确认删除选中的 ${emptySelected.size} 个空目录吗？这些目录会从存储中永久清除，操作不可恢复。`,
+            confirmText: '确认删除'
+        });
+        if (!confirmed) return;
         setEmptyDeleting(true);
         setEmptyError('');
         try {
@@ -6568,7 +6753,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         } finally {
             setEmptyDeleting(false);
         }
-    }, [emptySelected, loadEmptyFolders]);
+    }, [confirm, emptySelected, loadEmptyFolders]);
 
     useEffect(() => {
         scanUnusedAssets();
@@ -6663,6 +6848,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     return (
         <>
+            {confirmDialog}
             <AdminNoticeBar notice={notice} onClose={hideNotice} />
             <div className={`space-y-6 home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`}>
             {/* 顶部子页切换 */}

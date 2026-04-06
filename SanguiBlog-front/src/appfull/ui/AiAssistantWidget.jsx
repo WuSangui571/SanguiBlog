@@ -118,6 +118,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const [guardCaptchaInput, setGuardCaptchaInput] = useState('');
     const [guardCaptchaLoading, setGuardCaptchaLoading] = useState(false);
     const [guardError, setGuardError] = useState('');
+    const [assistantNotice, setAssistantNotice] = useState({ visible: false, message: '', tone: 'info' });
     const viewportRef = useRef(null);
     const textareaRef = useRef(null);
     const previousUserRef = useRef(user);
@@ -126,9 +127,20 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const panelRef = useRef(null);
     const dragStateRef = useRef(null);
     const resizeStateRef = useRef(null);
+    const assistantNoticeTimerRef = useRef(null);
     const isGuestMode = isAiAssistantGuest(user);
     const raiseAssistantOverlay = useCallback(() => {
         setOverlayBaseZ(claimOverlayStackBase());
+    }, []);
+    const showAssistantNotice = useCallback((message, tone = 'info') => {
+        if (!message) return;
+        setAssistantNotice({ visible: true, message, tone });
+        if (assistantNoticeTimerRef.current) {
+            window.clearTimeout(assistantNoticeTimerRef.current);
+        }
+        assistantNoticeTimerRef.current = window.setTimeout(() => {
+            setAssistantNotice((prev) => ({ ...prev, visible: false }));
+        }, 3200);
     }, []);
 
     useEffect(() => {
@@ -136,6 +148,12 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             raiseAssistantOverlay();
         }
     }, [isOpen, raiseAssistantOverlay]);
+
+    useEffect(() => () => {
+        if (assistantNoticeTimerRef.current) {
+            window.clearTimeout(assistantNoticeTimerRef.current);
+        }
+    }, []);
 
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
@@ -374,7 +392,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
     const handleToggleFloatingMode = () => {
         if (isMobileViewport) {
-            window.alert('手机端暂不支持浮动窗口，请在桌面端使用该功能。');
+            showAssistantNotice('手机端暂不支持浮动窗口，请在桌面端使用该功能。', 'warning');
             return;
         }
 
@@ -443,7 +461,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             }
             setPendingDeleteSession(null);
         } catch (error) {
-            window.alert(error?.message?.trim() || '删除会话失败，请稍后再试。');
+            showAssistantNotice(error?.message?.trim() || '删除会话失败，请稍后再试。', 'error');
         }
     };
 
@@ -533,7 +551,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         try {
             await verifyGuardCaptcha(captcha);
             closeGuardPrompt();
-            window.alert('验证通过，现在可以继续提问了。');
+            showAssistantNotice('验证通过，现在可以继续提问了。', 'success');
         } catch (error) {
             setGuardError(error?.message?.trim() || '验证码验证失败，请重试。');
             try {
@@ -761,6 +779,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const assistantLauncherZ = isOpen ? overlayBaseZ + 1 : 89;
     const assistantPanelZ = overlayBaseZ + 2;
     const assistantModalZ = overlayBaseZ + 10;
+    const assistantNoticeZ = overlayBaseZ + 11;
 
     const portalTarget = typeof document !== 'undefined' ? document.body : null;
     const assistantLayer = (
@@ -1464,6 +1483,47 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                             )}
                         </AnimatePresence>
                     </>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {assistantNotice.visible && assistantNotice.message && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className={`fixed right-4 md:right-6 w-[min(360px,calc(100vw-32px))] rounded-[24px] border px-4 py-3 backdrop-blur-2xl ${
+                            assistantNotice.tone === 'error'
+                                ? (isDarkMode
+                                    ? 'border-rose-400/30 bg-[rgba(127,29,29,0.88)] text-white'
+                                    : 'border-rose-200 bg-[rgba(255,241,242,0.96)] text-rose-700')
+                                : assistantNotice.tone === 'success'
+                                    ? (isDarkMode
+                                        ? 'border-emerald-400/30 bg-[rgba(6,78,59,0.88)] text-white'
+                                        : 'border-emerald-200 bg-[rgba(236,253,245,0.96)] text-emerald-700')
+                                    : (isDarkMode
+                                        ? 'border-amber-400/30 bg-[rgba(120,53,15,0.88)] text-white'
+                                        : 'border-amber-200 bg-[rgba(255,251,235,0.96)] text-amber-700')
+                        }`}
+                        style={{ zIndex: assistantNoticeZ, bottom: isOpen ? 24 : 96 }}
+                    >
+                        <div className="flex items-start gap-3">
+                            <div className="pt-0.5">
+                                {assistantNotice.tone === 'error' ? <X size={16} /> : <Bot size={16} />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold leading-6">{assistantNotice.message}</p>
+                                <p className="text-[11px] opacity-80">这是站内提示，不会打断你当前操作。</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setAssistantNotice((prev) => ({ ...prev, visible: false }))}
+                                className="rounded-full border border-current/15 px-2 py-1 text-[11px] font-bold opacity-80 transition hover:opacity-100"
+                            >
+                                关闭
+                            </button>
+                        </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
