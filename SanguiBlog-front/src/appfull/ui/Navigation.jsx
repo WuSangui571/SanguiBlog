@@ -547,13 +547,13 @@ const Navigation = ({
                         <div className={`w-11 h-11 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
                             {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
                         </div>
-                        <div className="flex-1 space-y-1">
+                        <div className="flex-1 min-w-0 space-y-1">
                             <div className="font-black text-sm">彩蛋背景</div>
                             <div className={`text-xs ${overlayMutedTextClass}`}>显示或隐藏太阳与月亮动画</div>
                         </div>
-                                                <button
+                        <button
                             onClick={() => onToggleBackground && onToggleBackground()}
-                            className={`relative flex h-10 w-[110px] items-center rounded-full border px-3 transition-all duration-300 ${
+                            className={`relative flex h-9 w-24 items-center rounded-full border px-2.5 transition-all duration-300 ${
                                 backgroundEnabled
                                     ? (isDarkMode
                                         ? 'border-amber-300/35 bg-amber-300/22 text-amber-50 shadow-[0_10px_28px_rgba(245,158,11,0.22)]'
@@ -566,11 +566,11 @@ const Navigation = ({
                             aria-label="切换彩蛋背景"
                         >
                             <span
-                                className={`absolute top-1/2 left-1 h-8 w-8 -translate-y-1/2 rounded-full transition-transform duration-300 ${
+                                className={`absolute top-1/2 left-1 h-7 w-7 -translate-y-1/2 rounded-full transition-transform duration-300 ${
                                     isDarkMode ? 'border border-white/14 bg-white/90' : 'border border-black/8 bg-white'
-                                } ${backgroundEnabled ? 'translate-x-0' : 'translate-x-[68px]'}`}
+                                } ${backgroundEnabled ? 'translate-x-0' : 'translate-x-[56px]'}`}
                             />
-                            <span className={`relative z-[1] w-full text-center text-[11px] font-black tracking-[0.18em] transition-colors ${
+                            <span className={`relative z-[1] w-full text-center text-[10px] font-black tracking-[0.14em] transition-colors ${
                                 backgroundEnabled
                                     ? (isDarkMode ? 'text-amber-50' : 'text-amber-950')
                                     : (isDarkMode ? 'text-gray-300' : 'text-slate-500')
@@ -584,7 +584,7 @@ const Navigation = ({
                         <div className={`w-11 h-11 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
                             <List size={18} />
                         </div>
-                        <div className="flex-1 space-y-1">
+                        <div className="flex-1 min-w-0 space-y-1">
                             <div className="font-black text-sm">首页每页文章数</div>
                             <div className={`text-xs ${overlayMutedTextClass}`}>默认 5 篇，可选 10 / 20</div>
                         </div>
@@ -592,7 +592,7 @@ const Navigation = ({
                             <select
                                 value={pageSize}
                                 onChange={(e) => handlePageSizeSelect(Number(e.target.value))}
-                                className={`w-28 p-2.5 rounded-2xl font-black text-sm outline-none transition ${overlayButtonClass}`}
+                                className={`h-9 w-24 rounded-full px-2.5 font-black text-xs outline-none transition ${overlayButtonClass}`}
                             >
                                 {pageSizeOptions.map((opt) => (
                                     <option key={opt} value={opt}>{opt} 篇/页</option>
