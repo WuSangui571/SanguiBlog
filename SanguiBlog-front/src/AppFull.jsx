@@ -1,5 +1,6 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { useBlog } from "./hooks/useBlogData";
 import {
     recordPageView,
@@ -17,7 +18,6 @@ import {
 } from "./api";
 import { LayoutOffsetContext } from "./contexts/LayoutOffsetContext.jsx";
 import { PermissionContext } from "./contexts/PermissionContext.jsx";
-import { AdminPanel } from "./appfull/AdminPanel.jsx";
 import BackgroundEasterEggs from "./appfull/ui/BackgroundEasterEggs.jsx";
 import Navigation, { NAVIGATION_HEIGHT } from "./appfull/ui/Navigation.jsx";
 import EmergencyBar from "./appfull/ui/EmergencyBar.jsx";
@@ -62,6 +62,9 @@ import {
 } from "./appfull/shared.js";
 import { AnimatePresence, motion } from 'framer-motion';
 const BROADCAST_SESSION_KEY = 'sangui-broadcast-dismissed';
+const LazyAdminPanel = lazy(() =>
+    import("./appfull/AdminPanel.jsx").then((module) => ({ default: module.AdminPanel }))
+);
 export default function SanGuiBlog({ initialView = 'home', initialArticleId = null, initialGameId = null, onViewChange }) {
     const {
         meta,
@@ -1294,8 +1297,50 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         </div>
                     );
                 }
-                return <AdminPanel setView={setView} notification={notification} setNotification={setNotification}
-                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} loadGameList={loadGameList} onAiAssistantChanged={loadMeta} onHomeBackgroundChanged={loadMeta} />;
+                return (
+                    <Suspense
+                        fallback={
+                            <div className={`min-h-screen px-4 pt-28 pb-10 ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                                <div className="mx-auto max-w-5xl">
+                                    <div className={`rounded-[28px] border p-6 backdrop-blur-2xl ${
+                                        isDarkMode
+                                            ? 'border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(0,0,0,0.42)]'
+                                            : 'border-black/10 bg-white/75 shadow-[0_24px_80px_rgba(15,23,42,0.12)]'
+                                    }`}>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#FF0080]">Admin Loading</p>
+                                        <h2 className="mt-2 text-3xl font-black">管理后台正在按需加载</h2>
+                                        <p className={`mt-3 text-sm leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                            后台模块已从首页主包拆出，只有进入后台时才会下载对应代码。
+                                        </p>
+                                        <div className="mt-6 grid gap-3 md:grid-cols-3">
+                                            {Array.from({ length: 3 }).map((_, index) => (
+                                                <div
+                                                    key={index}
+                                                    className={`h-28 animate-pulse rounded-[22px] border ${
+                                                        isDarkMode ? 'border-white/10 bg-white/[0.05]' : 'border-black/8 bg-black/[0.04]'
+                                                    }`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    >
+                        <LazyAdminPanel
+                            setView={setView}
+                            notification={notification}
+                            setNotification={setNotification}
+                            user={user}
+                            isDarkMode={isDarkMode}
+                            handleLogout={handleLogout}
+                            onAboutSaved={loadAbout}
+                            loadGameList={loadGameList}
+                            onAiAssistantChanged={loadMeta}
+                            onHomeBackgroundChanged={loadMeta}
+                        />
+                    </Suspense>
+                );
             case 'about':
                 return (
                     <AboutView

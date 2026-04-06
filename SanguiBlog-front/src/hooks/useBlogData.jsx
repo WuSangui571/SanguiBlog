@@ -11,6 +11,7 @@ import {
   deleteComment,
   updateComment,
   login as apiLogin,
+  fetchCurrentUser,
   fetchAbout,
 } from "../api";
 import logger from "../utils/logger.js";
@@ -66,7 +67,7 @@ function useProvideBlog() {
     const token = localStorage.getItem("sg_token");
     if (!token) return;
     try {
-      const res = await import("../api").then(m => m.fetchCurrentUser());
+      const res = await fetchCurrentUser();
       const data = res.data || res;
       if (data) setUser(data);
     } catch (e) {
