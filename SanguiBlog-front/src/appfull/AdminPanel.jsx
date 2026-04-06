@@ -7580,7 +7580,6 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     const [analyticsError, setAnalyticsError] = useState('');
     const [analyticsRange, setAnalyticsRange] = useState(7);
     const { loading: permissionLoading, error: permissionError, hasPermission } = usePermissionContext();
-    const { headerHeight } = useLayoutOffsets();
     const [adminNavOpen, setAdminNavOpen] = useState(false);
 
     const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -7845,8 +7844,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
             <div className="flex-1 md:ml-64 ml-0 flex flex-col min-w-0">
                 {/* Top Bar */}
                 <header
-                    className={`sticky z-30 h-16 flex items-center justify-between px-4 md:px-8 ${topbarBg}`}
-                    style={{ top: headerHeight }}>
+                    className={`relative z-20 h-16 flex items-center justify-between px-4 md:px-8 ${topbarBg} mb-4`}>
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
