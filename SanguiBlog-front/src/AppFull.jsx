@@ -1300,7 +1300,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     );
                 }
                 return <AdminPanel setView={setView} notification={notification} setNotification={setNotification}
-                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} loadGameList={loadGameList} onAiAssistantChanged={loadMeta} />;
+                    user={user} isDarkMode={isDarkMode} handleLogout={handleLogout} onAboutSaved={loadAbout} loadGameList={loadGameList} onAiAssistantChanged={loadMeta} onHomeBackgroundChanged={loadMeta} />;
             case 'about':
                 return (
                     <AboutView

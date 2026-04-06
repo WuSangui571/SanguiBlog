@@ -36,6 +36,7 @@ export default function HomeView({
     const siteVersion = meta?.version || 'V2.2.6';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
+    const homeBackgroundUrl = meta?.homeBackgroundUrl || null;
 
     return (
         <>
@@ -45,6 +46,7 @@ export default function HomeView({
                 onStartReading={onScrollToPosts}
                 version={siteVersion}
                 tagline={heroTagline}
+                backgroundUrl={homeBackgroundUrl}
             />
             <ArticleList
                 setView={setView}
@@ -79,5 +81,6 @@ export default function HomeView({
         </>
     );
 }
+
 
 

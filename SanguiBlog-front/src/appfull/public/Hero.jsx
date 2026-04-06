@@ -2,17 +2,21 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
+import { buildAssetUrl } from "../../utils/asset.js";
 import './homeRedesign.css';
 
 const HOME_BG_PATH = '/static/home/bg.jpg';
 
-export default function Hero({ onStartReading, isDarkMode }) {
+export default function Hero({ onStartReading, isDarkMode, backgroundUrl }) {
     const heroParallaxRef = useRef(null);
     const bgRef = useRef(null);
     const { headerHeight } = useLayoutOffsets();
     const { scrollY } = useScroll();
     const contentOpacity = useTransform(scrollY, [0, 80, 220], [1, 0.72, 0]);
     const contentY = useTransform(scrollY, [0, 220], [0, -168]);
+    const resolvedBackgroundUrl = backgroundUrl
+        ? (backgroundUrl.startsWith('/uploads/') ? buildAssetUrl(backgroundUrl, HOME_BG_PATH) : backgroundUrl)
+        : HOME_BG_PATH;
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
@@ -65,7 +69,7 @@ export default function Hero({ onStartReading, isDarkMode }) {
                 ref={bgRef}
                 aria-hidden="true"
                 className="home-hero__bg"
-                style={{ backgroundImage: `url('${HOME_BG_PATH}')` }}
+                style={{ backgroundImage: `url('${resolvedBackgroundUrl}')` }}
             />
             <div aria-hidden="true" className="home-hero__shade" />
             <div aria-hidden="true" className="home-hero__grid" />

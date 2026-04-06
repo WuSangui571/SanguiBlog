@@ -139,7 +139,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   **入口文件**：实际构建入口为 `SanguiBlog-front/src/main.jsx`（`createRoot`）→ `SanguiBlog-front/src/App.jsx`（路由壳）→ `SanguiBlog-front/src/AppFull.jsx`（主流程编排）。仓库根目录历史上曾存在一个同名 `App.jsx` 原型文件，现已移除以避免误改。
 
 *   **AppFull 拆分**：后台管理相关组件迁移到 `src/appfull/AdminPanel.jsx`，共享常量/工具抽离到 `src/appfull/shared.js`；前台视图拆分到 `src/appfull/public/`，通用 UI 组件拆分到 `src/appfull/ui/`，`AppFull.jsx` 仅保留主流程编排；其中首页组合视图已抽离为 `src/appfull/public/HomeView.jsx`，页脚抽离为 `src/appfull/ui/SiteFooter.jsx`，避免单文件体量过大。
-*   **首页新版视觉（V2.2.6）**：首页首屏继续复用 `src/appfull/public/Hero.jsx` 作为唯一入口，但视觉已切换为 `newIndex` 同款的极简沉浸式设计；共享样式位于 `src/appfull/public/homeRedesign.css`，背景图静态资源位于 `public/static/home/bg.jpg`。导航仍统一走 `src/appfull/ui/Navigation.jsx`，只做视觉层重设计，不新增第二套首页或导航实现。
+*   **首页新版视觉（V2.2.6）**：首页首屏继续复用 `src/appfull/public/Hero.jsx` 作为唯一入口，但视觉已切换为 `newIndex` 同款的极简沉浸式设计；共享样式位于 `src/appfull/public/homeRedesign.css`，默认回退背景图位于 `public/static/home/bg.jpg`。导航仍统一走 `src/appfull/ui/Navigation.jsx`，只做视觉层重设计，不新增第二套首页或导航实现。自 2026-04-06 起，首页 Hero 背景图支持在 `/admin/settings` 的“首页背景”分组中后台管理；前台应优先读取 `/api/site/meta` 返回的 `homeBackgroundUrl`，仅在后台尚未配置时才回退到静态 `bg.jpg`。
 
 
 

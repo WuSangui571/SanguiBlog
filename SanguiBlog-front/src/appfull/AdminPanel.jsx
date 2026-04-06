@@ -40,6 +40,10 @@ import {
     adminCreateGame,
     adminUpdateGame,
     adminDeleteGame,
+    adminFetchHomeBackgrounds,
+    adminUploadHomeBackground,
+    adminSetCurrentHomeBackground,
+    adminDeleteHomeBackground,
     adminFetchKnowledgeDocuments,
     adminFetchKnowledgeDocumentDetail,
     adminCreateKnowledgeDocument,
@@ -5977,10 +5981,11 @@ const PermissionsView = ({ isDarkMode }) => {
 
 
 // 4.5 Sub-Component: System Settings (Super Admin) — 仅游戏管理精简版
-const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged, onAiAssistantChanged }) => {
+const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged, onAiAssistantChanged, onHomeBackgroundChanged }) => {
     const MAX_BROADCAST_LEN = 180;
     const SETTINGS_TABS = [
         { key: 'broadcast', label: '广播管理' },
+        { key: 'home-background', label: '首页背景' },
         { key: 'knowledge', label: 'AI助理' },
         { key: 'registration', label: '注册邀请码' },
         { key: 'games', label: '游戏管理' },
@@ -6008,6 +6013,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [gameEditingId, setGameEditingId] = useState(null);
     const [gameSaving, setGameSaving] = useState(false);
     const [gameDeletingId, setGameDeletingId] = useState(null);
+
+    const [homeBackgrounds, setHomeBackgrounds] = useState([]);
+    const [homeBackgroundLoading, setHomeBackgroundLoading] = useState(false);
+    const [homeBackgroundUploading, setHomeBackgroundUploading] = useState(false);
+    const [homeBackgroundSelectingId, setHomeBackgroundSelectingId] = useState(null);
+    const [homeBackgroundDeletingId, setHomeBackgroundDeletingId] = useState(null);
+    const [homeBackgroundError, setHomeBackgroundError] = useState('');
+    const [homeBackgroundFile, setHomeBackgroundFile] = useState(null);
 
     const [knowledgeList, setKnowledgeList] = useState([]);
     const [knowledgeLoading, setKnowledgeLoading] = useState(false);
@@ -6159,6 +6172,80 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             window.open(targetUrl, '_blank', 'noopener,noreferrer');
         }
     }, []);
+
+    const loadHomeBackgrounds = useCallback(async () => {
+        setHomeBackgroundLoading(true);
+        setHomeBackgroundError('');
+        try {
+            const res = await adminFetchHomeBackgrounds();
+            const data = res?.data || res;
+            setHomeBackgrounds(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setHomeBackgroundError(err?.message || '加载首页背景列表失败');
+        } finally {
+            setHomeBackgroundLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadHomeBackgrounds();
+    }, [loadHomeBackgrounds]);
+
+    const handleUploadHomeBackground = useCallback(async () => {
+        if (!homeBackgroundFile) {
+            setHomeBackgroundError('请先选择一张首页背景图');
+            return;
+        }
+        setHomeBackgroundUploading(true);
+        setHomeBackgroundError('');
+        try {
+            await adminUploadHomeBackground(homeBackgroundFile);
+            setHomeBackgroundFile(null);
+            await loadHomeBackgrounds();
+            onHomeBackgroundChanged && await onHomeBackgroundChanged();
+            showNotice('首页背景图已上传，并已切换为当前背景', 'success');
+        } catch (err) {
+            setHomeBackgroundError(err?.message || '上传首页背景图失败');
+        } finally {
+            setHomeBackgroundUploading(false);
+        }
+    }, [homeBackgroundFile, loadHomeBackgrounds, onHomeBackgroundChanged, showNotice]);
+
+    const handleSelectCurrentHomeBackground = useCallback(async (id) => {
+        if (!id) return;
+        setHomeBackgroundSelectingId(id);
+        setHomeBackgroundError('');
+        try {
+            await adminSetCurrentHomeBackground(id);
+            await loadHomeBackgrounds();
+            onHomeBackgroundChanged && await onHomeBackgroundChanged();
+            showNotice('已切换当前首页背景图', 'success');
+        } catch (err) {
+            setHomeBackgroundError(err?.message || '切换首页背景图失败');
+        } finally {
+            setHomeBackgroundSelectingId(null);
+        }
+    }, [loadHomeBackgrounds, onHomeBackgroundChanged, showNotice]);
+
+    const handleDeleteHomeBackground = useCallback(async (item) => {
+        if (!item?.id) return;
+        const ok = typeof window !== 'undefined'
+            ? window.confirm(item.current ? '确认删除当前首页背景图吗？删除后会自动回退到上一张或默认背景。' : '确认删除这张历史首页背景图吗？此操作不可恢复。')
+            : true;
+        if (!ok) return;
+        setHomeBackgroundDeletingId(item.id);
+        setHomeBackgroundError('');
+        try {
+            await adminDeleteHomeBackground(item.id);
+            await loadHomeBackgrounds();
+            onHomeBackgroundChanged && await onHomeBackgroundChanged();
+            showNotice(item.current ? '当前首页背景图已删除，已自动回退背景' : '历史首页背景图已删除', 'success');
+        } catch (err) {
+            setHomeBackgroundError(err?.message || '删除首页背景图失败');
+        } finally {
+            setHomeBackgroundDeletingId(null);
+        }
+    }, [loadHomeBackgrounds, onHomeBackgroundChanged, showNotice]);
 
     const loadKnowledgeDocuments = useCallback(async (keyword = '') => {
         setKnowledgeLoading(true);
@@ -6739,6 +6826,157 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                     </div>
                                 );
                             })()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'home-background' ? '' : 'hidden'}`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">首页背景</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                            在这里统一管理首页 Hero 背景图。上传新图后会自动设为当前背景，也可以从历史背景中随时切换。
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={loadHomeBackgrounds}
+                            disabled={homeBackgroundLoading}
+                            className={primaryButtonClass}
+                        >
+                            {homeBackgroundLoading ? '刷新中...' : '刷新列表'}
+                        </button>
+                    </div>
+                </div>
+
+                {homeBackgroundError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {homeBackgroundError}
+                    </div>
+                )}
+
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
+                    <div className="space-y-4">
+                        <div className="space-y-1">
+                            <h4 className="text-base font-bold">上传新背景图</h4>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                支持 `.png`、`.jpg`、`.jpeg`、`.webp`、`.gif`、`.avif`，单张最大 20MB。上传成功后会立即生效。
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold">选择背景图文件</label>
+                            <input
+                                type="file"
+                                accept=".png,.jpg,.jpeg,.webp,.gif,.avif,image/png,image/jpeg,image/webp,image/gif,image/avif"
+                                onChange={(e) => setHomeBackgroundFile(e.target.files?.[0] || null)}
+                                className={fileInputClass}
+                            />
+                        </div>
+
+                        {homeBackgroundFile && (
+                            <div className={softPanelClass}>
+                                <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">待上传文件</div>
+                                <div className="mt-2 text-sm font-semibold break-all">{homeBackgroundFile.name}</div>
+                                <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    文件大小：{formatBytes(homeBackgroundFile.size)}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={handleUploadHomeBackground}
+                                disabled={homeBackgroundUploading}
+                                className={accentButtonClass}
+                            >
+                                {homeBackgroundUploading ? '上传中...' : '上传并设为当前背景'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setHomeBackgroundFile(null)}
+                                className={primaryButtonClass}
+                            >
+                                清空选择
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <ImagePlus size={16} />
+                            <span className="text-sm font-semibold">历史背景图</span>
+                            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>共 {homeBackgrounds.length} 张</span>
+                        </div>
+
+                        <div className={dashedPanelClass}>
+                            {homeBackgroundLoading ? (
+                                <div className="p-6 text-sm text-gray-500">加载中，请稍候...</div>
+                            ) : homeBackgrounds.length === 0 ? (
+                                <div className="p-6 text-sm text-gray-500">
+                                    暂无已上传首页背景图，当前仍使用默认 `/static/home/bg.jpg`。
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[760px] overflow-auto">
+                                    {homeBackgrounds.map((item) => {
+                                        const target = item.url ? buildAssetUrl(item.url) : '';
+                                        return (
+                                            <div key={item.id} className="p-4 space-y-3">
+                                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                                    <div className="flex items-start gap-3 min-w-0">
+                                                        {target ? (
+                                                            <img
+                                                                src={target}
+                                                                alt={item.originalFilename}
+                                                                className="w-28 h-20 rounded-2xl object-cover border border-white/20 bg-gray-100 cursor-zoom-in"
+                                                                loading="lazy"
+                                                                onClick={() => setPreviewSrc(target)}
+                                                            />
+                                                        ) : (
+                                                            <div className="w-28 h-20 rounded-2xl border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400">
+                                                                无预览
+                                                            </div>
+                                                        )}
+                                                        <div className="min-w-0 space-y-1">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className="text-sm font-bold break-all">{item.originalFilename}</span>
+                                                                {item.current && <span className={chipClass}>当前背景</span>}
+                                                            </div>
+                                                            <p className={`text-xs break-all ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                路径：{item.url || '--'}
+                                                            </p>
+                                                            <p className={`text-[11px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                大小：{formatBytes(item.fileSize)} · 更新时间：{formatDateTime(item.updatedAt)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleSelectCurrentHomeBackground(item.id)}
+                                                            disabled={item.current || homeBackgroundSelectingId === item.id}
+                                                            className={`${item.current ? successButtonClass : primaryButtonClass} px-3 py-1 text-xs`}
+                                                        >
+                                                            {item.current ? '正在使用' : (homeBackgroundSelectingId === item.id ? '切换中...' : '设为当前')}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteHomeBackground(item)}
+                                                            disabled={homeBackgroundDeletingId === item.id}
+                                                            className={`${dangerButtonClass} px-3 py-1 text-xs`}
+                                                        >
+                                                            {homeBackgroundDeletingId === item.id ? '删除中...' : '删除'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -7568,7 +7806,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
 // 4.5 The main Admin Panel structure
 // 4.5 The main Admin Panel structure
-const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, loadGameList, onAiAssistantChanged }) => {
+const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, loadGameList, onAiAssistantChanged, onHomeBackgroundChanged }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const BROADCAST_STYLES = [
@@ -7898,7 +8136,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
                             <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
                             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} />} />
-                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} onGameChanged={loadGameList} onAiAssistantChanged={onAiAssistantChanged} />} />
+                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} onGameChanged={loadGameList} onAiAssistantChanged={onAiAssistantChanged} onHomeBackgroundChanged={onHomeBackgroundChanged} />} />
                             <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
                             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
                         </Routes>

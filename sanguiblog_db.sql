@@ -21,6 +21,7 @@ DROP TABLE IF EXISTS post_tags;
 DROP TABLE IF EXISTS tags;
 DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS game_pages;
+DROP TABLE IF EXISTS home_background_images;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS system_broadcasts;
 DROP TABLE IF EXISTS site_settings;
@@ -154,6 +155,22 @@ CREATE TABLE game_pages (
     KEY idx_game_pages_status (status),
     CONSTRAINT fk_game_pages_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_game_pages_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE home_background_images (
+    id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    original_filename VARCHAR(255) NOT NULL,
+    file_path       VARCHAR(512) NOT NULL,
+    content_type    VARCHAR(100) NULL,
+    file_size       BIGINT NOT NULL,
+    is_current      TINYINT(1) NOT NULL DEFAULT 0,
+    uploaded_by     BIGINT UNSIGNED NULL,
+    created_at      DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at      DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (id),
+    KEY idx_home_background_images_current (is_current, updated_at),
+    KEY idx_home_background_images_uploaded_by (uploaded_by),
+    CONSTRAINT fk_home_background_images_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE tags (

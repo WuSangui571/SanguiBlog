@@ -940,6 +940,25 @@ export const adminDeleteGame = (id) =>
     method: "DELETE",
   });
 
+export const adminFetchHomeBackgrounds = () =>
+  request("/admin/home-backgrounds");
+
+export const adminUploadHomeBackground = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return authFormRequest("/api/admin/home-backgrounds", "POST", formData);
+};
+
+export const adminSetCurrentHomeBackground = (id) =>
+  request(`/admin/home-backgrounds/${id}/current`, {
+    method: "PUT",
+  });
+
+export const adminDeleteHomeBackground = (id) =>
+  request(`/admin/home-backgrounds/${id}`, {
+    method: "DELETE",
+  });
+
 export const adminFetchKnowledgeDocuments = (params = {}) => {
   const search = new URLSearchParams();
   if (params.keyword) search.append("keyword", params.keyword);

@@ -16,6 +16,7 @@ public class SiteMetaDto {
     private FooterInfo footer;
     private String heroTagline;
     private String homeQuote;
+    private String homeBackgroundUrl;
     private String assetBaseUrl;
     private String version;
     private AiAssistantDto aiAssistant;

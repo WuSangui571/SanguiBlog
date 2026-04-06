@@ -9,6 +9,7 @@ import com.sangui.sanguiblog.model.entity.User;
 import com.sangui.sanguiblog.model.repository.AnalyticsPageViewRepository;
 import com.sangui.sanguiblog.model.repository.AnalyticsTrafficSourceRepository;
 import com.sangui.sanguiblog.model.repository.CategoryRepository;
+import com.sangui.sanguiblog.model.repository.HomeBackgroundImageRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.SystemBroadcastRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
@@ -42,6 +43,7 @@ public class SiteService {
 
         private final PostRepository postRepository;
         private final CategoryRepository categoryRepository;
+        private final HomeBackgroundImageRepository homeBackgroundImageRepository;
         private final TagRepository tagRepository;
         private final AnalyticsPageViewRepository analyticsPageViewRepository;
         private final AnalyticsTrafficSourceRepository analyticsTrafficSourceRepository;
@@ -170,6 +172,15 @@ public class SiteService {
                                                 .build())
                                 .heroTagline(heroTagline)
                                 .homeQuote(homeSignatureQuote)
+                                .homeBackgroundUrl(homeBackgroundImageRepository.findFirstByIsCurrentTrueOrderByUpdatedAtDesc()
+                                                .map(item -> {
+                                                        String normalized = item.getFilePath() != null ? item.getFilePath().replace('\\', '/') : "";
+                                                        if (!StringUtils.hasText(normalized)) {
+                                                                return null;
+                                                        }
+                                                        return normalized.startsWith("/") ? normalized : "/" + normalized;
+                                                })
+                                                .orElse(null))
                                 .assetBaseUrl(resolveAssetBaseUrl())
                                 .version(siteVersion)
                                 .aiAssistant(aiAssistantSettingService.siteConfig())
