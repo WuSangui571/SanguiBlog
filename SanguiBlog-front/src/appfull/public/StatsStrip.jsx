@@ -22,7 +22,7 @@ const StatsStrip = ({ isDarkMode, stats }) => {
     const subClass = isDarkMode ? 'text-gray-300' : 'text-gray-700';
     const tooltipBg = isDarkMode ? 'bg-[#0f172a]/92 border-white/20 text-gray-100' : 'bg-white/92 border-white/75 text-black';
     const tooltipArrow = isDarkMode ? 'border-b-[#0f172a]' : 'border-b-white';
-    const glassClass = `home-ios-card ${isDarkMode ? 'home-ios-card--dark' : ''}`;
+    const glassClass = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark' : ''}`;
 
     return (
         <div
