@@ -25,10 +25,10 @@ import { claimOverlayStackBase, OVERLAY_STACK_BASE } from './overlayStack.js';
 
 export const NAVIGATION_HEIGHT = 80;
 const PRIMARY_NAV_ITEMS = [
-    { key: 'home', label: '棣栭〉' },
-    { key: 'archive', label: '褰掓。' },
-    { key: 'games', label: '宸ュ叿' },
-    { key: 'about', label: '鍏充簬' }
+    { key: 'home', label: '首页' },
+    { key: 'archive', label: '归档' },
+    { key: 'games', label: '工具' },
+    { key: 'about', label: '关于' }
 ];
 
 const Navigation = ({
@@ -375,13 +375,13 @@ const Navigation = ({
                             disabled={!notificationTotal}
                             className={`px-2.5 py-1.5 text-[11px] font-black rounded-full transition ${notificationTotal ? overlayAccentButtonClass : overlayDisabledButtonClass}`}
                         >
-                            鍏ㄩ儴宸茶
+                            全部已读
                         </button>
                         <button
                             type="button"
                             onClick={onCloseNotifications}
                             className={`p-2 rounded-full transition ${overlayButtonClass}`}
-                            aria-label="鍏抽棴閫氱煡"
+                            aria-label="关闭通知"
                         >
                             <X size={14} />
                         </button>
@@ -389,7 +389,7 @@ const Navigation = ({
                 </div>
                 <div className={`max-h-[calc(92vh-132px)] overflow-y-auto divide-y ${overlayDividerClass}`}>
                     {notificationLoading ? (
-                        <div className="p-4 text-sm font-semibold">鍔犺浇涓?..</div>
+                        <div className="p-4 text-sm font-semibold">加载中...</div>
                     ) : (notifications && notifications.length ? (
                         notifications.map((item) => (
                             <button
@@ -401,28 +401,28 @@ const Navigation = ({
                                 <div className={`w-10 h-10 rounded-full font-black flex items-center justify-center shrink-0 overflow-hidden ${overlayIconWrapClass}`}>
                                     <img
                                         src={buildAssetUrl(normalizeAvatarPathLocal(item.avatar) || DEFAULT_AVATAR, DEFAULT_AVATAR)}
-                                        alt={item.from || '璁垮'}
+                                        alt={item.from || '访客'}
                                         className="w-full h-full object-cover"
                                         onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <p className="font-black text-sm truncate">{item.from || '璁垮'}</p>
+                                        <p className="font-black text-sm truncate">{item.from || '访客'}</p>
                                         <span className={`text-[11px] truncate ${overlaySubtleTextClass}`}>{item.createdAt || ''}</span>
                                     </div>
                                     <p className="mt-1 text-sm font-semibold leading-5 break-words">
-                                        {item.commentContent || '鏀跺埌涓€鏉℃柊鐨勮瘎璁洪€氱煡'}
+                                        {item.commentContent || '收到一条新的评论通知'}
                                     </p>
-                                    <p className={`text-xs mt-1 truncate ${overlaySubtleTextClass}`}>{item.postTitle || '鏂囩珷'}</p>
+                                    <p className={`text-xs mt-1 truncate ${overlaySubtleTextClass}`}>{item.postTitle || '文章'}</p>
                                 </div>
                                 {item.read ? null : (
-                                    <span className="self-start text-[10px] font-black text-red-500 border border-red-400/60 bg-red-500/10 px-1.5 py-0.5 rounded-full">鏈</span>
+                                    <span className="self-start text-[10px] font-black text-red-500 border border-red-400/60 bg-red-500/10 px-1.5 py-0.5 rounded-full">未读</span>
                                 )}
                             </button>
                         ))
                     ) : (
-                        <div className="p-4 text-sm font-semibold">鏆傛棤閫氱煡</div>
+                        <div className="p-4 text-sm font-semibold">暂无通知</div>
                     ))}
                 </div>
                 <div className={`px-4 py-3 flex items-center justify-between border-t ${overlayDividerClass}`}>
@@ -444,7 +444,7 @@ const Navigation = ({
                             onClick={() => onNotificationPageChange && onNotificationPageChange(1)}
                             className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage <= 1 ? overlayDisabledButtonClass : overlayButtonClass}`}
                         >
-                            棣栭〉
+                            首页
                         </button>
                         <button
                             type="button"
@@ -452,9 +452,11 @@ const Navigation = ({
                             onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage - 1)}
                             className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage <= 1 ? overlayDisabledButtonClass : overlayButtonClass}`}
                         >
-                            涓婁竴椤?                        </button>
+                            上一页
+                        </button>
                         <span className={`text-[11px] font-bold ${overlayMutedTextClass}`}>
-                            绗?{notificationPage} 椤?/ 鍏?{totalNotificationPages} 椤?                        </span>
+                            第 {notificationPage} 页 / 共 {totalNotificationPages} 页
+                        </span>
                         <select
                             value={notificationPage}
                             onChange={(e) => {
@@ -479,7 +481,8 @@ const Navigation = ({
                             onClick={() => onNotificationPageChange && onNotificationPageChange(notificationPage + 1)}
                             className={`text-xs font-black px-2.5 py-1.5 rounded-full transition ${notificationPage >= totalNotificationPages ? overlayDisabledButtonClass : overlayButtonClass}`}
                         >
-                            涓嬩竴椤?                        </button>
+                            下一页
+                        </button>
                         <button
                             type="button"
                             disabled={notificationPage >= totalNotificationPages}
@@ -525,14 +528,14 @@ const Navigation = ({
                             <Settings size={18} />
                         </span>
                         <div className="leading-tight">
-                            <div className="font-black text-sm uppercase tracking-wide">绯荤粺璁剧疆</div>
+                            <div className="font-black text-sm uppercase tracking-wide">系统设置</div>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setSettingsOpen(false)}
                             className={`p-2 rounded-full transition ${overlayButtonClass}`}
-                            aria-label="鍏抽棴璁剧疆"
+                            aria-label="关闭设置"
                         >
                             <X size={16} />
                         </button>
@@ -545,8 +548,8 @@ const Navigation = ({
                             {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
                         </div>
                         <div className="flex-1 space-y-1">
-                            <div className="font-black text-sm">褰╄泲鑳屾櫙</div>
-                            <div className={`text-xs ${overlayMutedTextClass}`}>鏄剧ず鎴栭殣钘忓お闃充笌鏈堜寒鍔ㄧ敾</div>
+                            <div className="font-black text-sm">彩蛋背景</div>
+                            <div className={`text-xs ${overlayMutedTextClass}`}>显示或隐藏太阳与月亮动画</div>
                         </div>
                                                 <button
                             onClick={() => onToggleBackground && onToggleBackground()}
@@ -631,7 +634,7 @@ const Navigation = ({
                 onClick={handleLogoClick}
             >
                 <div className="home-nav-brand">
-                    <span className="home-nav-brand__title">涓夋鍗氬</span>
+                    <span className="home-nav-brand__title">三桂博客</span>
                     <span className="home-nav-brand__version">{siteVersion || 'V2.2.6'}</span>
                 </div>
             </div>
@@ -670,7 +673,7 @@ const Navigation = ({
                         type="button"
                         onClick={handleNotificationEntry}
                         className={`${desktopActionClass} relative`}
-                        title="鏈鎻愰啋"
+                        title="未读提醒"
                     >
                         <Mail size={18} />
                         {notificationUnread > 0 && (
@@ -686,7 +689,7 @@ const Navigation = ({
                             type="button"
                             onClick={handleProfileEntry}
                             className="inline-flex items-center gap-2"
-                            title="鍚庡彴/涓汉涓績"
+                            title="后台/个人中心"
                         >
                             <div className={`w-9 h-9 overflow-hidden rounded-full border ${floatingNavMode
                                 ? (isDarkMode ? 'border-white/25 bg-white/10' : 'border-black/10 bg-white/15')
@@ -709,7 +712,7 @@ const Navigation = ({
                 <button
                     onClick={openSettingsPanel}
                     className={desktopActionClass}
-                    title="绯荤粺璁惧畾"
+                    title="系统设置"
                 >
                     <Settings size={18} />
                 </button>
@@ -764,7 +767,7 @@ const Navigation = ({
                         type="button"
                         onClick={handleNotificationEntry}
                         className={`${mobileActionClass} relative`}
-                        aria-label="鏈鎻愰啋"
+                        aria-label="未读提醒"
                     >
                         <Mail size={22} />
                         {notificationUnread > 0 && (
@@ -777,7 +780,7 @@ const Navigation = ({
                 <button
                     className={`${mobileActionClass} home-nav-icon-btn--accent`}
                     onClick={toggleMenu}
-                    aria-label="鎵撳紑瀵艰埅鑿滃崟"
+                    aria-label="打开导航菜单"
                     aria-pressed={menuOpen}>
                     <Menu size={24} />
                 </button>
@@ -800,7 +803,7 @@ const Navigation = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        aria-label="鍏抽棴瀵艰埅閬僵"
+                        aria-label="关闭导航遮罩"
                         onClick={onCloseMenu}
                     />
                     <motion.div
@@ -825,7 +828,7 @@ const Navigation = ({
                                 type="button"
                                 onClick={onCloseMenu}
                                 className={`p-2 rounded-full transition ${mobileDrawerButtonClass}`}
-                                aria-label="鍏抽棴瀵艰埅鑿滃崟"
+                                aria-label="关闭导航菜单"
                             >
                                 <X size={18} />
                             </button>
@@ -854,7 +857,7 @@ const Navigation = ({
                             {user ? (
                                 <div className={`flex items-center gap-3 p-3 rounded-2xl ${mobileDrawerSoftCardClass}`}>
                                     <div className="w-12 h-12 rounded-full overflow-hidden border border-white/50 bg-[#FFD700]">
-                                    <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="鐢ㄦ埛澶村儚" className="w-full h-full object-cover" />
+                                    <ImageWithFallback src={buildAssetUrl(user.avatar || user.avatarUrl, DEFAULT_AVATAR)} alt="用户头像" className="w-full h-full object-cover" />
                                 </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
@@ -869,7 +872,7 @@ const Navigation = ({
                                                 onClick={handleProfileEntry}
                                                 className={`flex-1 px-3 py-2 text-xs font-black rounded-xl hover:-translate-y-0.5 transition-transform ${mobileDrawerAccentClass}`}
                                             >
-                                                鍚庡彴/涓汉涓績
+                                                后台/个人中心
                                             </button>
                                             <button
                                                 type="button"
@@ -879,7 +882,8 @@ const Navigation = ({
                                                 }}
                                                 className={`px-3 py-2 text-xs font-black rounded-xl ${mobileDrawerButtonClass}`}
                                             >
-                                                閫€鍑?                                            </button>
+                                                退出登录
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -889,7 +893,7 @@ const Navigation = ({
                                     onClick={handleLoginClick}
                                     className={`w-full px-4 py-3 rounded-2xl text-base font-black hover:-translate-y-0.5 transition-transform ${mobileDrawerAccentClass}`}
                                 >
-                                    鍓嶅線鐧诲綍
+                                    前往登录
                                 </button>
                             )}
 
@@ -915,7 +919,7 @@ const Navigation = ({
                             </div>
 
                             <div className={`p-3 rounded-2xl ${mobileDrawerSoftCardClass}`}>
-                                <div className="text-xs font-semibold uppercase tracking-[0.2em] mb-2">棣栭〉姣忛〉</div>
+                                <div className="text-xs font-semibold uppercase tracking-[0.2em] mb-2">首页每页</div>
                                 <div className="flex items-center gap-2">
                                     <select
                                         value={pageSize}
