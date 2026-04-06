@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-04-06] 统一 AI SSE 旧导出与现用导出的流式解析链
+- 背景/需求：用户指出 `api.js` 中旧导出 `streamAiChat` 仍保留一套手写 SSE 解析逻辑，而现用主链路 `streamAiChatReliable` 已切到 `consumeSseStream`；即使补齐 `parseSseBlocks` 导入，也仍存在“旧实现与新实现继续漂移”的维护风险。
+- 修改类型：fix
+- 影响范围：前端 AI 聊天流式请求封装、SSE 解析一致性、AI 变更日志
+- 变更摘要：
+  1) 在 `api.js` 中抽出共享的 `openAiChatStreamResponse(...)`，统一负责 token 过期校验、SSE 请求发起、错误解析与 `ReadableStream` 可用性校验。
+  2) 将旧导出 `streamAiChat` 改为直接复用 `consumeSseStream`，不再保留独立的手写 `parseSseBlocks` 循环。
+  3) 让 `streamAiChatReliable` 与 `streamAiChat` 共享同一条底层流式处理链，避免后续只修一边导致行为漂移或旧导出重新失效。
+- 涉及文件：
+  - `SanguiBlog-front/src/api.js`
+- 检索与复用策略：
+  - 检索关键词：`streamAiChat` / `streamAiChatReliable` / `consumeSseStream` / `parseSseBlocks`
+  - 候选实现：`api.js` 中两个 SSE 导出、`utils/aiStream.js` 中共享消费器
+  - 最终选择：复用现有 `consumeSseStream` 单一实现，不再维护第二套手写 SSE 解析逻辑
+- 风险点：
+  - 本次未改变 AI 流式接口协议与回调签名，仅收敛实现路径；现网主链路行为应保持不变。
+- 验证方式：
+  - 执行 `cmd /c npm run lint`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-06] 修复前端静态质量基线并清零 lint 错误
 - 背景/需求：用户要求优先解决前端静态质量问题，尤其是 `AdminPanel.jsx` 中条件式 Hook 带来的真实正确性风险，并把当前 `npm run lint` 的报错收敛到可维护基线。
 - 修改类型：fix

@@ -1,5 +1,5 @@
 import logger from "./utils/logger.js";
-import { consumeSseStream, parseSseBlocks } from "./utils/aiStream.js";
+import { consumeSseStream } from "./utils/aiStream.js";
 
 // 这是本机测试的 API_BASE
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
@@ -271,7 +271,7 @@ export const sendAiChat = (message, sessionId, currentPageContext = null) => req
   body: JSON.stringify({ message, sessionId, currentPageContext }),
 });
 
-export const streamAiChat = async ({ message, sessionId, currentPageContext = null, localHistory = [], onChunk, onComplete, onError }) => {
+const openAiChatStreamResponse = async ({ message, sessionId, currentPageContext = null, localHistory = [] }) => {
   const token = getStoredToken();
   if (isTokenExpired(token)) {
     localStorage.removeItem("sg_token");
@@ -314,83 +314,21 @@ export const streamAiChat = async ({ message, sessionId, currentPageContext = nu
     throw new Error("当前浏览器不支持流式响应");
   }
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
+  return res;
+};
 
-  while (true) {
-    const { value, done } = await reader.read();
-    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-    buffer = parseSseBlocks(buffer, (event, data) => {
-      if (event === "chunk") {
-        onChunk?.(data?.text || "");
-      } else if (event === "complete") {
-        onComplete?.(data);
-      } else if (event === "error") {
-        onError?.(data?.message || "AI服务调用失败，请稍后再试");
-      }
-    });
-
-    if (done) {
-      if (buffer.trim()) {
-        parseSseBlocks(`${buffer}\n\n`, (event, data) => {
-          if (event === "chunk") {
-            onChunk?.(data?.text || "");
-          } else if (event === "complete") {
-            onComplete?.(data);
-          } else if (event === "error") {
-            onError?.(data?.message || "AI服务调用失败，请稍后再试");
-          }
-        });
-      }
-      break;
-    }
-  }
+export const streamAiChat = async ({ message, sessionId, currentPageContext = null, localHistory = [], onChunk, onComplete, onError }) => {
+  const res = await openAiChatStreamResponse({ message, sessionId, currentPageContext, localHistory });
+  await consumeSseStream({
+    reader: res.body.getReader(),
+    onChunk,
+    onComplete,
+    onError,
+  });
 };
 
 export const streamAiChatReliable = async ({ message, sessionId, currentPageContext = null, localHistory = [], onChunk, onComplete, onError }) => {
-  const token = getStoredToken();
-  if (isTokenExpired(token)) {
-    localStorage.removeItem("sg_token");
-    notifyAuthExpired({ reason: "token_expired", status: 401, message: "登录已过期" });
-    const expiredError = new Error("登录已过期，请重新登录");
-    expiredError.status = 401;
-    throw expiredError;
-  }
-
-  const res = await fetch(`${API_BASE}/ai/chat/stream`, {
-    method: "POST",
-    headers: {
-      ...buildHeaders(),
-      Accept: "text/event-stream",
-    },
-    body: JSON.stringify({ message, sessionId, currentPageContext, localHistory }),
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    let payload = null;
-    let errorMessage = txt || res.statusText;
-    if (txt) {
-      try {
-        payload = JSON.parse(txt);
-        if (payload && typeof payload === "object") {
-          errorMessage = payload.message || payload.msg || errorMessage;
-        }
-      } catch {
-        // ignore
-      }
-    }
-    const error = new Error(errorMessage || res.statusText);
-    error.status = res.status;
-    if (payload) error.payload = payload;
-    throw error;
-  }
-
-  if (!res.body) {
-    throw new Error("当前浏览器不支持流式响应");
-  }
-
+  const res = await openAiChatStreamResponse({ message, sessionId, currentPageContext, localHistory });
   await consumeSseStream({
     reader: res.body.getReader(),
     onChunk,
