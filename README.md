@@ -1,68 +1,72 @@
-﻿# SanguiBlog 部署与开发指南
+[简体中文](./README.zh-CN.md)
 
-SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring Boot + MySQL，前端基于 React + Vite（SPA）。本文面向部署/运维与本地开发，提供从环境准备到上线的最小可用流程与常见问题排查。
+# SanguiBlog Deployment and Development Guide
 
-> 当前站点版本号：`V2.2.6`（统一由后端 `site.version` 提供，首页 Banner 展示为 `SANGUI BLOG // <version>`）
+SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backend and a React + Vite (SPA) frontend. This document is intended for deployment, operations, and local development, covering the minimum workable path from environment setup to production rollout, along with common troubleshooting notes.
+
+> Current site version: `V2.2.6` (provided centrally by backend `site.version`, and displayed on the homepage banner as `SANGUI BLOG // <version>`)
 >
-> `V2.2.x` 延续了 `V2.2.0` 引入的 AI 助理体系：当前 `V2.2.6` 继续沿用登录用户多轮会话、博客文章 RAG、当前文章页上下文增强、超级管理员知识库导入与后台 AI 会话审计，并更新了首页与导航的新版视觉。
+> `V2.2.x` continues the AI assistant system introduced in `V2.2.0`. The current `V2.2.6` release keeps multi-turn chat for logged-in users, blog-article RAG, current article page context enhancement, super-admin knowledge import, and backend AI session auditing, while also updating the homepage and navigation visuals.
 
-## 1. 目录索引
+## 1. Directory Index
 
-- 发布说明目录：`release/`（当前仓库内最新现有对外 release 文档为 `release/V2.2.4.md`）
-- Nginx 反代示例：`fake-nginx-config/nginx.conf`
-- 环境切换说明：`ChangeEnv.md`
-- 数据库初始化脚本：`sanguiblog_db.sql`
+- Release notes directory: `release/` (the latest existing external release document in this repository is `release/V2.2.4.md`)
+- Nginx reverse proxy example: `fake-nginx-config/nginx.conf`
+- Environment switching notes: `ChangeEnv.md`
+- Database initialization script: `sanguiblog_db.sql`
 
-## 2. 项目结构
+## 2. Project Structure
 
 ```
-├─ SanguiBlog-server/      # Spring Boot 服务端（REST API、鉴权、站点地图等）
-├─ SanguiBlog-front/       # React 单页应用（访客端 + 管理端 UI）
-├─ uploads/                # 默认上传目录（生产环境建议挂载到持久化存储）
-├─ release/                # Release Notes（例如 V2.1.287 / V2.2.0，当前最新文档为 V2.2.4）
-├─ sanguiblog_db.sql       # 初始化建库脚本（表结构 + 基础数据）
-└─ README.md               # 本文档
+├─ SanguiBlog-server/      # Spring Boot backend service (REST API, auth, sitemap, etc.)
+├─ SanguiBlog-front/       # React single-page app (public site + admin UI)
+├─ uploads/                # Default upload directory (mount to persistent storage in production)
+├─ release/                # Release notes (for example V2.1.287 / V2.2.0, current latest document is V2.2.4)
+├─ sanguiblog_db.sql       # Database bootstrap script (schema + seed data)
+└─ README.md               # This document
 ```
 
-## 3. 环境准备
+## 3. Environment Requirements
 
-| 组件 | 版本建议 | 说明 |
+| Component | Recommended Version | Notes |
 | --- | --- | --- |
-| JDK | 21 | 后端 `pom.xml` 指定 `java.version=21` |
-| Maven | 3.9.x | 构建/打包后端 |
-| Node.js | ≥ 18（建议 20） | 构建前端 |
-| MySQL | ≥ 8.0 | 主业务数据库，建议 UTF8MB4 |
-| PostgreSQL | 13+（可选） | 仅在启用博客/知识库 RAG 时需要，需安装 PgVector 扩展 |
-| Git | 任意近期版本 | 拉取代码 |
+| JDK | 21 | Backend `pom.xml` sets `java.version=21` |
+| Maven | 3.9.x | Used to build/package the backend |
+| Node.js | >= 18 (20 recommended) | Used to build the frontend |
+| MySQL | >= 8.0 | Main application database, UTF8MB4 recommended |
+| PostgreSQL | 13+ (optional) | Required only when enabling blog/knowledge-base RAG, with PgVector installed |
+| Git | Any recent version | Used to clone/pull the repository |
 
-> Windows / Linux 均可部署。生产环境建议：在 CI/构建机完成前后端构建，线上仅部署产物（后端 Jar + 前端 dist + 持久化 uploads）。
+> Both Windows and Linux are supported. For production, it is recommended to build both frontend and backend in CI or on a build machine, and deploy only the build artifacts online (backend JAR + frontend `dist` + persistent `uploads`).
 >
-> 如果你暂时不启用 AI RAG，则 PostgreSQL / PgVector 不是必需项；只使用基础 AI 聊天时，MySQL 仍是唯一必需数据库。
+> If you are not enabling AI RAG for now, PostgreSQL / PgVector is not required. For basic AI chat only, MySQL remains the only required database.
 
-## 4. 初始化数据库
+## 4. Initialize the Database
 
-1. 创建数据库（示例）：
+1. Create the database (example):
    ```sql
    CREATE DATABASE sanguiblog_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
    ```
-2. 导入根目录 `sanguiblog_db.sql`：
+2. Import the root-level `sanguiblog_db.sql`:
    ```bash
    mysql -u root -p sanguiblog_db < sanguiblog_db.sql
    ```
-3. 建议创建业务账号（读写权限），并在后端配置里配置用户名/密码（见下一节）。
-4. 如果你准备启用 AI 聊天相关新功能，请确保根目录 `sanguiblog_db.sql` 已同步到当前版本，里面已包含：
-   - AI 会话与消息表
-   - 博客 RAG 跟踪表
-   - 超级管理员文本知识库表
+3. It is recommended to create a dedicated application user with read/write permissions, then configure that username/password in backend config (see next section).
+4. If you plan to enable AI chat related features, make sure the root-level `sanguiblog_db.sql` is synced to the current version. It already includes:
+   - AI session and message tables
+   - Blog RAG tracking tables
+   - Super-admin text knowledge base tables
 
-## 5. 后端配置与启动（SanguiBlog-server）
-后端配置文件：
-- 通用配置（提交 Git）：`SanguiBlog-server/src/main/resources/application.yaml`
-- 私有配置（不提交 Git）：`SanguiBlog-server/src/main/resources/application-local.yaml`
+## 5. Backend Configuration and Startup (`SanguiBlog-server`)
 
-`application.yaml` 已通过 `spring.config.import` 引入 `application-local.yaml`，用于加载数据库/JWT/站点等私有配置。
+Backend configuration files:
+- Shared config (committed to Git): `SanguiBlog-server/src/main/resources/application.yaml`
+- Private config (not committed): `SanguiBlog-server/src/main/resources/application-local.yaml`
 
-`application-local.yaml` 示例（请按实际环境修改）：
+`application.yaml` already imports `application-local.yaml` through `spring.config.import`, so database/JWT/site private settings can be loaded there.
+
+Example `application-local.yaml` (adjust to your environment):
+
 ```yaml
 spring:
   datasource:
@@ -93,49 +97,51 @@ site:
   asset-base-url: https://www.sangui.top/uploads
 ```
 
-### 5.1 必配项（建议写入 application-local.yaml 或用环境变量注入）
+### 5.1 Required Settings
 
-- 数据库：`spring.datasource.url/username/password`（写入 `application-local.yaml` 或环境变量）
-  - 兼容环境变量：`SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`（也可用 `DB_URL` / `DB_USERNAME` / `DB_PASSWORD`）
-- JWT 密钥：`jwt.secret`（写入 `application-local.yaml` 或环境变量 `JWT_SECRET`）
-- 上传目录：`storage.base-path`（写入 `application-local.yaml` 或环境变量 `STORAGE_BASE_PATH`）
+- Database: `spring.datasource.url/username/password` (in `application-local.yaml` or env vars)
+  - Compatible env vars: `SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD` (or `DB_URL` / `DB_USERNAME` / `DB_PASSWORD`)
+- JWT secret: `jwt.secret` (in `application-local.yaml` or env var `JWT_SECRET`)
+- Upload directory: `storage.base-path` (in `application-local.yaml` or env var `STORAGE_BASE_PATH`)
 
-### 5.2 端口与跨域
+### 5.2 Port and CORS
 
-- 服务端口：`server.port`（仓库默认 `8080`）
-- CORS：`security.cors.allowed-origins`（写入 `application-local.yaml` 或环境变量 `SECURITY_CORS_ALLOWED_ORIGINS`）
+- Service port: `server.port` (repository default is `8080`)
+- CORS: `security.cors.allowed-origins` (in `application-local.yaml` or env var `SECURITY_CORS_ALLOWED_ORIGINS`)
 
-### 5.3 启动方式
+### 5.3 Startup Options
 
-开发模式（本地调试）：
+Development mode (local debugging):
+
 ```bash
 cd SanguiBlog-server
 mvn spring-boot:run
 ```
 
-生产模式（构建 Jar 后运行）：
+Production mode (build JAR first, then run):
+
 ```bash
 cd SanguiBlog-server
 mvn -DskipTests package
 java -jar target/SanguiBlog-server-*.jar
 ```
 
-### 5.4 AI 助理与 RAG（V2.2.0+）
+### 5.4 AI Assistant and RAG (`V2.2.0+`)
 
-`V2.2.0` 起，项目已内置 AI 助理；当前 `V2.2.6` 延续并完善了该能力。能力包括：
+Starting from `V2.2.0`, the project includes a built-in AI assistant. The current `V2.2.6` release continues and improves this capability. It includes:
 
-- 站点前台 AI 聊天入口
-- 登录用户多轮会话与历史会话管理
-- 基于已发布博客文章的 RAG 检索增强
-- 文章详情页“当前页面内容”临时上下文总结
-- 超级管理员文本知识库导入
-- 后台 AI 会话审计
+- Public-site AI chat entry
+- Multi-turn chat and chat history for logged-in users
+- RAG enhancement based on published blog articles
+- Temporary summary of the current article page context
+- Super-admin text knowledge import
+- Backend AI session audit
 
-基础 AI 聊天至少需要：
+Basic AI chat requires at least:
 
-- `SPRING_AI_DASHSCOPE_API_KEY` 或 `AI_DASHSCOPE_API_KEY`
+- `SPRING_AI_DASHSCOPE_API_KEY` or `AI_DASHSCOPE_API_KEY`
 
-如需启用博客/知识库 RAG，还需要额外准备 PostgreSQL + PgVector，并配置：
+To enable blog / knowledge-base RAG, you also need PostgreSQL + PgVector, with configuration like:
 
 ```bash
 AI_RAG_ENABLED=true
@@ -149,44 +155,48 @@ AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=false
 AI_DASHSCOPE_EMBEDDING_MODEL=text-embedding-v4
 ```
 
-说明：
+Notes:
 
-- 首次建 `vector_store` 表时，可临时将 `AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=true`，建表成功后建议改回 `false`
-- AI 入口支持在后台 `/admin/settings` 的 `AI助理` 分组中统一开启/关闭
-- 超级管理员可在后台管理 AI 知识库与 AI 会话审计
+- When creating `vector_store` for the first time, you may temporarily set `AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=true`; after the table is created, it is recommended to switch it back to `false`
+- The AI entry can be enabled/disabled centrally in the `AI助理` section of backend `/admin/settings`
+- Super admins can manage AI knowledge bases and AI session audits in the backend
 
-## 6. 前端构建与部署（SanguiBlog-front）
+## 6. Frontend Build and Deployment (`SanguiBlog-front`)
 
-前端 API 默认走同源 `/api`，生产环境通常无需额外配置。若你需要跨域/分域名部署，可在 `SanguiBlog-front/.env` 或 `.env.production` 设置：
+The frontend uses same-origin `/api` by default, so production usually does not require extra frontend config. If you need cross-origin or separate-domain deployment, set the following in `SanguiBlog-front/.env` or `.env.production`:
 
 ```
 VITE_API_BASE=/api
-# 或：VITE_API_BASE=https://your-domain.com/api
+# or: VITE_API_BASE=https://your-domain.com/api
 VITE_API_ORIGIN=https://your-domain.com
 VITE_ASSET_ORIGIN=https://your-domain.com
 ```
 
-构建：
+Build:
+
 ```bash
 cd SanguiBlog-front
 npm install
 npm run build
 ```
-构建产物在 `SanguiBlog-front/dist/`。
 
-本地开发（可选）：
+The build output is in `SanguiBlog-front/dist/`.
+
+Local development (optional):
+
 ```bash
 cd SanguiBlog-front
 npm install
 npm run dev
 ```
-默认开发地址：`http://localhost:5173`。
 
-## 7. Nginx 反代建议（含 sitemap/robots）
+Default dev URL: `http://localhost:5173`.
 
-如果你使用 SPA 回退（`try_files $uri /index.html`），务必让 `sitemap.xml/robots.txt` 优先走后端，否则会被回退到前端首页导致访问异常。
+## 7. Nginx Reverse Proxy Recommendations (including sitemap/robots)
 
-可参考仓库示例：`fake-nginx-config/nginx.conf`，核心片段如下（按需调整域名/端口/目录）：
+If you use SPA fallback (`try_files $uri /index.html`), make sure `sitemap.xml/robots.txt` is routed to the backend first; otherwise they may fall back to the frontend homepage and behave incorrectly.
+
+You can refer to the example config in `fake-nginx-config/nginx.conf`. Core snippet (adjust domain/port/path as needed):
 
 ```
 server {
@@ -203,29 +213,26 @@ server {
 }
 ```
 
-## 8. sitemap/robots 说明（V2.1.275+）
+## 8. sitemap/robots Notes (`V2.1.275+`)
 
-- 站点地图：`GET /sitemap.xml`
-  - URL 超阈值时返回 `<sitemapindex>`，并通过 `GET /sitemap.xml?page=1..N` 分片拉取
-  - 支持 `ETag/If-None-Match` 命中返回 304
-- robots：`GET /robots.txt`
-  - 默认禁止抓取 `/admin` 与 `/api/`，并指向 `Sitemap: https://<域名>/sitemap.xml`
+- Sitemap: `GET /sitemap.xml`
+  - Returns `<sitemapindex>` when URL count exceeds the threshold, and supports paged retrieval via `GET /sitemap.xml?page=1..N`
+  - Supports `ETag/If-None-Match`, returning `304` when matched
+- robots: `GET /robots.txt`
+  - By default disallows `/admin` and `/api/`, and points to `Sitemap: https://<domain>/sitemap.xml`
 
-阈值配置项：`site.sitemap.max-urls-per-file`（默认 45000，对应环境变量 `SITE_SITEMAP_MAX_URLS_PER_FILE`）。
+Threshold config: `site.sitemap.max-urls-per-file` (default `45000`, corresponding env var `SITE_SITEMAP_MAX_URLS_PER_FILE`).
 
-## 9. 常见问题排查
+## 9. Common Troubleshooting
 
-| 现象 | 可能原因 | 解决方案 |
+| Symptom | Possible Cause | Solution |
 | --- | --- | --- |
-| 前端接口 404 | Nginx 未做 `/api/` 转发 | 增加 `location /api/` 并重载 Nginx |
-| `/sitemap.xml` 打开变首页 | `try_files` 先于 sitemap location | 添加 `location = /sitemap.xml` 与 `location = /robots.txt` 并放在 `try_files` 前 |
-| 上传失败/找不到文件 | `storage.base-path` 无写权限或 Nginx `/uploads/` 未映射 | 确保目录可写，配置 `alias` 或由后端静态映射提供 |
-| 服务启动失败提示 JWT_SECRET | 未设置 JWT 密钥 | 设置环境变量 `JWT_SECRET` 后再启动 |
-| AI 聊天不可用 | DashScope Key 未配置，或后台已关闭 AI 助理 | 检查 `SPRING_AI_DASHSCOPE_API_KEY` / `/admin/settings -> AI助理` |
-| AI RAG 不生效 | `AI_RAG_ENABLED` 未开启，或 PgVector 未就绪 | 检查 PostgreSQL / PgVector、`vector_store`、启动同步日志 |
-| 控制台出现 `content_script.js` 报错 | 浏览器扩展注入脚本噪声 | 无痕窗口/禁用扩展验证（通常与站点无关） |
+| Frontend API returns 404 | Nginx does not proxy `/api/` | Add `location /api/` and reload Nginx |
+| `/sitemap.xml` opens the homepage | `try_files` is evaluated before sitemap location | Add `location = /sitemap.xml` and `location = /robots.txt`, and place them before `try_files` |
+| Upload fails / files cannot be found | `storage.base-path` is not writable, or Nginx `/uploads/` is not mapped | Ensure the directory is writable, configure `alias`, or serve it through backend static mapping |
+| Service fails to start due to JWT_SECRET | JWT secret is missing | Set env var `JWT_SECRET` before starting |
+| AI chat is unavailable | DashScope key is not configured, or AI assistant was disabled in backend | Check `SPRING_AI_DASHSCOPE_API_KEY` / `/admin/settings -> AI助理` |
+| AI RAG is not working | `AI_RAG_ENABLED` is off, or PgVector is not ready | Check PostgreSQL / PgVector, `vector_store`, and sync logs at startup |
+| `content_script.js` errors appear in console | Browser extension injected script noise | Verify in incognito mode or disable extensions (usually unrelated to the site itself) |
 
-如需了解更深入的实现细节，可参考仓库内的历史发布说明与源码注释。
-
-
-
+For deeper implementation details, refer to the historical release notes in this repository and the source code comments.
