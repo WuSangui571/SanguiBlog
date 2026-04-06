@@ -116,6 +116,15 @@ const ArticleList = ({
         return diff <= NEW_POST_WINDOW_MS;
     };
 
+    const showSpinHint = useCallback((message, duration = 2200) => {
+        setSpinWarning(message);
+        setShowSpinWarning(true);
+        if (warningTimerRef.current) {
+            clearTimeout(warningTimerRef.current);
+        }
+        warningTimerRef.current = setTimeout(() => setShowSpinWarning(false), duration);
+    }, []);
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             konamiSequence.current = [...konamiSequence.current, e.key].slice(-10);
@@ -127,7 +136,7 @@ const ArticleList = ({
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [KONAMI_CODE]);
+    }, [KONAMI_CODE, showSpinHint]);
 
     const categories = categoriesData && categoriesData.length
         ? (categoriesData.some((c) => c.id === "all") ? categoriesData : [{
@@ -136,9 +145,10 @@ const ArticleList = ({
             children: []
         }, ...categoriesData])
         : CATEGORY_TREE;
-    const currentParentObj = categories.find(c => c.id === activeParent);
-    const subCategories = currentParentObj ? currentParentObj.children : [];
-    const sourcePosts = Array.isArray(postsPage?.records) ? postsPage.records : [];
+    const sourcePosts = useMemo(
+        () => (Array.isArray(postsPage?.records) ? postsPage.records : []),
+        [postsPage?.records]
+    );
     const registerExcerptElement = useCallback((postId, element) => {
         excerptOverflowTracker.registerElement(postId, element);
     }, [excerptOverflowTracker]);
@@ -175,15 +185,6 @@ const ArticleList = ({
         setActiveSub(subId);
         scrollToPostsTop();
     }, [scrollToPostsTop, setActiveSub]);
-
-    const showSpinHint = useCallback((message, duration = 2200) => {
-        setSpinWarning(message);
-        setShowSpinWarning(true);
-        if (warningTimerRef.current) {
-            clearTimeout(warningTimerRef.current);
-        }
-        warningTimerRef.current = setTimeout(() => setShowSpinWarning(false), duration);
-    }, []);
 
     const triggerSpinLock = useCallback(() => {
         setSpinLockActive(true);
@@ -300,7 +301,7 @@ const ArticleList = ({
 
     const totalPages = Math.max(1, Math.ceil((Number(postsPage?.total ?? 0) || 0) / pageSize));
     // 筛选/分页触发加载时，隐藏旧文章卡片，避免“加载中卡片 + 旧卡片堆叠”的视觉别扭
-    const displayPosts = postsLoading ? [] : sourcePosts;
+    const displayPosts = useMemo(() => (postsLoading ? [] : sourcePosts), [postsLoading, sourcePosts]);
     useEffect(() => {
         return observeArticleExcerptOverflow(
             excerptOverflowTracker.getElements(),

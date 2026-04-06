@@ -5,6 +5,37 @@
 
 ---
 
+## [2026-04-06] 修复前端静态质量基线并清零 lint 错误
+- 背景/需求：用户要求优先解决前端静态质量问题，尤其是 `AdminPanel.jsx` 中条件式 Hook 带来的真实正确性风险，并把当前 `npm run lint` 的报错收敛到可维护基线。
+- 修改类型：fix
+- 影响范围：前端静态检查基线、AI 审计页 Hook 顺序、SSE 兼容导出、Markdown 代码块组件、后台设置页与首页文章列表的若干 lint/构建问题
+- 变更摘要：
+  1) 调整 `AiAdminAuditView` 中的 `filteredSessions` 与相关 `useEffect` 调用顺序，消除“先 return 再调用 Hook”的条件式 Hook 风险。
+  2) 为 `api.js` 补齐 `parseSseBlocks` 导入，清理多处未使用变量、无用依赖与不稳定依赖写法，并修复 `ArticleList.jsx`、`Navigation.jsx`、`AboutView.jsx`、`ArticleDetail.jsx` 等文件中的 lint 问题。
+  3) 将 `MarkdownCodeBlock` 从 `.js` 调整为 `.jsx` 并更新引用，保留复制与展示行为不变，同时恢复可构建状态。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/aiAssistantAccess.js`
+  - `SanguiBlog-front/src/appfull/public/AboutView.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/shared.js`
+  - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.js`
+  - `SanguiBlog-front/src/appfull/ui/MarkdownCodeBlock.jsx`
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/utils/logger.js`
+- 检索与复用策略：
+  - 检索关键词：`useEffect` / `parseSseBlocks` / `no-unused-vars` / `MarkdownCodeBlock` / `react-hooks`
+  - 候选实现：`AdminPanel.jsx` 的 AI 审计视图、`api.js` 的 SSE 逻辑、`MarkdownCodeBlock` 与 `AiMessageMarkdown` 的代码块渲染链
+  - 最终选择：继续复用现有实现与现有组件链，只做最小静态修复，不新增并行模块
+- 风险点：
+  - 本次未处理 Vite 仍提示的“大包体积”告警，该问题属于后续性能优化项，不影响本轮静态质量修复结论。
+- 验证方式：
+  - 执行 `cmd /c npm run lint`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-04] 将文章详情页外层结构适配为站点玻璃风格
 - 背景/需求：用户要求继续按统一流程把 `/article/:id` 页面适配为玻璃风格，并明确说明“不要适配那个 md 格式的渲染”。
 - 修改类型：fix

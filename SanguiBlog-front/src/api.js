@@ -1,5 +1,5 @@
 import logger from "./utils/logger.js";
-import { consumeSseStream } from "./utils/aiStream.js";
+import { consumeSseStream, parseSseBlocks } from "./utils/aiStream.js";
 
 // 这是本机测试的 API_BASE
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";

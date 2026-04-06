@@ -65,7 +65,6 @@ const Navigation = ({
     notificationCanBackfill = true
 }) => {
     const { headerHeight } = useLayoutOffsets();
-    const roleInfo = user ? ROLES[user.role] : null;
     const displayName = user?.displayName || user?.display_name || user?.nickname || user?.username || 'USER';
     const activeView = currentView === 'game' ? 'games' : (currentView || 'home');
     const shellThemeClass = `home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`;
@@ -299,7 +298,6 @@ const Navigation = ({
         ? 'home-nav-icon-btn--hero'
         : ((recalledGlassMode || authGlassMode) ? 'home-nav-icon-btn--glass' : '');
     const desktopActionClass = `home-nav-icon-btn ${navIconToneClass} inline-flex items-center justify-center rounded-full p-2.5`;
-    const desktopAccentActionClass = `${desktopActionClass} home-nav-icon-btn--accent`;
     const mobileActionClass = `home-nav-icon-btn ${navIconToneClass} inline-flex items-center justify-center rounded-full p-2`;
     const overlayPanelClass = isDarkMode
         ? 'border border-white/12 bg-[linear-gradient(180deg,rgba(14,23,38,0.96),rgba(11,18,31,0.9))] text-white shadow-[0_24px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl'

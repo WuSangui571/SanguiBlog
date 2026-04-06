@@ -3,16 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useBlog } from "./hooks/useBlogData";
 import {
     recordPageView,
-    updateBroadcast,
     fetchGames,
     fetchGameDetail,
     fetchArchiveSummary,
     fetchArchiveMonth,
     fetchMyPermissions,
-    fetchCategories,
-    fetchPosts,
-    fetchTags,
-    createComment,
     fetchUnreadNotifications,
     fetchNotificationHistory,
     backfillNotifications,

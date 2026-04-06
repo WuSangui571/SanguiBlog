@@ -110,6 +110,13 @@ const formatBgClassFromHex = (hex) => {
     return `bg-[${normalized}]`;
 };
 
+const REGISTRATION_INVITE_DURATION_OPTIONS = [
+    { code: 'MINUTES_5', label: '5分钟' },
+    { code: 'HOURS_1', label: '1小时' },
+    { code: 'DAYS_1', label: '1天' },
+    { code: 'DAYS_10', label: '10天' }
+];
+
 const ThemeColorSelector = ({ value, onChange, inputClass, isDarkMode }) => {
     const selectedHex = useMemo(() => extractHexFromBgClass(value, '#6366F1'), [value]);
 
@@ -907,7 +914,7 @@ const TrendChart = ({ data, isDarkMode }) => {
                         }}
                     >
                         <div className="font-mono">{hoverItem.dateKey || hoverItem.dateLabel}</div>
-                        <div className="mt-0.5">PV：{formatNumber(hoverItem.views)}　UV：{formatNumber(hoverItem.visitors)}</div>
+                        <div className="mt-0.5">PV：{formatNumber(hoverItem.views)} UV：{formatNumber(hoverItem.visitors)}</div>
                     </div>
                 )}
             </div>
@@ -4382,10 +4389,6 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
         loadSessionDetail(activeSessionId);
     }, [activeSessionId, loadSessionDetail]);
 
-    if (!user || user.role !== 'SUPER_ADMIN') {
-        return <PermissionNotice title="无权限" description="仅超级管理员可以查看全站 AI 聊天审计记录。" />;
-    }
-
     const filteredSessions = sessions.filter((session) => {
         if (visibilityFilter === 'VISIBLE') {
             if (session.guest) return false;
@@ -4403,12 +4406,6 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
         return true;
     });
 
-    const activeSession = sessionDetail?.session && filteredSessions.some((item) => item.id === sessionDetail.session.id)
-        ? sessionDetail.session
-        : filteredSessions.find((item) => item.id === activeSessionId) || null;
-    const activeIdentityMeta = activeSession ? getIdentityMeta(activeSession) : null;
-    const messages = sessionDetail?.messages || [];
-
     useEffect(() => {
         if (filteredSessions.length === 0) {
             setActiveSessionId(null);
@@ -4418,6 +4415,16 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
             setActiveSessionId(filteredSessions[0].id);
         }
     }, [activeSessionId, filteredSessions]);
+
+    if (!user || user.role !== 'SUPER_ADMIN') {
+        return <PermissionNotice title="无权限" description="仅超级管理员可以查看全站 AI 聊天审计记录。" />;
+    }
+
+    const activeSession = sessionDetail?.session && filteredSessions.some((item) => item.id === sessionDetail.session.id)
+        ? sessionDetail.session
+        : filteredSessions.find((item) => item.id === activeSessionId) || null;
+    const activeIdentityMeta = activeSession ? getIdentityMeta(activeSession) : null;
+    const messages = sessionDetail?.messages || [];
 
     return (
         <div className="space-y-6">
@@ -5991,12 +5998,6 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         { key: 'games', label: '游戏管理' },
         { key: 'cleanup', label: '存储清理' }
     ];
-    const REGISTRATION_INVITE_DURATION_OPTIONS = [
-        { code: 'MINUTES_5', label: '5分钟' },
-        { code: 'HOURS_1', label: '1小时' },
-        { code: 'DAYS_1', label: '1天' },
-        { code: 'DAYS_10', label: '10天' }
-    ];
     const [activeSettingsTab, setActiveSettingsTab] = useState('broadcast');
     const [broadcastDraft, setBroadcastDraft] = useState({
         content: notification?.content || '',
@@ -6134,7 +6135,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         } finally {
             setGameSaving(false);
         }
-    }, [gameForm, gameEditingId, loadGames, resetGameForm, onGameChanged]);
+    }, [gameForm, gameEditingId, loadGames, resetGameForm, onGameChanged, showNotice]);
 
     const handleGameEdit = useCallback((game) => {
         if (!game) return;
@@ -6372,7 +6373,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
     const selectedInviteDuration = useMemo(
         () => REGISTRATION_INVITE_DURATION_OPTIONS.find((item) => item.code === inviteDurationCode) || REGISTRATION_INVITE_DURATION_OPTIONS[0],
-        [REGISTRATION_INVITE_DURATION_OPTIONS, inviteDurationCode]
+        [inviteDurationCode]
     );
 
     const handleOpenInviteDialog = useCallback(() => {

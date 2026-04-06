@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { rehypeSanitize, SG_REHYPE_SANITIZE_SCHEMA } from '../../utils/rehypeSanitizeSchema.js';
-import MarkdownCodeBlock from './MarkdownCodeBlock.js';
+import MarkdownCodeBlock from './MarkdownCodeBlock.jsx';
 
 function createMarkdownComponents({ isDarkMode, isAssistant }) {
     const inlineCodeClass = isAssistant

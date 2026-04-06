@@ -3,7 +3,7 @@ export function canUseAiAssistant() {
 }
 
 export function isAiAssistantGuest(user) {
-    return !Boolean(user);
+    return !user;
 }
 
 export function shouldResetAiAssistantState(prevUser, nextUser) {

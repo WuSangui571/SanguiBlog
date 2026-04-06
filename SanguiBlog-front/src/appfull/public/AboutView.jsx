@@ -11,7 +11,6 @@ import { THEME, remarkHighlight } from "../shared.js";
 import { Copy } from 'lucide-react';
 
 function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
-    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const [aboutPreview, setAboutPreview] = useState(null);
     const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';

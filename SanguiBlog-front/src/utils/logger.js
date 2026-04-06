@@ -12,7 +12,6 @@ const shouldSample = () => {
 
 const safeConsole = (method, args) => {
   try {
-    // eslint-disable-next-line no-console
     (console[method] || console.log).apply(console, args);
   } catch {
     // ignore
@@ -57,4 +56,3 @@ const logger = {
 };
 
 export default logger;
-

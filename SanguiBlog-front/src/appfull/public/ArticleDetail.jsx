@@ -158,7 +158,6 @@ const ArticleDetail = ({
     const contentMd = articleData?.contentMd;
     const comments = commentsData && commentsData.length ? commentsData : [];
     const text = isDarkMode ? 'text-gray-100' : 'text-black';
-    const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const pageBackground = 'bg-transparent';
     const articleContentRef = useRef(null);
     const articleShellRef = useRef(null);
