@@ -7661,8 +7661,16 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     const textClass = isDarkMode ? 'text-gray-100' : 'text-slate-800';
     const sidebarBorder = isDarkMode ? 'border-white/10' : 'border-white/70';
     const adminSurfaceClass = `home-redesign-surface ${isDarkMode ? 'is-dark' : ''}`;
-    const sidebarBg = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark bg-white/[0.035] text-gray-100 shadow-[0_24px_48px_rgba(0,0,0,0.34)]' : 'bg-white/70 text-slate-800 shadow-[0_20px_48px_rgba(148,163,184,0.2)]'} rounded-none border-r ${sidebarBorder}`;
-    const topbarBg = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark bg-white/[0.035] shadow-[0_18px_40px_rgba(0,0,0,0.28)]' : 'bg-white/65 shadow-[0_16px_38px_rgba(148,163,184,0.16)]'} rounded-none border-b ${sidebarBorder}`;
+    const sidebarBg = `backdrop-blur-2xl ${
+        isDarkMode
+            ? 'bg-[linear-gradient(180deg,rgba(13,17,30,0.9),rgba(9,12,24,0.82))] text-gray-100 shadow-[0_20px_46px_rgba(0,0,0,0.32)]'
+            : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(245,248,255,0.72))] text-slate-800 shadow-[0_18px_42px_rgba(148,163,184,0.18)]'
+    } border-r ${sidebarBorder}`;
+    const topbarBg = `backdrop-blur-2xl ${
+        isDarkMode
+            ? 'bg-[linear-gradient(180deg,rgba(13,17,30,0.88),rgba(10,14,26,0.78))] shadow-[0_12px_28px_rgba(0,0,0,0.22)]'
+            : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(245,248,255,0.66))] shadow-[0_12px_28px_rgba(148,163,184,0.14)]'
+    } border-b ${sidebarBorder}`;
     const panelTitleClass = isDarkMode ? 'text-gray-400' : 'text-slate-500';
     const panelGroupClass = isDarkMode ? 'pl-3 border-l border-white/10' : 'pl-3 border-l border-white/60';
     const navItemBaseClass = 'group w-full text-left pl-3.5 pr-3.5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-3 transition-all duration-300 border backdrop-blur-xl';
@@ -7809,7 +7817,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-                            className={`absolute left-0 top-0 h-full w-[78vw] max-w-xs flex flex-col ${sidebarBg} rounded-r-[28px] border-r ${sidebarBorder}`}
+                            className={`absolute left-0 top-0 h-full w-[78vw] max-w-xs flex flex-col ${sidebarBg} rounded-r-[28px]`}
                         >
                             <div className={`flex items-center justify-between px-4 py-3 border-b ${sidebarBorder}`}>
                                 <div className="flex items-center gap-2">
