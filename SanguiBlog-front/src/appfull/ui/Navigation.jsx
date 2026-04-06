@@ -291,9 +291,10 @@ const Navigation = ({
     const settingsPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
     const notificationPanelTop = (headerHeight || NAVIGATION_HEIGHT) + 12;
     const authPageMode = currentView === 'login' || currentView === 'register';
-    const recalledGlassMode = navVisible && !topMode;
+    const adminPageMode = currentView === 'admin';
+    const recalledGlassMode = navVisible && (!topMode || adminPageMode);
     const authGlassMode = authPageMode && navVisible;
-    const floatingNavMode = !authGlassMode && (heroMode || topMode) && !recalledGlassMode;
+    const floatingNavMode = !authGlassMode && !adminPageMode && (heroMode || topMode) && !recalledGlassMode;
     const navIconToneClass = floatingNavMode
         ? 'home-nav-icon-btn--hero'
         : ((recalledGlassMode || authGlassMode) ? 'home-nav-icon-btn--glass' : '');
@@ -627,7 +628,7 @@ const Navigation = ({
             initial={{ y: -100 }}
             animate={{ y: navVisible ? 0 : -((headerHeight || NAVIGATION_HEIGHT) + 24) }}
             transition={{ duration: 0.26, ease: 'easeInOut' }}
-            className={`home-nav-shell ${heroMode ? 'home-nav-shell--hero' : ''} ${!heroMode && topMode && !authPageMode ? 'home-nav-shell--top' : ''} ${(recalledGlassMode || authGlassMode) ? 'home-nav-shell--glass' : ''} relative w-full h-20 flex items-center justify-between px-4 md:px-8`}
+            className={`home-nav-shell ${heroMode ? 'home-nav-shell--hero' : ''} ${!heroMode && topMode && !authPageMode && !adminPageMode ? 'home-nav-shell--top' : ''} ${(recalledGlassMode || authGlassMode) ? 'home-nav-shell--glass' : ''} relative w-full h-20 flex items-center justify-between px-4 md:px-8`}
         >
             <div
                 className="flex items-center gap-2 cursor-pointer group shrink-0"
