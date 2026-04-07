@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-07] 优化首页主文案在手机端的居中观感
+- 背景/需求：用户反馈首页主文案“在这里把问题想清楚，把代码写简单。”在桌面端显示良好，但手机端会自然变成三行，且视觉上像左对齐，第二行带逗号时更显得右侧不齐，希望只优化手机端观感，桌面端保持不变。
+- 修改类型：fix
+- 影响范围：首页 Hero 移动端标题排版、Hero 移动端样式断言、AI 变更日志
+- 变更摘要：
+  1) 检索确认文案本身在 `Hero.jsx` 中已固定拆成两段 `span`，问题根因不在文案源，而在 `homeRedesign.css` 的手机端 `.home-hero__headline` 只缩小字号，没有追加移动端的标题宽度与文字居中约束。
+  2) 在 `@media (max-width: 640px)` 中为 `.home-hero__headline` 增加更明确的最大宽度、居中对齐、轴向居中，以及轻微收敛的移动端行高和字距。
+  3) 桌面端标题结构与样式保持不变，只优化手机端三行场景下的标题整体感。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/public/HeroMobileHeadline.test.js`
+- 检索与复用策略：
+  - 检索关键词：`home-hero__headline` / `Hero.jsx` / `@media (max-width: 640px)` / `在这里把问题想清楚`
+  - 候选实现：`Hero.jsx` 标题结构、`homeRedesign.css` 默认标题规则、`homeRedesign.css` 手机端媒体查询
+  - 最终选择：复用现有 Hero 标题结构，只补手机端排版样式，不改文案、不改桌面端规则
+- 风险点：
+  - 本次主要影响手机端 Hero 标题在窄屏下的视觉重心；若后续更换标题文案长度，可能仍需再微调移动端 `max-width`。
+- 验证方式：
+  - 执行 `node ./src/appfull/public/HeroMobileHeadline.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-07] 移除黑夜模式背景中的流星特效
 - 背景/需求：用户反馈黑夜模式下会出现流星特效，体感上主要在手机端更明显，希望直接去掉该特效，其它夜间背景效果保持不变。
 - 修改类型：fix

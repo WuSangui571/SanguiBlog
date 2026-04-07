@@ -597,6 +597,11 @@
 
   .home-hero__headline {
     font-size: clamp(2rem, 10vw, 3rem);
+    max-width: min(92vw, 9.6em);
+    align-items: center;
+    text-align: center;
+    line-height: 1.18;
+    letter-spacing: -0.045em;
   }
 
   .home-hero__actions {
