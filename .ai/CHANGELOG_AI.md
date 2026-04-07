@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-07] 修复导航通知分页下拉栏中文乱码与暗色可读性
+- 背景/需求：用户反馈顶部导航“信箱/通知”面板里切换页码的下拉栏出现中文乱码；同时黑夜模式下该下拉栏仍呈现偏白的原生浅色面板，导致白字难以辨认。
+- 修改类型：fix
+- 影响范围：导航通知面板分页下拉栏文案、通知分页下拉栏暗色主题、AI 变更日志
+- 变更摘要：
+  1) 检索确认乱码根因在 `Navigation.jsx` 的通知分页下拉栏 `<option>` 文案被写成了损坏字符串 `绗?{page} 椤?`，不是接口返回问题。
+  2) 将通知分页下拉栏选项文案恢复为正常中文 `第 {page} 页`。
+  3) 为通知分页下拉栏新增专用暗色样式 `overlaySelectClass`，并显式设置 `colorScheme: dark/light`，让浏览器原生下拉面板在黑夜模式下跟随深色主题，避免白底白字。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/appfull/ui/NavigationNotificationSelect.test.js`
+- 检索与复用策略：
+  - 检索关键词：`notificationPage` / `select` / `option` / `绗?` / `bg-white`
+  - 候选实现：`Navigation.jsx` 通知分页下拉栏、`overlayButtonClass` 现有浮层按钮体系
+  - 最终选择：复用现有浮层样式体系，单独补一个通知分页下拉栏专用深色变体，不影响其他 select
+- 风险点：
+  - 不同浏览器对原生 `select` 下拉菜单的样式支持存在差异，但 `colorScheme: dark` 已能覆盖主流浏览器的原生暗色面板表现。
+- 验证方式：
+  - 执行 `node ./src/appfull/ui/NavigationNotificationSelect.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-07] 优化首页主文案在手机端的居中观感
 - 背景/需求：用户反馈首页主文案“在这里把问题想清楚，把代码写简单。”在桌面端显示良好，但手机端会自然变成三行，且视觉上像左对齐，第二行带逗号时更显得右侧不齐，希望只优化手机端观感，桌面端保持不变。
 - 修改类型：fix

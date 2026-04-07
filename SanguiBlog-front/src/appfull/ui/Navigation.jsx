@@ -312,6 +312,9 @@ const Navigation = ({
     const overlayButtonClass = isDarkMode
         ? 'border border-white/12 bg-white/[0.07] text-white hover:bg-white/[0.14] shadow-[0_12px_24px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.1)]'
         : 'border border-black/10 bg-white/72 text-black hover:bg-white/90 shadow-[0_12px_24px_rgba(148,163,184,0.16),inset_0_1px_0_rgba(255,255,255,0.78)]';
+    const overlaySelectClass = isDarkMode
+        ? 'border border-white/12 bg-[#162033] text-white hover:bg-[#1b2a43] shadow-[0_12px_24px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.08)]'
+        : overlayButtonClass;
     const overlayAccentButtonClass = isDarkMode
         ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(255,215,0,0.34),rgba(255,196,0,0.2))] text-white hover:bg-[linear-gradient(180deg,rgba(255,215,0,0.4),rgba(255,196,0,0.24))] shadow-[0_14px_28px_rgba(255,196,0,0.16),inset_0_1px_0_rgba(255,255,255,0.18)]'
         : 'border border-[#d9a200]/28 bg-[linear-gradient(180deg,rgba(255,232,145,0.92),rgba(255,217,92,0.72))] text-black hover:bg-[linear-gradient(180deg,rgba(255,236,165,0.96),rgba(255,220,110,0.82))] shadow-[0_14px_28px_rgba(255,215,0,0.16),inset_0_1px_0_rgba(255,255,255,0.65)]';
@@ -464,13 +467,15 @@ const Navigation = ({
                                     onNotificationPageChange && onNotificationPageChange(v);
                                 }
                             }}
-                            className={`text-xs font-black rounded-full px-3 py-1.5 transition outline-none ${overlayButtonClass}`}
+                            className={`text-xs font-black rounded-full px-3 py-1.5 transition outline-none ${overlaySelectClass}`}
+                            style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
                         >
                             {Array.from({ length: totalNotificationPages }).map((_, idx) => {
                                 const page = idx + 1;
                                 return (
                                     <option key={page} value={page}>
-                                        绗?{page} 椤?                                    </option>
+                                        第 {page} 页
+                                    </option>
                                 );
                             })}
                         </select>
