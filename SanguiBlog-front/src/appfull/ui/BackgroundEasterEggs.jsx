@@ -9,13 +9,6 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
         delay: Math.random() * 3,
         id: idx
     })), []);
-    const meteors = useMemo(() => Array.from({ length: 10 }, (_, idx) => ({
-        top: 5 + Math.random() * 50,
-        left: -40 - Math.random() * 30,
-        delay: Math.random() * 2.5,
-        duration: 2.8 + Math.random() * 1.5,
-        id: idx
-    })), []);
 
     const shellClass = fixed
         ? 'pointer-events-none fixed inset-0 overflow-hidden z-0'
@@ -148,15 +141,6 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
                     }}
                     animate={{ opacity: [0.05, star.size > 2 ? 1 : 0.6, 0.05] }}
                     transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, ease: 'easeInOut', delay: star.delay }}
-                />
-            ))}
-            {meteors.map((meteor) => (
-                <motion.span
-                    key={`meteor-${meteor.id}`}
-                    className="absolute h-3 w-60 bg-gradient-to-r from-transparent via-white to-transparent blur-[1px]"
-                    style={{ top: `${meteor.top}%`, left: `${meteor.left}%`, transform: 'rotate(-20deg)' }}
-                    animate={{ x: ['0%', '180%'], y: ['0%', '70%'], opacity: [0, 1, 0] }}
-                    transition={{ duration: meteor.duration, repeat: Infinity, delay: meteor.delay, ease: 'linear' }}
                 />
             ))}
             <motion.div

@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-07] 移除黑夜模式背景中的流星特效
+- 背景/需求：用户反馈黑夜模式下会出现流星特效，体感上主要在手机端更明显，希望直接去掉该特效，其它夜间背景效果保持不变。
+- 修改类型：fix
+- 影响范围：前台夜间背景彩蛋层、BackgroundEasterEggs 回归断言、AI 变更日志
+- 变更摘要：
+  1) 检索确认流星来自 `BackgroundEasterEggs.jsx` 中固定全屏黑夜模式分支的 `meteors` 数据与 `meteors.map(...)` 渲染，而首页内部 `fixed={false}` 的黑夜分支并未渲染流星。
+  2) 删除 `BackgroundEasterEggs.jsx` 中的流星数据源与对应渲染层，只保留月亮、星点、光晕与底部夜色渐变。
+  3) 新增 `BackgroundEasterEggs.test.js` 并以断言约束组件源码中不再出现 `meteors` 与 `meteors.map(...)`，避免后续回归。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/BackgroundEasterEggs.jsx`
+  - `SanguiBlog-front/src/appfull/ui/BackgroundEasterEggs.test.js`
+- 检索与复用策略：
+  - 检索关键词：`BackgroundEasterEggs` / `meteors` / `fixed` / `isDarkMode`
+  - 候选实现：`BackgroundEasterEggs.jsx`、`ArticleList.jsx` 中 `fixed={false}` 用法、`AppFull.jsx` 中全局 `fixed` 用法
+  - 最终选择：继续复用现有夜间背景组件，只移除流星子层，不新增新的背景组件或主题分支
+- 风险点：
+  - 本次会让所有使用 `BackgroundEasterEggs` 的夜间页面都不再出现流星，不仅仅是手机端；星点和月亮等夜景氛围保留。
+- 验证方式：
+  - 执行 `node ./src/appfull/ui/BackgroundEasterEggs.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-07] 调整首页最新评论区域的悬浮上移层级
 - 背景/需求：用户希望首页“最新评论”区域取消整块卡片在鼠标悬停时的上移效果，改为仅在鼠标悬停到某一条具体评论卡片时，该条评论轻微上移，其他保持不变。
 - 修改类型：fix
