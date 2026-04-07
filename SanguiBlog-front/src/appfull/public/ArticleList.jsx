@@ -614,7 +614,7 @@ const ArticleList = ({
                         </div>
 
 
-                        <div className={`${sidebarBg} ${glassSurface} p-5`}>
+                        <div className={`${sidebarBg} ${glassSurface} home-ios-card--static p-5`}>
                             <div className="flex items-center justify-between gap-3">
                                 <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
                                     <MessageCircle size={18} className={isDarkMode ? 'text-white' : 'text-black'} /> 最新评论
@@ -632,7 +632,7 @@ const ArticleList = ({
                                     };
                                     return (
                                         <div key={comment.id || `recent-${comment.postId || 'post'}-${index}`}
-                                            className={`${glassInner} p-3 rounded-xl ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                                            className={`${glassInner} p-3 rounded-xl transition-transform duration-200 hover:-translate-y-0.5 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                                             <div className="flex items-center gap-3">
                                                 <img src={avatar} alt={comment.authorName || '访客'}
                                                     className="w-10 h-10 rounded-full border border-white/70 object-cover bg-[#FFD700]" />

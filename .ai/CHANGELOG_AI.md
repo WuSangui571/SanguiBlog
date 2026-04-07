@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-07] 调整首页最新评论区域的悬浮上移层级
+- 背景/需求：用户希望首页“最新评论”区域取消整块卡片在鼠标悬停时的上移效果，改为仅在鼠标悬停到某一条具体评论卡片时，该条评论轻微上移，其他保持不变。
+- 修改类型：fix
+- 影响范围：首页最新评论侧栏卡片 hover 反馈、ArticleList 回归断言、AI 变更日志
+- 变更摘要：
+  1) 检索确认根因在 `ArticleList.jsx` 中“最新评论”外层容器仍使用默认 `home-ios-card` hover 行为，因此悬停整块区域时整个卡片会上移。
+  2) 将“最新评论”外层容器切换为 `home-ios-card--static`，取消外层卡整体上移。
+  3) 为每条具体评论项补充 `transition-transform duration-200 hover:-translate-y-0.5`，让悬停反馈下沉到单条评论卡片层级。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.test.js`
+- 检索与复用策略：
+  - 检索关键词：`最新评论` / `home-ios-card` / `home-ios-card--static` / `hover:-translate-y`
+  - 候选实现：`ArticleList.jsx` 最新评论区域、`homeRedesign.css` 中 `home-ios-card--static`、`ArticleList.test.js` 现有源码级回归断言
+  - 最终选择：复用现有 `home-ios-card--static` 与现有 hover 工具类，不新增新的卡片样式类
+- 风险点：
+  - 本次只影响首页“最新评论”这一块，不会改动作者卡、全部标签卡或文章列表卡片的 hover 行为。
+- 验证方式：
+  - 执行 `node ./src/appfull/public/ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-07] 适配 AI 历史会话浮窗滚动条的黑夜模式
 - 背景/需求：用户反馈前台 AI 聊天中“历史会话”浮窗在黑夜模式下滚动条仍偏白、发亮，和整体深色面板不协调，希望只修正该滚动条的深浅色适配，其他行为不变。
 - 修改类型：fix
