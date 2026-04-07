@@ -5,6 +5,26 @@
 
 ---
 
+## [2026-04-07] 去除前台 AI 助手消息外层玻璃气泡
+- 背景/需求：用户要求当前台与 AI 聊天时，去掉 AI 方消息文字外层的玻璃气泡，让助手内容直接显示在 AI 聊天背景上；用户侧消息气泡保留，其他行为不变。
+- 修改类型：fix
+- 影响范围：前台 AI 聊天消息展示样式、消息展示断言、AI 变更日志
+- 变更摘要：
+  1) 检索确认前台 AI 聊天真实单入口仍为 `AppFull.jsx -> AiAssistantWidget.jsx -> aiMessagePresentation.js`，不存在需要并行修改的第二套前台消息组件。
+  2) 将 `aiMessagePresentation.js` 中助手消息分支从“带圆角/边框/半透明背景/阴影的玻璃气泡”改为“透明背景直接贴聊天区”的文本容器，保留用户消息右侧玻璃气泡不变。
+  3) 同步更新 `aiMessagePresentation.test.js` 断言，明确约束助手消息不再包含圆角边框、背景、阴影与模糊气泡类，防止后续回归。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/aiMessagePresentation.js`
+  - `SanguiBlog-front/src/appfull/ui/aiMessagePresentation.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `aiMessagePresentation` / `AiMessageMarkdown` / `助手贴背景` / `用户保留气泡`
+  - 候选实现：`AiAssistantWidget.jsx` 消息渲染入口、`aiMessagePresentation.js` 消息样式决策、`AiMessageMarkdown.js` Markdown 渲染层、`.ai/PROJECT_MEMORY.md` 既有行为说明
+  - 最终选择：复用现有消息展示链路，只修改助手消息样式决策，不新建聊天组件或第二套样式实现
+- 风险点：
+  - 本次只移除了助手消息外层气泡容器，未改 Markdown 内部代码块、表格、引用等子元素样式；如果后续希望这些子元素也进一步“去卡片化”，需要单独再收敛 `AiMessageMarkdown.js`。
+- 验证方式：
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-06] 统一 AI SSE 旧导出与现用导出的流式解析链
 - 背景/需求：用户指出 `api.js` 中旧导出 `streamAiChat` 仍保留一套手写 SSE 解析逻辑，而现用主链路 `streamAiChatReliable` 已切到 `consumeSseStream`；即使补齐 `parseSseBlocks` 导入，也仍存在“旧实现与新实现继续漂移”的维护风险。
 - 修改类型：fix
