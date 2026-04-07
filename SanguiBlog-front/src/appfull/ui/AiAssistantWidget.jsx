@@ -28,6 +28,7 @@ import {
     shouldStartPanelDrag
 } from './aiFloatingPanel.js';
 import {
+    getHistoryPopoverScrollbarClass,
     shouldCapturePageScrollWithAssistantOpen,
     getHistoryPopoverScrollStyle,
     shouldLockAssistantViewport
@@ -479,6 +480,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     });
     const capturePageScroll = shouldCapturePageScrollWithAssistantOpen(isOpen);
     const lockAssistantViewport = shouldLockAssistantViewport(historyOpen);
+    const historyPopoverScrollbarClass = getHistoryPopoverScrollbarClass(isDarkMode);
     const floatingPanelStyle = isFloating
         ? {
             top: floatingPosition?.y ?? headerHeight + 16,
@@ -944,7 +946,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                     </button>
                                                 </div>
                                                 <div
-                                                    className="mt-2 max-h-[280px] overflow-y-auto pr-1"
+                                                    className={`mt-2 max-h-[280px] overflow-y-auto pr-1 ${historyPopoverScrollbarClass}`}
                                                     style={getHistoryPopoverScrollStyle()}
                                                 >
                                                     {sessionsLoading ? (

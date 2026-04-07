@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-07] 适配 AI 历史会话浮窗滚动条的黑夜模式
+- 背景/需求：用户反馈前台 AI 聊天中“历史会话”浮窗在黑夜模式下滚动条仍偏白、发亮，和整体深色面板不协调，希望只修正该滚动条的深浅色适配，其他行为不变。
+- 修改类型：fix
+- 影响范围：前台 AI 历史会话浮窗滚动条主题、历史浮窗工具函数、AI 变更日志
+- 变更摘要：
+  1) 检索确认历史会话浮窗列表容器仅使用 `getHistoryPopoverScrollStyle()` 内联滚动样式，没有接入现有 `sg-scrollbar-dark/light` 主题类，因此黑夜模式下滚动条轨道未跟随主题切换。
+  2) 在 `aiHistoryOverlay.js` 中新增 `getHistoryPopoverScrollbarClass(isDarkMode)`，统一返回深浅色对应的滚动条类名。
+  3) 在 `AiAssistantWidget.jsx` 的历史会话浮窗滚动容器上接入该类名，让黑夜模式复用站点现有 `sg-scrollbar-dark`，白天模式继续走 `sg-scrollbar-light`。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/aiHistoryOverlay.js`
+  - `SanguiBlog-front/src/appfull/ui/aiHistoryOverlay.test.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+- 检索与复用策略：
+  - 检索关键词：`historyPopover` / `getHistoryPopoverScrollStyle` / `sg-scrollbar-dark` / `scrollbar-color`
+  - 候选实现：`AiAssistantWidget.jsx` 历史会话浮窗、`aiHistoryOverlay.js` 浮窗工具函数、`src/index.css` 现有暗色/亮色滚动条样式
+  - 最终选择：复用全站现有 `sg-scrollbar-dark/light`，不新增新的滚动条样式体系
+- 风险点：
+  - 本次只调整历史会话浮窗的滚动条主题，不改浮窗面板背景、会话项样式和主聊天区滚动条。
+- 验证方式：
+  - 执行 `node ./src/appfull/ui/aiHistoryOverlay.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-07] 去除前台 AI 助手消息外层玻璃气泡
 - 背景/需求：用户要求当前台与 AI 聊天时，去掉 AI 方消息文字外层的玻璃气泡，让助手内容直接显示在 AI 聊天背景上；用户侧消息气泡保留，其他行为不变。
 - 修改类型：fix
