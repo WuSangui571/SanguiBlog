@@ -8,43 +8,36 @@ export default function SiteFooter({
     icpLink = 'https://beian.miit.gov.cn/',
     poweredBy
 }) {
-    const shellClass = `home-ios-card home-ios-card--static mx-auto w-[min(1120px,calc(100%-2rem))] px-6 py-8 md:px-10 md:py-10 ${
-        isDarkMode
-            ? 'home-ios-card--dark text-slate-100'
-            : 'text-slate-900'
-    }`;
-    const metaTextClass = isDarkMode ? 'text-slate-300' : 'text-slate-600';
+    const borderClass = isDarkMode ? 'border-white/10' : 'border-slate-900/10';
+    const brandClass = isDarkMode ? 'text-slate-100' : 'text-slate-900';
+    const metaTextClass = isDarkMode ? 'text-slate-400' : 'text-slate-500';
     const linkClass = isDarkMode
-        ? 'border-white/12 bg-white/6 text-slate-100 hover:bg-white/10'
-        : 'border-black/8 bg-white/58 text-slate-800 hover:bg-white/72';
+        ? 'text-slate-300 hover:text-slate-100'
+        : 'text-slate-600 hover:text-slate-900';
 
     return (
-        <footer className="px-4 pt-14 pb-14">
-            <div className={shellClass}>
-                <div className="flex flex-col items-center text-center">
-                    <div className={`mb-3 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] ${
-                        isDarkMode
-                            ? 'border-white/12 bg-white/6 text-slate-300'
-                            : 'border-black/8 bg-white/58 text-slate-500'
-                    }`}>
-                        Site Footer
+        <footer className="px-4 pt-16 pb-14">
+            <div className={`mx-auto max-w-5xl border-t ${borderClass}`}>
+                <div className="flex flex-col items-center gap-4 pt-8 text-center md:pt-10">
+                    <div className={`text-[11px] font-semibold uppercase tracking-[0.28em] ${metaTextClass}`}>
+                        End Of Page
                     </div>
-                    <h2 className="mb-3 text-2xl font-black tracking-[-0.04em] md:text-3xl">{brand}</h2>
+                    <h2 className={`text-xl font-black tracking-[-0.04em] md:text-2xl ${brandClass}`}>{brand}</h2>
                     {copyrightText && (
-                        <p className={`max-w-3xl text-sm leading-6 ${metaTextClass}`}>{copyrightText}</p>
+                        <p className={`max-w-3xl text-sm leading-7 ${metaTextClass}`}>{copyrightText}</p>
                     )}
                     {icpNumber && (
                         <a
                             href={icpLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`mt-4 inline-flex items-center justify-center rounded-full border px-4 py-2 text-xs font-semibold tracking-[0.16em] transition-colors ${linkClass}`}
+                            className={`inline-flex items-center justify-center text-xs font-medium tracking-[0.14em] underline decoration-current/30 underline-offset-4 transition-colors ${linkClass}`}
                         >
                             {icpNumber}
                         </a>
                     )}
                     {poweredBy && (
-                        <p className={`mt-4 text-xs tracking-[0.16em] ${metaTextClass}`}>
+                        <p className={`text-xs tracking-[0.14em] ${metaTextClass}`}>
                             {poweredBy}
                         </p>
                     )}
