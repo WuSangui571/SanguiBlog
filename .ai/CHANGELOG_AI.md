@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-08] 将首页回到顶部悬浮按钮适配为站点玻璃风格
+- 背景/需求：用户要求只调整首页悬浮“回到顶部”按钮的 UI，让它更贴合当前站点首页/导航的玻璃设计语言，明确不要改动原有显隐、拖拽、回顶和进度环等逻辑。
+- 修改类型：fix
+- 影响范围：首页回顶悬浮按钮视觉、回顶按钮回归断言、AI 变更日志
+- 变更摘要：
+  1) 检索确认首页真实单入口为 `AppFull.jsx -> ScrollToTop.jsx`，不存在第二套首页回顶按钮实现；同时对比首页既有 `home-ios-card`、导航 `home-nav-icon-btn--glass` 与文章页悬浮按钮样式，选择直接在 `ScrollToTop.jsx` 原位改造。
+  2) 将回顶按钮从旧的黑金/玫红霓虹块状按钮收敛为站点同体系的圆形玻璃悬浮按钮，复用 `home-ios-card home-ios-card--static` 语言，并补充轻量 ring、blur、浅/深色主题细分与内层圆形箭头承载壳。
+  3) 保持拖拽定位、本地持久化、滚动进度环、显隐阈值、点击平滑回顶和彩蛋粒子逻辑不变，仅调整颜色、阴影、边框和容器质感。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/ScrollToTop.jsx`
+  - `SanguiBlog-front/src/appfull/ui/ScrollToTop.test.js`
+- 检索与复用策略：
+  - 检索关键词：`scrollToTop` / `ScrollToTop` / `ArrowUp` / `home-ios-card` / `home-nav-icon-btn--glass`
+  - 候选实现：`ScrollToTop.jsx` 现有回顶按钮、`homeRedesign.css` 中 `home-ios-card` 玻璃卡体系、`Navigation.jsx` 的玻璃图标按钮、`ArticleDetail.jsx` 的站内悬浮按钮
+  - 最终选择：复用现有回顶组件和既有玻璃视觉体系，原位改造，不新建新组件或第二套悬浮按钮实现
+- 风险点：
+  - 本次主要影响回顶按钮的视觉表现；由于按钮仍是固定尺寸圆形容器，交互命中区与拖拽逻辑保持稳定，低风险。
+- 验证方式：
+  - 执行 `node ./src/appfull/ui/ScrollToTop.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node ./src/appfull/ui/NavigationNotificationSelect.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-07] 升级站点版本号到 V2.2.7 并同步 README
 
 - 将站点版本号从 `V2.2.6` 升级为 `V2.2.7`，同步更新后端 `site.version`、首页版本展示兜底值与导航中的版本显示兜底值。
