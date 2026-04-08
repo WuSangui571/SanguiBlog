@@ -66,6 +66,33 @@ const WELCOME_INTRO_DURATION_MS = 2400;
 const launcherGlowShapeClass = 'rounded-[24px]';
 const launcherGlowInnerShapeClass = 'rounded-[22px]';
 
+function getMobileViewportRect() {
+    if (typeof window === 'undefined') {
+        return {
+            width: 0,
+            height: 0,
+            offsetTop: 0,
+            offsetLeft: 0,
+            keyboardInset: 0
+        };
+    }
+
+    const visualViewport = window.visualViewport;
+    const width = Math.round(visualViewport?.width ?? window.innerWidth);
+    const height = Math.round(visualViewport?.height ?? window.innerHeight);
+    const offsetTop = Math.max(0, Math.round(visualViewport?.offsetTop ?? 0));
+    const offsetLeft = Math.max(0, Math.round(visualViewport?.offsetLeft ?? 0));
+    const keyboardInset = Math.max(0, window.innerHeight - height - offsetTop);
+
+    return {
+        width,
+        height,
+        offsetTop,
+        offsetLeft,
+        keyboardInset
+    };
+}
+
 function AssistantLogo({ logoPath, alt, size, roundedClassName = 'rounded-2xl' }) {
     const [hasError, setHasError] = useState(false);
 
@@ -98,6 +125,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const [isMobileViewport, setIsMobileViewport] = useState(() =>
         typeof window !== 'undefined' ? window.innerWidth < 768 : false
     );
+    const [mobileViewportRect, setMobileViewportRect] = useState(() => getMobileViewportRect());
     const [isOpen, setIsOpen] = useState(false);
     const [overlayBaseZ, setOverlayBaseZ] = useState(OVERLAY_STACK_BASE);
     const [draft, setDraft] = useState('');
@@ -143,6 +171,27 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             setAssistantNotice((prev) => ({ ...prev, visible: false }));
         }, 3200);
     }, []);
+    const scrollAssistantViewportToBottom = useCallback((behavior = 'smooth') => {
+        requestAnimationFrame(() => {
+            viewportRef.current?.scrollTo({
+                top: viewportRef.current.scrollHeight,
+                behavior
+            });
+        });
+    }, []);
+    const handleTextareaFocus = useCallback(() => {
+        if (!isMobileViewport) {
+            return;
+        }
+
+        window.setTimeout(() => {
+            textareaRef.current?.scrollIntoView({
+                block: 'nearest',
+                inline: 'nearest'
+            });
+            scrollAssistantViewportToBottom('smooth');
+        }, 120);
+    }, [isMobileViewport, scrollAssistantViewportToBottom]);
 
     useEffect(() => {
         if (isOpen) {
@@ -166,26 +215,42 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
     useEffect(() => {
         if (!isOpen) return;
-        requestAnimationFrame(() => {
-            viewportRef.current?.scrollTo({
-                top: viewportRef.current.scrollHeight,
-                behavior: 'smooth'
-            });
-        });
-    }, [isOpen, messages, messagesLoading]);
+        scrollAssistantViewportToBottom('smooth');
+    }, [isOpen, messages, messagesLoading, scrollAssistantViewportToBottom]);
 
     useEffect(() => {
         const handleResize = () => {
             setIsMobileViewport(window.innerWidth < 768);
+            setMobileViewportRect(getMobileViewportRect());
         };
 
         handleResize();
         window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+
+        const visualViewport = window.visualViewport;
+        visualViewport?.addEventListener('resize', handleResize);
+        visualViewport?.addEventListener('scroll', handleResize);
 
         return () => {
             window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleResize);
+            visualViewport?.removeEventListener('resize', handleResize);
+            visualViewport?.removeEventListener('scroll', handleResize);
         };
     }, []);
+
+    useEffect(() => {
+        if (!isOpen || !isMobileViewport) {
+            return;
+        }
+
+        if (mobileViewportRect.keyboardInset <= 0 && document.activeElement !== textareaRef.current) {
+            return;
+        }
+
+        scrollAssistantViewportToBottom('smooth');
+    }, [isMobileViewport, isOpen, mobileViewportRect, scrollAssistantViewportToBottom]);
 
     useEffect(() => {
         if (!shouldPlayAiWelcomeIntro({
@@ -501,12 +566,12 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         };
     const panelStyle = isMobileViewport
         ? {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh'
+            top: mobileViewportRect.offsetTop,
+            left: mobileViewportRect.offsetLeft,
+            right: 'auto',
+            bottom: 'auto',
+            width: `${mobileViewportRect.width}px`,
+            height: `${mobileViewportRect.height}px`
         }
         : floatingPanelStyle;
 
@@ -1148,7 +1213,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 className={`sg-scrollbar flex-1 min-h-0 px-4 py-4 ${viewportGlassClass} ${
                                     lockAssistantViewport ? 'overflow-hidden' : 'overflow-y-auto'
                                 }`}
-                                style={{ overscrollBehavior: 'contain' }}
+                                style={{
+                                    overscrollBehavior: 'contain',
+                                    WebkitOverflowScrolling: 'touch'
+                                }}
                             >
                                 {messagesLoading ? (
                                     <div className="flex min-h-[240px] items-center justify-center">
@@ -1286,7 +1354,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 )}
                             </div>
 
-                            <form onSubmit={handleSubmit} className={`border-t p-3 ${panelBorderClass} ${shellClass}`}>
+                            <form
+                                onSubmit={handleSubmit}
+                                className={`border-t p-3 ${panelBorderClass} ${shellClass}`}
+                                style={isMobileViewport ? { paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' } : undefined}
+                            >
                                 <div className="relative">
                                     <label className="block">
                                         <span className="sr-only">输入消息</span>
@@ -1295,6 +1367,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             rows={1}
                                             value={draft}
                                             onChange={(event) => setDraft(event.target.value)}
+                                            onFocus={handleTextareaFocus}
                                             onKeyDown={handleTextareaKeyDown}
                                             placeholder={assistantConfig.inputPlaceholder}
                                             style={{
