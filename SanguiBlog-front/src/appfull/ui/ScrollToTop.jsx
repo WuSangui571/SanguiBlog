@@ -212,11 +212,8 @@ const ScrollToTop = ({ isDarkMode }) => {
     const progressColor = isDarkMode ? '#E2E8F0' : '#1B63D6';
     const percentLabel = Math.round(scrollPercent * 100);
     const buttonToneClass = isDarkMode
-        ? 'border-white/12 bg-[rgba(255,255,255,0.06)] text-slate-100 ring-white/10 shadow-[0_18px_48px_rgba(0,0,0,0.34)] hover:bg-[rgba(255,255,255,0.1)]'
-        : 'border-[rgba(215,226,241,0.52)] bg-[linear-gradient(160deg,rgba(255,255,255,0.82)_0%,rgba(255,255,255,0.58)_48%,rgba(244,248,255,0.72)_100%)] text-slate-900 ring-black/5 shadow-[0_18px_48px_rgba(15,23,42,0.18)] hover:bg-[linear-gradient(160deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.74)_48%,rgba(244,248,255,0.84)_100%)]';
-    const arrowShellClass = isDarkMode
-        ? 'bg-white/8 text-slate-100 border-white/10'
-        : 'bg-white/58 text-slate-900 border-black/8';
+        ? 'border border-white/12 bg-[linear-gradient(160deg,rgba(255,255,255,0.1)_0%,rgba(255,255,255,0.05)_100%)] text-slate-100 ring-1 ring-white/10 shadow-[0_18px_48px_rgba(0,0,0,0.34)] hover:bg-[linear-gradient(160deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.08)_100%)]'
+        : 'border border-[rgba(215,226,241,0.52)] bg-[linear-gradient(160deg,rgba(255,255,255,0.82)_0%,rgba(255,255,255,0.58)_48%,rgba(244,248,255,0.72)_100%)] text-slate-900 ring-1 ring-black/5 shadow-[0_18px_48px_rgba(15,23,42,0.18)] hover:bg-[linear-gradient(160deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.74)_48%,rgba(244,248,255,0.84)_100%)]';
 
     return (
         <AnimatePresence>
@@ -230,10 +227,10 @@ const ScrollToTop = ({ isDarkMode }) => {
                     onClick={handleClick}
                     style={{ left: `${position.x}px`, top: `${position.y}px`, touchAction: 'none' }}
                     aria-label={`返回顶部（已滚动 ${percentLabel}%）`}
-                    className={`home-ios-card home-ios-card--static fixed z-50 flex h-14 w-14 items-center justify-center rounded-full border p-0 backdrop-blur-[18px] ring-1 transition-all duration-300 ${buttonToneClass} ${isDragging ? 'scale-[1.02] cursor-grabbing' : 'cursor-grab hover:-translate-y-0.5'}`}
+                    className={`fixed z-50 p-3 rounded-full backdrop-blur-[18px] transition-colors ${buttonToneClass} ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 >
-                    <span className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border ${arrowShellClass}`}>
-                        <ArrowUp size={20} className="relative z-10" strokeWidth={2.4} />
+                    <span className="relative flex items-center justify-center w-10 h-10">
+                        <ArrowUp size={24} className="relative z-10" strokeWidth={2.4} />
                     </span>
                     <motion.svg
                         className="absolute pointer-events-none"
