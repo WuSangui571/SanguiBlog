@@ -165,9 +165,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const lastViewRef = useRef(initialView);
     const [articleBackTarget, setArticleBackTarget] = useState(initialView === 'article' ? 'home' : initialView || 'home');
     const [backgroundEnabled, setBackgroundEnabled] = useState(() => {
-        if (typeof window === 'undefined') return true;
+        if (typeof window === 'undefined') return false;
         const stored = window.localStorage.getItem('sg_background_enabled');
-        if (stored === null) return true;
+        if (stored === null) return false;
         return stored !== 'false';
     });
 

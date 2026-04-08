@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-08] 将彩蛋背景默认值调整为首次进入默认关闭
+- 背景/需求：用户要求当前站点首次进入时，彩蛋背景默认关闭，但手动开关能力与本地持久化逻辑保持不变。
+- 修改类型：fix
+- 影响范围：前台彩蛋背景默认开关初始化、本地持久化默认值、AI 变更日志
+- 变更摘要：
+  1) 检索确认彩蛋背景默认值唯一入口在 `AppFull.jsx` 的 `backgroundEnabled` 初始化逻辑，导航与移动端开关只是消费该状态，不需要并行修改。
+  2) 将 `stored === null` 时的默认值从 `true` 调整为 `false`；同时 `typeof window === 'undefined'` 的 SSR/预渲染兜底默认值也同步改为 `false`。
+  3) 保留 `sg_background_enabled` 的本地持久化写入逻辑和 `return stored !== 'false'` 的已保存状态解析逻辑不变，因此用户后续仍可手动开启/关闭，并继续保存在本地。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/backgroundEnabledDefault.test.js`
+- 检索与复用策略：
+  - 检索关键词：`sg_background_enabled` / `backgroundEnabled` / `stored === null`
+  - 候选实现：`AppFull.jsx` 状态初始化、`AppFull.jsx` localStorage 持久化、`Navigation.jsx` 开关消费逻辑
+  - 最终选择：只修改 `AppFull.jsx` 的默认初始化分支，不改开关 UI 和持久化逻辑
+- 风险点：
+  - 本次只影响“首次进入且本地尚无记录”的默认值；已有本地记录的用户会继续按本地配置生效。
+- 验证方式：
+  - 执行 `node ./src/appfull/backgroundEnabledDefault.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-08] 将归档页顶部返回/刷新按钮适配为站点轻玻璃风格
 - 背景/需求：用户要求只调整 `/archive` 页面顶部“返回首页”“刷新归档”两个按钮的 UI，使其更贴合站点当前首页/归档的玻璃风格，明确不改按钮文案、跳转、刷新与 loading 逻辑。
 - 修改类型：fix
