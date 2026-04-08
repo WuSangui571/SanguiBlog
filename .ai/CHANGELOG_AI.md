@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-08] 将归档页顶部返回/刷新按钮适配为站点轻玻璃风格
+- 背景/需求：用户要求只调整 `/archive` 页面顶部“返回首页”“刷新归档”两个按钮的 UI，使其更贴合站点当前首页/归档的玻璃风格，明确不改按钮文案、跳转、刷新与 loading 逻辑。
+- 修改类型：fix
+- 影响范围：归档页顶部两个动作按钮视觉、归档页按钮回归断言、AI 变更日志
+- 变更摘要：
+  1) 检索确认这两个按钮的真实单入口都在 `ArchiveView.jsx` 顶部操作区，继续复用现有 `PopButton` 与 `onBackHome/onReload` 逻辑，不新增第二套按钮组件。
+  2) 为按钮区新增轻量玻璃包裹层 `archiveActionWrapClass`，并将两个按钮切到 `variant="ghost"`，同时通过 `archiveActionButtonClass` 覆盖为圆角、轻边框、无厚重黑投影的站点风格按钮。
+  3) 保留“返回首页”“刷新归档/加载中…”文案、禁用态和点击行为不变，仅收敛外观。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArchiveView.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArchiveView.test.js`
+- 检索与复用策略：
+  - 检索关键词：`返回首页` / `刷新归档` / `ArchiveView` / `PopButton` / `home-ios-inner-card`
+  - 候选实现：`ArchiveView.jsx` 顶部操作区、`PopButton.jsx` 通用按钮、`homeRedesign.css` 中 `home-ios-inner-card` 玻璃样式体系
+  - 最终选择：复用既有 `PopButton` 和站点玻璃样式体系，原位改造，不新建新按钮实现
+- 风险点：
+  - 本次只改类名与包裹层，不改按钮行为；唯一可见差异是按钮 hover/tap 的视觉反馈会比原先更轻。
+- 验证方式：
+  - 执行 `node ./src/appfull/public/ArchiveView.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-08] 将首页页脚适配为站点玻璃风格
 - 背景/需求：用户要求按“只改外观、不改显示与逻辑”的边界，把首页底部页脚适配为当前站点首页统一的玻璃风格，保留品牌、版权、备案号与 Powered by 的显示规则不变。
 - 修改类型：fix

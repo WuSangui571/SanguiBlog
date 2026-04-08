@@ -9,14 +9,13 @@ const source = fs.readFileSync(path.join(__dirname, 'SiteFooter.jsx'), 'utf8');
 
 assert.match(source, /border-t/);
 assert.match(source, /max-w-5xl/);
-assert.match(source, /tracking-\[0\.28em\]/);
-assert.match(source, /End Of Page/);
 assert.match(source, /brand = 'SANGUI BLOG'/);
 assert.match(source, /copyrightText/);
 assert.match(source, /icpNumber/);
 assert.match(source, /poweredBy/);
 assert.doesNotMatch(source, /home-ios-card--static/);
 assert.doesNotMatch(source, /Site Footer/);
+assert.doesNotMatch(source, /End Of Page/);
 assert.doesNotMatch(source, /border-t-8/);
 
 console.log('SiteFooter tests passed');

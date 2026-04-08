@@ -180,6 +180,9 @@ const ArchiveView = ({
     const quickJumpBtn = isDarkMode
         ? 'bg-[#111827]/70 text-white hover:bg-[#1F2937]'
         : 'bg-white/72 text-black hover:bg-[#FFD700]';
+    const archiveActionButtonClass = isDarkMode
+        ? '!rounded-full !border !border-white/10 !bg-transparent !text-slate-100 !shadow-none hover:!bg-white/10'
+        : '!rounded-full !border !border-black/10 !bg-white/38 !text-slate-900 !shadow-none hover:!bg-white/72';
 
     const handleArticleClick = (postId) => {
         if (!postId || typeof onOpenArticle !== 'function') return;
@@ -195,10 +198,10 @@ const ArchiveView = ({
                         <h1 className="text-4xl md:text-5xl font-black mt-3">归档时间线</h1>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                        <PopButton variant="accent" onClick={onBackHome} className="shadow-[6px_6px_0px_0px_#000]">
+                        <PopButton variant="ghost" onClick={onBackHome} className={archiveActionButtonClass}>
                             返回首页
                         </PopButton>
-                        <PopButton variant="primary" onClick={onReload} disabled={loading} className="shadow-[6px_6px_0px_0px_#000]">
+                        <PopButton variant="ghost" onClick={onReload} disabled={loading} className={archiveActionButtonClass}>
                             {loading ? '加载中…' : '刷新归档'}
                         </PopButton>
                     </div>

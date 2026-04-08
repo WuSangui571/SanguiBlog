@@ -16,12 +16,9 @@ export default function SiteFooter({
         : 'text-slate-600 hover:text-slate-900';
 
     return (
-        <footer className="px-4 pt-16 pb-14">
+        <footer className="px-4 pt-0 pb-14">
             <div className={`mx-auto max-w-5xl border-t ${borderClass}`}>
                 <div className="flex flex-col items-center gap-4 pt-8 text-center md:pt-10">
-                    <div className={`text-[11px] font-semibold uppercase tracking-[0.28em] ${metaTextClass}`}>
-                        End Of Page
-                    </div>
                     <h2 className={`text-xl font-black tracking-[-0.04em] md:text-2xl ${brandClass}`}>{brand}</h2>
                     {copyrightText && (
                         <p className={`max-w-3xl text-sm leading-7 ${metaTextClass}`}>{copyrightText}</p>
