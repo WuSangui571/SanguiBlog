@@ -19,14 +19,15 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
         : (backgroundResolved ? HOME_BG_PATH : null);
     const motionCapability = useMemo(() => {
         if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-            return { prefersReducedMotion: false, coarsePointer: false };
+            return { prefersReducedMotion: false, coarsePointer: false, narrowViewport: false };
         }
         return {
             prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-            coarsePointer: window.matchMedia('(pointer: coarse)').matches
+            coarsePointer: window.matchMedia('(pointer: coarse)').matches,
+            narrowViewport: window.matchMedia('(max-width: 768px)').matches
         };
     }, []);
-    const shouldUseMotionParallax = !motionCapability.prefersReducedMotion && !motionCapability.coarsePointer;
+    const shouldUseMotionParallax = !motionCapability.prefersReducedMotion && !motionCapability.coarsePointer && !motionCapability.narrowViewport;
     const orbMotionPrimary = shouldUseMotionParallax ? { x: [0, 10, -4, 0], y: [0, -7, 4, 0] } : undefined;
     const orbMotionSecondary = shouldUseMotionParallax ? { x: [0, -10, 4, 0], y: [0, 7, -5, 0] } : undefined;
 

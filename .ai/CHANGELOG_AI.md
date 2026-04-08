@@ -5,6 +5,36 @@
 
 ---
 
+## [2026-04-08] 继续下调首页持续动画并新增手机端首页性能模式
+- 背景/需求：用户继续要求优先削减首页无限循环动画、移除卡片倾斜，并对手机端启用更激进的首页性能模式，包括关闭 Hero 背景视差、关闭文章卡片倾斜、关闭 shimmer 扫光、关闭背景星点闪烁，仅保留静态背景。
+- 修改类型：fix
+- 影响范围：首页 NEW 卡片持续动效、首页文章卡片 hover 反馈、首页背景动画层、手机端首页性能模式、AI 变更日志
+- 变更摘要：
+  1) 将 `TiltCard.jsx` 的 3D 倾斜链路彻底移除，不再使用 `useMotionValue/useTransform` 实时跟鼠标旋转，hover 仅保留轻微纵向位移。
+  2) 在 `ArticleList.jsx` 中新增 `NEW_BADGE_ACTIVE_MS = 7000` 窗口，首页 NEW 徽章和 NEW 卡片外层发光只在页面进入后的前 7 秒保持动态，随后自动静止。
+  3) 在 `ArticleList.jsx` 与 `BackgroundEasterEggs.jsx` 中新增基于 `matchMedia('(max-width: 768px)')` 的手机端首页性能模式；手机端关闭文章卡片额外特效、关闭背景星点与背景层动画。
+  4) 在 `BackgroundEasterEggs.jsx` 中把桌面端无限循环层再砍一轮：星点改为静态点缀，只保留 1 到 2 个主氛围层做缓慢运动；在 `homeRedesign.css` 中将 shimmer 静态降级范围扩到 `max-width: 768px`。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/ui/TiltCard.jsx`
+  - `SanguiBlog-front/src/appfull/ui/BackgroundEasterEggs.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleListPerformance.test.js`
+  - `SanguiBlog-front/src/appfull/ui/TiltCardPerformance.test.js`
+  - `SanguiBlog-front/src/appfull/ui/BackgroundEasterEggsPerformance.test.js`
+- 检索与复用策略：
+  - 检索关键词：`TiltCard` / `useMotionValue` / `rotateX` / `BackgroundEasterEggs` / `repeat: Infinity` / `NEW` / `Sparkles` / `max-width: 768px`
+  - 候选实现：`TiltCard.jsx` 卡片倾斜、`ArticleList.jsx` NEW 徽章与卡片入口、`BackgroundEasterEggs.jsx` 背景循环动画、`homeRedesign.css` shimmer 降级规则
+  - 最终选择：继续复用现有首页链路，原位减负，不新建第二套首页或第二套移动端页面
+- 风险点：
+  - 手机端首页会比桌面端明显更克制，氛围感降低属于预期取舍；换来的是更稳定的滚动与更低的发热风险。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\TiltCardPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\public\\ArticleListPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\BackgroundEasterEggsPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-08] 收敛首页 Hero 与文章卡片持续动效以降低发热和卡顿
 - 背景/需求：用户反馈首页顶部文字、CTA 入场与“向下探索内容”按钮体感略卡，同时移动端发热和桌面端风扇明显，希望排查是否为首页动效过重，并优先降低首页文字倾斜/视差幅度与持续动画成本。
 - 修改类型：fix

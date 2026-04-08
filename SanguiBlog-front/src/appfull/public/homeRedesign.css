@@ -529,7 +529,7 @@
   z-index: 2;
 }
 
-@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
+@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse), (max-width: 768px) {
   .home-hero__cta:hover {
     transform: none;
   }

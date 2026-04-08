@@ -46,6 +46,8 @@ import {
     X
 } from 'lucide-react';
 
+const NEW_BADGE_ACTIVE_MS = 7000;
+
 const ArticleList = ({
     setView,
     setArticleId,
@@ -88,6 +90,8 @@ const ArticleList = ({
     const [keyword, setKeyword] = useState('');
     const [appliedKeyword, setAppliedKeyword] = useState('');
     const [excerptOverflowMap, setExcerptOverflowMap] = useState({});
+    const [newBadgeMotionEnabled, setNewBadgeMotionEnabled] = useState(true);
+    const [mobilePerformanceMode, setMobilePerformanceMode] = useState(false);
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
     const warningTimerRef = useRef(null);
     const excerptOverflowTracker = useMemo(() => createArticleExcerptOverflowTracker(), []);
@@ -107,6 +111,7 @@ const ArticleList = ({
     const NEW_POST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     const keywordText = appliedKeyword.trim();
+    const cardEffectsDisabled = mobilePerformanceMode || !newBadgeMotionEnabled;
     const isPostNew = (dateStr) => {
         if (!dateStr) return false;
         const parsed = Date.parse(`${dateStr}T00:00:00`);
@@ -115,6 +120,26 @@ const ArticleList = ({
         if (diff < 0) return false;
         return diff <= NEW_POST_WINDOW_MS;
     };
+
+    useEffect(() => {
+        const timer = setTimeout(() => setNewBadgeMotionEnabled(false), NEW_BADGE_ACTIVE_MS);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return undefined;
+        }
+
+        const mobileQuery = window.matchMedia('(max-width: 768px)');
+        const syncMobilePerformanceMode = () => setMobilePerformanceMode(mobileQuery.matches);
+        syncMobilePerformanceMode();
+        mobileQuery.addEventListener?.('change', syncMobilePerformanceMode);
+
+        return () => {
+            mobileQuery.removeEventListener?.('change', syncMobilePerformanceMode);
+        };
+    }, []);
 
     const showSpinHint = useCallback((message, duration = 2200) => {
         setSpinWarning(message);
@@ -818,7 +843,7 @@ const ArticleList = ({
                                             transition={{ delay: idx * 0.1, duration: 0.5 }}
                                             whileHover="hover"
                                         >
-                                            <TiltCard variant="glass" isDarkMode={isDarkMode} isNew={isNewPost} accentColor={accentColor} onClick={() => {
+                                            <TiltCard variant="glass" isDarkMode={isDarkMode} isNew={isNewPost} accentColor={accentColor} disableEffects={cardEffectsDisabled} onClick={() => {
                                                 setArticleId(post.id);
                                                 setView('article');
                                             }}>
@@ -933,8 +958,8 @@ const ArticleList = ({
                                                                 <motion.span
                                                                     className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest border border-white/65 rounded-full bg-[#FF0080]/88 text-white shadow-[0_10px_22px_rgba(255,0,128,0.3)]"
                                                                     initial={{ scale: 0.95, opacity: 0.9 }}
-                                                                    animate={{ scale: [0.95, 1.08, 1], opacity: [0.9, 1, 0.95] }}
-                                                                    transition={{ duration: 2, repeat: 1, ease: 'easeInOut' }}
+                                                                    animate={cardEffectsDisabled ? undefined : { scale: [0.95, 1.08, 1], opacity: [0.9, 1, 0.95] }}
+                                                                    transition={cardEffectsDisabled ? undefined : { duration: 2, repeat: 1, ease: 'easeInOut' }}
                                                                 >
                                                                     <Sparkles size={12} strokeWidth={3} />
                                                                     NEW
