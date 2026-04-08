@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-08] 将首页页脚适配为站点玻璃风格
+- 背景/需求：用户要求按“只改外观、不改显示与逻辑”的边界，把首页底部页脚适配为当前站点首页统一的玻璃风格，保留品牌、版权、备案号与 Powered by 的显示规则不变。
+- 修改类型：fix
+- 影响范围：首页页脚视觉、页脚回归断言、AI 变更日志
+- 变更摘要：
+  1) 检索确认首页页脚真实单入口为 `HomeView.jsx -> SiteFooter.jsx`，不存在第二套首页 footer 实现。
+  2) 将 `SiteFooter.jsx` 从旧的黑底厚色条样式改为复用首页现有 `home-ios-card home-ios-card--static` 的玻璃卡风格，整体收敛到与首页文章区、导航一致的材质语言。
+  3) 保留 `brand / copyrightText / icpNumber / icpLink / poweredBy` 的传参与显示条件不变，只调整容器、标题、辅助文案和备案链接的视觉样式。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/SiteFooter.jsx`
+  - `SanguiBlog-front/src/appfull/ui/SiteFooter.test.js`
+- 检索与复用策略：
+  - 检索关键词：`SiteFooter` / `footer` / `copyright` / `备案` / `Powered by`
+  - 候选实现：`SiteFooter.jsx` 现有页脚、`HomeView.jsx` 首页接入点、`homeRedesign.css` 中 `home-ios-card` 玻璃卡体系
+  - 最终选择：复用现有 `SiteFooter.jsx` 单入口并复用首页玻璃样式，不新增第二套页脚组件
+- 风险点：
+  - 本次只影响首页页脚视觉层，不改链接、文案来源与条件渲染，功能风险较低。
+- 验证方式：
+  - 执行 `node ./src/appfull/ui/SiteFooter.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-08] 将首页回到顶部悬浮按钮适配为站点玻璃风格
 - 背景/需求：用户要求只调整首页悬浮“回到顶部”按钮的 UI，让它更贴合当前站点首页/导航的玻璃设计语言，明确不要改动原有显隐、拖拽、回顶和进度环等逻辑。
 - 修改类型：fix
