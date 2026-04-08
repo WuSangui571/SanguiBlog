@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
@@ -13,18 +13,30 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
     const { headerHeight } = useLayoutOffsets();
     const { scrollY } = useScroll();
     const contentOpacity = useTransform(scrollY, [0, 80, 220], [1, 0.72, 0]);
-    const contentY = useTransform(scrollY, [0, 220], [0, -168]);
+    const contentY = useTransform(scrollY, [0, 220], [0, -96]);
     const resolvedBackgroundUrl = backgroundUrl
         ? (backgroundUrl.startsWith('/uploads/') ? buildAssetUrl(backgroundUrl, HOME_BG_PATH) : backgroundUrl)
         : (backgroundResolved ? HOME_BG_PATH : null);
+    const motionCapability = useMemo(() => {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return { prefersReducedMotion: false, coarsePointer: false };
+        }
+        return {
+            prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+            coarsePointer: window.matchMedia('(pointer: coarse)').matches
+        };
+    }, []);
+    const shouldUseMotionParallax = !motionCapability.prefersReducedMotion && !motionCapability.coarsePointer;
+    const orbMotionPrimary = shouldUseMotionParallax ? { x: [0, 10, -4, 0], y: [0, -7, 4, 0] } : undefined;
+    const orbMotionSecondary = shouldUseMotionParallax ? { x: [0, -10, 4, 0], y: [0, 7, -5, 0] } : undefined;
 
     useEffect(() => {
-        if (typeof window === 'undefined') return undefined;
+        if (typeof window === 'undefined' || !shouldUseMotionParallax) return undefined;
 
         let frameId = 0;
         const handleMouseMove = (event) => {
-            const x = (window.innerWidth / 2 - event.clientX) / 100;
-            const y = (window.innerHeight / 2 - event.clientY) / 100;
+            const x = (window.innerWidth / 2 - event.clientX) / 180;
+            const y = (window.innerHeight / 2 - event.clientY) / 180;
 
             if (frameId) {
                 window.cancelAnimationFrame(frameId);
@@ -32,10 +44,10 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
 
             frameId = window.requestAnimationFrame(() => {
                 if (bgRef.current) {
-                    bgRef.current.style.transform = `scale(1.05) translate(${x}px, ${y}px)`;
+                    bgRef.current.style.transform = `scale(1.02) translate(${x}px, ${y}px)`;
                 }
                 if (heroParallaxRef.current) {
-                    heroParallaxRef.current.style.transform = `translate(${-x}px, ${-y}px)`;
+                    heroParallaxRef.current.style.transform = `translate(${-x * 0.45}px, ${-y * 0.45}px)`;
                 }
             });
         };
@@ -47,7 +59,7 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
                 window.cancelAnimationFrame(frameId);
             }
         };
-    }, []);
+    }, [shouldUseMotionParallax]);
 
     const handleStartReading = () => {
         if (typeof onStartReading === 'function') {
@@ -76,14 +88,14 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
             <motion.div
                 aria-hidden="true"
                 className="home-hero__orb home-hero__orb--primary"
-                animate={{ x: [0, 18, -8, 0], y: [0, -12, 8, 0] }}
-                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+                animate={orbMotionPrimary}
+                transition={shouldUseMotionParallax ? { duration: 22, repeat: Infinity, ease: 'easeInOut' } : undefined}
             />
             <motion.div
                 aria-hidden="true"
                 className="home-hero__orb home-hero__orb--secondary"
-                animate={{ x: [0, -18, 8, 0], y: [0, 12, -10, 0] }}
-                transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+                animate={orbMotionSecondary}
+                transition={shouldUseMotionParallax ? { duration: 26, repeat: Infinity, ease: 'easeInOut' } : undefined}
             />
 
             <motion.div
@@ -94,16 +106,16 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
                     <motion.span
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                        transition={{ duration: 0.75, ease: 'easeOut' }}
                         className="home-hero__eyebrow"
                     >
                         Hello, I am Sangui
                     </motion.span>
 
                     <motion.h1
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1], delay: 0.3 }}
+                        transition={{ duration: 0.85, ease: [0.2, 0.8, 0.2, 1], delay: 0.18 }}
                         className="home-hero__headline"
                     >
                         <span>在这里把问题想清楚，</span>
@@ -113,7 +125,7 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 1.3, ease: 'easeOut', delay: 0.9 }}
+                        transition={{ duration: 0.9, ease: 'easeOut', delay: 0.38 }}
                         className="home-hero__actions"
                     >
                         <button
@@ -132,4 +144,3 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
         </section>
     );
 }
-

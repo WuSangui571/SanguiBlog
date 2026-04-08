@@ -73,7 +73,7 @@
   filter: grayscale(100%) blur(1px);
   opacity: var(--home-bg-opacity);
   transform: scale(1.05);
-  transition: transform 0.1s ease-out;
+  transition: transform 0.18s ease-out;
 }
 
 .home-hero__shade {
@@ -100,7 +100,7 @@
 .home-hero__orb {
   inset: auto;
   border-radius: 999px;
-  filter: blur(90px);
+  filter: blur(72px);
   opacity: var(--home-orb-opacity);
 }
 
@@ -133,7 +133,7 @@
 }
 
 .home-hero__parallax {
-  transition: transform 0.1s ease-out;
+  transition: transform 0.18s ease-out;
 }
 
 .home-hero__eyebrow {
@@ -189,7 +189,7 @@
   color: var(--home-text);
   overflow: hidden;
   isolation: isolate;
-  transition: all 0.6s cubic-bezier(0.2, 1, 0.2, 1);
+  transition: transform 0.35s cubic-bezier(0.2, 1, 0.2, 1), color 0.35s cubic-bezier(0.2, 1, 0.2, 1), border-color 0.35s cubic-bezier(0.2, 1, 0.2, 1);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
@@ -209,12 +209,12 @@
   width: 100%;
   height: 100%;
   background: var(--home-text);
-  transition: all 0.6s cubic-bezier(0.2, 1, 0.2, 1);
+  transition: left 0.35s cubic-bezier(0.2, 1, 0.2, 1);
   z-index: 1;
 }
 
 .home-hero__cta:hover {
-  transform: translateY(-5px);
+  transform: translateY(-2px);
   color: var(--home-bg-color);
   border-color: var(--home-text);
 }
@@ -228,11 +228,11 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
-  transition: transform 0.35s ease;
+  transition: transform 0.25s ease;
 }
 
 .home-hero__cta:hover .home-hero__arrow {
-  transform: translateY(4px);
+  transform: translateY(2px);
 }
 
 .home-nav-shell {
@@ -527,6 +527,21 @@
   animation: homeCardShimmerSweep 4.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
+  .home-hero__cta:hover {
+    transform: none;
+  }
+
+  .home-hero__cta:hover .home-hero__arrow {
+    transform: none;
+  }
+
+  .home-ios-card--shimmer::after {
+    animation: none;
+    opacity: 0.16;
+  }
 }
 
 @keyframes homeCardShimmerSweep {

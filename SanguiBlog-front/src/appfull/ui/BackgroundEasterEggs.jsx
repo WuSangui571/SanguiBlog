@@ -1,14 +1,31 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
-    const stars = useMemo(() => Array.from({ length: 80 }, (_, idx) => ({
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+    const starCount = fixed ? 40 : 24;
+    const stars = useMemo(() => Array.from({ length: starCount }, (_, idx) => ({
         top: Math.random() * 90,
         left: Math.random() * 90,
         size: Math.random() * 2.6 + 1,
         delay: Math.random() * 3,
         id: idx
-    })), []);
+    })), [starCount]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return undefined;
+        }
+
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const syncPreference = () => setPrefersReducedMotion(mediaQuery.matches);
+        syncPreference();
+        mediaQuery.addEventListener?.('change', syncPreference);
+
+        return () => {
+            mediaQuery.removeEventListener?.('change', syncPreference);
+        };
+    }, []);
 
     const shellClass = fixed
         ? 'pointer-events-none fixed inset-0 overflow-hidden z-0'
@@ -26,14 +43,14 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
                     <motion.div
                         className="absolute inset-x-0 bottom-0 h-64"
                         style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(255, 239, 186, 0.3) 44%, rgba(251, 226, 144, 0.62) 100%)' }}
-                        animate={{ opacity: [0.42, 0.62, 0.42] }}
-                        transition={{ duration: 12, repeat: Infinity }}
+                        animate={prefersReducedMotion ? undefined : { opacity: [0.42, 0.62, 0.42] }}
+                        transition={prefersReducedMotion ? undefined : { duration: 12, repeat: Infinity }}
                     />
                     <motion.div
                         className="absolute w-64 h-64"
                         style={{ left: sideOffset, top: dayCelestialTop }}
-                        animate={{ scale: [0.97, 1.04, 0.97], rotate: [0, 10, 0] }}
-                        transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut' }}
+                        animate={prefersReducedMotion ? undefined : { scale: [0.985, 1.02, 0.985], rotate: [0, 6, 0] }}
+                        transition={prefersReducedMotion ? undefined : { duration: 16, repeat: Infinity, ease: 'easeInOut' }}
                     >
                         <div
                             className="absolute left-1/2 top-1/2 w-[36rem] h-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
@@ -65,21 +82,21 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
                                 left: `${star.left}%`,
                                 boxShadow: '0 0 18px rgba(220,232,255,0.45)'
                             }}
-                            animate={{ opacity: [0.04, star.size > 2 ? 0.78 : 0.46, 0.04] }}
-                            transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, ease: 'easeInOut', delay: star.delay }}
+                            animate={prefersReducedMotion ? undefined : { opacity: [0.08, star.size > 2 ? 0.56 : 0.34, 0.08] }}
+                            transition={prefersReducedMotion ? undefined : { duration: 3.2 + Math.random() * 2.2, repeat: Infinity, ease: 'easeInOut', delay: star.delay }}
                         />
                     ))}
                     <motion.div
                         className="absolute inset-x-0 bottom-0 h-56"
                         style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(10, 21, 39, 0.38) 45%, rgba(12, 27, 48, 0.82) 100%)' }}
-                        animate={{ opacity: [0.48, 0.64, 0.48] }}
-                        transition={{ duration: 12, repeat: Infinity }}
+                        animate={prefersReducedMotion ? undefined : { opacity: [0.5, 0.6, 0.5] }}
+                        transition={prefersReducedMotion ? undefined : { duration: 13.5, repeat: Infinity }}
                     />
                     <motion.div
                         className="absolute w-40 h-40"
                         style={{ left: sideOffset, top: nightCelestialTop }}
-                        animate={{ rotate: [-4, 4, -4], opacity: [0.82, 0.96, 0.82] }}
-                        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+                        animate={prefersReducedMotion ? undefined : { rotate: [-2, 2, -2], opacity: [0.84, 0.92, 0.84] }}
+                        transition={prefersReducedMotion ? undefined : { duration: 20, repeat: Infinity, ease: 'easeInOut' }}
                     >
                         <div
                             className="absolute left-1/2 top-1/2 w-[32rem] h-[32rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[110px]"
@@ -101,13 +118,13 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
                 <motion.div
                     className="absolute w-72 h-72 rounded-full bg-gradient-to-br from-[#FFD54F] via-[#FFB703] to-white border border-white/70 shadow-[0_0_80px_rgba(255,213,79,0.9)]"
                     style={{ left: sideOffset, top: dayCelestialTop }}
-                    animate={{ scale: [0.95, 1.08, 0.95], rotate: [0, 15, 0] }}
-                    transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+                    animate={prefersReducedMotion ? undefined : { scale: [0.98, 1.04, 0.98], rotate: [0, 8, 0] }}
+                    transition={prefersReducedMotion ? undefined : { duration: 15, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
                     className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#FFF5C0]/90 via-transparent to-transparent"
-                    animate={{ opacity: [0.45, 0.75, 0.45] }}
-                    transition={{ duration: 12, repeat: Infinity }}
+                    animate={prefersReducedMotion ? undefined : { opacity: [0.48, 0.64, 0.48] }}
+                    transition={prefersReducedMotion ? undefined : { duration: 14, repeat: Infinity }}
                 />
             </div>
         );
@@ -119,14 +136,14 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
             <motion.div
                 className="absolute w-44 h-44 rounded-full bg-gradient-to-br from-white via-slate-200 to-slate-500 shadow-[0_0_90px_rgba(191,219,254,0.7)]"
                 style={{ left: sideOffset, top: nightCelestialTop }}
-                animate={{ rotate: [-6, 6, -6], opacity: [0.8, 1, 0.8] }}
-                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+                animate={prefersReducedMotion ? undefined : { rotate: [-3, 3, -3], opacity: [0.84, 0.96, 0.84] }}
+                transition={prefersReducedMotion ? undefined : { duration: 20, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.div
                 className="absolute w-[90vw] h-[90vw] rounded-full blur-[110px] mix-blend-screen"
                 style={{ left: '-30%', top: '-30%', background: 'radial-gradient(circle, rgba(79,70,229,0.35), transparent 65%)' }}
-                animate={{ rotate: [0, 25, 0] }}
-                transition={{ duration: 26, repeat: Infinity }}
+                animate={prefersReducedMotion ? undefined : { rotate: [0, 14, 0] }}
+                transition={prefersReducedMotion ? undefined : { duration: 30, repeat: Infinity }}
             />
             {stars.map((star) => (
                 <motion.span
@@ -139,14 +156,14 @@ const BackgroundEasterEggs = ({ isDarkMode, fixed = true }) => {
                         left: `${star.left}%`,
                         boxShadow: '0 0 22px rgba(255,255,255,0.8)'
                     }}
-                    animate={{ opacity: [0.05, star.size > 2 ? 1 : 0.6, 0.05] }}
-                    transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, ease: 'easeInOut', delay: star.delay }}
+                    animate={prefersReducedMotion ? undefined : { opacity: [0.08, star.size > 2 ? 0.72 : 0.42, 0.08] }}
+                    transition={prefersReducedMotion ? undefined : { duration: 3.5 + Math.random() * 2.2, repeat: Infinity, ease: 'easeInOut', delay: star.delay }}
                 />
             ))}
             <motion.div
                 className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#020617] via-transparent to-transparent"
-                animate={{ opacity: [0.35, 0.6, 0.35] }}
-                transition={{ duration: 12, repeat: Infinity }}
+                animate={prefersReducedMotion ? undefined : { opacity: [0.38, 0.54, 0.38] }}
+                transition={prefersReducedMotion ? undefined : { duration: 14, repeat: Infinity }}
             />
         </div>
     );

@@ -5,6 +5,35 @@
 
 ---
 
+## [2026-04-08] 收敛首页 Hero 与文章卡片持续动效以降低发热和卡顿
+- 背景/需求：用户反馈首页顶部文字、CTA 入场与“向下探索内容”按钮体感略卡，同时移动端发热和桌面端风扇明显，希望排查是否为首页动效过重，并优先降低首页文字倾斜/视差幅度与持续动画成本。
+- 修改类型：fix
+- 影响范围：首页 Hero 视差与入场动效、首页文章卡片 3D 倾斜与 NEW 发光层、前台背景持续动画、首页 CTA hover 位移、AI 变更日志
+- 变更摘要：
+  1) 检索确认首页主链为 `HomeView -> Hero -> ArticleList -> TiltCard/BackgroundEasterEggs`，不存在第二套在用首页实现；卡顿更像是首屏与列表的持续动画叠加，而非单一接口或数据问题。
+  2) 在 `Hero.jsx` 中为 `prefers-reduced-motion` 与粗指针设备增加降级分支，收窄首屏 `mousemove` 视差位移、降低滚动上移幅度，并缩短文案/CTA 入场时长，减少“略卡”的体感。
+  3) 在 `TiltCard.jsx` 中降低文章卡片倾斜角度与 hover 抬升幅度，关闭移动端/减少动态偏好下的 3D 倾斜与 NEW 多层发光动画，降低持续重绘与合成层压力。
+  4) 在 `BackgroundEasterEggs.jsx` 中减少星点数量，并在减少动态偏好下关闭背景呼吸/旋转；同时在 `homeRedesign.css` 中收窄 CTA hover 位移、减轻 orb blur，并为 `home-ios-card--shimmer` 增加移动端/减少动态偏好的静态降级。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/ui/TiltCard.jsx`
+  - `SanguiBlog-front/src/appfull/ui/BackgroundEasterEggs.jsx`
+  - `SanguiBlog-front/src/appfull/public/HeroPerformance.test.js`
+  - `SanguiBlog-front/src/appfull/ui/TiltCardPerformance.test.js`
+  - `SanguiBlog-front/src/appfull/ui/BackgroundEasterEggsPerformance.test.js`
+- 检索与复用策略：
+  - 检索关键词：`Hero` / `home-hero` / `TiltCard` / `BackgroundEasterEggs` / `framer-motion` / `mousemove` / `rotateX` / `rotateY` / `向下探索内容`
+  - 候选实现：`Hero.jsx` 首屏视差、`TiltCard.jsx` 文章卡片 3D 倾斜、`BackgroundEasterEggs.jsx` 持续背景动画、`homeRedesign.css` 的 CTA 与 shimmer 规则
+  - 最终选择：只在现有主链上减负，不新建第二套首页或卡片实现
+- 风险点：
+  - 本次优化会让首页 NEW 卡片和背景氛围更克制，视觉冲击力会比之前略低，但能换来更稳的滚动与更低的持续资源占用。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\public\\HeroPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\TiltCardPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\BackgroundEasterEggsPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-08] 将彩蛋背景默认值调整为首次进入默认关闭
 - 背景/需求：用户要求当前站点首次进入时，彩蛋背景默认关闭，但手动开关能力与本地持久化逻辑保持不变。
 - 修改类型：fix
