@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-10] 适配文章页代码块滚动条的黑夜模式
+- 背景/需求：用户反馈具体文章页面 `/article/:id` 中 Markdown 代码块在黑夜模式下，如果代码过长需要横向滚动，原生滚动条仍偏亮、偏刺眼，希望只修正暗色适配，不改代码块现有结构与交互。
+- 修改类型：fix
+- 影响范围：文章详情页 Markdown 代码块滚动条主题、文章页最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认文章页实际使用的是 `ArticleDetail.jsx` 内部本地 `CodeBlockWithCopy`，并未复用共享 `MarkdownCodeBlock.jsx`；全站现有暗色滚动条样式已在 `src/index.css` 中提供 `sg-scrollbar-dark/light`，问题根因是文章页代码块 `<pre>` 未挂载该主题类。
+  2) 在 `ArticleDetail.jsx` 中新增 `codeScrollbarClass`，按深浅色分别复用 `sg-scrollbar sg-scrollbar-dark` 与 `sg-scrollbar sg-scrollbar-light`。
+  3) 将文章页代码块 `<pre>` 接入 `codeScrollbarClass`，让长代码块在黑夜模式下复用站点现有深色滚动条观感，亮色模式也同步走现有浅色主题。
+  4) 新增 `ArticleDetailCodeBlockScrollbar.test.js`，约束文章页代码块必须显式接入主题滚动条类，避免后续回归到浏览器默认亮色滚动条。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailCodeBlockScrollbar.test.js`
+- 检索与复用策略：
+  - 检索关键词：`ArticleDetail` / `CodeBlockWithCopy` / `overflow-auto` / `sg-scrollbar-dark` / `MarkdownCodeBlock` / `AboutView`
+  - 候选实现：`ArticleDetail.jsx` 本地代码块、`src/index.css` 现有滚动条样式、`MarkdownCodeBlock.jsx` 共享代码块组件、`AboutView.jsx` 同类页面实现
+  - 最终选择：只修改文章页现有代码块入口并复用已有 `sg-scrollbar-dark/light`，不新建样式体系、不顺手重构共享组件
+- 风险点：
+  - 本次是样式类接线式修复，不改复制、语言标签、代码内容与 Markdown 渲染逻辑；唯一需要注意的是不同浏览器对原生滚动条定制支持度略有差异，但仓库现有 `sg-scrollbar-*` 已在其他深浅色滚动区使用。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\public\\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-08] 继续下调首页持续动画并新增手机端首页性能模式
 - 背景/需求：用户继续要求优先削减首页无限循环动画、移除卡片倾斜，并对手机端启用更激进的首页性能模式，包括关闭 Hero 背景视差、关闭文章卡片倾斜、关闭 shimmer 扫光、关闭背景星点闪烁，仅保留静态背景。
 - 修改类型：fix

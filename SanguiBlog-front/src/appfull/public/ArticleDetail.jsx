@@ -194,6 +194,7 @@ const ArticleDetail = ({
     const [entryReady, setEntryReady] = useState(false);
     const commentJumpRef = useRef(null);
     const tocScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar';
+    const codeScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar sg-scrollbar-light';
     const tocTextClass = useCallback((level) => {
         if (level === 1) return 'text-[12px] font-black';
         if (level === 2) return 'text-[12px] font-bold opacity-95';
@@ -315,7 +316,7 @@ const ArticleDetail = ({
                     </div>
                 </div>
                 <pre
-                    className={`p-5 overflow-auto m-0 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
+                    className={`p-5 overflow-auto m-0 ${codeScrollbarClass} ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
                     <code className={`${className || ''} !bg-transparent !p-0 !border-none font-mono text-sm`}>
                         {textContent}
                     </code>
