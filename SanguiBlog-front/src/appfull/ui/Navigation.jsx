@@ -901,7 +901,7 @@ const Navigation = ({
                                 </button>
                             )}
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 <button
                                     type="button"
                                     onClick={handleThemeButton}
@@ -912,13 +912,6 @@ const Navigation = ({
                                         : mobileDrawerButtonClass}`}
                                 >
                                     {themeLockActive ? '冷却中' : (isDarkMode ? '切到亮色' : '切到暗色')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onToggleBackground && onToggleBackground()}
-                                    className={`px-3 py-3 rounded-xl font-black ${backgroundEnabled ? mobileDrawerAccentClass : mobileDrawerButtonClass}`}
-                                >
-                                    {backgroundEnabled ? '关闭彩蛋背景' : '开启彩蛋背景'}
                                 </button>
                             </div>
 

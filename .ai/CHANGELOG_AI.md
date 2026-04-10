@@ -5,6 +5,30 @@
 
 ---
 
+## [2026-04-10] 移除手机端彩蛋背景切换按钮
+- 背景/需求：用户反馈手机端导航抽屉中的“关闭/开启背景彩蛋”按钮不适合手机端显示，要求只在手机端去掉该按钮，电脑端保持现状不变。
+- 修改类型：fix
+- 影响范围：手机端导航抽屉的彩蛋背景入口、前端最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认“彩蛋背景”真实链路集中在 `AppFull.jsx` 的 `backgroundEnabled` 状态和 `Navigation.jsx` 的两个入口，其中桌面端设置浮层与手机端抽屉共用同一状态，但只有手机端抽屉按钮需要移除。
+  2) 继续复用现有 `backgroundEnabled` 状态、`localStorage` 持久化和背景渲染逻辑，不改 `BackgroundEasterEggs.jsx`、`HomeView.jsx`、`ArticleList.jsx` 等背景展示链路。
+  3) 在 `Navigation.jsx` 中移除手机端抽屉里的“关闭彩蛋背景 / 开启彩蛋背景”按钮，并把原来的双列按钮区收成单列，避免手机端留下空位。
+  4) 新增 `NavigationMobileBackgroundToggle.test.js`，先用失败用例锁定“桌面端入口仍存在、手机端按钮文本不再出现”，再让实现过绿。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/appfull/ui/NavigationMobileBackgroundToggle.test.js`
+- 检索与复用策略：
+  - 检索关键词：`backgroundEnabled` / `关闭彩蛋背景` / `开启彩蛋背景` / `切换彩蛋背景` / `BackgroundEasterEggs`
+  - 候选实现：`Navigation.jsx` 桌面端设置浮层、`Navigation.jsx` 手机端抽屉入口、`AppFull.jsx` 状态持久化、`BackgroundEasterEggs.jsx` 渲染本体
+  - 最终选择：只修改 `Navigation.jsx` 的手机端入口，继续复用桌面端和全局状态链路，不新建任何移动端专用背景逻辑
+- 风险点：
+  - 手机端将不再提供彩蛋背景的显式切换入口，这是按需求有意收敛；桌面端设置与背景状态持久化逻辑不受影响。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\NavigationMobileBackgroundToggle.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\NavigationNotificationSelect.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\backgroundEnabledDefault.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 关闭手机端返回顶部按钮显示
 - 背景/需求：用户要求首页及前台页面中的“一键向上 / 返回顶部”按钮在手机端永远不出现，但桌面端维持现有行为不变。
 - 修改类型：fix
