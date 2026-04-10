@@ -12,13 +12,19 @@ assert.match(
 
 assert.match(
     source,
-    /onMouseEnter=\{\(\) => setLastUpdatedTooltipOpen\(true\)\}/,
-    '最后更新时间应支持鼠标悬停打开浮层'
+    /createPortal\(/,
+    '最后更新时间浮层应通过 portal 渲染，避免被状态条滚动容器裁切'
 );
 
 assert.match(
     source,
-    /onClick=\{\(\) => setLastUpdatedTooltipOpen\(\(prev\) => !prev\)\}/,
+    /position:\s*'fixed'/,
+    '最后更新时间浮层应使用 fixed 定位，确保悬停或点击时真正可见'
+);
+
+assert.match(
+    source,
+    /onClick=\{\(\) => setLastUpdatedTooltipOpen\(\(prev\) => \{/,
     '最后更新时间应支持点击切换浮层'
 );
 

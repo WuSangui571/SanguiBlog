@@ -13,7 +13,8 @@
   1) 检索确认真实入口为 `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`，不是 legacy 目录；当前问题根因是“最后更新时间”被渲染成带 `cursor-help` 的普通文本，只支持纯 hover 提示，因此浏览器显示帮助态鼠标。
   2) 在 `StatsStrip.jsx` 中新增 `formatStatusExactMinute(value)`，将 `lastUpdatedFull` 本地格式化为 `yyyy-MM-dd HH:mm`，只保留到分钟，不改后端接口。
   3) 将“最后更新时间”从 `span` 改为可交互 `button`，同时支持 `hover / focus / click` 打开站内浮层，并移除 `cursor-help` 帮助态样式。
-  4) 新增 `StatsStripLastUpdatedTooltip.test.js`，约束状态条保留“精确到分钟格式化 + hover/click 触发 + 不再使用 cursor-help”这三项行为。
+  4) 继续排查确认浮层初版仍被状态条 `overflow-x-auto` 容器裁切，因此把最后更新时间浮层改为 `createPortal(..., document.body)` + `position: fixed`，彻底绕开滚动容器裁切，确保真正可见。
+  5) 新增 `StatsStripLastUpdatedTooltip.test.js`，约束状态条保留“精确到分钟格式化 + portal 浮层 + 点击触发 + 不再使用 cursor-help”这几项行为。
 - 涉及文件：
   - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
   - `SanguiBlog-front/src/appfull/public/StatsStripLastUpdatedTooltip.test.js`
