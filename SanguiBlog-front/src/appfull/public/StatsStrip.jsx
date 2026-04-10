@@ -118,7 +118,7 @@ const StatsStrip = ({ isDarkMode, stats }) => {
         <>
             <div
                 id="home-status-strip"
-                className="sticky z-40 px-3 pt-2 md:px-5 md:pt-3"
+                className="hidden md:block sticky z-40 px-3 pt-2 md:px-5 md:pt-3"
                 style={{ top: 0, scrollMarginTop: 0 }}
             >
                 <div className={`${glassClass} max-w-7xl mx-auto px-4 py-3 sm:py-2`}>

@@ -845,6 +845,9 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.90))] text-white border-white/12 shadow-[0_20px_60px_rgba(2,6,23,0.46)]'
         : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,252,0.88))] text-black border-black/10 shadow-[0_20px_60px_rgba(15,23,42,0.16)]';
     const modalInsetClass = isDarkMode ? 'bg-white/[0.05] border-white/10' : 'bg-white/72 border-black/8';
+    const launcherLayoutClass = isMobileViewport
+        ? 'w-[60px] h-[60px] justify-center px-0'
+        : 'pl-3.5 pr-5 py-3 gap-3';
     const assistantBackdropZ = overlayBaseZ;
     const assistantLauncherZ = isOpen ? overlayBaseZ + 1 : 89;
     const assistantPanelZ = overlayBaseZ + 2;
@@ -1613,7 +1616,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 onClick={handleLauncherToggle}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className={`fixed z-[89] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border ${launcherGlowShapeClass} pl-3.5 pr-5 py-3 flex items-center gap-3 transition-colors backdrop-blur-2xl ${
+                className={`fixed z-[89] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border ${launcherGlowShapeClass} flex items-center transition-colors backdrop-blur-2xl ${launcherLayoutClass} ${
                     isDarkMode
                         ? 'border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.86),rgba(15,23,42,0.76))] text-white hover:bg-[rgba(15,23,42,0.92)]'
                         : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.72))] text-black hover:bg-white/85'
@@ -1783,7 +1786,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                         transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                     />
                 </span>
-                <span className="relative text-left">
+                {!isMobileViewport && <span className="relative text-left">
                     <span className={`block text-[10px] font-black uppercase tracking-[0.28em] ${
                         isDarkMode ? 'text-white/70' : 'text-slate-500'
                     }`}>
@@ -1792,7 +1795,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     <span className="mt-0.5 block text-sm font-black leading-5">
                         {launcherBadge.label}
                     </span>
-                </span>
+                </span>}
             </motion.button>
         </>
     );

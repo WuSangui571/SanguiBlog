@@ -5,6 +5,34 @@
 
 ---
 
+## [2026-04-10] 收紧手机端 AI 入口并隐藏手机端系统状态卡
+- 背景/需求：用户要求仅在手机端做两处首页体验收敛：一是 AI 聊天入口卡片只保留 Logo，不再显示右侧文案，并将卡片收成接近正方形；二是首页系统状态卡在手机端去掉，使首页首屏下方直接进入文章搜索。桌面端均保持原样。
+- 修改类型：fix
+- 影响范围：手机端 AI 聊天入口外观、手机端首页系统状态卡显示、前台最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认 AI 聊天入口真实实现仍在 `AiAssistantWidget.jsx` 右下角浮动按钮处，系统状态卡唯一现网入口在 `StatsStrip.jsx`；无需新增组件或改动桌面端布局。
+  2) 在 `AiAssistantWidget.jsx` 中新增 `launcherLayoutClass`，手机端改为 `60x60` 左右的近方形玻璃按钮，仅居中显示 Logo；桌面端继续沿用原来的横向胶囊尺寸与文案。
+  3) 将 AI 聊天入口右侧文案包进 `!isMobileViewport` 条件渲染，确保手机端不再出现 Logo 右侧文字，位置仍保持原先右下角逻辑不变。
+  4) 在 `StatsStrip.jsx` 的外层根节点接入 `hidden md:block`，让系统状态卡只在桌面端显示；手机端首页下滑后直接衔接文章搜索区。
+  5) 更新 `AiAssistantWidget.test.js` 与 `StatsStripReadability.test.js`，分别锁定“手机端方形 AI 入口 + 文案仅桌面可见”和“系统状态卡仅桌面显示”这两项行为。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.test.js`
+  - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
+  - `SanguiBlog-front/src/appfull/public/StatsStripReadability.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `launcherBadge` / `isMobileViewport` / `StatsStrip` / `ArticleList`
+  - 候选实现：AI 浮动入口按钮、系统状态卡根节点、首页 `ArticleList` 接入点
+  - 最终选择：原位修改现有组件，继续复用移动端视口判断和桌面端现有结构，不增加第二套实现
+- 风险点：
+  - 手机端首页会少掉一块系统状态信息，这是按需求有意收敛；桌面端的 AI 入口与系统状态卡均不受影响。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantWidget.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantMobileViewport.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\public\\StatsStripReadability.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantWidgetContrast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 收起手机端 AI 聊天头部标题文案以避免键盘挤压换行
 - 背景/需求：用户反馈手机端 AI 聊天打开后，头部的“标题 + Beta 测试版”在窄屏上会换成多行，尤其是系统键盘弹出后可用宽度进一步缩小，原本两行文案可能被挤成多行，影响观感；用户要求手机端只保留左侧图标，桌面端保持现状。
 - 修改类型：fix

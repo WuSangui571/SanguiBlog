@@ -25,5 +25,13 @@ assert.match(
 assert.match(
     source,
     /gap-2\.5 md:gap-3/,
-    '右侧五项数据之间的横向间距应比当前略收一点，整体更紧凑'
+    '右侧五项数据之间的横向间距应略收紧，整体更紧凑'
 );
+
+assert.match(
+    source,
+    /hidden md:block/,
+    '系统状态条应在手机端隐藏，仅桌面端显示'
+);
+
+console.log('StatsStrip readability tests passed');
