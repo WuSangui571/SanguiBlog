@@ -65,6 +65,8 @@ const StatsStrip = ({ isDarkMode, stats }) => {
     const tooltipBg = isDarkMode ? 'bg-[#0f172a]/92 border-white/20 text-gray-100' : 'bg-white/92 border-white/75 text-black';
     const tooltipArrow = isDarkMode ? 'border-b-[#0f172a]' : 'border-b-white';
     const glassClass = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark' : ''}`;
+    const valueTextClass = 'font-mono font-black text-[15px] md:text-base tracking-[0.01em]';
+    const labelTextClass = `text-[12px] font-semibold tracking-[0.08em] ${subClass}`;
 
     const syncTooltipPosition = () => {
         const rect = lastUpdatedButtonRef.current?.getBoundingClientRect();
@@ -121,18 +123,18 @@ const StatsStrip = ({ isDarkMode, stats }) => {
             >
                 <div className={`${glassClass} max-w-7xl mx-auto px-4 py-3 sm:py-2`}>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className={`flex items-center gap-2 sm:mr-8 flex-shrink-0 ${textClass}`}>
+                        <div className={`flex items-center gap-2 sm:mr-6 flex-shrink-0 ${textClass}`}>
                             <Activity className="text-[#00E096] animate-pulse" />
-                            <span className="font-black tracking-widest uppercase">System Status</span>
+                            <span className="font-black tracking-[0.22em] uppercase text-[13px] md:text-sm">System Status</span>
                         </div>
 
-                        <div className="flex items-center gap-3 md:gap-4 overflow-x-auto sm:overflow-visible w-full sm:w-auto pb-1 sm:pb-0 pr-1 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
+                        <div className="flex items-center gap-2.5 md:gap-3 overflow-x-auto sm:overflow-visible w-full sm:w-auto pb-1 sm:pb-0 pr-1 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
                             {items.map((item, idx) => (
                                 <div
                                     key={idx}
-                                    className={`flex items-center gap-2 flex-shrink-0 group cursor-default relative snap-start ${subClass} home-ios-chip px-2.5 py-1.5`}
+                                    className={`flex items-center gap-2.5 flex-shrink-0 group cursor-default relative snap-start ${subClass} home-ios-chip px-3 py-1.5 md:py-2`}
                                 >
-                                    <item.icon size={15} className={`${item.color} group-hover:scale-125 transition-transform`} />
+                                    <item.icon size={16} className={`${item.color} shrink-0 group-hover:scale-125 transition-transform`} />
 
                                     {item.isDate ? (
                                         <div className="relative">
@@ -149,7 +151,7 @@ const StatsStrip = ({ isDarkMode, stats }) => {
                                                     }
                                                     return !prev;
                                                 })}
-                                                className={`font-mono font-bold text-sm border-b border-dashed transition-colors ${isDarkMode ? 'border-gray-400 text-gray-100 hover:text-white' : 'border-gray-500 text-gray-800 hover:text-black'}`}
+                                                className={`${valueTextClass} border-b border-dashed transition-colors ${isDarkMode ? 'border-gray-400 text-gray-100 hover:text-white' : 'border-gray-500 text-gray-800 hover:text-black'}`}
                                                 aria-label="查看最后更新时间"
                                                 aria-expanded={lastUpdatedTooltipOpen}
                                             >
@@ -157,10 +159,10 @@ const StatsStrip = ({ isDarkMode, stats }) => {
                                             </button>
                                         </div>
                                     ) : (
-                                        <span className="font-mono font-bold text-sm">{item.value}</span>
+                                        <span className={valueTextClass}>{item.value}</span>
                                     )}
 
-                                    <span className={`text-[11px] font-bold ${subClass}`}>{item.label}</span>
+                                    <span className={labelTextClass}>{item.label}</span>
                                 </div>
                             ))}
                         </div>

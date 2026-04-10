@@ -27,6 +27,29 @@
 - 验证方式：
   - 执行 `node .\\src\\appfull\\public\\StatsStripLastUpdatedTooltip.test.js`（工作目录 `SanguiBlog-front`）通过
 
+## [2026-04-10] 提升首页系统状态条五项数据的可读性并收紧整体间距
+- 背景/需求：用户反馈首页系统状态条右侧五项数据整体“有点看不清”，希望在不破坏当前风格的前提下，让数据更清楚、更优雅，同时把左侧 `SYSTEM STATUS` 与右侧五项的距离适当收小。
+- 修改类型：fix
+- 影响范围：首页系统状态条数据字号/字重/字距、状态条左右间距、系统状态条最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认系统状态条主数据当前仍使用 `text-sm + font-bold`，标签是 `text-[11px]`，再叠加较宽的左右间距，视觉上会显得数据不够“立得住”。
+  2) 在 `StatsStrip.jsx` 中新增统一的 `valueTextClass`，将五项主数据提升为 `font-black + text-[15px]/md:text-base + 轻微字距`，让数字本身更清楚。
+  3) 将标签文案统一抽成 `labelTextClass`，调整为 `text-[12px] + font-semibold + 更克制的 tracking`，让标签更稳定但不抢主数据。
+  4) 将左侧 `System Status` 与右侧统计组之间的间距从 `sm:mr-8` 收到 `sm:mr-6`，同时把右侧五项之间的横向间距从 `gap-3 md:gap-4` 收到 `gap-2.5 md:gap-3`，整体更紧凑。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
+  - `SanguiBlog-front/src/appfull/public/StatsStripReadability.test.js`
+- 检索与复用策略：
+  - 检索关键词：`System Status` / `home-ios-chip` / `text-sm` / `tracking-widest` / `gap-3 md:gap-4` / `StatsStrip`
+  - 候选实现：`StatsStrip.jsx` 当前状态条、`homeRedesign.css` 里的 `home-ios-chip`、首页 `ArticleList.jsx` 的现网接入点
+  - 最终选择：原位微调 `StatsStrip.jsx` 的排版常量与布局类，不额外新建样式文件或第二套状态条实现
+- 风险点：
+  - 本次是排版与间距微调，不改数据来源与交互逻辑；唯一可见变化是数字会更突出、标签更清楚、整体横向更紧凑。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\public\\StatsStripReadability.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\public\\StatsStripLastUpdatedTooltip.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 适配文章页代码块滚动条的黑夜模式
 - 背景/需求：用户反馈具体文章页面 `/article/:id` 中 Markdown 代码块在黑夜模式下，如果代码过长需要横向滚动，原生滚动条仍偏亮、偏刺眼，希望只修正暗色适配，不改代码块现有结构与交互。
 - 修改类型：fix
