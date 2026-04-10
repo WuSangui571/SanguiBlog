@@ -6,6 +6,9 @@ import logger from "../../utils/logger.js";
 const ScrollToTop = ({ isDarkMode }) => {
     const STORAGE_KEY = 'sangui-scroll-button';
     const BUTTON_SIZE = 56;
+    const [isMobileViewport, setIsMobileViewport] = useState(() =>
+        typeof window !== 'undefined' ? window.innerWidth < 768 : false
+    );
     const [isVisible, setIsVisible] = useState(false);
     const [scrollPercent, setScrollPercent] = useState(0);
     const scrollProgress = useSpring(0, { stiffness: 160, damping: 28, mass: 0.6 });
@@ -63,8 +66,10 @@ const ScrollToTop = ({ isDarkMode }) => {
     useEffect(() => {
         if (typeof window === 'undefined') return;
         const handleResize = () => {
+            setIsMobileViewport(window.innerWidth < 768);
             setPosition(prev => clampPosition(prev));
         };
+        handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, [clampPosition]);
@@ -214,6 +219,8 @@ const ScrollToTop = ({ isDarkMode }) => {
     const buttonToneClass = isDarkMode
         ? 'border border-white/12 bg-[linear-gradient(160deg,rgba(255,255,255,0.1)_0%,rgba(255,255,255,0.05)_100%)] text-slate-100 ring-1 ring-white/10 shadow-[0_18px_48px_rgba(0,0,0,0.34)] hover:bg-[linear-gradient(160deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.08)_100%)]'
         : 'border border-[rgba(215,226,241,0.52)] bg-[linear-gradient(160deg,rgba(255,255,255,0.82)_0%,rgba(255,255,255,0.58)_48%,rgba(244,248,255,0.72)_100%)] text-slate-900 ring-1 ring-black/5 shadow-[0_18px_48px_rgba(15,23,42,0.18)] hover:bg-[linear-gradient(160deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.74)_48%,rgba(244,248,255,0.84)_100%)]';
+
+    if (isMobileViewport) return null;
 
     return (
         <AnimatePresence>

@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-10] 关闭手机端返回顶部按钮显示
+- 背景/需求：用户要求首页及前台页面中的“一键向上 / 返回顶部”按钮在手机端永远不出现，但桌面端维持现有行为不变。
+- 修改类型：fix
+- 影响范围：前台返回顶部按钮的手机端显示策略、返回顶部按钮最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认现网入口为 `SanguiBlog-front/src/appfull/ui/ScrollToTop.jsx`，由 `AppFull.jsx` 统一挂载；因此无需改多处接入点，只需在组件内部做移动端短路即可。
+  2) 在 `ScrollToTop.jsx` 中新增 `isMobileViewport` 状态，基于 `window.innerWidth < 768` 判断手机端，并在 `resize` 时同步更新。
+  3) 当检测为手机端时，`ScrollToTop` 直接 `return null`，因此手机端无论页面滚动多深都不会再出现该按钮；桌面端仍保留原有出现逻辑、拖拽、进度环和回顶动画。
+  4) 更新 `ScrollToTop.test.js`，新增“组件应具备手机端视口判断并在手机端直接不渲染”的断言。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/ScrollToTop.jsx`
+  - `SanguiBlog-front/src/appfull/ui/ScrollToTop.test.js`
+- 检索与复用策略：
+  - 检索关键词：`ScrollToTop` / `ArrowUp` / `scrollTop` / `返回顶部`
+  - 候选实现：`ScrollToTop.jsx` 组件本体、`AppFull.jsx` 统一接入点
+  - 最终选择：仅修改 `ScrollToTop.jsx` 单入口，继续复用现有桌面端逻辑，不新建手机端分支组件
+- 风险点：
+  - 手机端将完全失去这个快捷入口，这是按需求有意为之；桌面端交互与视觉不受影响。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\ScrollToTop.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 收紧手机端 AI 入口并隐藏手机端系统状态卡
 - 背景/需求：用户要求仅在手机端做两处首页体验收敛：一是 AI 聊天入口卡片只保留 Logo，不再显示右侧文案，并将卡片收成接近正方形；二是首页系统状态卡在手机端去掉，使首页首屏下方直接进入文章搜索。桌面端均保持原样。
 - 修改类型：fix
