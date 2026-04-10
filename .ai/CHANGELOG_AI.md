@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-10] 收起手机端 AI 聊天头部标题文案以避免键盘挤压换行
+- 背景/需求：用户反馈手机端 AI 聊天打开后，头部的“标题 + Beta 测试版”在窄屏上会换成多行，尤其是系统键盘弹出后可用宽度进一步缩小，原本两行文案可能被挤成多行，影响观感；用户要求手机端只保留左侧图标，桌面端保持现状。
+- 修改类型：fix
+- 影响范围：前台 AI 聊天手机端头部显示、移动端 AI 最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认问题集中在 `AiAssistantWidget.jsx` 面板头部，标题文案与 `Beta 测试版` 紧跟在 `AssistantLogo` 右侧，在手机端和键盘弹出场景下会被可视宽度压缩。
+  2) 继续复用现有头部结构，不改桌面端布局；仅在 `isMobileViewport` 为 `true` 时隐藏标题文案区，让手机端头部只保留左侧 Logo。
+  3) 桌面端仍完整显示 `assistantConfig.title` 与 `Beta 测试版`，避免影响原有桌面体验。
+  4) 更新 `AiAssistantMobileViewport.test.js`，新增“移动端标题文案必须位于 `!isMobileViewport` 条件下”的断言，防止后续回归。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantMobileViewport.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `assistantConfig.title` / `Beta 测试版` / `isMobileViewport`
+  - 候选实现：AI 聊天头部标题区、移动端可视区逻辑、现有 `AssistantLogo`
+  - 最终选择：只修改现有头部标题渲染条件，不新建移动端专用头部组件
+- 风险点：
+  - 本次是移动端显示精简，手机端会失去头部文字提示，但能显著换来更稳定的头部高度与更干净的键盘打开体验；桌面端不受影响。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantMobileViewport.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantWidgetContrast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 继续增强 AI 聊天模块与站点背景的分层对比
 - 背景/需求：在上一轮已为 AI 聊天模块补充页面衬底、外壳阴影与正文区材质区分后，用户继续反馈“还是觉得差距不大”，说明站点背景与 AI 面板的视觉层次仍不够明显，需要在不破坏本站玻璃风格的前提下进一步拉开差异。
 - 修改类型：fix

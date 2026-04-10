@@ -936,14 +936,16 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                             alt={assistantConfig.title}
                                             size={44}
                                         />
-                                        <div>
-                                            <p className="font-black text-base tracking-[0.06em]">
-                                                {assistantConfig.title}
-                                            </p>
-                                            <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
-                                                Beta 测试版
-                                            </p>
-                                        </div>
+                                        {!isMobileViewport && (
+                                            <div>
+                                                <p className="font-black text-base tracking-[0.06em]">
+                                                    {assistantConfig.title}
+                                                </p>
+                                                <p className={`mt-1 text-xs font-semibold ${subTextClass}`}>
+                                                    Beta 测试版
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                     <div
                                         ref={historyTriggerGroupRef}
