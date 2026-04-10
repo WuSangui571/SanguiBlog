@@ -1,9 +1,33 @@
-﻿import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Activity, Clock, Eye, FileText, Hash, MessageSquare } from 'lucide-react';
 import { SITE_STATS } from "../shared.js";
 
+export function formatStatusExactMinute(value) {
+    const text = typeof value === 'string' ? value.trim() : '';
+    if (!text || text === '-') return '暂无';
+
+    const matched = text.match(/^(\d{4})[-/](\d{2})[-/](\d{2})[ T](\d{2}):(\d{2})/);
+    if (matched) {
+        const [, year, month, day, hour, minute] = matched;
+        return `${year}-${month}-${day} ${hour}:${minute}`;
+    }
+
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) {
+        return text;
+    }
+
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    const hour = String(parsed.getHours()).padStart(2, '0');
+    const minute = String(parsed.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hour}:${minute}`;
+}
+
 const StatsStrip = ({ isDarkMode, stats }) => {
     const s = stats || SITE_STATS;
+    const [lastUpdatedTooltipOpen, setLastUpdatedTooltipOpen] = useState(false);
     const items = [
         { label: "文章", value: s.posts, icon: FileText, color: "text-[#6366F1]" },
         { label: "浏览", value: s.views, icon: Eye, color: "text-[#FF0080]" },
@@ -18,6 +42,10 @@ const StatsStrip = ({ isDarkMode, stats }) => {
             isDate: true,
         },
     ];
+    const lastUpdatedExactText = useMemo(
+        () => formatStatusExactMinute(s.lastUpdatedFull || s.lastUpdated),
+        [s.lastUpdated, s.lastUpdatedFull]
+    );
     const textClass = isDarkMode ? 'text-white' : 'text-black';
     const subClass = isDarkMode ? 'text-gray-300' : 'text-gray-700';
     const tooltipBg = isDarkMode ? 'bg-[#0f172a]/92 border-white/20 text-gray-100' : 'bg-white/92 border-white/75 text-black';
@@ -46,13 +74,23 @@ const StatsStrip = ({ isDarkMode, stats }) => {
                                 <item.icon size={15} className={`${item.color} group-hover:scale-125 transition-transform`} />
 
                                 {item.isDate ? (
-                                    <div className="relative group/date">
-                                        <span className={`font-mono font-bold text-sm cursor-help border-b border-dashed ${isDarkMode ? 'border-gray-400' : 'border-gray-500'}`}>
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onMouseEnter={() => setLastUpdatedTooltipOpen(true)}
+                                            onMouseLeave={() => setLastUpdatedTooltipOpen(false)}
+                                            onFocus={() => setLastUpdatedTooltipOpen(true)}
+                                            onBlur={() => setLastUpdatedTooltipOpen(false)}
+                                            onClick={() => setLastUpdatedTooltipOpen((prev) => !prev)}
+                                            className={`font-mono font-bold text-sm border-b border-dashed transition-colors ${isDarkMode ? 'border-gray-400 text-gray-100 hover:text-white' : 'border-gray-500 text-gray-800 hover:text-black'}`}
+                                            aria-label="查看最后更新时间"
+                                            aria-expanded={lastUpdatedTooltipOpen}
+                                        >
                                             {item.value}
-                                        </span>
-                                        <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-4 ${tooltipBg} border px-3 py-2 text-sm font-bold whitespace-nowrap opacity-0 group-hover/date:opacity-100 transition-opacity pointer-events-none z-[100] rounded-xl shadow-[0_12px_24px_rgba(0,0,0,0.16)]`}>
+                                        </button>
+                                        <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-4 ${tooltipBg} border px-3 py-2 text-sm font-bold whitespace-nowrap transition-opacity z-[100] rounded-xl shadow-[0_12px_24px_rgba(0,0,0,0.16)] ${lastUpdatedTooltipOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}>
                                             <div className={`absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 ${tooltipArrow}`} />
-                                            {item.fullValue}
+                                            {lastUpdatedExactText}
                                         </div>
                                     </div>
                                 ) : (
@@ -70,4 +108,3 @@ const StatsStrip = ({ isDarkMode, stats }) => {
 };
 
 export default StatsStrip;
-

@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-10] 修复首页系统状态条“最后更新时间”的帮助态鼠标并补充精确到分钟浮层
+- 背景/需求：用户反馈首页系统状态条中的“最后更新时间”当前鼠标移上去会出现“鼠标 + 问号”的帮助态光标，体验不对；希望改为悬停或点击这一小块时，显示具体的最后更新时间，并精确到分钟。
+- 修改类型：fix
+- 影响范围：首页系统状态条最后更新时间交互、时间展示格式、首页最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认真实入口为 `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`，不是 legacy 目录；当前问题根因是“最后更新时间”被渲染成带 `cursor-help` 的普通文本，只支持纯 hover 提示，因此浏览器显示帮助态鼠标。
+  2) 在 `StatsStrip.jsx` 中新增 `formatStatusExactMinute(value)`，将 `lastUpdatedFull` 本地格式化为 `yyyy-MM-dd HH:mm`，只保留到分钟，不改后端接口。
+  3) 将“最后更新时间”从 `span` 改为可交互 `button`，同时支持 `hover / focus / click` 打开站内浮层，并移除 `cursor-help` 帮助态样式。
+  4) 新增 `StatsStripLastUpdatedTooltip.test.js`，约束状态条保留“精确到分钟格式化 + hover/click 触发 + 不再使用 cursor-help”这三项行为。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
+  - `SanguiBlog-front/src/appfull/public/StatsStripLastUpdatedTooltip.test.js`
+- 检索与复用策略：
+  - 检索关键词：`系统状态` / `最后更新时间` / `StatsStrip` / `lastUpdatedFull` / `cursor-help`
+  - 候选实现：`src/appfull/public/StatsStrip.jsx` 现网入口、`src/legacy/components/StatsStrip.jsx` 历史原型、`SiteService.currentStats()` 后端时间来源
+  - 最终选择：只修改现网 `StatsStrip.jsx` 单入口，继续复用现有状态条卡片，不新增新组件、不改接口
+- 风险点：
+  - 这次只改首页状态条最后更新时间这一格的前端交互；按钮点击打开后在失焦或鼠标移出时会关闭，属于有意保持轻量的浮层行为。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\public\\StatsStripLastUpdatedTooltip.test.js`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 适配文章页代码块滚动条的黑夜模式
 - 背景/需求：用户反馈具体文章页面 `/article/:id` 中 Markdown 代码块在黑夜模式下，如果代码过长需要横向滚动，原生滚动条仍偏亮、偏刺眼，希望只修正暗色适配，不改代码块现有结构与交互。
 - 修改类型：fix
