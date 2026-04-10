@@ -5,6 +5,30 @@
 
 ---
 
+## [2026-04-10] 恢复底部 ICP 备案号跳转并隐藏首尾两行
+- 背景/需求：用户反馈站点底部的 ICP 备案号虽然代码里仍是链接，但页面点击无法正常跳转；同时要求底部第一行站点名称“三桂博客”和最后一行“Powered by Spring Boot 3 & React 19”仅不显示，后台保存数据与其他底部信息保持不变。
+- 修改类型：fix
+- 影响范围：前台站点底部备案号跳转兜底、页脚两行显示策略、页脚最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认 footer 配置链路仍存在：后端 `SiteService.meta()` 会继续下发 `footer.brand / icpNumber / icpLink / poweredBy`，前端 `HomeView.jsx` 也完整透传给 `SiteFooter.jsx`，因此不是配置字段被删。
+  2) 在 `SiteFooter.jsx` 中新增 `resolvedIcpLink` 规范化逻辑：对 `icpLink` 先 `trim()`，空值回退到 `https://beian.miit.gov.cn/`，缺少协议时自动补全 `https://`，避免“配置里看似有值但 href 实际不可跳”的情况。
+  3) 为备案号链接增加 `onClick + window.open(resolvedIcpLink, '_blank', 'noopener,noreferrer')` 的显式打开兜底，并补 `relative z-10 pointer-events-auto`，增强点击命中与浏览器兼容性。
+  4) 仅停止渲染页脚首行品牌名与最后一行 Powered by，保留 `brand / poweredBy` props 与后端配置链路，不改后台存储、不改 `site/meta` 结构、不改中间两行版权与备案号。
+  5) 新增 `SiteFooterVisibility.test.js`，锁定“备案链接必须使用规范化结果、链接具备显式可点击层级、品牌行与 Powered by 行不再渲染”。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/SiteFooter.jsx`
+  - `SanguiBlog-front/src/appfull/ui/SiteFooterVisibility.test.js`
+- 检索与复用策略：
+  - 检索关键词：`ICP备案` / `footer` / `icpLink` / `poweredBy` / `brand` / `SiteFooter`
+  - 候选实现：`SiteFooter.jsx` 页脚渲染入口、`HomeView.jsx` 透传链路、`SiteService.java` 站点 meta 聚合、`application.yaml` 默认 footer 配置
+  - 最终选择：只修改 `SiteFooter.jsx` 单入口，继续复用现有 footer 配置与站点 meta 数据，不新建第二套页脚或后台字段
+- 风险点：
+  - 当前修复基于“链接值可能被空白/缺协议污染，且前端缺少点击兜底”的判断；如果线上还存在浏览器插件或外部覆盖层干扰，这次改动已经尽量用更稳健的链接打开方式规避，但不涉及其他悬浮组件逻辑。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\SiteFooter.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\SiteFooterVisibility.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 移除手机端彩蛋背景切换按钮
 - 背景/需求：用户反馈手机端导航抽屉中的“关闭/开启背景彩蛋”按钮不适合手机端显示，要求只在手机端去掉该按钮，电脑端保持现状不变。
 - 修改类型：fix
