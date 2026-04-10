@@ -848,6 +848,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const launcherLayoutClass = isMobileViewport
         ? 'w-[60px] h-[60px] justify-center px-0'
         : 'pl-3.5 pr-5 py-3 gap-3';
+    const launcherOverflowClass = isMobileViewport ? 'overflow-visible' : 'overflow-hidden';
     const assistantBackdropZ = overlayBaseZ;
     const assistantLauncherZ = isOpen ? overlayBaseZ + 1 : 89;
     const assistantPanelZ = overlayBaseZ + 2;
@@ -1616,7 +1617,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 onClick={handleLauncherToggle}
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className={`fixed z-[89] right-4 bottom-6 md:right-6 md:bottom-6 isolate overflow-hidden border ${launcherGlowShapeClass} flex items-center transition-colors backdrop-blur-2xl ${launcherLayoutClass} ${
+                className={`fixed z-[89] right-4 bottom-6 md:right-6 md:bottom-6 isolate border ${launcherGlowShapeClass} flex items-center ${launcherOverflowClass} transition-colors backdrop-blur-2xl ${launcherLayoutClass} ${
                     isDarkMode
                         ? 'border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.86),rgba(15,23,42,0.76))] text-white hover:bg-[rgba(15,23,42,0.92)]'
                         : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.72))] text-black hover:bg-white/85'

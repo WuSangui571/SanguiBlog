@@ -5,6 +5,31 @@
 
 ---
 
+## [2026-04-10] 修复手机端 AI 入口状态点被裁切
+- 背景/需求：用户反馈手机端 AI 聊天入口卡片右上角的绿色呼吸状态点被玻璃外框裁掉，只能显示一部分；要求仅修复手机端显示，电脑端保持原样。
+- 修改类型：fix
+- 影响范围：手机端 AI 入口外层裁切策略、AI 入口移动端最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认问题集中在 `AiAssistantWidget.jsx` 的手机端 AI 入口按钮：外层 `motion.button` 当前统一使用 `overflow-hidden`，而绿色呼吸点位于图标层右上角 `-top-1 -right-1`，因此在手机端更紧凑的 60x60 外框下会被裁切。
+  2) 继续复用现有 `AiAssistantWidget.jsx` 入口组件，不新建移动端专用入口；仅新增 `launcherOverflowClass`，按视口分支为“手机端 `overflow-visible`、桌面端 `overflow-hidden`”。
+  3) 将入口外层按钮改为使用 `launcherOverflowClass`，从而只在手机端放开绿色呼吸点的显示裁切，桌面端现有玻璃卡片的收口感和裁切策略保持不变。
+  4) 新增 `AiAssistantMobileLauncherIndicator.test.js`，先锁定“移动端必须允许溢出显示、外层按钮必须使用可切换 overflow 类”，再让实现过绿。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantMobileLauncherIndicator.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `launcherLayoutClass` / `overflow-hidden` / `-top-1 -right-1` / `isMobileViewport`
+  - 候选实现：AI 入口外层按钮、图标玻璃容器、移动端视口判断、现有 AI 入口回归测试
+  - 最终选择：只修改 `AiAssistantWidget.jsx` 里的外层 overflow 分支，继续复用同一套入口组件和移动端视口判断，不新增第二套实现
+- 风险点：
+  - 本次只放开手机端入口按钮的外溢显示，用于完整显示状态点；桌面端仍保持裁切收口。若未来继续增加更大的外溢装饰，需要再次核对手机端点击热区与视觉边界是否一致。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantMobileLauncherIndicator.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantWidget.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantMobileViewport.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\\src\\appfull\\ui\\aiLauncherBadge.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 恢复底部 ICP 备案号跳转并隐藏首尾两行
 - 背景/需求：用户反馈站点底部的 ICP 备案号虽然代码里仍是链接，但页面点击无法正常跳转；同时要求底部第一行站点名称“三桂博客”和最后一行“Powered by Spring Boot 3 & React 19”仅不显示，后台保存数据与其他底部信息保持不变。
 - 修改类型：fix
