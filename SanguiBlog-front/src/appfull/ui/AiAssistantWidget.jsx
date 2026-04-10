@@ -810,11 +810,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     };
 
     const assistantBackdropClass = isDarkMode
-        ? 'bg-[radial-gradient(circle_at_right_center,rgba(99,102,241,0.18),transparent_34%),linear-gradient(180deg,rgba(2,6,23,0.26),rgba(2,6,23,0.42))] backdrop-blur-[10px]'
-        : 'bg-[radial-gradient(circle_at_right_center,rgba(129,140,248,0.16),transparent_34%),linear-gradient(180deg,rgba(248,250,252,0.18),rgba(226,232,240,0.34))] backdrop-blur-[10px]';
+        ? 'bg-[radial-gradient(circle_at_right_center,rgba(99,102,241,0.28),transparent_34%),linear-gradient(180deg,rgba(2,6,23,0.58),rgba(2,6,23,0.78))] backdrop-blur-[18px]'
+        : 'bg-[radial-gradient(circle_at_right_center,rgba(129,140,248,0.24),transparent_34%),linear-gradient(180deg,rgba(241,245,249,0.46),rgba(226,232,240,0.66))] backdrop-blur-[18px]';
     const shellClass = isDarkMode
-        ? 'bg-[linear-gradient(180deg,rgba(17,26,45,0.96),rgba(12,19,34,0.92))] text-white backdrop-blur-2xl shadow-[0_28px_80px_rgba(2,6,23,0.46)]'
-        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,248,255,0.86))] text-black backdrop-blur-2xl shadow-[0_24px_64px_rgba(15,23,42,0.16)]';
+        ? 'ring-1 ring-white/12 bg-[linear-gradient(180deg,rgba(24,36,60,0.99),rgba(9,14,25,0.985))] text-white backdrop-blur-2xl shadow-[0_36px_120px_rgba(2,6,23,0.68)]'
+        : 'ring-1 ring-black/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.985),rgba(239,244,250,0.95))] text-black backdrop-blur-2xl shadow-[0_32px_96px_rgba(15,23,42,0.22)]';
     const panelBorderClass = isDarkMode ? 'border-white/10' : 'border-black/8';
     const subTextClass = isDarkMode ? 'text-gray-300' : 'text-gray-600';
     const panelAccentClass = isDarkMode
@@ -836,8 +836,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.94),rgba(15,23,42,0.88))] text-white border-white/12 shadow-[0_20px_50px_rgba(2,6,23,0.42)]'
         : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,250,252,0.82))] text-black border-black/10 shadow-[0_20px_50px_rgba(15,23,42,0.14)]';
     const viewportGlassClass = isDarkMode
-        ? 'sg-scrollbar-dark ring-1 ring-white/8 bg-[linear-gradient(180deg,rgba(7,12,24,0.92),rgba(10,17,31,0.98))]'
-        : 'sg-scrollbar-light ring-1 ring-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(244,247,252,0.9))]';
+        ? 'sg-scrollbar-dark ring-1 ring-white/12 bg-[linear-gradient(180deg,rgba(2,6,14,0.985),rgba(7,11,20,1))]'
+        : 'sg-scrollbar-light ring-1 ring-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(236,242,249,0.98))]';
     const textareaGlassClass = isDarkMode
         ? 'sg-scrollbar-dark border-white/10 bg-white/[0.06] text-white placeholder:text-gray-400'
         : 'sg-scrollbar-light border-black/10 bg-white/70 text-black placeholder:text-gray-500';

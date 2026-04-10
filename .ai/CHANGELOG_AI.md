@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-10] 继续增强 AI 聊天模块与站点背景的分层对比
+- 背景/需求：在上一轮已为 AI 聊天模块补充页面衬底、外壳阴影与正文区材质区分后，用户继续反馈“还是觉得差距不大”，说明站点背景与 AI 面板的视觉层次仍不够明显，需要在不破坏本站玻璃风格的前提下进一步拉开差异。
+- 修改类型：fix
+- 影响范围：前台 AI 助手打开时的背景虚化强度、AI 面板外壳层次、聊天正文区材质深浅、AI 聊天 UI 最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 继续沿用 `AiAssistantWidget.jsx` 现有三层结构，不新建第二套聊天组件；检索确认本轮仍应聚焦 `assistantBackdropClass / shellClass / viewportGlassClass` 这三个入口，而不是改消息气泡或功能结构。
+  2) 将 AI 打开时的页面衬底进一步加深：暗色模式提高整体遮罩深度并把 `backdrop-blur` 提升到 `18px`，让页面内容更明确地退到后景；亮色模式同步提高衬底雾化与灰蓝层次，避免白底站点里聊天层“贴”在页面上。
+  3) 将 AI 面板外壳的渐变与阴影再加强一档：暗色模式外壳改为更深的蓝黑玻璃面，边框从 `white/10` 提到 `white/12`，阴影扩大到 `0 36px 120px`，让整体浮层感更稳；亮色模式也同步略提边界和阴影，保持深浅模式一致的层级逻辑。
+  4) 将聊天正文区再与外壳拉开半档：暗色模式正文区继续下探到更深的墨蓝底，亮色模式正文区更接近冷白阅读面，确保用户打开 AI 后能一眼区分“页面背景 / 面板外壳 / 聊天内容”三层。
+  5) 把 `AiAssistantWidgetContrast.test.js` 从脆弱的长正则改为更稳定的源码片段断言，避免后续因类名顺序微调导致误报。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidgetContrast.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `assistantBackdropClass` / `shellClass` / `viewportGlassClass` / `backdrop-blur`
+  - 候选实现：AI 打开时的整页衬底、AI 面板外壳、聊天正文区材质层
+  - 最终选择：继续复用现有聊天组件和站点玻璃视觉语言，只增强三层对比，不引入新组件或新主题体系
+- 风险点：
+  - 本次会让 AI 打开时的背景退后感明显一些，属于有意为之；功能逻辑、消息流、历史会话和拖拽行为均未改动。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantWidgetContrast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 修复首页系统状态条“最后更新时间”的帮助态鼠标并补充精确到分钟浮层
 - 背景/需求：用户反馈首页系统状态条中的“最后更新时间”当前鼠标移上去会出现“鼠标 + 问号”的帮助态光标，体验不对；希望改为悬停或点击这一小块时，显示具体的最后更新时间，并精确到分钟。
 - 修改类型：fix
