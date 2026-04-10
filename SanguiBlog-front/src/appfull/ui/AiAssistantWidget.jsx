@@ -809,9 +809,12 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         await sendCurrentDraft();
     };
 
+    const assistantBackdropClass = isDarkMode
+        ? 'bg-[radial-gradient(circle_at_right_center,rgba(99,102,241,0.18),transparent_34%),linear-gradient(180deg,rgba(2,6,23,0.26),rgba(2,6,23,0.42))] backdrop-blur-[10px]'
+        : 'bg-[radial-gradient(circle_at_right_center,rgba(129,140,248,0.16),transparent_34%),linear-gradient(180deg,rgba(248,250,252,0.18),rgba(226,232,240,0.34))] backdrop-blur-[10px]';
     const shellClass = isDarkMode
-        ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(15,23,42,0.84))] text-white backdrop-blur-2xl'
-        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.72))] text-black backdrop-blur-2xl';
+        ? 'bg-[linear-gradient(180deg,rgba(17,26,45,0.96),rgba(12,19,34,0.92))] text-white backdrop-blur-2xl shadow-[0_28px_80px_rgba(2,6,23,0.46)]'
+        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,248,255,0.86))] text-black backdrop-blur-2xl shadow-[0_24px_64px_rgba(15,23,42,0.16)]';
     const panelBorderClass = isDarkMode ? 'border-white/10' : 'border-black/8';
     const subTextClass = isDarkMode ? 'text-gray-300' : 'text-gray-600';
     const panelAccentClass = isDarkMode
@@ -833,8 +836,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         ? 'bg-[linear-gradient(180deg,rgba(15,23,42,0.94),rgba(15,23,42,0.88))] text-white border-white/12 shadow-[0_20px_50px_rgba(2,6,23,0.42)]'
         : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,250,252,0.82))] text-black border-black/10 shadow-[0_20px_50px_rgba(15,23,42,0.14)]';
     const viewportGlassClass = isDarkMode
-        ? 'sg-scrollbar-dark bg-[linear-gradient(180deg,rgba(9,15,28,0.86),rgba(11,18,32,0.92))]'
-        : 'sg-scrollbar-light bg-[linear-gradient(180deg,rgba(255,255,255,0.52),rgba(250,250,252,0.72))]';
+        ? 'sg-scrollbar-dark ring-1 ring-white/8 bg-[linear-gradient(180deg,rgba(7,12,24,0.92),rgba(10,17,31,0.98))]'
+        : 'sg-scrollbar-light ring-1 ring-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(244,247,252,0.9))]';
     const textareaGlassClass = isDarkMode
         ? 'sg-scrollbar-dark border-white/10 bg-white/[0.06] text-white placeholder:text-gray-400'
         : 'sg-scrollbar-light border-black/10 bg-white/70 text-black placeholder:text-gray-500';
@@ -861,7 +864,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.16 }}
-                                className="fixed inset-0 z-[90] bg-transparent touch-none"
+                                className={`fixed inset-0 z-[90] touch-none ${assistantBackdropClass}`}
                                 style={{ zIndex: assistantBackdropZ }}
                             />
                         )}

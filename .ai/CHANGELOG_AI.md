@@ -50,6 +50,28 @@
   - 执行 `node .\\src\\appfull\\public\\StatsStripLastUpdatedTooltip.test.js`（工作目录 `SanguiBlog-front`）通过
   - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
 
+## [2026-04-10] 拉开 AI 聊天模块与站点背景的层次对比
+- 背景/需求：用户反馈前台 AI 聊天模块打开后，与站点背景颜色过于接近，视觉对比太小、看久了容易“重眼”；希望在符合本站玻璃风格的前提下，优雅地增强 AI 面板与页面背景的区分度。
+- 修改类型：fix
+- 影响范围：前台 AI 助手打开时的页面衬底、AI 面板外壳层次、聊天正文区材质区分、AI 聊天 UI 最小回归测试、AI 变更日志
+- 变更摘要：
+  1) 检索确认当前问题不是单一颜色过淡，而是三层都过近：打开 AI 时页面拦截层仍是透明、AI 外壳与站点暗色背景都落在相近蓝黑灰区间、聊天正文区与外壳材质差异不足。
+  2) 在 `AiAssistantWidget.jsx` 中新增 `assistantBackdropClass`，让 AI 打开时页面出现轻量的站内风格渐变衬底与 `backdrop-blur-[10px]`，不做厚重遮罩，但能把页面背景和 AI 面板温和分开。
+  3) 同步增强 `shellClass`：提高暗色/亮色外壳渐变对比，并补更明确的阴影，让整个 AI 外壳从页面背景里“站出来”。
+  4) 同步调整 `viewportGlassClass`：让聊天正文区在暗色模式下更深一档、在亮色模式下更净一档，并补 `ring-1`，让正文区与外壳形成更清晰但不过分突兀的材质分层。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidgetContrast.test.js`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `backdrop-blur` / `shellClass` / `viewportGlassClass` / `bg-transparent` / `panelBorderClass`
+  - 候选实现：`AiAssistantWidget.jsx` 的页面拦截层、面板外壳 `shellClass`、正文区 `viewportGlassClass`、消息展示层 `aiMessagePresentation.js`
+  - 最终选择：优先改“页面衬底 + 面板外壳 + 正文区”三层，不去大改消息气泡结构；这样能最小代价拉开站点背景与 AI 面板的层次
+- 风险点：
+  - 本次是视觉层级增强，不改 AI 会话、消息流、历史会话、拖拽和移动端适配逻辑；唯一变化是打开 AI 时背景会更柔和虚化、面板会更显眼一些。
+- 验证方式：
+  - 执行 `node .\\src\\appfull\\ui\\AiAssistantWidgetContrast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-10] 适配文章页代码块滚动条的黑夜模式
 - 背景/需求：用户反馈具体文章页面 `/article/:id` 中 Markdown 代码块在黑夜模式下，如果代码过长需要横向滚动，原生滚动条仍偏亮、偏刺眼，希望只修正暗色适配，不改代码块现有结构与交互。
 - 修改类型：fix
