@@ -5,6 +5,38 @@
 
 ---
 
+## [2026-04-11] 将文章页玻璃复制提示沉淀为共享弹出模板并升级到 V2.2.17
+- 背景/需求：用户确认文章页分享复制提示的视觉已满意，并要求把这套弹出卡片作为后续可复用模板沉淀下来，同时留下明确约定，后续新增同类弹出框时优先使用该设计。
+- 修改类型：refactor
+- 影响范围：前台玻璃弹出卡片复用模板、文章详情页分享提示接入方式、模板回归测试、项目长期记忆、站点版本号
+- 变更摘要：
+  1) 检索确认现有前端提示体系里，`ErrorToast` 是错误提示、`AdminNoticeBar` 是后台顶部通知、`StatsStrip` 的 tooltip 只是统计浮层，当前并不存在适合作为“前台玻璃弹出卡片模板”的共享组件。
+  2) 新增 `src/appfull/ui/GlassPopupToast.jsx`，将文章页分享提示沉淀为共享模板：内置 body portal、偏上定位辅助方法 `getGlassPopupToastTop(...)`、仅位移入场、半透明渐变玻璃底、`backdropFilter/WebkitBackdropFilter` 以及 `translateZ(0) + backfaceVisibility` 首帧稳定兜底。
+  3) `ArticleDetail.jsx` 改为直接复用 `GlassPopupToast`，分享复制提示不再内嵌私有 portal 结构；同时新增 `GlassPopupToast.test.js`，并更新 `ArticleDetailShareToast.test.js`，锁定“文章页必须复用共享模板，模板本身必须保持当前玻璃设计与动画参数”。
+  4) 在 `PROJECT_MEMORY.md` 中补充长期约定：后续前台若要新增“非阻塞、短暂展示、位于屏幕偏上”的玻璃弹出卡片，应优先复用 `GlassPopupToast.jsx`，避免再次各页面各写一套。
+  5) 将站点版本号从 `V2.2.16` 升级为 `V2.2.17`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/GlassPopupToast.jsx`
+  - `SanguiBlog-front/src/appfull/ui/GlassPopupToast.test.js`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailShareToast.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`ErrorToast` / `AdminNoticeBar` / `createPortal` / `shareToastLayer` / `home-ios-card--static` / `GlassPopupToast`
+  - 候选实现：`ArticleDetail.jsx` 的分享提示私有实现、`StatsStrip.jsx` 的 tooltip portal、`ErrorToast.jsx` 的错误提示、`AdminPanel.jsx` 的 `AdminNoticeBar`
+  - 最终选择：新建单一共享模板 `GlassPopupToast.jsx` 并让文章页回接它，避免未来同类弹出框继续复制私有实现
+- 风险点：
+  - 当前模板更适合“前台非阻塞、短时出现、偏上定位”的玻璃提示，不适合直接替代错误提示、后台管理通知或需要交互按钮的模态层；后续若需求超出这个边界，应在复用基础上扩展，而不是再复制一套相似实现。
+- 验证方式：
+  - 执行 `node .\src\appfull\ui\GlassPopupToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailShareToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 恢复文章页分享复制提示的玻璃质感并保持首帧无延迟并升级到 V2.2.16
 - 背景/需求：用户确认分享复制提示的位置和首帧延迟问题已经修好，但反馈当前卡片更像固定底色，不再像真正的玻璃；要求先评估能否在恢复玻璃质感的同时继续保持首帧无视觉延迟，若不能同时满足则保持现状不动。
 - 修改类型：fix

@@ -202,6 +202,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   **前端日志与提示规范**：
 
     *   禁止在生产代码中使用 `alert()` 作为提示手段；后台操作提示优先使用 `src/appfull/AdminPanel.jsx` 的 `AdminNoticeBar + useTimedNotice` 体系（非打断式），前台的彩蛋/交互提示应使用页面内提示组件或状态提示，而非系统弹窗。
+    *   自 V2.2.17 起，前台若需要新增“非阻塞、短暂展示、位于屏幕偏上”的玻璃弹出卡片，应优先复用 `src/appfull/ui/GlassPopupToast.jsx` 这套共享模板，而不是在页面内重新手写一套 portal + 动画 + 玻璃背景实现。该模板已沉淀当前文章页分享复制提示的设计：`body portal`、偏上定位 `getGlassPopupToastTop(...)`、仅位移入场、半透明渐变玻璃底、`backdropFilter/WebkitBackdropFilter` 与 `translateZ(0)` 首帧稳定兜底。
 
     *   控制台输出统一走 `src/utils/logger.js`：开发环境允许 `debug/info/warn` 全量打印；生产环境仅对 `warn` 做采样输出（默认 0.12），可用前端环境变量 `VITE_LOG_SAMPLE_RATE` 调整（0~1）。
 

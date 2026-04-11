@@ -12,6 +12,7 @@ import 'katex/dist/katex.min.css';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLayoutOffsets } from "../../contexts/LayoutOffsetContext.jsx";
+import GlassPopupToast, { getGlassPopupToastTop } from "../ui/GlassPopupToast.jsx";
 import sanitizeHtml from "../../utils/sanitize.js";
 import { rehypeSanitize, SG_REHYPE_SANITIZE_SCHEMA } from "../../utils/rehypeSanitizeSchema.js";
 import {
@@ -1143,54 +1144,16 @@ const ArticleDetail = ({
         )
         : null;
 
-    const shareToastLayer = typeof document !== 'undefined'
-        ? (() => {
-            const shareToastTop = Math.max(fixedTopOffset + 8, 104);
-            return createPortal(
-                <AnimatePresence>
-                    {showShareToast && (
-                        <motion.div
-                            initial={{ y: 12, x: '-50%' }}
-                            animate={{ y: 0, x: '-50%' }}
-                            exit={{ opacity: 0, y: -10, x: '-50%' }}
-                            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                            role="status"
-                            aria-live="polite"
-                            className="pointer-events-none fixed left-1/2 z-[140] w-[min(92vw,320px)]"
-                            style={{ top: shareToastTop, willChange: 'transform' }}
-                        >
-                            <div
-                                className={`relative overflow-hidden px-4 py-3 ${glassCard} home-ios-card--static ${isDarkMode ? 'text-white border-white/12' : 'text-black border-white/75'} shadow-[0_20px_60px_rgba(15,23,42,0.22)]`}
-                                style={{
-                                    background: isDarkMode
-                                        ? 'linear-gradient(160deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.06) 46%, rgba(15, 23, 42, 0.3) 100%), rgba(15, 23, 42, 0.22)'
-                                        : 'linear-gradient(160deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.38) 46%, rgba(244, 248, 255, 0.42) 100%), rgba(255, 255, 255, 0.22)',
-                                    backdropFilter: 'blur(14px) saturate(1.01)',
-                                    WebkitBackdropFilter: 'blur(14px) saturate(1.01)',
-                                    transform: 'translateZ(0)',
-                                    backfaceVisibility: 'hidden'
-                                }}
-                            >
-                                <div className={`absolute inset-x-8 -top-10 h-20 rounded-full blur-2xl ${isDarkMode ? 'bg-emerald-400/18' : 'bg-[#FFD700]/28'}`} />
-                                <div className="relative flex items-center gap-3">
-                                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${isDarkMode ? 'border-emerald-300/30 bg-emerald-400/18 text-emerald-200' : 'border-emerald-500/20 bg-emerald-100 text-emerald-700'}`}>
-                                        <CheckCircle size={21} strokeWidth={3} />
-                                    </span>
-                                    <span className="min-w-0">
-                                        <span className="block text-sm font-black tracking-[0.08em]">链接已复制</span>
-                                        <span className={`mt-0.5 block truncate text-xs font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                            文章地址已放入剪贴板
-                                        </span>
-                                    </span>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>,
-                document.body
-            );
-        })()
-        : null;
+    const shareToastLayer = (
+        <GlassPopupToast
+            open={showShareToast}
+            isDarkMode={isDarkMode}
+            top={getGlassPopupToastTop(fixedTopOffset)}
+            icon={<CheckCircle size={21} strokeWidth={3} />}
+            title="链接已复制"
+            description="文章地址已放入剪贴板"
+        />
+    );
 
     return (
         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
