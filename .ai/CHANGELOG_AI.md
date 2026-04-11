@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-11] 去掉首页博主信息卡与全部标签卡的外层 hover 上浮
+- 背景/需求：用户希望首页左侧“博主信息”卡片和“全部标签”卡片的外层卡片不再在鼠标悬浮时整体上浮，但要求“全部标签”卡片内部具体标签 chip 的 hover 上浮保留，其他区域保持不变。
+- 修改类型：fix
+- 影响范围：首页左侧博主信息卡、首页左侧全部标签卡、首页侧栏卡片最小回归测试
+- 变更摘要：
+  1) 检索确认首页左侧博主信息外层卡和全部标签外层卡都位于 `ArticleList.jsx`，当前仍复用默认 `home-ios-card` hover 行为；而首页最新评论外层卡已经通过 `home-ios-card--static` 关闭了整体上浮，可直接作为复用方案。
+  2) 先更新 `ArticleList.test.js`，锁定“博主信息外层卡必须带 `home-ios-card--static` 且保留 `home-ios-card--overflow-visible`”“全部标签外层卡必须带 `home-ios-card--static`”“内部具体标签 chip 仍保留 `hover:-translate-y-0.5`”，确认源码级测试先失败后再修改。
+  3) 在 `ArticleList.jsx` 中为博主信息外层卡补上 `home-ios-card--static`，同时保留 `home-ios-card--overflow-visible`，确保头像仍能外溢但卡片本体不再上浮。
+  4) 为全部标签外层卡补上 `home-ios-card--static`，只取消整块卡片的 hover 上浮，不改内部标签按钮、清除筛选按钮和展开按钮的既有交互。
+  5) 本次属于首页细节交互收敛，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`全部标签` / `home-ios-card--overflow-visible` / `home-ios-card--static` / `home-ios-chip`
+  - 候选实现：`ArticleList.jsx` 博主信息卡、`ArticleList.jsx` 全部标签卡、`ArticleList.jsx` 最新评论卡、`homeRedesign.css` 里的 `home-ios-card--static`
+  - 最终选择：复用现有 `home-ios-card--static`，只在两张外层卡上补类名，不新增样式类
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 修复文章图片大图预览被首页按钮与 AI 入口压层并去掉右侧白线
 - 背景/需求：用户反馈具体文章页中点击正文图片打开大图预览时，仍会看到并能点到“首页”悬浮按钮和右下角 AI 聊天入口；同时浏览器右侧会出现一条粗白线，希望大图预览期间这些浮层不再压在图片上且不可点击，并消除右侧白线。
 - 修改类型：fix

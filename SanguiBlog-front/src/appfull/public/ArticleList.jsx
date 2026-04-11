@@ -519,7 +519,7 @@ const ArticleList = ({
                 <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 flex flex-col lg:flex-row gap-12">
                     <div className="hidden lg:block w-full lg:w-1/4 space-y-8">
                         <div
-                            className={`${sidebarBg} ${glassSurface} home-ios-card--overflow-visible p-6 text-center relative ${text}`}>
+                            className={`${sidebarBg} ${glassSurface} home-ios-card--static home-ios-card--overflow-visible p-6 text-center relative ${text}`}>
                             <motion.div
                                 animate={spinLockActive ? { rotate: [0, -8, 8, -5, 5, 0] } : { rotate: avatarClicks * 360 }}
                                 transition={spinLockActive ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.5 }}
@@ -673,7 +673,7 @@ const ArticleList = ({
                             </div>
                         </div>
 
-                        <div className={`${sidebarBg} ${glassSurface} p-5`}>
+                        <div className={`${sidebarBg} ${glassSurface} home-ios-card--static p-5`}>
                             <div className="flex items-center justify-between gap-3">
                                 <h4 className={`font-black text-lg flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
                                     <Hash size={18} className={isDarkMode ? 'text-white' : 'text-black'} /> 全部标签
