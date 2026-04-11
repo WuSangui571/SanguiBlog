@@ -10,9 +10,9 @@ const source = fs.readFileSync(path.join(__dirname, 'Hero.jsx'), 'utf8');
 assert.match(source, /prefers-reduced-motion: reduce/);
 assert.match(source, /pointer: coarse/);
 assert.match(source, /useTransform\(scrollY, \[0, 180, 520\], \[1, 0\.9, 0\]\)/);
-assert.match(source, /useTransform\(scrollY, \[0, 520\], \[0, -128\]\)/);
 assert.doesNotMatch(source, /useTransform\(scrollY, \[0, 80, 220\], \[1, 0\.72, 0\]\)/);
-assert.doesNotMatch(source, /useTransform\(scrollY, \[0, 220\], \[0, -96\]\)/);
+assert.doesNotMatch(source, /const contentY = useTransform/);
+assert.match(source, /style=\{\{ opacity: contentOpacity \}\}/);
 assert.match(source, /scale\(1\.02\) translate/);
 
 console.log('Hero performance tests passed');

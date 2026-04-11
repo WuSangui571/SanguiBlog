@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-11] 让首页 Hero 文案贴合首屏画布淡出而不额外上飞
+- 背景/需求：用户进一步说明，首页 Hero 文案不应额外向上漂移，而应像钉在首页画布上一样，保持与首页底部的相对距离稳定；参考模板 `newIndex/html/indexV11.html` 的感觉是文案随首屏画布存在，只缓慢透明淡出。
+- 修改类型：fix
+- 影响范围：首页 Hero 文案滚动位移、Hero 性能/滚动回归测试
+- 变更摘要：
+  1) 对照 `newIndex/html/indexV11.html` 后确认，模板里 Hero 文案主要是挂在首屏内容容器上淡出，不应像当前实现一样额外使用负向 `contentY` 让文字先往上飞走。
+  2) 更新 `HeroPerformance.test.js`，锁定 Hero 文案继续使用更缓的透明度映射 `[0, 180, 520] -> [1, 0.9, 0]`，但禁止再声明 `const contentY = useTransform(...)`，并要求内容层 style 只绑定 `opacity: contentOpacity`。
+  3) 在 `Hero.jsx` 中移除 `contentY` 位移映射和 `y: contentY` 样式绑定，只保留缓慢透明淡出，让文案相对首屏画布保持稳定。
+  4) 未修改 Hero 结构、背景图、按钮、手机端首篇文章滚动目标或鼠标视差逻辑。
+  5) 本次属于对上一轮 Hero 动效理解偏差的修正，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/HeroPerformance.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`contentY` / `useTransform` / `home-hero__content` / `hero-wrap` / `indexV11.html`
+  - 候选实现：`Hero.jsx` 当前 contentY 位移、`Hero.jsx` contentOpacity 淡出、模板 `indexV11.html` 的 `hero-wrap` 行为、`homeRedesign.css` 的 sticky Hero 布局
+  - 最终选择：原位删除额外位移，只复用现有透明度淡出链路，不新增动画系统
+- 验证方式：
+  - 执行 `node .\src\appfull\public\HeroPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\HeroScrollTarget.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 放缓首页 Hero 文案随滚动淡出的节奏
 - 背景/需求：用户反馈首页打开后，随着页面上滑，中间 Hero 文案透明消失太快；鼠标滚轮只滑动几小下时首页仍有大部分在屏幕内，但文案已经完全透明，希望文案多移动一会再消失，并且透明度更缓慢、渐进地变化。
 - 修改类型：fix
