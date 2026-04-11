@@ -5,6 +5,7 @@ import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.service.AvatarStorageService;
 import com.sangui.sanguiblog.service.PostAssetService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,6 +50,7 @@ public class UploadController {
     }
 
     @PostMapping("/post-cover")
+    @PreAuthorize("hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
     public ApiResponse<Map<String, String>> uploadPostCover(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "postSlug", required = false) String postSlug) {
@@ -75,6 +77,7 @@ public class UploadController {
     }
 
     @PostMapping("/post-assets/reserve")
+    @PreAuthorize("hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
     public ApiResponse<Map<String, String>> reservePostAssetsFolder(
             @RequestParam(value = "folder", required = false) String folder) {
         String slug = StringUtils.hasText(folder)
@@ -84,6 +87,7 @@ public class UploadController {
     }
 
     @PostMapping("/post-assets")
+    @PreAuthorize("hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
     public ApiResponse<Map<String, Object>> uploadPostAssets(
             @RequestParam(value = "folder", required = false) String folder,
             @RequestParam("files") List<MultipartFile> files) {

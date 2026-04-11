@@ -7,12 +7,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Pattern;
 
 /**
  * 统一管理所有本地静态资源的根路径，支持通过配置切换存储位置。
  */
 @Component
 public class StoragePathResolver {
+
+    private static final Pattern SAFE_AVATAR_FILENAME = Pattern.compile("^[A-Za-z0-9._-]+$");
 
     private final Path rootPath;
 
@@ -66,7 +69,29 @@ public class StoragePathResolver {
 
     public Path resolveAvatarFile(String filename) {
         ensureDirectoryExists(getAvatarDir());
-        return getAvatarDir().resolve(filename).normalize();
+        String safeFilename = normalizeAvatarFilename(filename);
+        return resolve("avatar", safeFilename);
+    }
+
+    public String normalizeAvatarFilename(String avatarPath) {
+        if (avatarPath == null || avatarPath.isBlank()) {
+            return null;
+        }
+        String value = avatarPath.trim().replace('\\', '/');
+        if (value.startsWith("/avatar/")) {
+            value = value.substring("/avatar/".length());
+        } else if (value.startsWith("avatar/")) {
+            value = value.substring("avatar/".length());
+        } else if (value.contains("/avatar/")) {
+            value = value.substring(value.lastIndexOf("/avatar/") + "/avatar/".length());
+        } else if (value.startsWith("http://") || value.startsWith("https://")) {
+            int idx = value.lastIndexOf('/');
+            value = idx >= 0 && idx < value.length() - 1 ? value.substring(idx + 1) : "";
+        }
+        if (!SAFE_AVATAR_FILENAME.matcher(value).matches() || value.contains("..")) {
+            throw new IllegalArgumentException("非法头像路径: " + avatarPath);
+        }
+        return value;
     }
 
     public String toResourceLocation(Path directory) {

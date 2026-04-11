@@ -5,6 +5,90 @@
 
 ---
 
+## [2026-04-11] 修复用户名变更后旧 JWT 失效并升级到 V2.2.10
+- 背景/需求：项目审阅发现用户在个人资料中修改用户名后，当前 JWT 的 subject 仍是旧用户名，而 `JwtAuthenticationFilter` 每次请求只按 subject 查询用户，导致后续请求因旧用户名不存在而掉线；要求修复这条 P2 登录态稳定性问题。
+- 修改类型：fix
+- 影响范围：JWT claim 解析、JWT 鉴权过滤器、用户详情加载、用户名变更后的登录态兼容、后端回归测试、站点版本号
+- 变更摘要：
+  1) 检索确认登录时生成的 JWT 已包含稳定的 `uid` claim，因此不需要为本问题新增前端换 token 流程，也不需要禁止用户修改用户名。
+  2) 新增 `JwtAuthenticationFilterTest`，先锁定“token subject 为旧用户名，但 `uid` 对应的新用户名用户仍存在时，请求必须认证成功”的行为。
+  3) `JwtUtil` 新增 `extractUserId(...)`，从 `uid` claim 中解析稳定用户 ID，兼容数字和字符串形式。
+  4) `CustomUserDetailsService` 新增 `loadUserById(...)`，并复用同一套 `UserPrincipal` 构造逻辑，避免用户名和 ID 两条加载路径出现权限差异。
+  5) `JwtAuthenticationFilter` 调整为优先按 `uid` 加载用户，只有缺少 `uid` 的旧格式 token 才回退 subject 用户名加载，从而让改名后的旧 token 在有效期内继续可用。
+  6) 将站点版本号从 `V2.2.9` 升级为 `V2.2.10`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/JwtUtil.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/CustomUserDetailsService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/JwtAuthenticationFilter.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/security/JwtAuthenticationFilterTest.java`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`generateToken` / `uid` / `extractUsername` / `JwtAuthenticationFilter` / `loadUserByUsername` / `updateProfile`
+  - 候选实现：`AuthService.login` 现有 `uid` claim、`JwtUtil` claim 解析、`JwtAuthenticationFilter` token 鉴权入口、`CustomUserDetailsService` 用户详情加载
+  - 最终选择：复用现有 JWT `uid` claim，修改鉴权过滤器为优先按稳定用户 ID 加载，不新建 token 类型、不新增前端刷新 token 协议
+- 风险点：
+  - 缺少 `uid` 的历史 token 仍会回退用户名 subject；这类旧 token 在用户改名后仍可能失效，但当前项目登录生成的 token 已包含 `uid`，后续新登录用户不受影响。
+- 验证方式：
+  - 执行 `mvn -q "-Dtest=JwtAuthenticationFilterTest" test`（工作目录 `SanguiBlog-server`）通过
+  - 执行 `mvn -q -DskipTests compile`（工作目录 `SanguiBlog-server`）通过
+
+## [2026-04-11] 收紧文章封面与正文资源上传权限并升级到 V2.2.9
+- 背景/需求：项目审阅发现 `UploadController` 的文章封面与正文资源上传接口虽然位于后台编辑链路中，但实际只要求“已登录”即可调用，导致任意登录用户都能向公开 `/uploads/**` 目录写入文件；要求只修复这条 P2 权限边界问题，不影响头像上传。
+- 修改类型：fix
+- 影响范围：文章封面上传、文章正文资源目录预留与资源上传的权限边界、上传控制器回归测试、站点版本号
+- 变更摘要：
+  1) 检索确认前端 `uploadPostCover / reservePostAssetsFolder / uploadPostAssets` 仅由后台文章编辑面板调用，而 `uploadAvatar` 只用于个人资料页，因此权限可以按“文章资源”和“头像资源”拆分收口。
+  2) 新增 `UploadControllerAuthorizationTest`，先锁定文章封面、正文资源目录预留、正文资源上传三个方法必须声明 `@PreAuthorize("hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")`，同时锁定头像上传方法不应被附带文章权限。
+  3) 在 `UploadController` 上仅为 `uploadPostCover`、`reservePostAssetsFolder`、`uploadPostAssets` 补充方法级 `PreAuthorize`，要求具备 `PERM_POST_CREATE` 或 `PERM_POST_EDIT`；`uploadAvatar` 保持原有“登录用户可用”的行为不变。
+  4) 未改动全局 `/api/upload/**` 的登录要求，继续让头像上传受“已登录”保护；文章资源上传则在此基础上再受文章权限约束，形成更细粒度的防线。
+  5) 将站点版本号从 `V2.2.8` 升级为 `V2.2.9`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/UploadController.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/controller/UploadControllerAuthorizationTest.java`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`uploadPostCover` / `uploadPostAssets` / `reservePostAssetsFolder` / `/api/upload/**` / `PERM_POST_CREATE` / `PERM_POST_EDIT`
+  - 候选实现：`SecurityConfig` 全局上传认证、`UploadController` 单接口入口、`PostController` 现有文章创建/编辑权限、前端 `AdminPanel.jsx` 的文章资源上传调用点
+  - 最终选择：复用现有 `PERM_POST_CREATE` 与 `PERM_POST_EDIT`，在 `UploadController` 单入口做方法级权限收紧，不新建权限码、不复制上传接口
+- 风险点：
+  - 若未来需要给“只能新建不能编辑”的角色开放上传，本轮仍允许，因为使用的是 `CREATE or EDIT`；这与“创建文章前也要先上传封面/资源”的现有编辑流程一致。
+- 验证方式：
+  - 执行 `mvn -q "-Dtest=UploadControllerAuthorizationTest" test`（工作目录 `SanguiBlog-server`）通过
+  - 执行 `mvn -q -DskipTests compile`（工作目录 `SanguiBlog-server`）通过
+
+## [2026-04-11] 修复头像路径越界删除风险并升级到 V2.2.8
+- 背景/需求：项目审阅发现个人资料更新链路会信任客户端传入的 `avatarUrl`，旧头像删除时又会按该值解析本地文件，存在通过头像切换触发越界删除的风险；要求优先修复该 P1 安全问题。
+- 修改类型：fix
+- 影响范围：头像路径规范化、头像文件解析根目录校验、用户资料与后台用户头像路径复用逻辑、后端安全回归测试、站点版本号
+- 变更摘要：
+  1) 新增 `StoragePathResolverTest`，先锁定 `resolveAvatarFile("../../...")` 必须拒绝路径穿越，避免头像目录解析绕过存储根目录。
+  2) 新增 `AuthServiceTest`，先锁定用户资料更新时不能把 `../../...` 这类不可信头像路径写入用户资料，避免后续换头像删除旧路径时触发越界删除。
+  3) 在 `StoragePathResolver` 中新增统一的头像文件名规范化规则，仅允许安全文件名，并让 `resolveAvatarFile` 复用已有 `resolve("avatar", ...)` 根目录校验。
+  4) `AuthService` 与 `AdminUserService` 统一复用 `StoragePathResolver.normalizeAvatarFilename(...)`，不再各自手写头像路径截取逻辑；删除旧头像时若遇到历史遗留非法值只忽略，不执行删除。
+  5) 将站点版本号从 `V2.2.7` 升级为 `V2.2.8`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/StoragePathResolver.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AuthService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AdminUserService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/config/StoragePathResolverTest.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/AuthServiceTest.java`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`avatarUrl` / `deleteLocalAvatar` / `resolveAvatarFile` / `updateProfile` / `AdminUserService` / `UploadController`
+  - 候选实现：`StoragePathResolver` 统一存储根路径、`AuthService` 用户资料更新、`AdminUserService` 后台用户资料更新、`AvatarStorageService` 头像上传落盘
+  - 最终选择：复用 `StoragePathResolver` 作为单一头像路径规范化入口，修改现有服务调用点，不新建第二套头像路径工具
+- 风险点：
+  - 历史数据库中若存在非安全头像文件名，本轮会在后续资料更新时拒绝继续写入或在删除旧头像时跳过删除；这是为了避免误删头像目录外文件的安全取舍。
+- 验证方式：
+  - 执行 `mvn -q "-Dtest=StoragePathResolverTest,AuthServiceTest" test`（工作目录 `SanguiBlog-server`）通过
+  - 执行 `mvn -q -DskipTests compile`（工作目录 `SanguiBlog-server`）通过
+
 ## [2026-04-10] 修复手机端 AI 入口状态点被裁切
 - 背景/需求：用户反馈手机端 AI 聊天入口卡片右上角的绿色呼吸状态点被玻璃外框裁掉，只能显示一部分；要求仅修复手机端显示，电脑端保持原样。
 - 修改类型：fix

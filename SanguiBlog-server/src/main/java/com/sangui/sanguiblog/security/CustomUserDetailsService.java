@@ -20,6 +20,16 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return toUserPrincipal(user);
+    }
+
+    public UserDetails loadUserById(Long userId) throws UsernameNotFoundException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return toUserPrincipal(user);
+    }
+
+    private UserDetails toUserPrincipal(User user) {
         var permissionCodes = permissionService.permissionsForRole(
                 user.getRole() != null ? user.getRole().getCode() : "USER");
         return new UserPrincipal(user, permissionCodes);

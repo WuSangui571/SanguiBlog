@@ -157,17 +157,7 @@ public class AuthService {
         }
         String previousAvatar = user.getAvatarUrl();
         if (request.getAvatarUrl() != null) {
-            String incoming = request.getAvatarUrl();
-            String stored = incoming;
-            if (incoming.startsWith("/avatar/")) {
-                stored = incoming.substring("/avatar/".length());
-            } else if (incoming.contains("/avatar/")) {
-                stored = incoming.substring(incoming.indexOf("/avatar/") + "/avatar/".length());
-            } else if (incoming.startsWith("http")) {
-                String trimmed = incoming.substring(incoming.lastIndexOf("/") + 1);
-                stored = trimmed;
-            }
-            user.setAvatarUrl(stored);
+            user.setAvatarUrl(storagePathResolver.normalizeAvatarFilename(request.getAvatarUrl()));
         }
         if (request.getGithubUrl() != null) {
             user.setGithubUrl(request.getGithubUrl());
@@ -206,11 +196,13 @@ public class AuthService {
         } else if (relative.startsWith("avatar/")) {
             relative = relative.substring("avatar/".length());
         }
-        Path path = storagePathResolver.resolveAvatarFile(relative);
         try {
+            Path path = storagePathResolver.resolveAvatarFile(relative);
             if (Files.exists(path)) {
                 Files.delete(path);
             }
+        } catch (IllegalArgumentException ignored) {
+            // Ignore legacy unsafe avatar values rather than deleting outside avatar storage.
         } catch (Exception ignored) {
         }
     }

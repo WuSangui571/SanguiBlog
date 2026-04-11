@@ -203,26 +203,7 @@ public class AdminUserService {
     }
 
     private String normalizeAvatarPath(String incoming) {
-        if (!StringUtils.hasText(incoming)) {
-            return null;
-        }
-        String value = incoming.trim();
-        if (value.startsWith("/avatar/")) {
-            return value.substring("/avatar/".length());
-        }
-        if (value.startsWith("avatar/")) {
-            return value.substring("avatar/".length());
-        }
-        if (value.contains("/avatar/")) {
-            return value.substring(value.indexOf("/avatar/") + "/avatar/".length());
-        }
-        if (value.startsWith("http")) {
-            int idx = value.lastIndexOf('/');
-            if (idx >= 0 && idx < value.length() - 1) {
-                return value.substring(idx + 1);
-            }
-        }
-        return value;
+        return storagePathResolver.normalizeAvatarFilename(incoming);
     }
 
     private void deleteLocalAvatar(String avatarPath) {
@@ -235,11 +216,13 @@ public class AdminUserService {
         } else if (relative.startsWith("avatar/")) {
             relative = relative.substring("avatar/".length());
         }
-        Path target = storagePathResolver.resolveAvatarFile(relative);
         try {
+            Path target = storagePathResolver.resolveAvatarFile(relative);
             if (Files.exists(target)) {
                 Files.delete(target);
             }
+        } catch (IllegalArgumentException ignored) {
+            // Ignore legacy unsafe avatar values rather than deleting outside avatar storage.
         } catch (Exception ignored) {
         }
     }
