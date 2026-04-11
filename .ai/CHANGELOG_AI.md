@@ -5,6 +5,34 @@
 
 ---
 
+## [2026-04-11] 优化文章页分享复制提示并升级到 V2.2.13
+- 背景/需求：用户反馈文章详情页博主信息卡片中的分享按钮复制成功后，顶部出现的“链接已复制！”长条提示观感突兀，并且提示出现/消失时页面结构会轻微移动；要求重新设计提示并修复抖动问题。
+- 修改类型：fix
+- 影响范围：文章详情页分享按钮复制成功提示、复制提示定时器、前台文章页最小回归测试、站点版本号
+- 变更摘要：
+  1) 检索确认分享按钮、`handleShare`、`showShareToast` 和旧提示横幅都集中在 `ArticleDetail.jsx`；项目已有 `StatsStrip.jsx` 使用 `createPortal(..., document.body)` 渲染浮层的范式，因此无需新建全局 Toast 系统。
+  2) 新增 `ArticleDetailShareToast.test.js`，先锁定分享成功提示必须走 body portal、具备 `role="status"` 与 `aria-live="polite"`、限制宽度、使用更紧凑文案，并禁止退回旧的大号“链接已复制！”横条。
+  3) 将分享提示改为 `shareToastLayer`，通过 `createPortal` 挂到 `document.body`，避免提示作为文章页主体结构的一部分参与渲染层级；视觉改为底部居中的小型玻璃卡片，包含状态图标、主文案“链接已复制”和辅助文案“文章地址已放入剪贴板”。
+  4) 为分享提示新增 `shareToastTimerRef`，连续点击分享时会先清理旧 timer，再启动新的 2.2 秒自动消失计时，避免提示闪烁或被旧 timer 提前关闭。
+  5) 将站点版本号从 `V2.2.12` 升级为 `V2.2.13`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailShareToast.test.js`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`showShareToast` / `handleShare` / `链接已复制` / `clipboard` / `createPortal` / `Toast`
+  - 候选实现：`ArticleDetail.jsx` 当前分享提示、`StatsStrip.jsx` portal tooltip、`ErrorToast.jsx` 固定提示、`AdminPanel.jsx` 后台复制 toast
+  - 最终选择：原位修改 `ArticleDetail.jsx` 的分享提示为 body portal，不新增全局 Toast，也不复制后台提示系统
+- 风险点：
+  - 本次只优化复制成功提示；若浏览器拒绝剪贴板写入，当前仍沿用既有行为不弹成功提示，未新增失败提示分支。
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleDetailShareToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 移除手机端文章页目录按钮与抽屉并升级到 V2.2.12
 - 背景/需求：用户继续反馈手机端文章详情页仍出现“目录”悬浮按钮，要求与“首页/评论”按钮同样处理：仅手机端去掉该按钮，并且点击后出现的目录抽屉也直接不显示，电脑端保持不变。
 - 修改类型：fix

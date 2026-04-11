@@ -740,6 +740,13 @@ const ArticleDetail = ({
     };
 
     const [showShareToast, setShowShareToast] = useState(false);
+    const shareToastTimerRef = useRef(null);
+
+    useEffect(() => () => {
+        if (shareToastTimerRef.current) {
+            clearTimeout(shareToastTimerRef.current);
+        }
+    }, []);
 
     useEffect(() => {
         if (!previewImage || typeof document === 'undefined') return;
@@ -871,8 +878,11 @@ const ArticleDetail = ({
     const handleShare = () => {
         const url = window.location.href;
         navigator.clipboard.writeText(url).then(() => {
+            if (shareToastTimerRef.current) {
+                clearTimeout(shareToastTimerRef.current);
+            }
             setShowShareToast(true);
-            setTimeout(() => setShowShareToast(false), 3000);
+            shareToastTimerRef.current = setTimeout(() => setShowShareToast(false), 2200);
         });
     };
     const handleOpenSibling = useCallback((target) => {
@@ -1133,27 +1143,48 @@ const ArticleDetail = ({
         )
         : null;
 
+    const shareToastLayer = typeof document !== 'undefined'
+        ? createPortal(
+            <AnimatePresence>
+                {showShareToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 18, x: '-50%', scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
+                        exit={{ opacity: 0, y: 14, x: '-50%', scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+                        role="status"
+                        aria-live="polite"
+                        className="pointer-events-none fixed left-1/2 z-[140] w-[min(92vw,320px)]"
+                        style={{ bottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}
+                    >
+                        <div className={`relative overflow-hidden px-4 py-3 ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/88 text-white border-white/12' : 'bg-white/92 text-black border-white/75'} shadow-[0_20px_60px_rgba(15,23,42,0.22)]`}>
+                            <div className={`absolute inset-x-8 -top-10 h-20 rounded-full blur-2xl ${isDarkMode ? 'bg-emerald-400/18' : 'bg-[#FFD700]/28'}`} />
+                            <div className="relative flex items-center gap-3">
+                                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${isDarkMode ? 'border-emerald-300/30 bg-emerald-400/18 text-emerald-200' : 'border-emerald-500/20 bg-emerald-100 text-emerald-700'}`}>
+                                    <CheckCircle size={21} strokeWidth={3} />
+                                </span>
+                                <span className="min-w-0">
+                                    <span className="block text-sm font-black tracking-[0.08em]">链接已复制</span>
+                                    <span className={`mt-0.5 block truncate text-xs font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                        文章地址已放入剪贴板
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>,
+            document.body
+        )
+        : null;
+
     return (
         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             onAnimationComplete={() => setEntryReady(true)}
             className={`min-h-screen px-4 md:px-0 pb-20 ${pageBackground} ${text}`}
             style={{ paddingTop: articleTopPadding }}>
-            {/* Share Toast Notification */}
-            <AnimatePresence>
-                {showShareToast && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -50, x: '-50%' }}
-                        animate={{ opacity: 1, y: 0, x: '-50%' }}
-                        exit={{ opacity: 0, y: -50, x: '-50%' }}
-                        style={{ top: fixedTopOffset }}
-                        className={`fixed left-1/2 z-[60] px-6 py-3 flex items-center gap-3 ${glassCard} ${isDarkMode ? 'bg-emerald-500/85 text-white' : 'bg-emerald-400/90 text-black'}`}
-                    >
-                        <CheckCircle size={24} strokeWidth={3} />
-                        <span className="font-black text-lg">链接已复制！</span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {shareToastLayer}
 
             {tocItems.length > 0 && tocLeft === null && (
                 <div
