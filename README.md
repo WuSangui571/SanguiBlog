@@ -4,9 +4,9 @@
 
 SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backend and a React + Vite (SPA) frontend. This document is intended for deployment, operations, and local development, covering the minimum workable path from environment setup to production rollout, along with common troubleshooting notes.
 
-> Current site version: `V2.2.14` (provided centrally by backend `site.version`, and displayed on the homepage banner as `SANGUI BLOG // <version>`)
+> Current site version: `V2.2.15` (provided centrally by backend `site.version`, and displayed on the homepage banner as `SANGUI BLOG // <version>`)
 >
-> `V2.2.x` continues the AI assistant system introduced in `V2.2.0`. The current `V2.2.14` site version keeps multi-turn chat for logged-in users, blog-article RAG, current article page context enhancement, super-admin knowledge import, and backend AI session auditing, while also updating the homepage and navigation visuals.
+> `V2.2.x` continues the AI assistant system introduced in `V2.2.0`. The current `V2.2.15` site version keeps multi-turn chat for logged-in users, blog-article RAG, current article page context enhancement, super-admin knowledge import, and backend AI session auditing, while also updating the homepage and navigation visuals.
 
 ## 1. Directory Index
 
@@ -128,7 +128,7 @@ java -jar target/SanguiBlog-server-*.jar
 
 ### 5.4 AI Assistant and RAG (`V2.2.0+`)
 
-Starting from `V2.2.0`, the project includes a built-in AI assistant. The current `V2.2.14` site version continues and improves this capability. It includes:
+Starting from `V2.2.0`, the project includes a built-in AI assistant. The current `V2.2.15` site version continues and improves this capability. It includes:
 
 - Public-site AI chat entry
 - Multi-turn chat and chat history for logged-in users

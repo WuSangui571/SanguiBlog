@@ -1144,38 +1144,48 @@ const ArticleDetail = ({
         : null;
 
     const shareToastLayer = typeof document !== 'undefined'
-        ? createPortal(
-            <AnimatePresence>
-                {showShareToast && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 18, x: '-50%', scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
-                        exit={{ opacity: 0, y: 14, x: '-50%', scale: 0.98 }}
-                        transition={{ type: 'spring', stiffness: 360, damping: 28 }}
-                        role="status"
-                        aria-live="polite"
-                        className="pointer-events-none fixed left-1/2 z-[140] w-[min(92vw,320px)]"
-                        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
-                    >
-                        <div className={`relative overflow-hidden px-4 py-3 ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/88 text-white border-white/12' : 'bg-white/92 text-black border-white/75'} shadow-[0_20px_60px_rgba(15,23,42,0.22)]`}>
-                            <div className={`absolute inset-x-8 -top-10 h-20 rounded-full blur-2xl ${isDarkMode ? 'bg-emerald-400/18' : 'bg-[#FFD700]/28'}`} />
-                            <div className="relative flex items-center gap-3">
-                                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${isDarkMode ? 'border-emerald-300/30 bg-emerald-400/18 text-emerald-200' : 'border-emerald-500/20 bg-emerald-100 text-emerald-700'}`}>
-                                    <CheckCircle size={21} strokeWidth={3} />
-                                </span>
-                                <span className="min-w-0">
-                                    <span className="block text-sm font-black tracking-[0.08em]">链接已复制</span>
-                                    <span className={`mt-0.5 block truncate text-xs font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                        文章地址已放入剪贴板
+        ? (() => {
+            const shareToastTop = Math.max(fixedTopOffset + 8, 104);
+            return createPortal(
+                <AnimatePresence>
+                    {showShareToast && (
+                        <motion.div
+                            initial={{ y: 12, x: '-50%' }}
+                            animate={{ y: 0, x: '-50%' }}
+                            exit={{ opacity: 0, y: -10, x: '-50%' }}
+                            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                            role="status"
+                            aria-live="polite"
+                            className="pointer-events-none fixed left-1/2 z-[140] w-[min(92vw,320px)]"
+                            style={{ top: shareToastTop, willChange: 'transform' }}
+                        >
+                            <div
+                                className={`relative overflow-hidden px-4 py-3 ${glassCard} home-ios-card--static ${isDarkMode ? 'text-white border-white/12' : 'text-black border-white/75'} shadow-[0_20px_60px_rgba(15,23,42,0.22)]`}
+                                style={{
+                                    backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255, 255, 255, 0.92)',
+                                    backdropFilter: 'blur(14px) saturate(1.01)',
+                                    WebkitBackdropFilter: 'blur(14px) saturate(1.01)'
+                                }}
+                            >
+                                <div className={`absolute inset-x-8 -top-10 h-20 rounded-full blur-2xl ${isDarkMode ? 'bg-emerald-400/18' : 'bg-[#FFD700]/28'}`} />
+                                <div className="relative flex items-center gap-3">
+                                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${isDarkMode ? 'border-emerald-300/30 bg-emerald-400/18 text-emerald-200' : 'border-emerald-500/20 bg-emerald-100 text-emerald-700'}`}>
+                                        <CheckCircle size={21} strokeWidth={3} />
                                     </span>
-                                </span>
+                                    <span className="min-w-0">
+                                        <span className="block text-sm font-black tracking-[0.08em]">链接已复制</span>
+                                        <span className={`mt-0.5 block truncate text-xs font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                            文章地址已放入剪贴板
+                                        </span>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>,
-            document.body
-        )
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            );
+        })()
         : null;
 
     return (

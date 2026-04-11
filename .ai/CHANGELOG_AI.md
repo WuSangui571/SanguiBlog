@@ -5,6 +5,33 @@
 
 ---
 
+## [2026-04-11] 将文章页分享复制提示上移到屏幕偏上并修复首帧透明感并升级到 V2.2.15
+- 背景/需求：用户反馈分享复制提示即使上移后仍不够显眼，希望显示在屏幕偏上的位置；同时提示卡片刚出现的一瞬间背景像是半透明的，过一会才有完整玻璃特效，需要一起修复。
+- 修改类型：fix
+- 影响范围：文章详情页分享复制提示位置、分享提示入场动效、分享提示回归测试、站点版本号
+- 变更摘要：
+  1) 检索确认问题集中在 `ArticleDetail.jsx` 的 `shareToastLayer`：一方面仍使用靠近底部的定位方式，另一方面入场动画包含 `opacity`，导致玻璃卡片和内容一起从透明淡入，看起来像玻璃背景慢半拍。
+  2) 更新 `ArticleDetailShareToast.test.js`，先锁定分享提示应计算 `shareToastTop = Math.max(fixedTopOffset + 8, 104)` 并使用 `top` 定位到屏幕偏上，同时锁定入场动画只保留轻量位移，不再从透明或缩放状态开始。
+  3) 将分享提示从底部定位改为 `top: shareToastTop`，让卡片稳定显示在屏幕偏上的位置；同时将入场动画改为仅 `y` 位移，并为玻璃卡片显式声明 `backgroundColor/backdropFilter/WebkitBackdropFilter`，首帧即保留玻璃背景观感，消除“先透明、后玻璃”的延迟感。
+  4) 将站点版本号从 `V2.2.14` 升级为 `V2.2.15`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailShareToast.test.js`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`shareToastLayer` / `bottom:` / `top:` / `initial={{ opacity` / `home-ios-card` / `ArticleDetailShareToast`
+  - 候选实现：`ArticleDetail.jsx` 的分享提示 portal、`ArticleDetailShareToast.test.js` 既有测试、`home-ios-card` 玻璃卡片样式、`StatsStrip.jsx` 的 portal 浮层模式
+  - 最终选择：继续复用同一套 `shareToastLayer` 和玻璃卡片样式，只调整定位和入场动效，不新增组件
+- 风险点：
+  - 提示改到偏上位置后更容易被看见，但会更靠近文章头部区域；当前宽度较窄且不会阻塞交互，风险较低。
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleDetailShareToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 上移文章页分享复制提示并升级到 V2.2.14
 - 背景/需求：用户确认新版“链接已复制”提示风格更好，但反馈弹出的卡片位置过低，不刻意看时不容易感知；要求在保留现有风格的基础上把卡片位置调高一点。
 - 修改类型：fix

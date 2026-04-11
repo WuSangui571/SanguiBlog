@@ -6,7 +6,7 @@ const source = readFileSync(resolve('src/appfull/public/ArticleDetail.jsx'), 'ut
 
 assert.match(
     source,
-    /const shareToastLayer = typeof document !== 'undefined'\s*\?\s*createPortal\(/,
+    /const shareToastLayer = typeof document !== 'undefined'[\s\S]*createPortal\(/,
     '分享成功提示应通过 createPortal 挂到 document.body，避免参与文章页结构布局'
 );
 
@@ -36,8 +36,44 @@ assert.match(
 
 assert.match(
     source,
-    /bottom: 'calc\(72px \+ env\(safe-area-inset-bottom, 0px\)\)'/,
-    '分享成功提示应比贴底位置更高，便于用户感知'
+    /const shareToastTop = Math\.max\(fixedTopOffset \+ 8, 104\);/,
+    '分享成功提示应计算一个偏上的固定 top 位置'
+);
+
+assert.match(
+    source,
+    /style=\{\{ top: shareToastTop, willChange: 'transform' \}\}/,
+    '分享成功提示应改为使用 top 定位到屏幕偏上位置'
+);
+
+assert.match(
+    source,
+    /initial=\{\{ y: 12, x: '-50%' \}\}/,
+    '分享成功提示入场时应只做轻量上浮，避免首帧玻璃背景被缩放拖慢'
+);
+
+assert.match(
+    source,
+    /animate=\{\{ y: 0, x: '-50%' \}\}/,
+    '分享成功提示入场动画应只保留位移，避免玻璃背景慢半拍'
+);
+
+assert.match(
+    source,
+    /willChange: 'transform'/,
+    '分享成功提示外层应提前声明 transform 变化，减少首帧合成抖动'
+);
+
+assert.match(
+    source,
+    /backdropFilter: 'blur\(14px\) saturate\(1\.01\)'/,
+    '分享成功提示卡片应显式声明玻璃模糊，避免首帧只剩透明底色'
+);
+
+assert.match(
+    source,
+    /WebkitBackdropFilter: 'blur\(14px\) saturate\(1\.01\)'/,
+    '分享成功提示卡片应补充 WebKit 玻璃模糊，兼容移动端浏览器首帧渲染'
 );
 
 assert.match(
