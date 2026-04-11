@@ -5,6 +5,32 @@
 
 ---
 
+## [2026-04-11] 移除手机端文章页目录按钮与抽屉并升级到 V2.2.12
+- 背景/需求：用户继续反馈手机端文章详情页仍出现“目录”悬浮按钮，要求与“首页/评论”按钮同样处理：仅手机端去掉该按钮，并且点击后出现的目录抽屉也直接不显示，电脑端保持不变。
+- 修改类型：fix
+- 影响范围：文章详情页手机端目录入口、手机端目录抽屉状态与焦点管理、文章详情页最小回归测试、站点版本号
+- 变更摘要：
+  1) 检索确认手机端“目录”按钮、点击后的目录抽屉、对应 `tocDrawerOpen` 状态和焦点恢复逻辑都集中在 `ArticleDetail.jsx`，桌面端目录卡片则复用 `desktopTocCard` 的独立渲染分支。
+  2) 更新 `ArticleDetailFloatingButtons.test.js`，先锁定“手机端不应再有 `aria-label="打开目录"` 按钮，也不应再渲染 `aria-label="文章目录"` 抽屉”，同时锁定桌面端 `hidden xl:block fixed z-40` 目录卡片仍保留。
+  3) 移除 `ArticleDetail.jsx` 中手机端目录按钮、目录抽屉、`tocDrawerOpen` 相关状态、抽屉列表 ref、关闭按钮 ref、焦点恢复 ref 与 Escape 关闭监听；保留桌面端目录卡片、目录激活态计算和桌面目录列表滚动同步。
+  4) 将站点版本号从 `V2.2.11` 升级为 `V2.2.12`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailFloatingButtons.test.js`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`tocDrawerOpen` / `打开目录` / `文章目录` / `desktopTocCard` / `List` / `X`
+  - 候选实现：`ArticleDetail.jsx` 手机端目录按钮、`ArticleDetail.jsx` 手机端目录抽屉、`ArticleDetail.jsx` 桌面端 `desktopTocCard`、同文件目录激活态与滚动同步逻辑
+  - 最终选择：原位移除手机端目录入口与抽屉分支，继续复用桌面端目录卡片，不新增任何移动端专用实现
+- 风险点：
+  - 手机端将不再提供目录快捷入口，这是按需求有意收敛；桌面端目录卡片与文章正文、评论区、分享、图片预览不受影响。
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 隐藏手机端文章页首页/评论悬浮按钮并升级到 V2.2.11
 - 背景/需求：用户反馈手机端具体文章页 `/article/:id` 上“首页”“评论”两个悬浮按钮出现错位，要求仅手机端去掉这两个悬浮按钮，电脑端保持不变。
 - 修改类型：fix

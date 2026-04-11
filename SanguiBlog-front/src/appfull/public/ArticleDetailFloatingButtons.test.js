@@ -12,8 +12,20 @@ assert.match(
 
 assert.match(
     source,
+    /hidden xl:block fixed z-40/,
+    '桌面端目录卡片应继续保留，不受手机端目录入口移除影响'
+);
+
+assert.doesNotMatch(
+    source,
     /aria-label="打开目录"/,
-    '手机端仍应保留目录入口，避免隐藏悬浮按钮后失去文章内导航'
+    '手机端不应再显示目录按钮'
+);
+
+assert.doesNotMatch(
+    source,
+    /aria-label="文章目录"/,
+    '手机端不应再渲染目录抽屉'
 );
 
 console.log('ArticleDetail floating buttons tests passed');

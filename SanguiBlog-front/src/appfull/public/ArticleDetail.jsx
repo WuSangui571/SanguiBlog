@@ -32,11 +32,9 @@ import {
     FileText,
     Hash,
     Home,
-    List,
     MessageCircle,
     Share2,
-    Tag,
-    X
+    Tag
 } from 'lucide-react';
 
 const DESKTOP_TOC_WIDTH = 216;
@@ -179,14 +177,10 @@ const ArticleDetail = ({
     });
     const [activeTocId, setActiveTocId] = useState(null);
     const tocDesktopListRef = useRef(null);
-    const tocDrawerListRef = useRef(null);
     const tocHeadingsRef = useRef([]);
     const tocRafRef = useRef(0);
     const tocPositionTimersRef = useRef([]);
     const [tocItems, setTocItems] = useState([]);
-    const [tocDrawerOpen, setTocDrawerOpen] = useState(false);
-    const tocDrawerCloseBtnRef = useRef(null);
-    const tocDrawerRestoreFocusRef = useRef(null);
     const [tocCollapsed, setTocCollapsed] = useState(false);
     const [tocLeft, setTocLeft] = useState(null);
     const [articleRailOffset, setArticleRailOffset] = useState(16);
@@ -446,7 +440,6 @@ const ArticleDetail = ({
         const rect = target.getBoundingClientRect();
         const top = rect.top + window.pageYOffset - offset;
         window.scrollTo({ top: top > 0 ? top : 0, behavior: 'smooth' });
-        setTocDrawerOpen(false);
         setActiveTocId(targetId);
     }, [fixedTopOffset]);
 
@@ -544,11 +537,7 @@ const ArticleDetail = ({
             const el = tocDesktopListRef.current.querySelector(selector);
             el?.scrollIntoView?.({ block: 'nearest' });
         }
-        if (tocDrawerOpen && tocDrawerListRef.current) {
-            const el = tocDrawerListRef.current.querySelector(selector);
-            el?.scrollIntoView?.({ block: 'nearest' });
-        }
-    }, [activeTocId, tocCollapsed, tocDrawerOpen]);
+    }, [activeTocId, tocCollapsed]);
 
     const clamp = useCallback((value, min, max) => Math.min(max, Math.max(min, value)), []);
 
@@ -792,35 +781,6 @@ const ArticleDetail = ({
             el?.focus?.();
         };
     }, [previewImage, closeImagePreview]);
-    useEffect(() => {
-        if (!tocDrawerOpen) return;
-        if (typeof window === 'undefined' || typeof document === 'undefined') return;
-
-        tocDrawerRestoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-        const focusClose = () => {
-            tocDrawerCloseBtnRef.current?.focus?.();
-        };
-        const t = window.setTimeout(focusClose, 0);
-
-        const onKeyDown = (event) => {
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                setTocDrawerOpen(false);
-            }
-        };
-        window.addEventListener('keydown', onKeyDown, true);
-        return () => {
-            window.clearTimeout(t);
-            window.removeEventListener('keydown', onKeyDown, true);
-            const el = tocDrawerRestoreFocusRef.current;
-            tocDrawerRestoreFocusRef.current = null;
-            el?.focus?.();
-        };
-    }, [tocDrawerOpen]);
-    useEffect(() => {
-        setTocDrawerOpen(false);
-    }, [id]);
     useEffect(() => {
         if (!entryReady || typeof window === 'undefined') return;
         const minViewportGap = 8;
@@ -1207,87 +1167,6 @@ const ArticleDetail = ({
                     {desktopTocCard}
                 </div>
             )}
-
-            {tocItems.length > 0 && (
-                <button
-                    type="button"
-                    onClick={() => setTocDrawerOpen(true)}
-                    aria-label="打开目录"
-                    className={`md:hidden fixed bottom-24 right-4 z-[60] px-4 py-2 font-black inline-flex items-center gap-2 ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white' : 'bg-white/82 text-black'}`}
-                >
-                    <List size={16} />
-                    目录
-                </button>
-            )}
-
-            <AnimatePresence>
-                {tocDrawerOpen && (
-                    <motion.div
-                        className="fixed inset-0 z-[70] md:hidden"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="文章目录"
-                    >
-                        <motion.div
-                            className="absolute inset-0 bg-black/50"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setTocDrawerOpen(false)}
-                        />
-                        <motion.div
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '100%' }}
-                            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
-                            className={`absolute right-0 top-0 h-full w-[80vw] max-w-xs border-l ${isDarkMode ? 'border-white/10' : 'border-black/10'} ${navSurface}`}
-                        >
-                            <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'bg-[#0B1221]/88 border-white/10' : 'bg-white/72 border-black/10'}`}>
-                                <div className="flex items-center gap-2 font-black">
-                                    <List size={16} />
-                                    目录
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setTocDrawerOpen(false)}
-                                    aria-label="关闭目录"
-                                    ref={tocDrawerCloseBtnRef}
-                                    className={`p-2 border rounded-xl ${softButton}`}
-                                >
-                                    <X size={14} />
-                                </button>
-                            </div>
-                            <div ref={tocDrawerListRef} className={`p-4 space-y-3 overflow-y-auto overflow-x-hidden ${tocScrollbarClass}`}>
-                                {tocItems.map((item) => {
-                                    const isActive = item.id === activeTocId;
-                                    const activeBg = isDarkMode ? 'bg-white/10' : 'bg-black/5';
-                                    const activeRing = isDarkMode ? 'ring-2 ring-white/15' : 'ring-2 ring-black/10';
-                                    return (
-                                        <button
-                                            key={`toc-drawer-${item.id}`}
-                                            type="button"
-                                            onClick={() => handleTocJump(item.id)}
-                                            data-toc-id={item.id}
-                                            aria-current={isActive ? 'location' : undefined}
-                                            className={`w-full text-left py-1 px-1 rounded-md transition-colors ${isActive ? `${activeBg} ${activeRing}` : ''} ${isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-black'}`}
-                                        >
-                                            <div className="flex items-start gap-2">
-                                                <TocTreeGutter level={item.level} />
-                                                <span className={`block flex-1 leading-snug ${tocTextClass(item.level)} ${isActive ? (isDarkMode ? 'text-white opacity-100' : 'text-black opacity-100') : ''}`}>
-                                                    {item.text}
-                                                </span>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-            )}
-            </AnimatePresence>
 
             {floatingActionButtons}
 
