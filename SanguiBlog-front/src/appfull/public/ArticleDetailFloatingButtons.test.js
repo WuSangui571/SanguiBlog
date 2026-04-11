@@ -6,7 +6,7 @@ const source = readFileSync(resolve('src/appfull/public/ArticleDetail.jsx'), 'ut
 
 assert.match(
     source,
-    /className="hidden md:block fixed left-0 right-0 z-\[65\] pointer-events-none"/,
+    /className="sg-article-floating-actions hidden md:block fixed left-0 right-0 z-\[65\] pointer-events-none"/,
     '文章详情页的“首页/评论”悬浮按钮容器应仅在 md 及以上视口显示，手机端直接隐藏'
 );
 

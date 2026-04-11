@@ -857,7 +857,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
     const portalTarget = typeof document !== 'undefined' ? document.body : null;
     const assistantLayer = (
-        <>
+        <div className="sg-ai-assistant-layer">
             <AnimatePresence>
                 {isOpen && (
                     <>
@@ -1798,7 +1798,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     </span>
                 </span>}
             </motion.button>
-        </>
+        </div>
     );
     return portalTarget ? createPortal(assistantLayer, portalTarget) : assistantLayer;
 }

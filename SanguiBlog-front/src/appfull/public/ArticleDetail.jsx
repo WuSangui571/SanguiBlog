@@ -751,10 +751,11 @@ const ArticleDetail = ({
 
     useEffect(() => {
         if (!previewImage || typeof document === 'undefined') return;
-        const originalOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
+        document.documentElement.classList.add('sg-article-image-preview-open');
+        document.body.classList.add('sg-article-image-preview-open');
         return () => {
-            document.body.style.overflow = originalOverflow;
+            document.documentElement.classList.remove('sg-article-image-preview-open');
+            document.body.classList.remove('sg-article-image-preview-open');
         };
     }, [previewImage]);
     useEffect(() => {
@@ -1062,7 +1063,7 @@ const ArticleDetail = ({
     const floatingActionButtons = typeof document !== 'undefined'
         ? createPortal(
             <div
-                className="hidden md:block fixed left-0 right-0 z-[65] pointer-events-none"
+                className="sg-article-floating-actions hidden md:block fixed left-0 right-0 z-[65] pointer-events-none"
                 style={{ top: floatingActionTop }}
             >
                 <motion.button
@@ -1370,7 +1371,7 @@ const ArticleDetail = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-0"
+                        className="fixed inset-0 z-[220] bg-black/90 flex items-center justify-center p-0"
                         onClick={closeImagePreview}
                         onWheel={handlePreviewWheel}
                         role="dialog"

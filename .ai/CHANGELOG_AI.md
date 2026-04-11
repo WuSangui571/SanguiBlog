@@ -5,6 +5,33 @@
 
 ---
 
+## [2026-04-11] 修复文章图片大图预览被首页按钮与 AI 入口压层并去掉右侧白线
+- 背景/需求：用户反馈具体文章页中点击正文图片打开大图预览时，仍会看到并能点到“首页”悬浮按钮和右下角 AI 聊天入口；同时浏览器右侧会出现一条粗白线，希望大图预览期间这些浮层不再压在图片上且不可点击，并消除右侧白线。
+- 修改类型：fix
+- 影响范围：文章详情页图片预览浮层、文章页悬浮按钮层、AI 助手入口层、全局滚动条预留槽位样式、图片预览最小回归测试
+- 变更摘要：
+  1) 检索确认文章图片大图预览逻辑集中在 `ArticleDetail.jsx` 的 `previewImage` 状态与遮罩层，当前预览层 z-index 仅 `z-[80]`；文章页“首页/评论”浮层为单独 body portal，AI 入口同样是单独 body portal，因此在大图预览时仍可能压在图片层上。
+  2) 新增 `ArticleDetailImagePreviewOverlay.test.js`，先锁定“打开大图时 html/body 必须挂专用状态类”“文章浮动按钮层和 AI 助手层必须暴露稳定类名”“大图预览层需要更高 z-index”“全局样式必须在预览态取消滚动条预留槽位并让相关浮层不可点击”，确认旧实现先失败后再修改。
+  3) 在 `ArticleDetail.jsx` 中将大图预览打开态改为给 `html/body` 同步挂载 `sg-article-image-preview-open`，同时给文章浮动按钮 portal 容器补 `sg-article-floating-actions` 类名，并把图片预览遮罩层抬升到 `z-[220]`，确保预览层高于页面其他 portal。
+  4) 在 `AiAssistantWidget.jsx` 的 portal 根层补 `sg-ai-assistant-layer` 类名，让文章大图预览期间可以通过全局样式统一隐藏并禁点整层 AI 入口/面板。
+  5) 在 `src/index.css` 中新增图片预览打开态规则：取消 `scrollbar-gutter: stable` 的右侧预留槽位，强制 `html/body` 进入无滚动状态并统一置黑背景，同时让 `.sg-ai-assistant-layer` 与 `.sg-article-floating-actions` 在预览期间整体 `opacity: 0` 且 `pointer-events: none`，从而去掉右侧白线并屏蔽按钮点击。
+  6) 本次属于文章详情页交互修复，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/index.css`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailImagePreviewOverlay.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`previewImage` / `createPortal` / `AiAssistantWidget` / `首页` / `scrollbar-gutter`
+  - 候选实现：`ArticleDetail.jsx` 图片预览遮罩、`ArticleDetail.jsx` 悬浮按钮 portal、`AiAssistantWidget.jsx` body portal、`src/index.css` 全局滚动条 gutter 配置
+  - 最终选择：继续复用现有图片预览和 AI 单入口实现，只补预览打开态的全局类名、稳定选择器与样式联动，不新建第二套预览或第二套 AI 入口
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleDetailImagePreviewOverlay.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\ui\AiAssistantWidget.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 同步将文章 404 页面适配为站点玻璃风格
 - 背景/需求：用户在文章加载失败页玻璃化后，继续要求将具体文章页的 404“文章不存在”页面也适配为同一套玻璃风格。
 - 修改类型：fix
