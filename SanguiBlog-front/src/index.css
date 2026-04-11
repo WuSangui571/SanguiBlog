@@ -33,6 +33,23 @@ body.sg-article-image-preview-open .sg-article-floating-actions {
   pointer-events: none;
 }
 
+.sg-ai-message-text,
+.sg-ai-message-text * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.sg-ai-message-text {
+  cursor: text;
+}
+
+.sg-ai-message-text button,
+.sg-ai-message-text [role="button"] {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
 /* 文章页：标题中的行内 code 应继承标题字号（避免被 text-sm 缩小） */
 .sg-article-markdown :is(h1, h2, h3, h4, h5, h6) code {
   font-size: inherit !important;

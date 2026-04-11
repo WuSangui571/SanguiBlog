@@ -3,8 +3,8 @@ export function getAiMessagePresentation(role, isDarkMode) {
         return {
             wrapperClassName: 'w-full',
             contentClassName: isDarkMode
-                ? 'w-full px-1 py-1 text-gray-100'
-                : 'w-full px-1 py-1 text-[#111827]'
+                ? 'w-full px-1 py-1 text-gray-100 select-text cursor-text'
+                : 'w-full px-1 py-1 text-[#111827] select-text cursor-text'
         };
     }
 

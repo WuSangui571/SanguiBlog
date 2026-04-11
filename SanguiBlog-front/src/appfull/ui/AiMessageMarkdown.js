@@ -118,7 +118,7 @@ export default function AiMessageMarkdown({ content, isDarkMode, isAssistant }) 
     return React.createElement(
         'div',
         {
-            className: 'text-sm font-semibold break-words'
+            className: 'sg-ai-message-text text-sm font-semibold break-words select-text cursor-text'
         },
         React.createElement(
             ReactMarkdown,

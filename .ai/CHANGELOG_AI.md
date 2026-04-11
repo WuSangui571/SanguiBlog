@@ -5,6 +5,38 @@
 
 ---
 
+## [2026-04-11] 修复 AI 助手回复难以选中和右键复制的问题
+- 背景/需求：用户反馈 AI 聊天界面中，助手回复内容较难通过鼠标拖动选中，偶尔选中后也难以通过右键菜单复制，只能使用 `Ctrl+C`；而用户自己发送的消息更容易选中并可右键复制。希望分析原因并修复。
+- 修改类型：fix
+- 影响范围：前台 AI 助手消息渲染、助手 Markdown 文本区选区行为、浏览器原生右键复制体验、AI 消息交互回归测试
+- 变更摘要：
+  1) 检索确认用户消息是普通右侧气泡文本，而助手消息复用 `AiMessageMarkdown` 并采用“整行贴背景”的 Markdown 容器布局；现有实现没有显式声明助手回复文本区可被浏览器按普通文本选中。
+  2) 在 `aiMessagePresentation.js` 中为助手消息内容容器补充 `select-text cursor-text`，保留“助手整行、用户气泡”的既有布局，不恢复外层玻璃气泡。
+  3) 在 `AiMessageMarkdown.js` 的根节点增加稳定类名 `sg-ai-message-text`，用于专门约束 AI 助手 Markdown 回复文本区的选择行为。
+  4) 在 `src/index.css` 中为 `.sg-ai-message-text` 及其后代显式设置 `user-select: text` 与 `-webkit-user-select: text`，提高 Chrome/Edge/WebKit 下拖选与右键复制稳定性；同时把代码块复制按钮等交互控件排除出文本选区，避免按钮文字被误选。
+  5) 新增 `AiAssistantSelection.test.js`，并更新 `aiMessagePresentation.test.js`、`AiMessageMarkdown.test.js`，锁定助手消息仍复用现有 Markdown 渲染，同时具备明确文本选择兜底样式。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/aiMessagePresentation.js`
+  - `SanguiBlog-front/src/appfull/ui/aiMessagePresentation.test.js`
+  - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.js`
+  - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.test.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantSelection.test.js`
+  - `SanguiBlog-front/src/index.css`
+  - `.ai/CHANGELOG_AI.md`
+  - `.ai/PROJECT_MEMORY.md`
+- 检索与复用策略：
+  - 检索关键词：`user-select` / `select-none` / `onContextMenu` / `contextmenu` / `pointer-events` / `AiMessageMarkdown` / `getAiMessagePresentation` / `messages.map`
+  - 候选实现：`AiAssistantWidget.jsx` 消息渲染入口、`aiMessagePresentation.js` 消息容器样式、`AiMessageMarkdown.js` Markdown 根节点、`src/index.css` 全局 CSS 兜底、`aiFloatingPanel.js` 浮动窗口拖拽规则
+  - 最终选择：复用现有消息渲染和 Markdown 组件，只补文本选择语义与浏览器 CSS 兜底，不新增自定义右键菜单或第二套消息组件
+- 验证方式：
+  - 先执行 `node .\src\appfull\ui\aiMessagePresentation.test.js`，看到助手消息缺少 `select-text` 断言按预期失败
+  - 先执行 `node .\src\appfull\ui\AiAssistantSelection.test.js`，看到 `.sg-ai-message-text` 选择兜底样式断言按预期失败
+  - 修改后执行 `node .\src\appfull\ui\aiMessagePresentation.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\ui\AiMessageMarkdown.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\ui\AiAssistantSelection.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为 AI 助手前端交互细节修复，不单独提升站点版本号。
+
 ## [2026-04-11] 收紧 AI 当前文章图片数量口径并禁止编造配图内容
 - 背景/需求：上一轮让 AI 知道当前文章有图片后，用户继续反馈两个细节：文章正文内实际有 3 张图但 AI 说有 4 张，原因是把封面图也计入了图片数量；另外当用户要求 AI 讲解文中的配图信息时，AI 会编造图片里的具体内容，而当前并未实装图片识别功能。
 - 修改类型：fix
