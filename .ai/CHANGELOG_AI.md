@@ -14,8 +14,13 @@
   2) 在 `aiMessagePresentation.js` 中为助手消息内容容器补充 `select-text cursor-text`，保留“助手整行、用户气泡”的既有布局，不恢复外层玻璃气泡。
   3) 在 `AiMessageMarkdown.js` 的根节点增加稳定类名 `sg-ai-message-text`，用于专门约束 AI 助手 Markdown 回复文本区的选择行为。
   4) 在 `src/index.css` 中为 `.sg-ai-message-text` 及其后代显式设置 `user-select: text` 与 `-webkit-user-select: text`，提高 Chrome/Edge/WebKit 下拖选与右键复制稳定性；同时把代码块复制按钮等交互控件排除出文本选区，避免按钮文字被误选。
-  5) 新增 `AiAssistantSelection.test.js`，并更新 `aiMessagePresentation.test.js`、`AiMessageMarkdown.test.js`，锁定助手消息仍复用现有 Markdown 渲染，同时具备明确文本选择兜底样式。
+  5) 继续排查用户二次反馈“选中后右键会清空选区”，确认 AI 面板根层原本在任意 `pointerdown` 捕获阶段都会调用 `raiseAssistantOverlay()` 并触发层级状态更新；右键同样会走这条链路，从而在浏览器弹出原生菜单前打断 Markdown 文本选区。
+  6) 新增 `aiSelectionGuard.js`，将 AI 面板根层改为 `handlePanelPointerDownCapture`：当检测到右键 `button=2` 或当前已有选中文本时，不再提升层级；普通左键点击仍可提升 AI 面板层级，保留浮层“交互后置顶”的原有体验。
+  7) 新增 `AiAssistantSelection.test.js` 与 `AiAssistantSelectionGuard.test.js`，并更新 `aiMessagePresentation.test.js`、`AiMessageMarkdown.test.js`，锁定助手消息仍复用现有 Markdown 渲染，同时具备明确文本选择兜底样式和右键保留选区保护。
 - 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/aiSelectionGuard.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantSelectionGuard.test.js`
   - `SanguiBlog-front/src/appfull/ui/aiMessagePresentation.js`
   - `SanguiBlog-front/src/appfull/ui/aiMessagePresentation.test.js`
   - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.js`
@@ -25,15 +30,17 @@
   - `.ai/CHANGELOG_AI.md`
   - `.ai/PROJECT_MEMORY.md`
 - 检索与复用策略：
-  - 检索关键词：`user-select` / `select-none` / `onContextMenu` / `contextmenu` / `pointer-events` / `AiMessageMarkdown` / `getAiMessagePresentation` / `messages.map`
-  - 候选实现：`AiAssistantWidget.jsx` 消息渲染入口、`aiMessagePresentation.js` 消息容器样式、`AiMessageMarkdown.js` Markdown 根节点、`src/index.css` 全局 CSS 兜底、`aiFloatingPanel.js` 浮动窗口拖拽规则
+  - 检索关键词：`user-select` / `select-none` / `onContextMenu` / `contextmenu` / `pointer-events` / `onPointerDownCapture` / `raiseAssistantOverlay` / `AiMessageMarkdown` / `getAiMessagePresentation` / `messages.map`
+  - 候选实现：`AiAssistantWidget.jsx` 消息渲染入口与面板根层事件、`aiMessagePresentation.js` 消息容器样式、`AiMessageMarkdown.js` Markdown 根节点、`src/index.css` 全局 CSS 兜底、`aiFloatingPanel.js` 浮动窗口拖拽规则、`overlayStack.js` 浮层层级分配器
   - 最终选择：复用现有消息渲染和 Markdown 组件，只补文本选择语义与浏览器 CSS 兜底，不新增自定义右键菜单或第二套消息组件
 - 验证方式：
   - 先执行 `node .\src\appfull\ui\aiMessagePresentation.test.js`，看到助手消息缺少 `select-text` 断言按预期失败
   - 先执行 `node .\src\appfull\ui\AiAssistantSelection.test.js`，看到 `.sg-ai-message-text` 选择兜底样式断言按预期失败
+  - 继续执行 `node .\src\appfull\ui\AiAssistantSelection.test.js`，看到 AI 面板根层仍直接绑定 `onPointerDownCapture={raiseAssistantOverlay}` 的断言按预期失败
   - 修改后执行 `node .\src\appfull\ui\aiMessagePresentation.test.js`（工作目录 `SanguiBlog-front`）通过
   - 修改后执行 `node .\src\appfull\ui\AiMessageMarkdown.test.js`（工作目录 `SanguiBlog-front`）通过
   - 修改后执行 `node .\src\appfull\ui\AiAssistantSelection.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\ui\AiAssistantSelectionGuard.test.js`（工作目录 `SanguiBlog-front`）通过
   - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
 - 版本号说明：本次为 AI 助手前端交互细节修复，不单独提升站点版本号。
 

@@ -39,6 +39,7 @@ import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
 import { buildAiLauncherBadge } from './aiLauncherBadge.js';
 import { buildAiGuestAccessNotice } from './aiGuestAccessNotice.js';
 import { claimOverlayStackBase, OVERLAY_STACK_BASE } from './overlayStack.js';
+import { normalizeSelectedText, shouldRaiseAssistantOverlayOnPointerDown } from './aiSelectionGuard.js';
 import {
     buildAiWelcomeIntroLines,
     shouldPlayAiWelcomeIntro
@@ -161,6 +162,20 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const raiseAssistantOverlay = useCallback(() => {
         setOverlayBaseZ(claimOverlayStackBase());
     }, []);
+    const handlePanelPointerDownCapture = useCallback((event) => {
+        const selectedText = normalizeSelectedText(
+            typeof window !== 'undefined' ? window.getSelection?.()?.toString() : ''
+        );
+
+        if (!shouldRaiseAssistantOverlayOnPointerDown({
+            button: event.button,
+            selectedText
+        })) {
+            return;
+        }
+
+        raiseAssistantOverlay();
+    }, [raiseAssistantOverlay]);
     const showAssistantNotice = useCallback((message, tone = 'info') => {
         if (!message) return;
         setAssistantNotice({ visible: true, message, tone });
@@ -889,7 +904,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                     : 'md:left-auto md:w-[460px] md:rounded-l-[30px] md:border-r-0'
                             }`}
                             style={{ ...panelStyle, zIndex: assistantPanelZ }}
-                            onPointerDownCapture={raiseAssistantOverlay}
+                            onPointerDownCapture={handlePanelPointerDownCapture}
                         >
                             {isFloating && !isMobileViewport && (
                                 <>

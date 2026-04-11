@@ -13,6 +13,16 @@ assert.match(
     /<AiMessageMarkdown[\s\S]*isAssistant=\{isAssistant\}/,
     '助手消息应继续复用统一 Markdown 组件，避免为了修复选区另起第二套渲染'
 );
+assert.doesNotMatch(
+    widgetSource,
+    /onPointerDownCapture=\{raiseAssistantOverlay\}/,
+    'AI 面板根层不应在任意 pointer down 时直接提升层级，否则右键时会打断现有文本选区'
+);
+assert.match(
+    widgetSource,
+    /onPointerDownCapture=\{handlePanelPointerDownCapture\}/,
+    'AI 面板根层应改为通过选择保护函数决定是否提升层级'
+);
 assert.match(
     cssSource,
     /\.sg-ai-message-text,\s*\.sg-ai-message-text \*[\s\S]*user-select:\s*text;/,
