@@ -6,14 +6,17 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const source = fs.readFileSync(path.join(__dirname, 'Hero.jsx'), 'utf8');
+const styleSource = fs.readFileSync(path.join(__dirname, 'homeRedesign.css'), 'utf8');
 
 assert.match(source, /prefers-reduced-motion: reduce/);
 assert.match(source, /pointer: coarse/);
 assert.match(source, /useTransform\(scrollY, \[0, 180, 520\], \[1, 0\.9, 0\]\)/);
 assert.doesNotMatch(source, /useTransform\(scrollY, \[0, 80, 220\], \[1, 0\.72, 0\]\)/);
-assert.match(source, /const contentY = useTransform\(scrollY, \[0, 520\], \[0, -520\]\)/);
-assert.doesNotMatch(source, /const contentY = useTransform\(scrollY, \[0, 520\], \[0, -128\]\)/);
-assert.match(source, /style=\{\{ opacity: contentOpacity, y: contentY \}\}/);
+assert.doesNotMatch(source, /const contentY = useTransform/);
+assert.match(source, /style=\{\{ opacity: contentOpacity \}\}/);
+assert.match(source, /transition=\{\{ duration: 0\.9, ease: 'easeOut', delay: 0\.62 \}\}/);
 assert.match(source, /scale\(1\.02\) translate/);
+assert.match(styleSource, /\.home-hero \{\s*position: relative;/);
+assert.doesNotMatch(styleSource, /\.home-hero \{\s*position: sticky;/);
 
 console.log('Hero performance tests passed');

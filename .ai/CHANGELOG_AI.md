@@ -5,6 +5,32 @@
 
 ---
 
+## [2026-04-11] 优化首页 Hero 文案滚动稳定性并延后探索按钮入场
+- 背景/需求：用户反馈上一版等量上移仍有卡顿，快速滚动时文案会出现约半秒错位；同时希望“向下探索内容”按钮首次出现得再晚一点，并继续参考 `newIndex/html/indexV11.html` 的首屏节奏。
+- 修改类型：fix
+- 影响范围：首页 Hero 首屏布局、文案滚动淡出稳定性、探索按钮入场时机、Hero 性能/滚动回归测试
+- 变更摘要：
+  1) 对照模板确认其 `.hero` 是普通 `position: relative` 首屏，不是 sticky；上一版的卡顿根因是当前 `.home-hero` 使用 sticky 固定在视口内，又用 Framer Motion 的 `contentY` 每帧反向补偿滚动，快速滚动时 JS 位移与浏览器原生滚动存在时序错位。
+  2) 将 `.home-hero` 从 `position: sticky` 改回 `position: relative`，让首屏文案和首屏画布天然随页面原生滚动上移，不再依赖 `contentY` 模拟“等量上移”。
+  3) 移除 `Hero.jsx` 中的 `contentY` 位移映射和 `y: contentY` 样式绑定，只保留 `contentOpacity` 负责缓慢淡出，从而降低快速滚动时的合成层错位风险。
+  4) 将“向下探索内容”按钮的入场延迟从 `0.38s` 调整为 `0.62s`，让它比标题更晚出现，节奏更接近模板中按钮延后浮现的感觉。
+  5) 更新 `HeroPerformance.test.js`，锁定 Hero 不再使用 sticky、不再声明 `contentY`，并要求 CTA 延迟为 `0.62s`。
+  6) 本次为首页首屏动效稳定性修正，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/public/HeroPerformance.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`position: sticky` / `contentY` / `home-hero__content` / `explore-btn-wrap` / `delay: 0.38` / `heroWrap.style.transform`
+  - 候选实现：`Hero.jsx` 文案 opacity/y 绑定、`homeRedesign.css` 的 `.home-hero` 布局、`HeroPerformance.test.js` 现有动效回归、模板 `newIndex/html/indexV11.html` 的 `.hero` 与 `.explore-btn-wrap`
+  - 最终选择：复用现有 Hero 结构和透明度淡出链路，布局层对齐模板改为原生页面流，不新增滚动监听或第二套动画
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\HeroPerformance.test.js` 看到测试按预期失败，确认旧实现仍存在 `contentY`
+  - 修改后执行 `node .\src\appfull\public\HeroPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\HeroScrollTarget.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 修正首页 Hero 文案为等量随页上移并缓慢淡出
 - 背景/需求：用户纠正上一轮理解偏差，首页 Hero 文案不是完全不动，而是要像普通首屏内容一样随着页面滚动等量向上抬升；问题在于不能再有额外视差，即文案不应慢半拍或单独漂移，同时透明度仍要保留渐进淡出。
 - 修改类型：fix

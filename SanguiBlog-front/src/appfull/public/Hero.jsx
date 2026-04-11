@@ -13,7 +13,6 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
     const { headerHeight } = useLayoutOffsets();
     const { scrollY } = useScroll();
     const contentOpacity = useTransform(scrollY, [0, 180, 520], [1, 0.9, 0]);
-    const contentY = useTransform(scrollY, [0, 520], [0, -520]);
     const resolvedBackgroundUrl = backgroundUrl
         ? (backgroundUrl.startsWith('/uploads/') ? buildAssetUrl(backgroundUrl, HOME_BG_PATH) : backgroundUrl)
         : (backgroundResolved ? HOME_BG_PATH : null);
@@ -113,7 +112,7 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
 
             <motion.div
                 className="home-hero__content"
-                style={{ opacity: contentOpacity, y: contentY }}
+                style={{ opacity: contentOpacity }}
             >
                 <div ref={heroParallaxRef} className="home-hero__parallax">
                     <motion.span
@@ -138,7 +137,7 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 0.9, ease: 'easeOut', delay: 0.38 }}
+                        transition={{ duration: 0.9, ease: 'easeOut', delay: 0.62 }}
                         className="home-hero__actions"
                     >
                         <button

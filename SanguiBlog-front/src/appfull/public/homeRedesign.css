@@ -43,8 +43,7 @@
 }
 
 .home-hero {
-  position: sticky;
-  top: 0;
+  position: relative;
   height: 100vh;
   min-height: 100vh;
   margin-top: calc(var(--home-header-offset, 80px) * -1);
@@ -130,6 +129,7 @@
   width: min(100%, 960px);
   text-align: center;
   margin-top: -5.25rem;
+  will-change: opacity;
 }
 
 .home-hero__parallax {
