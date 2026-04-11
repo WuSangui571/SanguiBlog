@@ -12,8 +12,8 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
     const bgRef = useRef(null);
     const { headerHeight } = useLayoutOffsets();
     const { scrollY } = useScroll();
-    const contentOpacity = useTransform(scrollY, [0, 80, 220], [1, 0.72, 0]);
-    const contentY = useTransform(scrollY, [0, 220], [0, -96]);
+    const contentOpacity = useTransform(scrollY, [0, 180, 520], [1, 0.9, 0]);
+    const contentY = useTransform(scrollY, [0, 520], [0, -128]);
     const resolvedBackgroundUrl = backgroundUrl
         ? (backgroundUrl.startsWith('/uploads/') ? buildAssetUrl(backgroundUrl, HOME_BG_PATH) : backgroundUrl)
         : (backgroundResolved ? HOME_BG_PATH : null);

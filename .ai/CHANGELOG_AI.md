@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-11] 放缓首页 Hero 文案随滚动淡出的节奏
+- 背景/需求：用户反馈首页打开后，随着页面上滑，中间 Hero 文案透明消失太快；鼠标滚轮只滑动几小下时首页仍有大部分在屏幕内，但文案已经完全透明，希望文案多移动一会再消失，并且透明度更缓慢、渐进地变化。
+- 修改类型：fix
+- 影响范围：首页 Hero 首屏文案滚动淡出节奏、Hero 性能/滚动回归测试
+- 变更摘要：
+  1) 检索确认首页首屏文案淡出由 `Hero.jsx` 中的 `contentOpacity = useTransform(scrollY, [0, 80, 220], [1, 0.72, 0])` 控制，位移由 `contentY = useTransform(scrollY, [0, 220], [0, -96])` 控制，因此当前在约 220px 滚动距离就完全透明，确实偏快。
+  2) 先更新 `HeroPerformance.test.js`，锁定新的透明度映射必须拉长到 `[0, 180, 520] -> [1, 0.9, 0]`，位移映射必须拉长到 `[0, 520] -> [0, -128]`，并禁止回退到旧的 `[0, 80, 220]` 与 `[0, 220]` 映射。
+  3) 在 `Hero.jsx` 中只调整两条 `useTransform` 参数：滚到 180px 时文案仍保留 90% 不透明度，之后继续缓慢淡出，到 520px 才完全透明；位移也同步拉长，形成“多移动一会再消失”的节奏。
+  4) 未修改 Hero 结构、背景图、CTA 按钮、手机端滚动目标或鼠标视差逻辑。
+  5) 本次属于首页首屏动效体验微调，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/HeroPerformance.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`useTransform` / `scrollY` / `contentOpacity` / `contentY` / `home-hero__content`
+  - 候选实现：`Hero.jsx` 文案透明度映射、`Hero.jsx` 文案位移映射、`homeRedesign.css` Hero 样式、`HeroPerformance.test.js` 现有 Hero 动效回归测试
+  - 最终选择：原位调整 `Hero.jsx` 的滚动映射参数，复用现有 Framer Motion 动效链路，不新增状态或第二套动画
+- 验证方式：
+  - 执行 `node .\src\appfull\public\HeroPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\HeroScrollTarget.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 去掉首页博主信息卡与全部标签卡的外层 hover 上浮
 - 背景/需求：用户希望首页左侧“博主信息”卡片和“全部标签”卡片的外层卡片不再在鼠标悬浮时整体上浮，但要求“全部标签”卡片内部具体标签 chip 的 hover 上浮保留，其他区域保持不变。
 - 修改类型：fix
