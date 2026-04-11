@@ -63,6 +63,18 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
     }, [shouldUseMotionParallax]);
 
     const handleStartReading = () => {
+        const isMobileViewport = typeof window !== 'undefined'
+            && typeof window.matchMedia === 'function'
+            && window.matchMedia('(max-width: 768px)').matches;
+
+        if (isMobileViewport && typeof document !== 'undefined') {
+            const firstPostElement = document.getElementById('home-first-post');
+            if (firstPostElement) {
+                firstPostElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+        }
+
         if (typeof onStartReading === 'function') {
             onStartReading();
             return;

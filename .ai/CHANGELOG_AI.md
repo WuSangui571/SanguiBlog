@@ -5,6 +5,38 @@
 
 ---
 
+## [2026-04-11] 修复首页 Hero 在手机端无法正确跳到首篇文章并升级到 V2.2.19
+- 背景/需求：用户反馈首页 Hero 区“向下探索内容”按钮在电脑端正常，但手机端无法正确跳到下方内容；希望仅修改手机端行为，让它直接跳到第一篇文章位置，并跳过首页“文章搜索”卡片，电脑端保持不变。
+- 修改类型：fix
+- 影响范围：首页 Hero 按钮手机端滚动目标、首页首篇文章锚点、首页滚动回归测试、项目长期记忆、站点版本号
+- 变更摘要：
+  1) 检索确认当前首页滚动链路由 `Hero.jsx -> HomeView.jsx -> AppFull.jsx::scrollToPostsTop()` 统一驱动，而 `scrollToPostsTop()` 现优先滚到 `#home-status-strip`，这与手机端隐藏/弱化状态条后的页面结构不再一致，导致 Hero 的“向下探索内容”按钮在手机端落点不准确。
+  2) 检索确认首页“文章搜索”卡片位于 `ArticleList.jsx` 的 `#posts` 容器内且在文章列表之前，因此如果仍旧滚到 `#posts`，手机端就无法满足“掠过搜索卡片、直接到第一篇文章”的要求。
+  3) 新增 `src/appfull/public/HeroScrollTarget.test.js`，先锁定 Hero 必须显式识别手机端视口、手机端优先滚到 `#home-first-post`、桌面端继续复用既有 `onStartReading` 链路，并要求首页首篇文章卡片提供稳定锚点。
+  4) 在 `Hero.jsx` 中为点击处理增加手机端分支：当视口宽度 `<= 768px` 时，优先查找并滚动到 `#home-first-post`；若首篇文章尚未渲染，则回退到原有 `onStartReading` / `#posts` 链路，避免无文章或首屏未加载时失效。
+  5) 在 `ArticleList.jsx` 的首篇文章卡片上补充 `id="home-first-post"`，作为手机端 Hero 的唯一首篇文章落点；未改动搜索卡片本身、文章排序、桌面端滚动策略或其它首页交互。
+  6) 将站点版本号从 `V2.2.18` 升级为 `V2.2.19`，同步更新后端 `site.version` 与中英文 README 当前版本说明，并在 `PROJECT_MEMORY.md` 记录“手机端 Hero 需优先滚到首篇文章锚点”的长期约定。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/HeroScrollTarget.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`向下探索内容` / `onScrollToPosts` / `scrollToPostsTop` / `home-status-strip` / `#posts` / `文章搜索` / `displayPosts.map`
+  - 候选实现：`Hero.jsx` 的点击处理、`HomeView.jsx` 的传参链路、`AppFull.jsx` 的 `scrollToPostsTop()`、`ArticleList.jsx` 的搜索卡片与文章列表结构、`StatsStrip.jsx` 的 `#home-status-strip`
+  - 最终选择：复用现有 Hero 与首页文章列表实现，只给手机端 Hero 增加“首篇文章锚点优先”分支，并在首篇文章卡片上补一个稳定 id，不新建第二套首页或第二套滚动系统
+- 风险点：
+  - 当前首篇文章锚点依赖首页文章列表至少渲染出一篇文章；若文章尚未加载完成或当前无文章，Hero 会回退到原有滚动链路，因此不会出现按钮失效，但手机端此时仍可能先落到 `#posts` 容器顶部。
+  - 这次只修改 Hero 的手机端 CTA 行为；`AppFull.jsx` 中其它复用 `scrollToPostsTop()` 的链路仍保持既有逻辑，避免扩大影响范围。
+- 验证方式：
+  - 执行 `node .\src\appfull\public\HeroScrollTarget.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\HeroPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 适配后台文章编辑器 Markdown 正文暗色滚动条并升级到 V2.2.18
 - 背景/需求：用户反馈后台发布文章页 `/admin/create-post` 与修改文章页 `/admin/posts/edit?postId=xxx` 的“Markdown 正文”卡片在暗夜模式下若内容过长，会出现纵向滚动条，但当前滚动条轨道/滑块未适配暗色样式；要求只修复这两个正文编辑框的滚动条，其它区域保持不动。
 - 修改类型：fix
