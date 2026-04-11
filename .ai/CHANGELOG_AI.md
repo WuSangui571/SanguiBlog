@@ -5,6 +5,41 @@
 
 ---
 
+## [2026-04-11] 将头像与主题切换彩蛋适配为玻璃风格并升级到 V2.2.20
+- 背景/需求：用户反馈首页博主信息卡片头像的“转速过快/眼冒金星”彩蛋，以及顶部导航主题切换按钮的“超频模式”彩蛋仍是旧的黑边赛博风格，和当前站点玻璃体系不一致；希望优先复用现有站点玻璃弹出模板，若不适合则至少整体改成玻璃风格。
+- 修改类型：fix
+- 影响范围：首页头像彩蛋短提示、首页“眼冒金星模式”中心卡片、顶部主题超频/冷却提示、彩蛋最小回归测试、项目长期记忆、站点版本号
+- 变更摘要：
+  1) 检索确认头像彩蛋短提示与“眼冒金星模式”都集中在 `ArticleList.jsx`，其中短提示仍是 `SPIN ALERT` 黑边厚投影弹层，“眼冒金星模式”中心卡片仍是黑底金字粗边框；主题切换彩蛋的超频/冷却提示集中在 `AppFull.jsx`，同样使用独立的黑底厚投影层。
+  2) 复用判断后选择“两段式处理”：所有短暂、非阻塞提示统一接入现有 `GlassPopupToast` 共享模板；`眼冒金星模式` 因为仍需保留全屏强状态氛围，不直接降级成普通 toast，而是保留全屏背景效果，仅把中心主卡改为首页同源玻璃卡片。
+  3) 新增 `ArticleListEasterEggGlass.test.js` 与 `AppFullThemeOverdriveGlass.test.js`，先锁定头像短提示必须复用 `GlassPopupToast`、主题超频提示必须复用 `GlassPopupToast`，以及“眼冒金星模式”中心卡片必须改成玻璃风格；确认测试先失败后再实现。
+  4) 在 `ArticleList.jsx` 中引入 `GlassPopupToast`，让头像连点触发的短提示统一走偏上玻璃模板；同时将“眼冒金星模式”中心提示重做为 `home-ios-card` 玻璃卡片，保留原有全屏星点/冷却氛围，不再使用旧黑底粗边框主卡。
+  5) 在 `AppFull.jsx` 中引入 `GlassPopupToast`，让顶部主题切换按钮的“超频模式已开启 / 冷却中…”提示统一走与文章分享提示同源的玻璃模板；矩阵光效与主题 blast 背景动画保持不变。
+  6) 将站点版本号从 `V2.2.19` 升级为 `V2.2.20`，同步更新后端 `site.version` 与中英文 README 当前版本说明，并在 `PROJECT_MEMORY.md` 记录这两个彩蛋已纳入站点统一玻璃提示体系。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleListEasterEggGlass.test.js`
+  - `SanguiBlog-front/src/appfull/AppFullThemeOverdriveGlass.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`showSpinWarning` / `megaSpinActive` / `SPIN ALERT` / `眼冒金星模式` / `themeOverdriveNotice` / `themeOverdriveMessage` / `GlassPopupToast`
+  - 候选实现：`ArticleList.jsx` 头像短提示、`ArticleList.jsx` 眼冒金星全屏层、`AppFull.jsx` 主题超频提示、`GlassPopupToast.jsx` 现有共享玻璃模板、`ArticleDetail.jsx` 对模板的既有复用方式
+  - 最终选择：短提示复用现有 `GlassPopupToast`，强状态层保留原有业务氛围但改成玻璃主卡，不新增第二套提示模板
+- 风险点：
+  - `眼冒金星模式` 仍保留全屏星点与暗化氛围，只是中心卡片改成玻璃风格；不同浏览器下玻璃模糊的真实观感可能略有差异，但已尽量复用现有已验证样式语言。
+  - 本次只调整头像彩蛋与主题超频提示的视觉表达，不改阈值、持续时间、锁定时长和背景光效逻辑。
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleListEasterEggGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\AppFullThemeOverdriveGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\ui\GlassPopupToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 收短首页文章搜索占位文案
 - 背景/需求：用户反馈首页“文章搜索”输入框的默认提示“输入关键词后按回车搜索（标题/摘要模糊匹配）”在手机端过长，末尾会被截断，希望改成更简短的文案。
 - 修改类型：fix

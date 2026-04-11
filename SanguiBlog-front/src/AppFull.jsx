@@ -26,6 +26,7 @@ import SessionExpiredModal from "./appfull/ui/SessionExpiredModal.jsx";
 import ClickRipple from "./appfull/ui/ClickRipple.jsx";
 import ScrollToTop from "./appfull/ui/ScrollToTop.jsx";
 import AiAssistantWidget from "./appfull/ui/AiAssistantWidget.jsx";
+import GlassPopupToast, { getGlassPopupToastTop } from "./appfull/ui/GlassPopupToast.jsx";
 import { shouldShowAiAssistant } from "./appfull/aiAssistantVisibility.js";
 import { buildAiCurrentPageContext } from "./appfull/aiCurrentPageContext.js";
 import { buildAssetUrl } from "./utils/asset.js";
@@ -61,6 +62,7 @@ import {
     resetAutoPageViewGuard
 } from "./appfull/shared.js";
 import { AnimatePresence, motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 const BROADCAST_SESSION_KEY = 'sangui-broadcast-dismissed';
 const LazyAdminPanel = lazy(() =>
     import("./appfull/AdminPanel.jsx").then((module) => ({ default: module.AdminPanel }))
@@ -1479,25 +1481,14 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                     </motion.div>
                 )}
             </AnimatePresence>
-            <AnimatePresence>
-                {themeOverdriveNotice && (
-                    <motion.div
-                        className="fixed inset-0 z-[72] flex items-center justify-center pointer-events-none px-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.8, rotate: -4 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            exit={{ scale: 0.8, rotate: 6 }}
-                            className="px-6 md:px-10 py-4 md:py-6 border-4 border-black bg-black text-[#FFD700] font-black text-lg md:text-2xl tracking-[0.3em] shadow-[8px_8px_0px_0px_#FF0080]"
-                        >
-                            {themeOverdriveMessage || '超频模式'}
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <GlassPopupToast
+                open={themeOverdriveNotice}
+                isDarkMode={isDarkMode}
+                top={getGlassPopupToastTop(headerHeight || NAVIGATION_HEIGHT)}
+                icon={<Sparkles size={18} strokeWidth={2.5} />}
+                title={themeOverdriveMessage || '超频模式'}
+                description={themeOverdriveMessage === '冷却中…请稍候' ? '主题系统正在降温' : '主题能量已进入玻璃超频态'}
+            />
             <div className="fixed top-0 left-0 right-0 z-50">
                 <div className="flex flex-col w-full">
                             <EmergencyBar

@@ -5,6 +5,7 @@ import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
 import BackgroundEasterEggs from "../ui/BackgroundEasterEggs.jsx";
 import StatsStrip from "./StatsStrip.jsx";
+import GlassPopupToast, { getGlassPopupToastTop } from "../ui/GlassPopupToast.jsx";
 import {
     createArticleExcerptOverflowTracker,
     getArticleExcerptTooltip,
@@ -443,32 +444,14 @@ const ArticleList = ({
                 <div className="relative z-10">
                     <StatsStrip isDarkMode={isDarkMode} stats={stats} />
                 </div>
-                <AnimatePresence>
-                    {showSpinWarning && (
-                        <motion.div
-                            className="fixed inset-0 z-[140] flex items-center justify-center px-4 pointer-events-none"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                        >
-                            <motion.div
-                                initial={{ scale: 0.85, rotate: -4 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                exit={{ scale: 0.8, rotate: 6, opacity: 0 }}
-                                className="relative max-w-md w-full pointer-events-none"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#FF0080] via-[#6366F1] to-[#0EA5E9] opacity-60 blur-3xl" />
-                                <div
-                                    className={`relative border-4 border-black px-6 py-5 text-center shadow-[8px_8px_0px_0px_#000] ${isDarkMode ? 'bg-[#050816] text-[#FFD700]' : 'bg-white text-black'}`}>
-                                    <div className="text-[10px] font-mono tracking-[0.6em] text-gray-400 uppercase mb-2">
-                                        SPIN ALERT
-                                    </div>
-                                    <div className="text-2xl font-black italic leading-snug">{spinWarning}</div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                <GlassPopupToast
+                    open={showSpinWarning}
+                    isDarkMode={isDarkMode}
+                    top={getGlassPopupToastTop(88)}
+                    icon={<Sparkles size={18} strokeWidth={2.5} />}
+                    title="头像彩蛋"
+                    description={spinWarning}
+                />
                 <AnimatePresence>
                     {megaSpinActive && (
                         <motion.div
@@ -486,7 +469,7 @@ const ArticleList = ({
                             {starField.map((pos, idx) => (
                                 <motion.div
                                     key={`star-${idx}`}
-                                    className="absolute text-[#FFD700]"
+                                    className={`absolute ${isDarkMode ? 'text-amber-200' : 'text-[#FFD700]'}`}
                                     style={{ top: pos.top, left: pos.left }}
                                     initial={{ opacity: 0, scale: 0 }}
                                     animate={{ opacity: [0, 1, 0.4, 1], scale: [0, pos.scale, pos.scale * 0.8, pos.scale] }}
@@ -497,18 +480,27 @@ const ArticleList = ({
                             ))}
                             <div className="relative w-full h-full flex flex-col items-center justify-center gap-6 text-white">
                                 <motion.div
+                                    aria-label="眼冒金星模式"
                                     initial={{ scale: 0.8, rotate: -6 }}
                                     animate={{ scale: 1, rotate: 0 }}
                                     exit={{ scale: 0.8, rotate: 4, opacity: 0 }}
-                                    className="px-8 py-4 border-4 border-[#FFD700] bg-[#0f172a] text-[#FFD700] text-3xl font-black tracking-widest shadow-[12px_12px_0px_0px_#FF0080]"
+                                    className={`relative overflow-hidden px-7 py-5 md:px-10 md:py-6 text-center home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark text-white border-white/14' : 'text-black border-white/75'} shadow-[0_24px_70px_rgba(15,23,42,0.28)]`}
                                 >
-                                    眼冒金星模式
+                                    <div className="absolute inset-x-6 -top-12 h-24 rounded-full bg-[#FFD700]/25 blur-3xl" />
+                                    <div className="relative flex items-center justify-center gap-3">
+                                        <span className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${isDarkMode ? 'border-amber-200/30 bg-amber-300/14 text-amber-100' : 'border-amber-500/25 bg-amber-100 text-amber-700'}`}>
+                                            <Sparkles size={22} strokeWidth={2.6} />
+                                        </span>
+                                        <span className="text-2xl md:text-3xl font-black tracking-[0.18em]">
+                                            眼冒金星模式
+                                        </span>
+                                    </div>
                                 </motion.div>
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10 }}
-                                    className="text-base font-mono tracking-[0.4em]"
+                                    className={`px-4 py-2 rounded-full border text-xs md:text-sm font-mono tracking-[0.32em] backdrop-blur-2xl ${isDarkMode ? 'border-white/14 bg-white/8 text-white/75' : 'border-white/60 bg-white/45 text-white'}`}
                                 >
                                     SYSTEM COOLING DOWN...
                                 </motion.div>
