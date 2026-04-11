@@ -36,6 +36,8 @@ temp/
 # Operating system files
 .DS_Store
 Thumbs.db
+.m2/
+output/
 
 # ======================
 # IntelliJ IDEA / JetBrains
@@ -84,6 +86,8 @@ SanguiBlog-front/yarn-error.log*
 !.env.sample
 !.env.template
 application-local.yml
+application-local.yaml
+!SanguiBlog-server/src/main/resources/application.yaml
 SanguiBlog-server/.env
 SanguiBlog-server/.env.*
 SanguiBlog-server/target/

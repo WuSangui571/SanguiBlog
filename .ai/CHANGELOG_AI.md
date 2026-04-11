@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-11] 校正仓库忽略规则并显式区分共享配置与私有配置
+- 背景/需求：用户要求检查 `.gitignore` 是否合理，并按 README 约定确保后端 `application.yaml` 需要提交、`application-local.yaml` 因含敏感信息不应提交。
+- 修改类型：chore
+- 影响范围：仓库 Git 忽略规则、本地缓存/输出目录管理、后端共享/私有配置文件的跟踪边界
+- 变更摘要：
+  1) 检索并核对根目录 `.gitignore`、前端子项目 `.gitignore`、README/README.zh-CN 中对配置文件提交策略的说明。
+  2) 确认 `SanguiBlog-server/src/main/resources/application.yaml` 当前已被 Git 跟踪，且不应忽略；`SanguiBlog-server/src/main/resources/application-local.yaml` 当前未被 Git 跟踪，并已按约定忽略。
+  3) 在根 `.gitignore` 中新增显式规则：`application-local.yaml`、`.m2/`、`output/`，避免本地 Maven 缓存与运行输出目录只靠 `*.jar` / `*.log` 之类副作用规则被间接忽略。
+  4) 在根 `.gitignore` 中补充 `!SanguiBlog-server/src/main/resources/application.yaml`，把“共享配置必须提交”的约束写成显式白名单，降低后续误改忽略规则的风险。
+  5) 未新增/删除任何业务代码、接口或配置内容，仅调整忽略策略与留痕。
+- 涉及文件：
+  - `.gitignore`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`application-local.yaml` / `application.yaml` / `gitignore` / `忽略` / `敏感`
+  - 候选实现：根 `.gitignore`、`SanguiBlog-front/.gitignore`、`README.md`、`README.zh-CN.md`
+  - 最终选择：直接在根 `.gitignore` 上做最小增量修正，不新增第二份忽略配置文件
+- 验证方式：
+  - 执行 `git ls-files -- SanguiBlog-server/src/main/resources/application.yaml SanguiBlog-server/src/main/resources/application-local.yaml`，确认仅 `application.yaml` 被跟踪
+  - 执行 `git check-ignore -v ...`，确认 `application-local.yaml`、`.m2/`、`output/`、前端 `.env.local`、`uploads/**` 等规则命中符合预期
+  - 执行 `git status --short --ignored`，确认工作区忽略状态与目录收敛正常
+
 ## [2026-04-11] 优化首页 Hero 文案滚动稳定性并延后探索按钮入场
 - 背景/需求：用户反馈上一版等量上移仍有卡顿，快速滚动时文案会出现约半秒错位；同时希望“向下探索内容”按钮首次出现得再晚一点，并继续参考 `newIndex/html/indexV11.html` 的首屏节奏。
 - 修改类型：fix
