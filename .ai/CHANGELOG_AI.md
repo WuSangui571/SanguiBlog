@@ -5,6 +5,30 @@
 
 ---
 
+## [2026-04-11] 将文章加载失败页适配为站点玻璃风格
+- 背景/需求：用户反馈具体文章页在文章加载失败时展示的“文章加载失败”页面仍是旧的黑边厚投影样式，希望适配到当前站点统一的玻璃风格；本次仅处理失败态页面，不扩大到 404 页面或其它状态页。
+- 修改类型：fix
+- 影响范围：文章详情页加载失败态 UI、错误态最小回归测试
+- 变更摘要：
+  1) 检索确认具体文章页失败态集中在 `AppFull.jsx` 的 `articleState?.status === 'error'` 分支，而同一分支前面的 `loading/idle` 态已经接入 `home-ios-card` / `home-ios-inner-card` 玻璃语言，可直接复用。
+  2) 新增并先执行 `AppFullArticleErrorGlass.test.js`，锁定失败态必须使用玻璃主卡、错误信息必须落在内层玻璃卡片、操作按钮必须切到圆角玻璃按钮，同时禁止回退到旧的黑边厚投影容器。
+  3) 将错误态页面外层改为 `home-ios-card home-ios-card--static`，顶部补轻量状态胶囊与分隔线，错误详情落入 `home-ios-inner-card`，文案层级与当前文章加载态保持一致。
+  4) 将“重试加载”“返回首页”改成与站点现有玻璃体系一致的圆角按钮，保留原有交互逻辑不变，只调整视觉表达。
+  5) 本次属于小范围前台视觉修复，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/AppFullArticleErrorGlass.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`文章加载失败` / `articleState?.status === 'error'` / `home-ios-card` / `home-ios-inner-card`
+  - 候选实现：`AppFull.jsx` 文章加载态玻璃卡、`AboutView.jsx` 主体玻璃卡、`ArchiveView.jsx` 顶部操作区、`GlassPopupToast.jsx` 现有玻璃风格语言
+  - 最终选择：原位修改 `AppFull.jsx` 的失败态分支，直接复用现有 `home-ios-card` / `home-ios-inner-card` 视觉体系，不新建第二套错误页组件
+- 风险点：
+  - 本次刻意不改 `not_found` 分支，避免在用户未提出的 404 页面上扩大影响范围；若后续希望统一 404 视觉，可再单独处理。
+- 验证方式：
+  - 执行 `node .\src\appfull\AppFullArticleErrorGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 修复主题超频玻璃提示引用未定义变量导致前端白屏
 - 背景/需求：用户反馈上一轮彩蛋玻璃化后前端白屏，控制台报错 `Uncaught ReferenceError: headerHeight is not defined at SanGuiBlog (AppFull.jsx:1487:44)`。
 - 修改类型：fix

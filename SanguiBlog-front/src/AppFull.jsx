@@ -1248,23 +1248,36 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 if (articleState?.status === 'error') {
                     return (
                         <div className="max-w-4xl mx-auto px-4 pt-32">
-                            <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-10 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
-                                <div className="text-2xl font-black">文章加载失败</div>
-                                <div className={`mt-3 text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    {articleState?.error || '未知错误'}
+                            <div className={`home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark bg-[#0F172A]/54 text-white' : 'bg-white/48 text-black'} p-8 md:p-10`}>
+                                <div className="flex items-center gap-3">
+                                    <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] rounded-full border ${isDarkMode ? 'border-white/12 bg-white/10 text-gray-100' : 'border-black/10 bg-white/78 text-black'}`}>
+                                        文章加载失败
+                                    </span>
+                                    <div className={`h-px flex-1 ${isDarkMode ? 'bg-white/10' : 'bg-black/10'}`}></div>
                                 </div>
+
+                                <div className={`mt-6 home-ios-inner-card ${isDarkMode ? 'bg-[#0F172A]/62 text-gray-200 border-white/10' : 'bg-white/64 text-gray-700 border-black/10'} p-5 md:p-6`}>
+                                    <div className="text-2xl font-black">暂时没有取到这篇文章</div>
+                                    <div className="mt-3 text-sm font-semibold leading-6">
+                                        {articleState?.error || '未知错误'}
+                                    </div>
+                                    <div className={`mt-4 text-xs font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        你可以重新加载一次，或先返回首页继续浏览其它内容。
+                                    </div>
+                                </div>
+
                                 <div className="mt-6 flex flex-wrap gap-3">
                                     <button
                                         type="button"
                                         onClick={() => articleId && loadArticle && loadArticle(articleId)}
-                                        className={`px-6 py-3 font-black border-2 border-black shadow-[6px_6px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${isDarkMode ? 'bg-pink-600 text-white hover:bg-pink-500' : 'bg-[#FF0080] text-white'}`}
+                                        className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-black border transition-all hover:-translate-y-0.5 ${isDarkMode ? 'border-white/14 bg-white/12 text-white hover:bg-white/18 shadow-[0_16px_40px_rgba(0,0,0,0.26)]' : 'border-white/80 bg-white/72 text-black hover:bg-white/86 shadow-[0_14px_34px_rgba(15,23,42,0.14)]'}`}
                                     >
                                         重试加载
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setView('home')}
-                                        className={`px-6 py-3 font-black border-2 border-black shadow-[6px_6px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                        className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-black border transition-all hover:-translate-y-0.5 ${isDarkMode ? 'border-white/10 bg-white/8 text-gray-100 hover:bg-white/14 shadow-[0_14px_34px_rgba(0,0,0,0.22)]' : 'border-black/8 bg-white/46 text-gray-800 hover:bg-white/70 shadow-[0_12px_30px_rgba(15,23,42,0.10)]'}`}
                                     >
                                         返回首页
                                     </button>
