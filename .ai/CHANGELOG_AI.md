@@ -5,6 +5,32 @@
 
 ---
 
+## [2026-04-11] 隐藏手机端文章页首页/评论悬浮按钮并升级到 V2.2.11
+- 背景/需求：用户反馈手机端具体文章页 `/article/:id` 上“首页”“评论”两个悬浮按钮出现错位，要求仅手机端去掉这两个悬浮按钮，电脑端保持不变。
+- 修改类型：fix
+- 影响范围：文章详情页悬浮操作按钮的响应式显示、文章详情页最小回归测试、站点版本号
+- 变更摘要：
+  1) 检索确认“首页”“评论”悬浮按钮真实入口集中在 `ArticleDetail.jsx` 的 `floatingActionButtons` portal 中，且同页已有手机端 `md:hidden` 目录抽屉入口，因此无需新增移动端详情页或第二套按钮实现。
+  2) 新增 `ArticleDetailFloatingButtons.test.js`，先锁定“首页/评论”悬浮按钮容器必须仅在 `md` 及以上视口显示，同时保留手机端目录入口。
+  3) 将 `floatingActionButtons` 外层容器改为 `hidden md:block fixed ...`，让手机端直接不显示“首页”“评论”两个悬浮按钮；桌面端继续使用原有 portal、定位、回首页和滚动到评论区逻辑。
+  4) 将站点版本号从 `V2.2.10` 升级为 `V2.2.11`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailFloatingButtons.test.js`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`ArticleDetail` / `首页` / `评论` / `scrollToComments` / `floatingActionButtons` / `md:hidden` / `ScrollToTop`
+  - 候选实现：`ArticleDetail.jsx` 悬浮按钮 portal、`ArticleDetail.jsx` 手机端目录抽屉入口、`ScrollToTop.jsx` 手机端隐藏范式、`AiAssistantWidget.jsx` 移动端视口收敛范式
+  - 最终选择：原位修改 `floatingActionButtons` 外层响应式类，继续复用现有文章详情页与按钮回调，不新增移动端专用组件
+- 风险点：
+  - 手机端将不再有悬浮“首页/评论”快捷入口，这是按需求有意收敛；评论区内容、评论提交能力和手机端目录抽屉不受影响。
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 修复用户名变更后旧 JWT 失效并升级到 V2.2.10
 - 背景/需求：项目审阅发现用户在个人资料中修改用户名后，当前 JWT 的 subject 仍是旧用户名，而 `JwtAuthenticationFilter` 每次请求只按 subject 查询用户，导致后续请求因旧用户名不存在而掉线；要求修复这条 P2 登录态稳定性问题。
 - 修改类型：fix

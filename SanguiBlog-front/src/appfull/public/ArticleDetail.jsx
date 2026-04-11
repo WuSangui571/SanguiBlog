@@ -1091,7 +1091,7 @@ const ArticleDetail = ({
     const floatingActionButtons = typeof document !== 'undefined'
         ? createPortal(
             <div
-                className="fixed left-0 right-0 z-[65] pointer-events-none"
+                className="hidden md:block fixed left-0 right-0 z-[65] pointer-events-none"
                 style={{ top: floatingActionTop }}
             >
                 <motion.button
