@@ -1227,16 +1227,29 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 if (articleState?.status === 'not_found') {
                     return (
                         <div className="max-w-4xl mx-auto px-4 pt-32">
-                            <div className={`border-4 border-black shadow-[12px_12px_0px_0px_#000] p-10 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
-                                <div className="text-3xl font-black">404：文章不存在</div>
-                                <div className={`mt-3 text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    你访问的文章 ID 不存在或未发布，请检查链接是否正确。
+                            <div className={`home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark bg-[#0F172A]/54 text-white' : 'bg-white/48 text-black'} p-8 md:p-10`}>
+                                <div className="flex items-center gap-3">
+                                    <span className={`inline-flex items-center gap-2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.3em] rounded-full border ${isDarkMode ? 'border-white/12 bg-white/10 text-gray-100' : 'border-black/10 bg-white/78 text-black'}`}>
+                                        404：文章不存在
+                                    </span>
+                                    <div className={`h-px flex-1 ${isDarkMode ? 'bg-white/10' : 'bg-black/10'}`}></div>
                                 </div>
+
+                                <div className={`mt-6 home-ios-inner-card ${isDarkMode ? 'bg-[#0F172A]/62 text-gray-200 border-white/10' : 'bg-white/64 text-gray-700 border-black/10'} p-5 md:p-6`}>
+                                    <div className="text-2xl font-black">这篇文章现在不在这里</div>
+                                    <div className="mt-3 text-sm font-semibold leading-6">
+                                        你访问的文章 ID 不存在、未发布，或者链接已经失效，请检查地址是否正确。
+                                    </div>
+                                    <div className={`mt-4 text-xs font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        先返回首页继续浏览也可以，之后再重新确认文章链接。
+                                    </div>
+                                </div>
+
                                 <div className="mt-6 flex flex-wrap gap-3">
                                     <button
                                         type="button"
                                         onClick={() => setView('home')}
-                                        className={`px-6 py-3 font-black border-2 border-black shadow-[6px_6px_0px_0px_#000] transition-transform hover:-translate-y-0.5 ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
+                                        className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-black border transition-all hover:-translate-y-0.5 ${isDarkMode ? 'border-white/10 bg-white/8 text-gray-100 hover:bg-white/14 shadow-[0_14px_34px_rgba(0,0,0,0.22)]' : 'border-black/8 bg-white/46 text-gray-800 hover:bg-white/70 shadow-[0_12px_30px_rgba(15,23,42,0.10)]'}`}
                                     >
                                         返回首页
                                     </button>

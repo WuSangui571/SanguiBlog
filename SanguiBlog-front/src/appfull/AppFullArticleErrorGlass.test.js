@@ -28,4 +28,28 @@ assert.doesNotMatch(
     '文章加载失败状态不应继续使用旧的黑边厚投影卡片'
 );
 
+assert.match(
+    source,
+    /if \(articleState\?\.status === 'not_found'\) \{[\s\S]*home-ios-card home-ios-card--static/,
+    '具体文章页的 404 状态也应适配为站点玻璃卡片，而不是旧的黑边厚投影容器'
+);
+
+assert.match(
+    source,
+    /404：文章不存在[\s\S]*home-ios-inner-card/,
+    '具体文章页的 404 状态说明区应落在内层玻璃卡片中，保持和站点当前层级一致'
+);
+
+assert.match(
+    source,
+    /404：文章不存在[\s\S]*返回首页[\s\S]*rounded-full/,
+    '具体文章页的 404 状态操作按钮应切换到当前站点的圆角玻璃按钮风格'
+);
+
+assert.doesNotMatch(
+    source,
+    /if \(articleState\?\.status === 'not_found'\) \{[\s\S]*border-4 border-black shadow-\[12px_12px_0px_0px_#000\]/,
+    '具体文章页的 404 状态不应继续使用旧的黑边厚投影卡片'
+);
+
 console.log('AppFull article error glass tests passed');

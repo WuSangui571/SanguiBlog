@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-11] 同步将文章 404 页面适配为站点玻璃风格
+- 背景/需求：用户在文章加载失败页玻璃化后，继续要求将具体文章页的 404“文章不存在”页面也适配为同一套玻璃风格。
+- 修改类型：fix
+- 影响范围：文章详情页 404 状态 UI、文章异常状态最小回归测试
+- 变更摘要：
+  1) 检索确认 404 状态同样集中在 `AppFull.jsx` 的 `articleState?.status === 'not_found'` 分支，且仍使用旧的黑边厚投影卡片与按钮。
+  2) 在既有 `AppFullArticleErrorGlass.test.js` 中补充 404 状态断言，先验证其会因旧样式失败，再进行实现修改。
+  3) 将 404 状态外层改为 `home-ios-card home-ios-card--static`，说明内容放入 `home-ios-inner-card`，并把“返回首页”切换为圆角玻璃按钮。
+  4) 保留 `setView('home')` 返回首页行为不变，仅调整视觉风格和错误说明文案。
+  5) 本次属于上一次文章异常状态玻璃化的同范围补齐，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/AppFullArticleErrorGlass.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`404：文章不存在` / `articleState?.status === 'not_found'` / `home-ios-card` / `home-ios-inner-card`
+  - 候选实现：`AppFull.jsx` 文章加载态玻璃卡、`AppFull.jsx` 文章加载失败玻璃卡、`AboutView.jsx` 主体玻璃卡、`GlassPopupToast.jsx` 现有玻璃语言
+  - 最终选择：原位修改 `not_found` 分支，直接复用刚统一的文章异常状态玻璃结构，不新增组件
+- 验证方式：
+  - 执行 `node .\src\appfull\AppFullArticleErrorGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 将文章加载失败页适配为站点玻璃风格
 - 背景/需求：用户反馈具体文章页在文章加载失败时展示的“文章加载失败”页面仍是旧的黑边厚投影样式，希望适配到当前站点统一的玻璃风格；本次仅处理失败态页面，不扩大到 404 页面或其它状态页。
 - 修改类型：fix
