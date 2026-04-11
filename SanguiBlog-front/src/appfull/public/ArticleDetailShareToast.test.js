@@ -36,6 +36,12 @@ assert.match(
 
 assert.match(
     source,
+    /bottom: 'calc\(72px \+ env\(safe-area-inset-bottom, 0px\)\)'/,
+    '分享成功提示应比贴底位置更高，便于用户感知'
+);
+
+assert.match(
+    source,
     /shareToastTimerRef\.current = setTimeout\(\(\) => setShowShareToast\(false\), 2200\)/,
     '分享成功提示应使用统一 timer ref 控制自动消失'
 );

@@ -5,6 +5,33 @@
 
 ---
 
+## [2026-04-11] 上移文章页分享复制提示并升级到 V2.2.14
+- 背景/需求：用户确认新版“链接已复制”提示风格更好，但反馈弹出的卡片位置过低，不刻意看时不容易感知；要求在保留现有风格的基础上把卡片位置调高一点。
+- 修改类型：fix
+- 影响范围：文章详情页分享复制成功提示位置、分享提示回归测试、站点版本号
+- 变更摘要：
+  1) 检索确认分享成功提示当前已集中在 `ArticleDetail.jsx` 的 `shareToastLayer` portal 中，定位由 `bottom: calc(24px + env(safe-area-inset-bottom, 0px))` 控制。
+  2) 更新 `ArticleDetailShareToast.test.js`，先锁定分享提示应使用 `bottom: calc(72px + env(safe-area-inset-bottom, 0px))`，避免回退到过低的贴底位置。
+  3) 将 `shareToastLayer` 的 bottom 从 `24px` 上移到 `72px`，保留原有卡片风格、portal 渲染、无布局抖动和 safe-area 兼容。
+  4) 将站点版本号从 `V2.2.13` 升级为 `V2.2.14`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailShareToast.test.js`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`shareToastLayer` / `文章地址已放入剪贴板` / `bottom: 'calc(` / `ArticleDetailShareToast`
+  - 候选实现：`ArticleDetail.jsx` 的分享提示 portal、`ArticleDetailShareToast.test.js` 既有回归测试、`StatsStrip.jsx` 的 body portal 浮层范式
+  - 最终选择：原位调整 `shareToastLayer` 的 bottom 定位，不改分享按钮、不改提示组件结构、不新增组件
+- 风险点：
+  - 提示上移后更容易被看到，但也会比原来更靠近正文底部；当前宽度较窄且 `pointer-events-none`，不会阻塞用户点击页面。
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleDetailShareToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 优化文章页分享复制提示并升级到 V2.2.13
 - 背景/需求：用户反馈文章详情页博主信息卡片中的分享按钮复制成功后，顶部出现的“链接已复制！”长条提示观感突兀，并且提示出现/消失时页面结构会轻微移动；要求重新设计提示并修复抖动问题。
 - 修改类型：fix

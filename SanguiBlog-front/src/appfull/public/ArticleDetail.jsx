@@ -1155,7 +1155,7 @@ const ArticleDetail = ({
                         role="status"
                         aria-live="polite"
                         className="pointer-events-none fixed left-1/2 z-[140] w-[min(92vw,320px)]"
-                        style={{ bottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}
+                        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
                     >
                         <div className={`relative overflow-hidden px-4 py-3 ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/88 text-white border-white/12' : 'bg-white/92 text-black border-white/75'} shadow-[0_20px_60px_rgba(15,23,42,0.22)]`}>
                             <div className={`absolute inset-x-8 -top-10 h-20 rounded-full blur-2xl ${isDarkMode ? 'bg-emerald-400/18' : 'bg-[#FFD700]/28'}`} />
