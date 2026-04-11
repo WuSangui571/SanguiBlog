@@ -26,6 +26,51 @@ const validArticle = {
 
 {
   const context = buildAiCurrentPageContext({
+    view: "article",
+    article: {
+      summary: {
+        id: 199,
+        title: "带图文章",
+        excerpt: "正文里有 Markdown 图片，封面也存在",
+        coverImage: "/uploads/covers/with-image/cover.png",
+      },
+      contentMd: [
+        "# 带图文章",
+        "",
+        "开头说明。",
+        "",
+        "![架构图](/uploads/posts/with-image/diagram.png)",
+        "",
+        "中间继续。",
+        "",
+        "![流程图](/uploads/posts/with-image/flow.png)",
+      ].join("\n"),
+    },
+    articleState: { status: "ok" },
+  });
+
+  assert.equal(context.imageCount, 3);
+}
+
+{
+  const context = buildAiCurrentPageContext({
+    view: "article",
+    article: {
+      summary: {
+        id: 200,
+        title: "纯 HTML 图片文章",
+        excerpt: "正文没有 Markdown，但 HTML 里有图片",
+      },
+      contentHtml: '<p>这是正文</p><img src="/uploads/posts/html-only/a.png" alt="配图 A" /><p>继续</p><img src="/uploads/posts/html-only/b.png" />',
+    },
+    articleState: { status: "ok" },
+  });
+
+  assert.equal(context.imageCount, 2);
+}
+
+{
+  const context = buildAiCurrentPageContext({
     view: "home",
     article: validArticle,
     articleState: { status: "ok" },

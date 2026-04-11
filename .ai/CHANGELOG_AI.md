@@ -5,6 +5,37 @@
 
 ---
 
+## [2026-04-11] 修正 AI 评价当前博客时忽略文章图片的问题
+- 背景/需求：用户反馈在文章详情页向 AI 提问“如何评价这篇博客？”时，AI 回复中出现“图文结合（虽未展示）/若配图”等话术；但该文章实际包含图片。用户不要求 AI 识别图片具体内容，只要求至少能知道文章有图片，避免低级事实错误，同时回复不要变得过于生硬。
+- 修改类型：fix
+- 影响范围：AI 当前页面临时上下文、文章图片存在性检测、AI 当前文章指代识别、相关前后端回归测试
+- 变更摘要：
+  1) 检索确认现有 AI 链路已经通过 `buildAiCurrentPageContext -> AiAssistantWidget -> /api/ai/chat(/stream) -> AiCurrentPageContextService` 传递当前页面信息，本次不新增聊天接口、不新增第二套 AI 模块。
+  2) 在前端 `aiCurrentPageContext.js` 中为文章上下文补充 `imageCount`：从 Markdown 图片语法、HTML `<img>` 与文章封面中统计图片存在性；当 Markdown 与 HTML 同时存在时取较大值，避免同一正文被重复计算。
+  3) 在后端 `AiCurrentPageContextDto` 中新增 `imageCount` 字段，并在 `AiCurrentPageContextService` 的文章 system context 中自然注入“本文包含 N 张图片/配图引用”的事实，同时提示模型不要臆测图片具体内容，也不要使用“若配图/如果有配图”这类与事实冲突的表达。
+  4) 扩展当前文章指代识别关键词，支持“这篇博客 / 这篇文章 / 本文 / 当前文章”等自然问法，确保用户提问“如何评价这篇博客？”时会使用当前文章上下文。
+  5) 补充前端图片数量检测测试与后端当前页面上下文测试，覆盖含 Markdown 图片、纯 HTML 图片、有图文章评价问法、无图片文章不注入图片提示等场景。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.js`
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.test.js`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiCurrentPageContextDto.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiCurrentPageContextService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiCurrentPageContextServiceTest.java`
+  - `.ai/CHANGELOG_AI.md`
+  - `.ai/PROJECT_MEMORY.md`
+- 检索与复用策略：
+  - 检索关键词：`currentPageContext` / `AiCurrentPageContextDto` / `AiCurrentPageContextService` / `contentMd` / `contentHtml` / `coverImage` / `图片` / `img` / `AiChatService`
+  - 候选实现：`aiCurrentPageContext.js` 当前页面上下文构造、`AiCurrentPageContextService` system context 拼接、`AiCurrentPageContextDto` DTO 扩展、`AiChatService` 现有 page context 注入点、`api.js` 与 `AiAssistantWidget.jsx` 透传链路
+  - 最终选择：复用现有当前页面上下文链路，仅扩展字段与提示词，不新增接口、Service、RAG 文档类型或前端 AI 入口，避免同业务双实现
+- 验证方式：
+  - 先执行 `node .\src\appfull\aiCurrentPageContext.test.js` 看到 `imageCount` 断言按预期失败，确认旧实现没有传递图片存在性
+  - 先执行 `mvn -q "-Dtest=AiCurrentPageContextServiceTest" test` 看到 `setImageCount` 缺失导致测试编译失败，确认旧 DTO/服务没有图片字段
+  - 修改后执行 `node .\src\appfull\aiCurrentPageContext.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `mvn -q "-Dtest=AiCurrentPageContextServiceTest" test`（工作目录 `SanguiBlog-server`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `mvn -q -DskipTests compile`（工作目录 `SanguiBlog-server`）通过
+- 版本号说明：本次为 AI 当前页面上下文体验修复，不单独提升站点版本号。
+
 ## [2026-04-11] 新增 V2.2.20 发布说明并同步 README 的 release 引用
 - 背景/需求：用户准备基于当前最新站点版本 `V2.2.20` 进行正式 release 发布，希望在 `release/` 目录下新增中文发布说明，并检查项目根目录中英文 README 是否仍保留“最新 release 文档为 V2.2.6”之类的过时描述；若有，需要同步修正，但其他内容保持不变。
 - 修改类型：docs

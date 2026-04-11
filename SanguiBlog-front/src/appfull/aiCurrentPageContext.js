@@ -14,6 +14,22 @@ function stripHtmlTags(value) {
   return trimText(value).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function countImageReferences(value) {
+  const text = trimText(value);
+  if (!text) return 0;
+  const markdownImages = text.match(/!\[[^\]]*]\([^)]+\)/g) || [];
+  const htmlImages = text.match(/<img\b[^>]*>/gi) || [];
+  return markdownImages.length + htmlImages.length;
+}
+
+function countArticleImages(article, summary) {
+  const markdownImageCount = countImageReferences(article?.contentMd);
+  const htmlImageCount = countImageReferences(article?.contentHtml);
+  const inlineImageCount = Math.max(markdownImageCount, htmlImageCount);
+  const hasCoverImage = Boolean(trimText(summary?.coverImage || article?.coverImage));
+  return inlineImageCount + (hasCoverImage ? 1 : 0);
+}
+
 function buildStaticPageContext(pageType, title, url, content, excerpt = "") {
   const normalizedTitle = trimText(title);
   const normalizedContent = truncateText(content, MAX_CONTEXT_CONTENT_LENGTH);
@@ -40,6 +56,7 @@ function buildArticleContext(article, articleState) {
   const content = truncateText(rawContent, MAX_CONTEXT_CONTENT_LENGTH);
   const excerpt = trimText(summary.excerpt || article.excerpt);
   const articleId = summary.id || article.id;
+  const imageCount = countArticleImages(article, summary);
 
   if (!title || !content) {
     return null;
@@ -51,6 +68,7 @@ function buildArticleContext(article, articleState) {
     excerpt,
     content,
     url: articleId ? `/article/${articleId}` : "",
+    imageCount,
   };
 }
 

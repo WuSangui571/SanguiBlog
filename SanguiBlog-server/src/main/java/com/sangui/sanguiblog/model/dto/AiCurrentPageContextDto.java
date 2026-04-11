@@ -14,4 +14,6 @@ public class AiCurrentPageContextDto {
     private String content;
 
     private String url;
+
+    private Integer imageCount;
 }

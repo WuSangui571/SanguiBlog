@@ -11,7 +11,8 @@ public class AiCurrentPageContextService {
 
     private static final int MAX_CONTENT_LENGTH = 8000;
     private static final List<String> PAGE_REFERENCE_KEYWORDS = List.of(
-            "此页面", "这个页面", "当前页面", "本页", "这一页", "当前页", "这里"
+            "此页面", "这个页面", "当前页面", "本页", "这一页", "当前页", "这里",
+            "这篇博客", "这篇博文", "这篇文章", "这篇内容", "当前文章", "本文", "这篇"
     );
     private static final List<String> PAGE_EXPLAIN_KEYWORDS = List.of(
             "主要说了什么", "讲了什么", "总结", "概括", "内容是什么", "写了什么", "是干什么的", "有什么", "是什么页面"
@@ -62,6 +63,13 @@ public class AiCurrentPageContextService {
             if (StringUtils.hasText(url)) {
                 builder.append("【当前页面文章链接】").append(url).append(System.lineSeparator());
             }
+            int imageCount = normalizedImageCount(currentPageContext);
+            if (imageCount > 0) {
+                builder.append("【当前页面图片线索】本文包含 ")
+                        .append(imageCount)
+                        .append(" 张图片/配图引用。可以自然提到文章配有图片辅助表达；但不要臆测图片里的具体内容，也不要写成“如果有配图/若配图”。")
+                        .append(System.lineSeparator());
+            }
             builder.append("【当前页面内容】").append(System.lineSeparator()).append(content);
             return builder.toString().trim();
         }
@@ -103,6 +111,11 @@ public class AiCurrentPageContextService {
             return "";
         }
         return value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
+    private int normalizedImageCount(AiCurrentPageContextDto currentPageContext) {
+        Integer imageCount = currentPageContext.getImageCount();
+        return imageCount == null ? 0 : Math.max(0, imageCount);
     }
 
     public record PageContextAdvice(boolean useContext, String systemContext) {
