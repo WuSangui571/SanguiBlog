@@ -323,6 +323,7 @@ const Navigation = ({
         : 'border border-black/8 bg-white/45 text-black/35 cursor-not-allowed';
     const overlayMutedTextClass = isDarkMode ? 'text-white/68' : 'text-black/55';
     const overlaySubtleTextClass = isDarkMode ? 'text-white/52' : 'text-black/45';
+    const overlayScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : '';
     const mobileDrawerPanelClass = isDarkMode
         ? 'border border-white/14 bg-[linear-gradient(180deg,rgba(10,18,30,0.96),rgba(8,14,24,0.92))] text-white shadow-[0_24px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl'
         : 'border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(250,252,255,0.9))] text-black shadow-[0_24px_60px_rgba(15,23,42,0.16),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-3xl';
@@ -389,7 +390,7 @@ const Navigation = ({
                         </button>
                     </div>
                 </div>
-                <div className={`max-h-[calc(92vh-132px)] overflow-y-auto divide-y ${overlayDividerClass}`}>
+                <div className={`max-h-[calc(92vh-132px)] overflow-y-auto divide-y ${overlayDividerClass} ${overlayScrollbarClass}`}>
                     {notificationLoading ? (
                         <div className="p-4 text-sm font-semibold">加载中...</div>
                     ) : (notifications && notifications.length ? (
@@ -546,7 +547,7 @@ const Navigation = ({
                     </div>
                 </div>
 
-                <div className="p-4 space-y-3 max-h-[calc(92vh-64px)] overflow-y-auto">
+                <div className={`p-4 space-y-3 max-h-[calc(92vh-64px)] overflow-y-auto ${overlayScrollbarClass}`}>
                     <div className={`flex items-center gap-3 p-4 rounded-[24px] ${overlaySoftCardClass}`}>
                         <div className={`w-11 h-11 rounded-full flex items-center justify-center ${overlayIconWrapClass}`}>
                             {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
@@ -838,7 +839,7 @@ const Navigation = ({
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+                        <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-5 ${overlayScrollbarClass}`}>
                             <div className="grid grid-cols-1 gap-2">
                                 {PRIMARY_NAV_ITEMS.map((item) => {
                                     const isActive = activeView === item.key;

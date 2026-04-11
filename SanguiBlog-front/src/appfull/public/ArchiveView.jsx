@@ -180,6 +180,7 @@ const ArchiveView = ({
     const quickJumpBtn = isDarkMode
         ? 'bg-[#111827]/70 text-white hover:bg-[#1F2937]'
         : 'bg-white/72 text-black hover:bg-[#FFD700]';
+    const quickJumpScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : '';
     const archiveActionButtonClass = isDarkMode
         ? '!rounded-full !border !border-white/10 !bg-transparent !text-slate-100 !shadow-none hover:!bg-white/10'
         : '!rounded-full !border !border-black/10 !bg-white/38 !text-slate-900 !shadow-none hover:!bg-white/72';
@@ -394,7 +395,7 @@ const ArchiveView = ({
                                     style={{ top: quickJumpTop, marginTop: quickDockTop }}
                                 >
                                     <p className="text-sm font-black mb-4">快速跳转</p>
-                                    <div className="space-y-2 max-h-[70vh] overflow-auto pr-1">
+                                    <div className={`space-y-2 max-h-[70vh] overflow-auto pr-1 ${quickJumpScrollbarClass}`}>
                                         {monthShortcuts.map((shortcut) => (
                                             <button
                                                 key={shortcut.id}

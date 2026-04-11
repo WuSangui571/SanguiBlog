@@ -81,6 +81,7 @@ export default function MarkdownCodeBlock({ textContent, className, isDarkMode, 
                 ? 'text-gray-300'
                 : 'text-gray-600';
     const buttonText = copyState === 'success' ? COPY_SUCCESS_TEXT : COPY_ACTION_TEXT;
+    const codeScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : '';
 
     const Icon = copyState === 'success' ? Check : Copy;
 
@@ -110,7 +111,7 @@ export default function MarkdownCodeBlock({ textContent, className, isDarkMode, 
                     {buttonText}
                 </button>
             </div>
-            <pre className={`m-0 overflow-auto px-5 py-4 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
+            <pre className={`m-0 overflow-auto ${codeScrollbarClass} px-5 py-4 ${isDarkMode ? 'bg-[#0B1221] text-gray-100' : 'bg-white text-gray-900'}`}>
                 <code className={`${className || ''} !border-none !bg-transparent !p-0 font-mono text-[13px] leading-6`}>
                     {textContent}
                 </code>

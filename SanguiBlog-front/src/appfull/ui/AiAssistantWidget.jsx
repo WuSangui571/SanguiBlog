@@ -1148,7 +1148,10 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                 <div className={`border-b px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.18em] ${subTextClass} ${panelBorderClass}`}>
                                                     历史会话
                                                 </div>
-                                                <div className="mt-2 max-h-[280px] overflow-y-auto pr-1">
+                                                <div
+                                                    className={`mt-2 max-h-[280px] overflow-y-auto pr-1 ${historyPopoverScrollbarClass}`}
+                                                    style={getHistoryPopoverScrollStyle()}
+                                                >
                                                     {sessionsLoading ? (
                                                         <div className={`px-3 py-3 text-xs font-semibold ${subTextClass}`}>正在加载历史会话...</div>
                                                     ) : sessions.length === 0 ? (
@@ -1195,7 +1198,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                         <MessageSquarePlus size={15} />
                                         新对话
                                     </button>
-                                    <div className="min-w-0 flex-1 overflow-x-auto">
+                                    <div className={`min-w-0 flex-1 overflow-x-auto ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : ''}`}>
                                         <div className="flex min-w-max gap-2 pr-1">
                                             {isGuestMode ? (
                                                 <div className={`px-3 py-2 text-xs font-semibold ${subTextClass}`}>访客模式仅保留当前临时对话</div>

@@ -16,17 +16,19 @@ function createMarkdownComponents({ isDarkMode, isAssistant }) {
 
     const blockClass = isAssistant
         ? isDarkMode
-            ? 'my-3 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 px-3 py-3'
+            ? 'my-3 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 px-3 py-3 sg-scrollbar sg-scrollbar-dark'
             : 'my-3 overflow-x-auto rounded-2xl border border-black/15 bg-black/[0.04] px-3 py-3'
         : isDarkMode
-            ? 'my-3 overflow-x-auto rounded-2xl border border-white/10 bg-black/30 px-3 py-3'
+            ? 'my-3 overflow-x-auto rounded-2xl border border-white/10 bg-black/30 px-3 py-3 sg-scrollbar sg-scrollbar-dark'
             : 'my-3 overflow-x-auto rounded-2xl border border-black/10 bg-black/[0.04] px-3 py-3';
 
     const tableWrapClass = isAssistant
         ? isDarkMode
-            ? 'my-3 overflow-x-auto rounded-2xl border border-white/10'
+            ? 'my-3 overflow-x-auto rounded-2xl border border-white/10 sg-scrollbar sg-scrollbar-dark'
             : 'my-3 overflow-x-auto rounded-2xl border border-black/10'
-        : 'my-3 overflow-x-auto rounded-2xl border border-black/10';
+        : isDarkMode
+            ? 'my-3 overflow-x-auto rounded-2xl border border-white/10 sg-scrollbar sg-scrollbar-dark'
+            : 'my-3 overflow-x-auto rounded-2xl border border-black/10';
 
     return {
         p: ({ children }) => React.createElement('p', { className: 'my-0 leading-7' }, children),

@@ -16,6 +16,7 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
     const inlineCodeBg = isDarkMode ? 'bg-gray-800 text-pink-200' : 'bg-gray-100 text-pink-600';
     const glassCard = `home-ios-card ${isDarkMode ? 'home-ios-card--dark' : ''}`;
     const glassInner = `home-ios-inner-card ${isDarkMode ? 'bg-[#0F172A]/62 text-gray-100 border-white/10' : 'bg-white/58 text-gray-900 border-black/10'}`;
+    const codeScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : '';
     const softButton = isDarkMode
         ? 'border-white/14 bg-white/10 text-white hover:bg-white/16'
         : 'border-black/10 bg-white/78 text-black hover:bg-white/92';
@@ -62,7 +63,7 @@ function AboutView({ about, isDarkMode, onReload, onEdit, isSuperAdmin }) {
                     </div>
                 </div>
                 <pre
-                    className={`p-5 overflow-auto m-0 ${isDarkMode ? 'bg-[#0B1221]/78 text-gray-100' : 'bg-white/70 text-gray-900'}`}>
+                    className={`p-5 overflow-auto m-0 ${codeScrollbarClass} ${isDarkMode ? 'bg-[#0B1221]/78 text-gray-100' : 'bg-white/70 text-gray-900'}`}>
                     <code className={`${className || ''} !bg-transparent !p-0 !border-none font-mono text-sm`}>
                         {textContent}
                     </code>

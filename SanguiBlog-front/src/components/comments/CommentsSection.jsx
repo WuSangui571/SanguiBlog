@@ -37,6 +37,7 @@ const CommentsSection = ({
     const actionButtonBase = 'px-4 py-3 rounded-2xl border text-sm font-black inline-flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-0.5';
     const primaryActionButton = `${actionButtonBase} ${accentButton}`;
     const secondaryActionButton = `${actionButtonBase} ${softButton}`;
+    const textareaScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : '';
     const resolvedAuthorName = currentUser?.displayName || currentUser?.nickname || currentUser?.username || '访客';
     const resolvedAvatar = currentUser?.avatarUrl || currentUser?.avatar;
     const normalizedList = Array.isArray(list) ? list : [];
@@ -159,7 +160,7 @@ const CommentsSection = ({
                             <textarea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
-                                className={`w-full p-3 rounded-2xl border font-bold focus:outline-none ${inputBg}`}
+                                className={`w-full p-3 rounded-2xl border font-bold focus:outline-none ${textareaScrollbarClass} ${inputBg}`}
                                 rows={3}
                             />
                             <div className="flex gap-2">
@@ -218,7 +219,7 @@ const CommentsSection = ({
                             <textarea
                                 value={replyContent}
                                 onChange={(e) => setReplyContent(e.target.value)}
-                                className={`w-full p-3 rounded-2xl border font-bold focus:outline-none min-h-[100px] ${inputBg}`}
+                                className={`w-full p-3 rounded-2xl border font-bold focus:outline-none min-h-[100px] ${textareaScrollbarClass} ${inputBg}`}
                                 placeholder={`回复 ${displayAuthor}...`}
                             />
                             <div className="flex gap-2 mt-2">
@@ -270,7 +271,7 @@ const CommentsSection = ({
                 <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    className={`w-full p-4 rounded-2xl border font-bold focus:outline-none min-h-[140px] ${inputBg}`}
+                    className={`w-full p-4 rounded-2xl border font-bold focus:outline-none min-h-[140px] ${textareaScrollbarClass} ${inputBg}`}
                     placeholder="写点什么…"
                 />
                 <div className="flex flex-wrap items-center gap-3 pt-1">

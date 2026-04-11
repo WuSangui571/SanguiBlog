@@ -222,6 +222,7 @@ export default function AdminProfile({ isDarkMode = false }) {
       ? "border-white/10 bg-white/[0.05] text-gray-100 placeholder:text-gray-500 focus:border-sky-400/40"
       : "border-white/80 bg-white/80 text-slate-900 placeholder:text-slate-400 focus:border-indigo-300"
   }`;
+  const profileTextareaScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : '';
   const accentButtonClass = `inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3 font-semibold backdrop-blur-xl transition-all duration-300 disabled:opacity-50 ${
     isDarkMode
       ? "border-sky-400/28 bg-sky-400/18 text-sky-100 hover:bg-sky-400/24"
@@ -340,7 +341,7 @@ export default function AdminProfile({ isDarkMode = false }) {
           </div>
           <div className="mt-6">
             <FieldLabel>个人简介</FieldLabel>
-            <textarea className={`${inputClass} mt-2`} rows={4} name="bio" value={form.bio} onChange={handleChange} />
+            <textarea className={`${inputClass} ${profileTextareaScrollbarClass} mt-2`} rows={4} name="bio" value={form.bio} onChange={handleChange} />
           </div>
         </section>
 

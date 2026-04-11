@@ -67,6 +67,7 @@ const StatsStrip = ({ isDarkMode, stats }) => {
     const glassClass = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark' : ''}`;
     const valueTextClass = 'font-mono font-black text-[15px] md:text-base tracking-[0.01em]';
     const labelTextClass = `text-[12px] font-semibold tracking-[0.08em] ${subClass}`;
+    const statusScrollbarClass = isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : '';
 
     const syncTooltipPosition = () => {
         const rect = lastUpdatedButtonRef.current?.getBoundingClientRect();
@@ -128,7 +129,7 @@ const StatsStrip = ({ isDarkMode, stats }) => {
                             <span className="font-black tracking-[0.22em] uppercase text-[13px] md:text-sm">System Status</span>
                         </div>
 
-                        <div className="flex items-center gap-2.5 md:gap-3 overflow-x-auto sm:overflow-visible w-full sm:w-auto pb-1 sm:pb-0 pr-1 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
+                        <div className={`flex items-center gap-2.5 md:gap-3 overflow-x-auto sm:overflow-visible w-full sm:w-auto pb-1 sm:pb-0 pr-1 snap-x snap-mandatory [-webkit-overflow-scrolling:touch] ${statusScrollbarClass}`}>
                             {items.map((item, idx) => (
                                 <div
                                     key={idx}

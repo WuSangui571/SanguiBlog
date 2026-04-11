@@ -5,6 +5,44 @@
 
 ---
 
+## [2026-04-11] 统一补齐暗色模式下的滚动条适配
+- 背景/需求：用户反馈后台个人资料页 `/admin/profile` 中“个人简介”在暗色模式下内容过长时会出现默认原生滚动条，视觉未适配；同时要求审阅整个站点，把其它类似的暗色模式滚动条漏配点一并补齐，且白天模式保持原样。
+- 修改类型：fix
+- 影响范围：后台个人资料页、评论输入区、导航浮层、归档快捷跳转、关于页代码块、通用 Markdown 代码块、AI Markdown 滚动容器、后台表格/列表/长文本域、首页状态条、AI 助手历史横向区
+- 变更摘要：
+  1) 检索确认项目已在 `src/index.css` 沉淀统一的 `sg-scrollbar / sg-scrollbar-dark / sg-scrollbar-light` 样式，不新增第二套滚动条主题，改为系统性补漏。
+  2) 在 `/admin/profile` 的个人简介 `textarea` 上接入暗色滚动条类，解决用户直接反馈的问题；白天模式不加新类，保持原生外观不变。
+  3) 为评论区主输入框、回复输入框、编辑输入框补上暗色滚动条，避免正文较长时在暗色卡片里出现高对比默认滚动条。
+  4) 为导航通知浮层、设置浮层、移动端导航抽屉、归档页“快速跳转”、首页状态条移动端横向滚动区补上暗色滚动条。
+  5) 为关于页代码块、通用 Markdown 代码块、AI Markdown 代码块/表格滚动容器补上暗色滚动条；同时顺手补齐 AI 助手隐藏历史横向滚动区的暗色样式。
+  6) 为后台管理页中仍会出现滚动条的表格横向容器、长列表、广播内容、知识库正文、关于页 Markdown 正文、文章摘要等区域统一复用 `getAdminDarkScrollbarClass(isDarkMode)`，减少后续再次漏配的概率。
+  7) 新增 `DarkScrollbarCoverage.test.js`，直接锁定本轮关键覆盖点，避免以后某个暗色滚动区域回退成默认原生滚动条。
+- 涉及文件：
+  - `SanguiBlog-front/src/pages/admin/Profile.jsx`
+  - `SanguiBlog-front/src/components/comments/CommentsSection.jsx`
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArchiveView.jsx`
+  - `SanguiBlog-front/src/appfull/public/AboutView.jsx`
+  - `SanguiBlog-front/src/appfull/public/StatsStrip.jsx`
+  - `SanguiBlog-front/src/appfull/ui/MarkdownCodeBlock.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiMessageMarkdown.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/DarkScrollbarCoverage.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`overflow-auto` / `overflow-y-auto` / `overflow-x-auto` / `textarea` / `scrollbar` / `sg-scrollbar` / `Profile` / `bio`
+  - 候选实现：`src/index.css` 的全局滚动条类、`Profile.jsx` 个人简介文本域、`CommentsSection.jsx` 评论输入区、`Navigation.jsx` 浮层滚动区、`ArchiveView.jsx` 快捷跳转、`AboutView.jsx` 与 `MarkdownCodeBlock.jsx` 代码块滚动区、`AiMessageMarkdown.js` 表格/代码包裹层、`AdminPanel.jsx` 各后台滚动容器
+  - 最终选择：完全复用既有 `sg-scrollbar-dark` 体系，只补类名和后台辅助函数，不新增 CSS 主题文件、不改白天模式色值
+- 验证方式：
+  - 先执行 `node .\src\appfull\DarkScrollbarCoverage.test.js`，看到 `/admin/profile` 等漏配点断言按预期失败
+  - 修改后执行 `node .\src\appfull\DarkScrollbarCoverage.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\AdminPostEditorScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\ui\aiHistoryOverlay.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为暗色主题下的前端样式一致性修复，不单独提升站点版本号。
+
 ## [2026-04-11] 优化首页 Hero 手机端标题断行
 - 背景/需求：用户反馈首页 Hero 标题“在这里把问题想清楚，/把代码写简单。”在桌面端显示良好，但手机端自然换行会变成“在这里把问 / 题想清楚，/ 把代码写简单。”，视觉不够美观；希望手机端改为“在这里把问题 / 想清楚，/ 把代码写简单。”，同时保持桌面端不变。
 - 修改类型：fix

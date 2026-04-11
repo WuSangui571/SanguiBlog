@@ -118,6 +118,7 @@ const REGISTRATION_INVITE_DURATION_OPTIONS = [
 ];
 
 const getAdminMarkdownScrollbarClass = (isDarkMode) => isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar sg-scrollbar-light';
+const getAdminDarkScrollbarClass = (isDarkMode) => isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : '';
 
 const ThemeColorSelector = ({ value, onChange, inputClass, isDarkMode }) => {
     const selectedHex = useMemo(() => extractHexFromBgClass(value, '#6366F1'), [value]);
@@ -1721,7 +1722,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                 ) : logs.length === 0 ? (
                     <p className={`text-sm ${textMuted}`}>暂无访问记录</p>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className={`overflow-x-auto ${getAdminDarkScrollbarClass(isDarkMode)}`}>
                         <table className="min-w-full text-sm">
                             <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
                                 <tr>
@@ -1895,6 +1896,7 @@ const CreatePostView = ({ isDarkMode }) => {
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
     const markdownTextareaScrollbarClass = getAdminMarkdownScrollbarClass(isDarkMode);
+    const adminDarkScrollbarClass = getAdminDarkScrollbarClass(isDarkMode);
     const normalizeCoverValue = useCallback((raw) => {
         if (!raw) return "";
         if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
@@ -2385,7 +2387,7 @@ const CreatePostView = ({ isDarkMode }) => {
                         className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-3`}>
                         <label className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章摘要（可选）</label>
                         <textarea
-                            className={`${inputClass} min-h-[120px]`}
+                            className={`${inputClass} ${adminDarkScrollbarClass} min-h-[120px]`}
                             value={excerpt}
                             onChange={(e) => setExcerpt(e.target.value)}
                             placeholder="用于首页卡片展示，若留空则自动截取正文前 160 字"
@@ -2811,7 +2813,7 @@ const TaxonomyView = ({ isDarkMode }) => {
                 ) : tags.length === 0 ? (
                     <p className="text-center py-10 text-gray-500">暂无标签</p>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className={`overflow-x-auto ${getAdminDarkScrollbarClass(isDarkMode)}`}>
                         <table className="min-w-full table-auto text-sm">
                             <thead>
                                 <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
@@ -3208,7 +3210,7 @@ const CategoriesView = ({ isDarkMode }) => {
                 ) : categories.length === 0 ? (
                     <p className="text-center py-10 text-gray-500">暂无分类</p>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className={`overflow-x-auto ${getAdminDarkScrollbarClass(isDarkMode)}`}>
                         <table className="min-w-full table-auto text-sm">
                             <thead>
                                 <tr className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
@@ -3427,6 +3429,7 @@ const EditPostView = ({ isDarkMode }) => {
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
     const markdownTextareaScrollbarClass = getAdminMarkdownScrollbarClass(isDarkMode);
+    const adminDarkScrollbarClass = getAdminDarkScrollbarClass(isDarkMode);
     const normalizeCoverValue = useCallback((raw) => {
         if (!raw) return "";
         if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
@@ -4002,12 +4005,12 @@ const EditPostView = ({ isDarkMode }) => {
                             <label
                                 className="text-sm font-semibold text-gray-500 dark:text-gray-400">文章摘要（可选）</label>
                             <textarea
-                            className={`${inputClass} min-h-[120px]`}
-                            value={form.excerpt}
-                            onChange={(e) => setForm((prev) => ({ ...prev, excerpt: e.target.value }))}
-                            placeholder="用于首页卡片展示，若留空则自动截取正文"
-                        />
-                    </div>
+                                className={`${inputClass} ${adminDarkScrollbarClass} min-h-[120px]`}
+                                value={form.excerpt}
+                                onChange={(e) => setForm((prev) => ({ ...prev, excerpt: e.target.value }))}
+                                placeholder="用于首页卡片展示，若留空则自动截取正文"
+                            />
+                        </div>
 
                     <div
                         className={`${surface} p-6 rounded-2xl shadow-xl border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-4`}>
@@ -4349,7 +4352,7 @@ const PostsView = ({ isDarkMode }) => {
                 ) : posts.length === 0 ? (
                     <p className="text-center py-10 text-gray-500">暂无文章</p>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className={`overflow-x-auto ${getAdminDarkScrollbarClass(isDarkMode)}`}>
                         <table className="min-w-full table-auto text-sm">
                             <thead>
                                 <tr className={isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}>
@@ -5164,7 +5167,7 @@ const CommentsAdminView = ({ isDarkMode }) => {
                 ) : comments.length === 0 ? (
                     <p className="text-center py-10 text-sm text-gray-500">暂无符合条件的评论</p>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className={`overflow-x-auto ${getAdminDarkScrollbarClass(isDarkMode)}`}>
                         <table className="min-w-full text-sm">
                             <thead>
                                 <tr className={isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-600'}>
@@ -5712,7 +5715,7 @@ const UserManagementView = ({ isDarkMode }) => {
                 ) : users.length === 0 ? (
                     <p className="text-center py-10 text-gray-500">暂无用户</p>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className={`overflow-x-auto ${getAdminDarkScrollbarClass(isDarkMode)}`}>
                         <table className="min-w-full text-sm">
                             <thead>
                                 <tr className={isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-600'}>
@@ -6103,7 +6106,7 @@ const PermissionsView = ({ isDarkMode }) => {
                                             )}
                                         </div>
 
-                                        <div className="overflow-x-auto">
+                                        <div className={`overflow-x-auto ${getAdminDarkScrollbarClass(isDarkMode)}`}>
                                             <table className="w-full text-sm border-collapse">
                                                 <thead>
                                                     <tr className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -6792,6 +6795,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
             ? 'border-white/10 bg-white/[0.05] text-gray-100 placeholder:text-gray-500 focus:border-sky-400/40 focus:bg-white/[0.07]'
             : 'border-white/80 bg-white/80 text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white/90'
     }`;
+    const adminDarkScrollbarClass = getAdminDarkScrollbarClass(isDarkMode);
     const fileInputClass = `w-full rounded-2xl border px-3 py-2.5 text-sm backdrop-blur-xl file:mr-3 file:px-3 file:py-1.5 file:border-0 file:rounded-full ${
         isDarkMode
             ? 'border-white/10 bg-white/[0.05] text-gray-100 file:bg-white/[0.1] file:text-white'
@@ -6941,7 +6945,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                 value={broadcastDraft.content}
                                 onChange={(e) => handleBroadcastContentChange(e.target.value)}
                                 rows={5}
-                                className={`${inputClass} min-h-[140px] px-3 py-3 rounded-2xl focus:ring-4 ${isDarkMode ? 'focus:ring-sky-400/12' : 'focus:ring-indigo-200/60'}`}
+                                className={`${inputClass} ${adminDarkScrollbarClass} min-h-[140px] px-3 py-3 rounded-2xl focus:ring-4 ${isDarkMode ? 'focus:ring-sky-400/12' : 'focus:ring-indigo-200/60'}`}
                                 placeholder="例如：系统将在今晚 23:30 维护；或“祝大家节日快乐，福利已上线！”"
                             />
                             <div className={`pointer-events-none absolute inset-0 rounded-xl border ${isDarkMode ? 'border-white/5' : 'border-black/10'}`}></div>
@@ -7111,7 +7115,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                     暂无已上传首页背景图，当前仍使用默认 `/static/home/bg.jpg`。
                                 </div>
                             ) : (
-                                <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[760px] overflow-auto">
+                                <div className={`divide-y divide-gray-200 dark:divide-gray-700 max-h-[760px] overflow-auto ${adminDarkScrollbarClass}`}>
                                     {homeBackgrounds.map((item) => {
                                         const target = item.url ? buildAssetUrl(item.url) : '';
                                         return (
@@ -7320,7 +7324,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                                     value={knowledgeForm.contentText}
                                     onChange={(e) => setKnowledgeForm((prev) => ({ ...prev, contentText: e.target.value }))}
                                     rows={14}
-                                    className={`${inputClass} min-h-[280px] px-3 py-3`}
+                                    className={`${inputClass} ${adminDarkScrollbarClass} min-h-[280px] px-3 py-3`}
                                     placeholder="编辑知识库正文后，保存会自动重建向量索引"
                                 />
                             </div>
@@ -7376,7 +7380,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             ) : knowledgeList.length === 0 ? (
                                 <div className="p-6 text-sm text-gray-500">暂无已导入知识库，先导入一份文本吧。</div>
                             ) : (
-                                <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[760px] overflow-auto">
+                                <div className={`divide-y divide-gray-200 dark:divide-gray-700 max-h-[760px] overflow-auto ${adminDarkScrollbarClass}`}>
                                     {knowledgeList.map((item) => (
                                         <div key={item.id} className="p-4 space-y-3">
                                             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -7938,7 +7942,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             <span>我已确认备份必要图片，删除后无需恢复。</span>
                         </label>
 
-                        <div className="grid gap-3 md:grid-cols-3 max-h-[50vh] overflow-auto pr-1">
+                        <div className={`grid gap-3 md:grid-cols-3 max-h-[50vh] overflow-auto pr-1 ${adminDarkScrollbarClass}`}>
                             {Array.from(selectedAssets).map((path) => {
                                 const item = assets.find((a) => a.path === path);
                                 const target = item ? buildAssetUrl(item.url || item.path) : '';
@@ -8000,6 +8004,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, loadGameList, onAiAssistantChanged, onHomeBackgroundChanged }) => {
     const location = useLocation();
     const navigate = useNavigate();
+    const adminDarkScrollbarClass = getAdminDarkScrollbarClass(isDarkMode);
     const BROADCAST_STYLES = [
         { value: "ALERT", label: "紧急红色告警" },
         { value: "ANNOUNCE", label: "温和庆典公告" }
@@ -8177,7 +8182,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
 
     const adminNavContent = (
         <>
-            <nav className="flex-1 p-4 pt-6 space-y-6 overflow-y-auto">
+            <nav className={`flex-1 p-4 pt-6 space-y-6 overflow-y-auto ${adminDarkScrollbarClass}`}>
                 {navSections.map((section, idx) => (
                     <div key={section.title || `section-${idx}`} className="space-y-2">
                         {section.title && (
@@ -8296,7 +8301,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                     </div>
                 </header>
 
-                <main className="flex-1 p-4 md:p-8 overflow-x-auto">
+                <main className={`flex-1 p-4 md:p-8 overflow-x-auto ${adminDarkScrollbarClass}`}>
                     <AnalyticsSummaryContext.Provider value={analyticsContextValue}>
                         {permissionError && (
                             <div
@@ -8458,6 +8463,7 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
     const inputClass = `w-full p-3 border-2 rounded-lg ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-black'} focus:border-indigo-500 outline-none`;
+    const adminDarkScrollbarClass = getAdminDarkScrollbarClass(isDarkMode);
 
     return (
         <div className="space-y-6">
@@ -8522,7 +8528,7 @@ function AboutAdminView({ isDarkMode, user, onSaved }) {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     rows={28}
-                    className={`${inputClass} font-mono text-sm leading-6 min-h-[520px]`}
+                    className={`${inputClass} ${adminDarkScrollbarClass} font-mono text-sm leading-6 min-h-[520px]`}
                     placeholder="在此粘贴或输入 Markdown 内容…"
                 />
                 <div className="text-xs text-gray-500">提示：图片上传会自动将 Markdown 链接插入光标处，资源目录自动生成。</div>
