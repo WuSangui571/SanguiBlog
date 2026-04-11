@@ -769,7 +769,7 @@ const ArticleList = ({
                                                     scrollToPostsTop();
                                                 }
                                             }}
-                                            placeholder="输入关键词后按回车搜索（标题/摘要模糊匹配）"
+                                            placeholder="请输入关键词搜索"
                                             className={`flex-1 min-w-0 bg-transparent outline-none text-sm font-semibold placeholder:font-normal placeholder:text-gray-400 ${isDarkMode ? 'text-white' : 'text-black'}`}
                                         />
                                         <div className="flex w-[72px] shrink-0 justify-end">

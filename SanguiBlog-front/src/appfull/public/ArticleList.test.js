@@ -13,5 +13,7 @@ assert.doesNotMatch(source, /\{keyword && \(/);
 assert.match(source, /最新评论/);
 assert.match(source, /home-ios-card--static p-5/);
 assert.match(source, /transition-transform duration-200 hover:-translate-y-0\.5/);
+assert.match(source, /placeholder="请输入关键词搜索"/);
+assert.doesNotMatch(source, /输入关键词后按回车搜索（标题\/摘要模糊匹配）/);
 
 console.log('ArticleList tests passed');
