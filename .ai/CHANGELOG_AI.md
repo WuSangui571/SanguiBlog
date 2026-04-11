@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-11] 修正首页 Hero 文案为等量随页上移并缓慢淡出
+- 背景/需求：用户纠正上一轮理解偏差，首页 Hero 文案不是完全不动，而是要像普通首屏内容一样随着页面滚动等量向上抬升；问题在于不能再有额外视差，即文案不应慢半拍或单独漂移，同时透明度仍要保留渐进淡出。
+- 修改类型：fix
+- 影响范围：首页 Hero 文案滚动位移、Hero 性能/滚动回归测试
+- 变更摘要：
+  1) 将 `HeroPerformance.test.js` 的断言改为锁定 `contentY = useTransform(scrollY, [0, 520], [0, -520])`，明确文案上移距离与滚动距离等量，而不是取消位移或使用慢速视差位移。
+  2) 在 `Hero.jsx` 中恢复 `contentY`，并绑定到 `.home-hero__content` 的 `y` 样式；同时继续保留 `contentOpacity = useTransform(scrollY, [0, 180, 520], [1, 0.9, 0])` 的缓慢淡出曲线。
+  3) 保持 Hero 结构、背景图、CTA 按钮、手机端首篇文章滚动目标和鼠标视差逻辑不变。
+  4) 本次属于对上一轮 Hero 动效理解偏差的二次修正，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/HeroPerformance.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`contentY` / `contentOpacity` / `useTransform(scrollY` / `home-hero__content` / `heroWrap.style.transform`
+  - 候选实现：`Hero.jsx` 当前 Hero 文案 motion 容器、`HeroPerformance.test.js` 现有源码级动效回归、模板 `newIndex/html/indexV11.html` 的 scroll handler、`homeRedesign.css` 的 sticky Hero 布局
+  - 最终选择：复用既有 Framer Motion 滚动映射，只把位移曲线改为等量上移，不新增第二套 Hero 或动画工具
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\HeroPerformance.test.js` 看到测试按预期失败，确认旧实现缺少等量上移
+  - 修改后执行 `node .\src\appfull\public\HeroPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\HeroScrollTarget.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 让首页 Hero 文案贴合首屏画布淡出而不额外上飞
 - 背景/需求：用户进一步说明，首页 Hero 文案不应额外向上漂移，而应像钉在首页画布上一样，保持与首页底部的相对距离稳定；参考模板 `newIndex/html/indexV11.html` 的感觉是文案随首屏画布存在，只缓慢透明淡出。
 - 修改类型：fix
