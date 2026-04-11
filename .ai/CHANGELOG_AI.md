@@ -5,6 +5,32 @@
 
 ---
 
+## [2026-04-11] 适配后台文章编辑器 Markdown 正文暗色滚动条并升级到 V2.2.18
+- 背景/需求：用户反馈后台发布文章页 `/admin/create-post` 与修改文章页 `/admin/posts/edit?postId=xxx` 的“Markdown 正文”卡片在暗夜模式下若内容过长，会出现纵向滚动条，但当前滚动条轨道/滑块未适配暗色样式；要求只修复这两个正文编辑框的滚动条，其它区域保持不动。
+- 修改类型：fix
+- 影响范围：后台发布文章页 Markdown 正文 textarea、后台编辑文章页 Markdown 正文 textarea、后台编辑器滚动条最小回归测试、站点版本号
+- 变更摘要：
+  1) 检索确认 `/admin/create-post` 与 `/admin/posts/edit` 分别位于 `AdminPanel.jsx` 的 `CreatePostView` / `EditPostView`，两者各自渲染“Markdown 正文” textarea，但都只复用了 `inputClass`，没有接入项目现成的 `sg-scrollbar-dark` 暗色滚动条类。
+  2) 新增 `AdminPostEditorScrollbar.test.js`，先锁定后台文章编辑器应统一复用 `getAdminMarkdownScrollbarClass(isDarkMode)`，并要求发布页与编辑页这两个 Markdown 正文 textarea 都显式拼接 `sg-scrollbar-dark / sg-scrollbar-light`。
+  3) 在 `AdminPanel.jsx` 中新增 `getAdminMarkdownScrollbarClass(isDarkMode)`，并让 `CreatePostView` 与 `EditPostView` 的 Markdown 正文 textarea 都改用 `markdownTextareaScrollbarClass`，同时补 `overflow-y-auto`，从而在暗色模式下复用全局深色滚动条轨道/滑块样式。
+  4) 未改动摘要框、封面区、标签区、列表区或其它后台滚动容器，只修复用户指出的两个 Markdown 正文编辑框。
+  5) 将站点版本号从 `V2.2.17` 升级为 `V2.2.18`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/AdminPostEditorScrollbar.test.js`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`Markdown 正文` / `markdownEditorRef` / `textarea` / `sg-scrollbar-dark` / `sg-scrollbar-light` / `create-post` / `posts/edit`
+  - 候选实现：`CreatePostView` 的 Markdown 正文 textarea、`EditPostView` 的 Markdown 正文 textarea、`src/index.css` 的 `sg-scrollbar-dark/light` 全局滚动条样式、`ArticleDetail.jsx` / `AiAssistantWidget.jsx` 等已接入暗色滚动条的实现
+  - 最终选择：复用现有 `sg-scrollbar-dark/light` 全局样式，仅给后台文章正文编辑框补接滚动条类，不新增第二套滚动条 CSS
+- 风险点：
+  - 当前修复只覆盖后台文章正文 textarea；若未来还有新的长文本编辑区，也应优先复用同一个 helper，而不是再次手写滚动条类。
+- 验证方式：
+  - 执行 `node .\src\appfull\AdminPostEditorScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 将文章页玻璃复制提示沉淀为共享弹出模板并升级到 V2.2.17
 - 背景/需求：用户确认文章页分享复制提示的视觉已满意，并要求把这套弹出卡片作为后续可复用模板沉淀下来，同时留下明确约定，后续新增同类弹出框时优先使用该设计。
 - 修改类型：refactor

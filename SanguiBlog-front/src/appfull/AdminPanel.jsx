@@ -117,6 +117,8 @@ const REGISTRATION_INVITE_DURATION_OPTIONS = [
     { code: 'DAYS_10', label: '10天' }
 ];
 
+const getAdminMarkdownScrollbarClass = (isDarkMode) => isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar sg-scrollbar-light';
+
 const ThemeColorSelector = ({ value, onChange, inputClass, isDarkMode }) => {
     const selectedHex = useMemo(() => extractHexFromBgClass(value, '#6366F1'), [value]);
 
@@ -1892,6 +1894,7 @@ const CreatePostView = ({ isDarkMode }) => {
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
+    const markdownTextareaScrollbarClass = getAdminMarkdownScrollbarClass(isDarkMode);
     const normalizeCoverValue = useCallback((raw) => {
         if (!raw) return "";
         if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
@@ -2357,7 +2360,7 @@ const CreatePostView = ({ isDarkMode }) => {
                         )}
                         <textarea
                             ref={markdownEditorRef}
-                            className={`${inputClass} min-h-[420px] font-mono text-sm`}
+                            className={`${inputClass} ${markdownTextareaScrollbarClass} min-h-[420px] font-mono text-sm overflow-y-auto`}
                             value={mdContent}
                             onChange={(e) => {
                                 pushMdHistory(mdContent);
@@ -3423,6 +3426,7 @@ const EditPostView = ({ isDarkMode }) => {
     const surface = isDarkMode ? THEME.colors.surfaceDark : THEME.colors.surfaceLight;
     const text = isDarkMode ? 'text-gray-200' : 'text-gray-800';
     const inputClass = `w-full p-3 border-2 rounded-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white focus:border-indigo-500' : 'bg-white border-gray-300 text-black focus:border-indigo-500'}`;
+    const markdownTextareaScrollbarClass = getAdminMarkdownScrollbarClass(isDarkMode);
     const normalizeCoverValue = useCallback((raw) => {
         if (!raw) return "";
         if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
@@ -3986,7 +3990,7 @@ const EditPostView = ({ isDarkMode }) => {
                             )}
                             <textarea
                                 ref={markdownEditorRef}
-                                className={`${inputClass} min-h-[420px] font-mono text-sm`}
+                                className={`${inputClass} ${markdownTextareaScrollbarClass} min-h-[420px] font-mono text-sm overflow-y-auto`}
                                 value={form.mdContent}
                                 onChange={(e) => setForm((prev) => ({ ...prev, mdContent: e.target.value }))}
                                 placeholder="在此粘贴或编写 Markdown 内容"
