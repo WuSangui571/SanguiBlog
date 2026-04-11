@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-11] 新增 V2.2.20 发布说明并同步 README 的 release 引用
+- 背景/需求：用户准备基于当前最新站点版本 `V2.2.20` 进行正式 release 发布，希望在 `release/` 目录下新增中文发布说明，并检查项目根目录中英文 README 是否仍保留“最新 release 文档为 V2.2.6”之类的过时描述；若有，需要同步修正，但其他内容保持不变。
+- 修改类型：docs
+- 影响范围：Release 发布文档、根目录中英文 README 的 release 引用、AI 修改日志
+- 变更摘要：
+  1) 检索确认当前站点版本来源为 `SanguiBlog-server/src/main/resources/application.yaml` 中的 `site.version: V2.2.20`，而 `release/` 目录中上一份对外发布文档仍停留在 `V2.2.6.md`。
+  2) 结合 `release/V2.2.6.md` 的既有结构与 `.ai/CHANGELOG_AI.md` 中自 `V2.2.6` 之后的变更记录，整理生成新的 `release/V2.2.20.md` 中文发布说明，重点归纳安全与权限收口、文章详情页体验、首页与移动端交互、玻璃提示统一及深色模式细节适配。
+  3) 将英文 `README.md` 中“最新现有对外 release 文档”为 `V2.2.6.md` 的描述更新为 `V2.2.20.md`，并同步更新项目结构中的 release 目录说明。
+  4) 将中文 `README.zh-CN.md` 中对应的 release 引用同步更新到 `V2.2.20.md`，保持中英文 README 一致。
+  5) 本次仅更新 release 文档与 README 中已过时的 release 引用，不改动部署步骤、版本说明、配置示例或业务代码。
+- 涉及文件：
+  - `release/V2.2.20.md`
+  - `README.md`
+  - `README.zh-CN.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`V2.2.20` / `V2.2.6` / `release` / `README` / `site.version`
+  - 候选实现：`release/V2.2.6.md`、`.ai/CHANGELOG_AI.md` 中 2026-04-06 至 2026-04-11 的变更记录、`README.md`、`README.zh-CN.md`
+  - 最终选择：复用既有 release 文档结构与 README 写法，做最小范围文档更新，不新增第二套发布模板
+- 验证方式：
+  - 执行 `rg -n "latest existing external release|当前仓库内最新现有对外 release|当前最新文档|V2\\.2\\.20"`，确认 README 与 release 文档引用一致
+  - 执行 `git diff -- README.md README.zh-CN.md release/V2.2.20.md`，确认改动仅限 release 文档新增与 README 过时引用修正
+
 ## [2026-04-11] 校正仓库忽略规则并显式区分共享配置与私有配置
 - 背景/需求：用户要求检查 `.gitignore` 是否合理，并按 README 约定确保后端 `application.yaml` 需要提交、`application-local.yaml` 因含敏感信息不应提交。
 - 修改类型：chore
