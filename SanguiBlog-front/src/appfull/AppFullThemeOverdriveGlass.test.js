@@ -22,6 +22,18 @@ assert.match(
     '主题超频提示应为冷却和开启状态提供玻璃模板辅助文案'
 );
 
+assert.match(
+    source,
+    /top=\{getGlassPopupToastTop\(layoutContextValue\.headerHeight\)\}/,
+    '主题超频提示应复用 AppFull 中已存在的 layoutContextValue.headerHeight，而不是引用未定义变量'
+);
+
+assert.doesNotMatch(
+    source,
+    /top=\{getGlassPopupToastTop\(headerHeight \|\| NAVIGATION_HEIGHT\)\}/,
+    '主题超频提示不应直接引用未在 SanGuiBlog 作用域定义的 headerHeight'
+);
+
 assert.doesNotMatch(
     source,
     /bg-black text-\[#FFD700\][\s\S]*shadow-\[8px_8px_0px_0px_#FF0080\]/,

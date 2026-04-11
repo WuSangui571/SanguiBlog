@@ -5,6 +5,24 @@
 
 ---
 
+## [2026-04-11] 修复主题超频玻璃提示引用未定义变量导致前端白屏
+- 背景/需求：用户反馈上一轮彩蛋玻璃化后前端白屏，控制台报错 `Uncaught ReferenceError: headerHeight is not defined at SanGuiBlog (AppFull.jsx:1487:44)`。
+- 修改类型：fix
+- 影响范围：顶部主题超频/冷却玻璃提示定位、主题超频回归测试
+- 变更摘要：
+  1) 排查确认根因是 `AppFull.jsx` 中主题超频提示接入 `GlassPopupToast` 时错误引用了 `Navigation.jsx` 作用域里的 `headerHeight`，而 `SanGuiBlog` 组件实际只有 `layoutContextValue.headerHeight` 可用。
+  2) 更新 `AppFullThemeOverdriveGlass.test.js`，锁定主题超频提示必须使用 `layoutContextValue.headerHeight`，并禁止再次写回 `headerHeight || NAVIGATION_HEIGHT` 这种未定义变量引用。
+  3) 将主题超频提示的 `top` 改为 `getGlassPopupToastTop(layoutContextValue.headerHeight)`，复用当前页面已经提供给 `LayoutOffsetContext.Provider` 的真实头部高度，消除运行时 ReferenceError。
+  4) 本次是 V2.2.20 内部回归修复，不单独提升站点版本号。
+- 涉及文件：
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/AppFullThemeOverdriveGlass.test.js`
+- 验证方式：
+  - 执行 `node .\src\appfull\AppFullThemeOverdriveGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleListEasterEggGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\ui\GlassPopupToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 将头像与主题切换彩蛋适配为玻璃风格并升级到 V2.2.20
 - 背景/需求：用户反馈首页博主信息卡片头像的“转速过快/眼冒金星”彩蛋，以及顶部导航主题切换按钮的“超频模式”彩蛋仍是旧的黑边赛博风格，和当前站点玻璃体系不一致；希望优先复用现有站点玻璃弹出模板，若不适合则至少整体改成玻璃风格。
 - 修改类型：fix

@@ -1484,7 +1484,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             <GlassPopupToast
                 open={themeOverdriveNotice}
                 isDarkMode={isDarkMode}
-                top={getGlassPopupToastTop(headerHeight || NAVIGATION_HEIGHT)}
+                top={getGlassPopupToastTop(layoutContextValue.headerHeight)}
                 icon={<Sparkles size={18} strokeWidth={2.5} />}
                 title={themeOverdriveMessage || '超频模式'}
                 description={themeOverdriveMessage === '冷却中…请稍候' ? '主题系统正在降温' : '主题能量已进入玻璃超频态'}
