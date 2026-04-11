@@ -78,6 +78,30 @@ assert.match(
 
 assert.match(
     source,
+    /background:\s*isDarkMode\s*\?\s*'linear-gradient\(/,
+    '分享成功提示卡片应恢复半透明渐变玻璃底，而不是固定纯底色'
+);
+
+assert.match(
+    source,
+    /transform: 'translateZ\(0\)'/,
+    '分享成功提示卡片应提前建立合成层，减少玻璃效果首帧延迟'
+);
+
+assert.match(
+    source,
+    /backfaceVisibility: 'hidden'/,
+    '分享成功提示卡片应隐藏背面绘制，减少移动端首帧闪动'
+);
+
+assert.doesNotMatch(
+    source,
+    /backgroundColor: isDarkMode \? 'rgba\(15, 23, 42, 0\.88\)' : 'rgba\(255, 255, 255, 0\.92\)'/,
+    '分享成功提示不应退化为高不透明度的固定背景色'
+);
+
+assert.match(
+    source,
     /shareToastTimerRef\.current = setTimeout\(\(\) => setShowShareToast\(false\), 2200\)/,
     '分享成功提示应使用统一 timer ref 控制自动消失'
 );

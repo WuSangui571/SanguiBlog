@@ -5,6 +5,33 @@
 
 ---
 
+## [2026-04-11] 恢复文章页分享复制提示的玻璃质感并保持首帧无延迟并升级到 V2.2.16
+- 背景/需求：用户确认分享复制提示的位置和首帧延迟问题已经修好，但反馈当前卡片更像固定底色，不再像真正的玻璃；要求先评估能否在恢复玻璃质感的同时继续保持首帧无视觉延迟，若不能同时满足则保持现状不动。
+- 修改类型：fix
+- 影响范围：文章详情页分享复制提示卡片的玻璃背景表现、首帧合成稳定性、分享提示回归测试、站点版本号
+- 变更摘要：
+  1) 复盘当前实现后确认“玻璃感变弱”的根因是上一次为了兜底首帧稳定性，给分享提示卡片补上了更实的 `backgroundColor`，虽然消除了首帧延迟，但也把玻璃层的通透感压成了更像固定底色的观感。
+  2) 更新 `ArticleDetailShareToast.test.js`，先锁定分享提示卡片必须恢复半透明渐变玻璃底，同时继续保留 `backdropFilter / WebkitBackdropFilter`，并增加 `translateZ(0)`、`backfaceVisibility: hidden` 这类首帧合成稳定性断言，防止再次在“玻璃感”和“首帧稳定”之间回退。
+  3) 将分享提示卡片的内层背景从单纯 `backgroundColor` 改为半透明渐变玻璃底，并继续显式声明 `backdropFilter / WebkitBackdropFilter`；同时为卡片增加 `transform: translateZ(0)` 与 `backfaceVisibility: hidden`，在恢复玻璃质感的同时维持首帧无透明延迟。
+  4) 将站点版本号从 `V2.2.15` 升级为 `V2.2.16`，同步更新后端 `site.version` 与中英文 README 当前版本说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailShareToast.test.js`
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `README.md`
+  - `README.zh-CN.md`
+- 检索与复用策略：
+  - 检索关键词：`shareToastLayer` / `backgroundColor` / `background:` / `backdropFilter` / `home-ios-card` / `ArticleDetailShareToast`
+  - 候选实现：`ArticleDetail.jsx` 的分享提示 portal、`home-ios-card` 玻璃卡片基础样式、`ArticleDetailShareToast.test.js` 既有回归测试、`StatsStrip.jsx` 的 portal 浮层模式
+  - 最终选择：继续复用同一套 `shareToastLayer`、`home-ios-card` 视觉语言和回归测试，只调整分享提示卡片内层背景与首帧合成兜底，不新增组件
+- 风险点：
+  - 玻璃感恢复后背景通透度会比上一版更高；当前已通过显式模糊和合成层兜底平衡视觉质感与稳定性，但不同移动端浏览器的真实观感仍可能略有差异。
+- 验证方式：
+  - 执行 `node .\src\appfull\public\ArticleDetailShareToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+
 ## [2026-04-11] 将文章页分享复制提示上移到屏幕偏上并修复首帧透明感并升级到 V2.2.15
 - 背景/需求：用户反馈分享复制提示即使上移后仍不够显眼，希望显示在屏幕偏上的位置；同时提示卡片刚出现的一瞬间背景像是半透明的，过一会才有完整玻璃特效，需要一起修复。
 - 修改类型：fix

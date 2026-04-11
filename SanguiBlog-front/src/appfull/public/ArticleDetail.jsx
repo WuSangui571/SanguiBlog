@@ -1162,9 +1162,13 @@ const ArticleDetail = ({
                             <div
                                 className={`relative overflow-hidden px-4 py-3 ${glassCard} home-ios-card--static ${isDarkMode ? 'text-white border-white/12' : 'text-black border-white/75'} shadow-[0_20px_60px_rgba(15,23,42,0.22)]`}
                                 style={{
-                                    backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255, 255, 255, 0.92)',
+                                    background: isDarkMode
+                                        ? 'linear-gradient(160deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.06) 46%, rgba(15, 23, 42, 0.3) 100%), rgba(15, 23, 42, 0.22)'
+                                        : 'linear-gradient(160deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.38) 46%, rgba(244, 248, 255, 0.42) 100%), rgba(255, 255, 255, 0.22)',
                                     backdropFilter: 'blur(14px) saturate(1.01)',
-                                    WebkitBackdropFilter: 'blur(14px) saturate(1.01)'
+                                    WebkitBackdropFilter: 'blur(14px) saturate(1.01)',
+                                    transform: 'translateZ(0)',
+                                    backfaceVisibility: 'hidden'
                                 }}
                             >
                                 <div className={`absolute inset-x-8 -top-10 h-20 rounded-full blur-2xl ${isDarkMode ? 'bg-emerald-400/18' : 'bg-[#FFD700]/28'}`} />
