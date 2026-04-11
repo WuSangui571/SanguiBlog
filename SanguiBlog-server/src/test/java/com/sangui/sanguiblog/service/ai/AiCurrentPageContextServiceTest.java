@@ -65,6 +65,25 @@ class AiCurrentPageContextServiceTest {
     }
 
     @Test
+    void shouldExplicitlyStateImageRecognitionIsUnavailableWhenAskedAboutImageDetails() {
+        AiCurrentPageContextService service = new AiCurrentPageContextService();
+
+        AiCurrentPageContextDto context = new AiCurrentPageContextDto();
+        context.setPageType("article");
+        context.setTitle("带图博客");
+        context.setContent("这里是文章正文内容。");
+        context.setImageCount(3);
+
+        AiCurrentPageContextService.PageContextAdvice advice = service.advise("讲解下文中的配图信息", context);
+
+        assertTrue(advice.useContext());
+        assertTrue(advice.systemContext().contains("当前暂未实装图片识别功能"));
+        assertTrue(advice.systemContext().contains("只能确认本文包含 3 张图片"));
+        assertTrue(advice.systemContext().contains("不能判断图片里具体展示了什么"));
+        assertTrue(advice.systemContext().contains("不要编造任何图中细节"));
+    }
+
+    @Test
     void shouldUseLoginPageContextWhenQuestionRefersToCurrentPage() {
         AiCurrentPageContextService service = new AiCurrentPageContextService();
 

@@ -5,6 +5,36 @@
 
 ---
 
+## [2026-04-11] 收紧 AI 当前文章图片数量口径并禁止编造配图内容
+- 背景/需求：上一轮让 AI 知道当前文章有图片后，用户继续反馈两个细节：文章正文内实际有 3 张图但 AI 说有 4 张，原因是把封面图也计入了图片数量；另外当用户要求 AI 讲解文中的配图信息时，AI 会编造图片里的具体内容，而当前并未实装图片识别功能。
+- 修改类型：fix
+- 影响范围：AI 当前页面临时上下文、文章正文图片数量统计、配图内容问答能力边界、相关前后端回归测试
+- 变更摘要：
+  1) 在 `aiCurrentPageContext.js` 中收紧文章图片数量口径：`imageCount` 只统计文章正文内的 Markdown 图片语法与 HTML `<img>`，不再统计 `coverImage` / 文章封面图。
+  2) 保持 Markdown 与 HTML 同时存在时取较大值的策略，避免同一正文双格式返回时重复计数。
+  3) 在 `AiCurrentPageContextService` 中新增图片/配图/截图/图中等问法识别，使“讲解下文中的配图信息”这类问题也会触发当前页面上下文。
+  4) 当文章含正文图片且用户询问图片/配图具体内容时，system context 会明确要求回答“当前暂未实装图片识别功能”，只能确认正文包含多少张图片/配图引用，不能判断图中具体展示内容，也不要编造图中细节。
+  5) 更新前端测试，锁定“2 张正文图片 + 1 张封面图”时 `imageCount` 必须为 2；更新后端测试，锁定配图内容问法必须出现图片识别能力边界说明。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.js`
+  - `SanguiBlog-front/src/appfull/aiCurrentPageContext.test.js`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiCurrentPageContextService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiCurrentPageContextServiceTest.java`
+  - `.ai/CHANGELOG_AI.md`
+  - `.ai/PROJECT_MEMORY.md`
+- 检索与复用策略：
+  - 检索关键词：`countArticleImages` / `coverImage` / `imageCount` / `配图` / `图片内容` / `AiCurrentPageContextService`
+  - 候选实现：`aiCurrentPageContext.js` 正文图片统计、`aiCurrentPageContext.test.js` 前端上下文测试、`AiCurrentPageContextService.java` 当前页面 system context、`AiCurrentPageContextServiceTest.java` 后端上下文测试
+  - 最终选择：继续复用现有当前页面上下文链路，只修正统计口径和提示词能力边界，不新增图片识别服务或聊天接口
+- 验证方式：
+  - 先执行 `node .\src\appfull\aiCurrentPageContext.test.js`，看到封面计数断言按预期失败（实际 3，期望 2）
+  - 先执行 `mvn -q "-Dtest=AiCurrentPageContextServiceTest" test`，看到配图识别能力边界断言按预期失败
+  - 修改后执行 `node .\src\appfull\aiCurrentPageContext.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `mvn -q "-Dtest=AiCurrentPageContextServiceTest" test`（工作目录 `SanguiBlog-server`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `mvn -q -DskipTests compile`（工作目录 `SanguiBlog-server`）通过
+- 版本号说明：本次为上一轮 AI 当前文章图片上下文修复的口径收敛，不单独提升站点版本号。
+
 ## [2026-04-11] 修正 AI 评价当前博客时忽略文章图片的问题
 - 背景/需求：用户反馈在文章详情页向 AI 提问“如何评价这篇博客？”时，AI 回复中出现“图文结合（虽未展示）/若配图”等话术；但该文章实际包含图片。用户不要求 AI 识别图片具体内容，只要求至少能知道文章有图片，避免低级事实错误，同时回复不要变得过于生硬。
 - 修改类型：fix

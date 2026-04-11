@@ -17,6 +17,9 @@ public class AiCurrentPageContextService {
     private static final List<String> PAGE_EXPLAIN_KEYWORDS = List.of(
             "主要说了什么", "讲了什么", "总结", "概括", "内容是什么", "写了什么", "是干什么的", "有什么", "是什么页面"
     );
+    private static final List<String> IMAGE_DETAIL_KEYWORDS = List.of(
+            "配图", "图片", "插图", "截图", "图里", "图中", "图上", "图示", "图表", "配图信息", "图片内容", "讲解图片", "讲解配图"
+    );
 
     public PageContextAdvice advise(String question, AiCurrentPageContextDto currentPageContext) {
         if (!StringUtils.hasText(question) || !isValidContext(currentPageContext)) {
@@ -32,7 +35,9 @@ public class AiCurrentPageContextService {
     }
 
     private boolean shouldUseCurrentPageContext(String question) {
-        return containsAny(question, PAGE_REFERENCE_KEYWORDS) || containsAny(question, PAGE_EXPLAIN_KEYWORDS);
+        return containsAny(question, PAGE_REFERENCE_KEYWORDS)
+                || containsAny(question, PAGE_EXPLAIN_KEYWORDS)
+                || containsAny(question, IMAGE_DETAIL_KEYWORDS);
     }
 
     private boolean isValidContext(AiCurrentPageContextDto currentPageContext) {
@@ -68,6 +73,10 @@ public class AiCurrentPageContextService {
                 builder.append("【当前页面图片线索】本文包含 ")
                         .append(imageCount)
                         .append(" 张图片/配图引用。可以自然提到文章配有图片辅助表达；但不要臆测图片里的具体内容，也不要写成“如果有配图/若配图”。")
+                        .append(System.lineSeparator());
+                builder.append("如果用户要求你讲解、识别或描述文中的配图/图片/截图内容，你必须明确说明：当前暂未实装图片识别功能，只能确认本文包含 ")
+                        .append(imageCount)
+                        .append(" 张图片/配图引用，不能判断图片里具体展示了什么，也不要编造任何图中细节。")
                         .append(System.lineSeparator());
             }
             builder.append("【当前页面内容】").append(System.lineSeparator()).append(content);

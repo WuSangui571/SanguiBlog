@@ -49,7 +49,7 @@ const validArticle = {
     articleState: { status: "ok" },
   });
 
-  assert.equal(context.imageCount, 3);
+  assert.equal(context.imageCount, 2);
 }
 
 {

@@ -22,12 +22,10 @@ function countImageReferences(value) {
   return markdownImages.length + htmlImages.length;
 }
 
-function countArticleImages(article, summary) {
+function countArticleImages(article) {
   const markdownImageCount = countImageReferences(article?.contentMd);
   const htmlImageCount = countImageReferences(article?.contentHtml);
-  const inlineImageCount = Math.max(markdownImageCount, htmlImageCount);
-  const hasCoverImage = Boolean(trimText(summary?.coverImage || article?.coverImage));
-  return inlineImageCount + (hasCoverImage ? 1 : 0);
+  return Math.max(markdownImageCount, htmlImageCount);
 }
 
 function buildStaticPageContext(pageType, title, url, content, excerpt = "") {
@@ -56,7 +54,7 @@ function buildArticleContext(article, articleState) {
   const content = truncateText(rawContent, MAX_CONTEXT_CONTENT_LENGTH);
   const excerpt = trimText(summary.excerpt || article.excerpt);
   const articleId = summary.id || article.id;
-  const imageCount = countArticleImages(article, summary);
+  const imageCount = countArticleImages(article);
 
   if (!title || !content) {
     return null;
