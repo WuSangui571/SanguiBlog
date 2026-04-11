@@ -130,7 +130,7 @@ export default function Hero({ onStartReading, isDarkMode, backgroundResolved = 
                         transition={{ duration: 0.85, ease: [0.2, 0.8, 0.2, 1], delay: 0.18 }}
                         className="home-hero__headline"
                     >
-                        <span>在这里把问题想清楚，</span>
+                        <span>在这里把问题<br className="home-hero__mobile-break" />想清楚，</span>
                         <span>把代码写简单。</span>
                     </motion.h1>
 

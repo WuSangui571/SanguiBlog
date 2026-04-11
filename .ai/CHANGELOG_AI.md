@@ -5,6 +5,31 @@
 
 ---
 
+## [2026-04-11] 优化首页 Hero 手机端标题断行
+- 背景/需求：用户反馈首页 Hero 标题“在这里把问题想清楚，/把代码写简单。”在桌面端显示良好，但手机端自然换行会变成“在这里把问 / 题想清楚，/ 把代码写简单。”，视觉不够美观；希望手机端改为“在这里把问题 / 想清楚，/ 把代码写简单。”，同时保持桌面端不变。
+- 修改类型：fix
+- 影响范围：首页 Hero 标题 JSX、首页新版视觉 CSS、Hero 手机端标题回归测试
+- 变更摘要：
+  1) 检索确认首页首屏唯一入口仍为 `Hero.jsx`，标题视觉样式集中在 `homeRedesign.css`，现有手机端测试为 `HeroMobileHeadline.test.js`。
+  2) 在 `HeroMobileHeadline.test.js` 中新增受控换行断言，锁定手机端必须在“在这里把问题”和“想清楚，”之间断行，且该断行默认隐藏以避免影响桌面端。
+  3) 在 `Hero.jsx` 的首行文案中加入 `home-hero__mobile-break` 专用换行点；桌面端保持“在这里把问题想清楚，”一整行，手机端才显示该换行。
+  4) 在 `homeRedesign.css` 中默认隐藏该换行点，仅在 `max-width: 640px` 的手机端断点显示，复用现有标题字体、宽度、渐变与动效，不新增第二套首页标题组件。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/Hero.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/public/HeroMobileHeadline.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`在这里把问题` / `home-hero__headline` / `HeroMobileHeadline` / `homeRedesign.css` / `@media (max-width: 640px)`
+  - 候选实现：`Hero.jsx` 标题 JSX、`homeRedesign.css` 手机端标题样式、`HeroMobileHeadline.test.js` 移动端断言、`HeroPerformance.test.js` 动效回归、`HeroScrollTarget.test.js` 手机端滚动目标回归
+  - 最终选择：复用现有 Hero 与 CSS 断点，仅增加一个手机端专用换行点，不新增接口、模块、组件或第二套首页实现
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\HeroMobileHeadline.test.js`，看到受控换行断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\HeroMobileHeadline.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\HeroPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\HeroScrollTarget.test.js`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为首页移动端标题排版细节修复，不单独提升站点版本号。
+
 ## [2026-04-11] 修复 AI 助手回复难以选中和右键复制的问题
 - 背景/需求：用户反馈 AI 聊天界面中，助手回复内容较难通过鼠标拖动选中，偶尔选中后也难以通过右键菜单复制，只能使用 `Ctrl+C`；而用户自己发送的消息更容易选中并可右键复制。希望分析原因并修复。
 - 修改类型：fix

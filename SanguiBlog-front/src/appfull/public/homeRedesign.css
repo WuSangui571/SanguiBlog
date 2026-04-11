@@ -171,6 +171,10 @@
   -webkit-text-fill-color: transparent;
 }
 
+.home-hero__mobile-break {
+  display: none;
+}
+
 .home-hero__actions {
   margin-top: 8.8rem;
   display: flex;
@@ -617,6 +621,10 @@
     text-align: center;
     line-height: 1.18;
     letter-spacing: -0.045em;
+  }
+
+  .home-hero__mobile-break {
+    display: block;
   }
 
   .home-hero__actions {
