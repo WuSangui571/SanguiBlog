@@ -50,7 +50,7 @@ public class UploadController {
     }
 
     @PostMapping("/post-cover")
-    @PreAuthorize("hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
     public ApiResponse<Map<String, String>> uploadPostCover(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "postSlug", required = false) String postSlug) {
@@ -64,7 +64,9 @@ public class UploadController {
         String filename = UUID.randomUUID() + extension;
         try {
             Files.createDirectories(dir);
-            Files.copy(file.getInputStream(), dir.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
+            try (var inputStream = file.getInputStream()) {
+                Files.copy(inputStream, dir.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
             throw new RuntimeException("封面上传失败: " + e.getMessage(), e);
         }
@@ -77,7 +79,7 @@ public class UploadController {
     }
 
     @PostMapping("/post-assets/reserve")
-    @PreAuthorize("hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
     public ApiResponse<Map<String, String>> reservePostAssetsFolder(
             @RequestParam(value = "folder", required = false) String folder) {
         String slug = StringUtils.hasText(folder)
@@ -87,7 +89,7 @@ public class UploadController {
     }
 
     @PostMapping("/post-assets")
-    @PreAuthorize("hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')")
     public ApiResponse<Map<String, Object>> uploadPostAssets(
             @RequestParam(value = "folder", required = false) String folder,
             @RequestParam("files") List<MultipartFile> files) {

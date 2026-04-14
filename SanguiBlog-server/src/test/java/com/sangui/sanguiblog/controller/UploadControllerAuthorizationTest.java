@@ -13,9 +13,9 @@ class UploadControllerAuthorizationTest {
 
     @Test
     void shouldRequirePostCreateOrEditPermissionForArticleUploads() throws NoSuchMethodException {
-        assertPreAuthorize("uploadPostCover", "hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')");
-        assertPreAuthorize("reservePostAssetsFolder", "hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')");
-        assertPreAuthorize("uploadPostAssets", "hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')");
+        assertPreAuthorize("uploadPostCover", "hasRole('SUPER_ADMIN') or hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')");
+        assertPreAuthorize("reservePostAssetsFolder", "hasRole('SUPER_ADMIN') or hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')");
+        assertPreAuthorize("uploadPostAssets", "hasRole('SUPER_ADMIN') or hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')");
     }
 
     @Test

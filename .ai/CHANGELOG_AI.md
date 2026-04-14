@@ -5,6 +5,31 @@
 
 ---
 
+## [2026-04-14] 修复超级管理员文章封面上传长期停留在上传中的问题
+- 背景/需求：用户反馈超级管理员在后台新建/编辑文章时上传封面图会一直显示“上传中”，但失败尝试产生的文件已经落在 `/admin/settings` -> “存储清理” -> “未引用图片”中并可预览，说明封面文件已写入 `uploads/covers`，但上传链路没有正常收口到前端成功态；同时要求保留上一轮对文章上传权限的收紧，不重新放开给普通登录用户。
+- 修改类型：fix
+- 影响范围：文章封面上传接口、文章资源上传链路的超级管理员权限兜底、封面上传输入流关闭时机、上传控制器回归测试
+- 变更摘要：
+  1) 检索确认封面上传实际走的是 `UploadController.uploadPostCover`，前端入口是 `api.js -> uploadPostCover -> AdminPanel.jsx(handleCoverUpload / handleCoverUploadEdit)`；未引用图片展示来自 `MaintenanceService.scanUnusedAssets()`，因此“图片能在存储清理里看到”说明文件确实写进了 `uploads/covers/**`。
+  2) 在 `UploadControllerAuthorizationTest` 中先锁定文章封面、正文资源目录预留、正文资源上传三个方法都必须保留 `SUPER_ADMIN` 角色兜底，同时继续允许 `PERM_POST_CREATE / PERM_POST_EDIT` 两类文章权限角色访问。
+  3) 新增 `UploadControllerStreamHandlingTest`，先锁定 `uploadPostCover(...)` 在文件成功保存后必须主动关闭 `MultipartFile` 输入流，避免请求生命周期悬挂导致前端长期停留在“上传中”。
+  4) 生产代码中仅修改现有 `UploadController`：将三处文章上传接口的 `@PreAuthorize` 收口为 `hasRole('SUPER_ADMIN') or hasAnyAuthority('PERM_POST_CREATE','PERM_POST_EDIT')`，不新增接口、不新增权限码；同时将封面保存改为 `try-with-resources`，确保上传流在复制完成后立即关闭。
+  5) 未改动头像上传接口、未改动前端上传 API 形态、未改动未引用图片扫描逻辑，保持复用现有链路和最小改动。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/UploadController.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/controller/UploadControllerAuthorizationTest.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/controller/UploadControllerStreamHandlingTest.java`
+  - `.ai/CHANGELOG_AI.md`
+  - `.ai/PROJECT_MEMORY.md`
+- 检索与复用策略：
+  - 检索关键词：`uploadPostCover` / `post-cover` / `coverUploading` / `unused-assets` / `PERM_POST_CREATE` / `PERM_POST_EDIT` / `SUPER_ADMIN`
+  - 候选实现：`UploadController` 上传入口、`SecurityConfig` 的 `/api/upload/**` 全局认证、`UserPrincipal + PermissionService` 权限装配、`AdminPanel.jsx` 创建/编辑页封面上传处理、`MaintenanceService` 未引用图片扫描
+  - 最终选择：复用现有上传接口和现有文章权限码，只在 `UploadController` 做角色兜底与流关闭修复，不新建第二套上传接口/Service/前端状态机
+- 验证方式：
+  - 执行 `mvn -q "-Dtest=UploadControllerAuthorizationTest,UploadControllerStreamHandlingTest" test`（工作目录 `SanguiBlog-server`）通过
+  - 执行 `mvn -q -DskipTests compile`（工作目录 `SanguiBlog-server`）通过
+- 版本号说明：本次为后台文章封面上传修复，不单独提升站点版本号。
+
 ## [2026-04-11] 统一补齐暗色模式下的滚动条适配
 - 背景/需求：用户反馈后台个人资料页 `/admin/profile` 中“个人简介”在暗色模式下内容过长时会出现默认原生滚动条，视觉未适配；同时要求审阅整个站点，把其它类似的暗色模式滚动条漏配点一并补齐，且白天模式保持原样。
 - 修改类型：fix
