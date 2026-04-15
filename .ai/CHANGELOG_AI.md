@@ -13,8 +13,9 @@
   1) 检索确认首页真实主链为 `HomeView -> Hero -> ArticleList`，文章分页请求不是全局 Provider 初始化触发，而是 `ArticleList` 挂载后通过 `onQueryChange(loadPosts)` 发起。
   2) 将 `HomeView.jsx` 中的 `ArticleList` 改为 `React.lazy(() => import('./ArticleList.jsx'))`，避免文章区代码继续参与首页首屏同步解析。
   3) 在 `HomeView.jsx` 增加 `articleListEnabled` 门控：首屏先渲染 Hero 与轻量文章区占位，文章列表在滚动、接近视口或首屏动画后浏览器空闲时再启用。
-  4) 为 Hero CTA 增加 `handleHeroStartReading` 包装：用户主动点击“向下探索内容”时会立即启用文章区；若真实文章区尚未下载/渲染完成，则稳定滚到轻量 `home-status-strip/#posts` 占位处，让文章继续加载，不再排队二次跳到首篇文章。
-  5) 新增 `HomeViewDeferredArticles.test.js`，锁定首页文章区必须懒加载、具备空闲/近视口启用和 CTA 强制启用入口，避免回退到同步挂载。
+  4) 为 Hero CTA 增加 `handleHeroStartReading` 包装：用户主动点击“向下探索内容”时会先滚到始终挂载的 `home-deferred-posts-anchor` 稳定锚点，再启用文章区；若真实文章区尚未下载/渲染完成，则停留在轻量 `home-status-strip/#posts` 占位附近，让文章继续加载，不再排队二次跳到首篇文章。
+  5) 针对“刚进首页马上点击 CTA 仍会半路停下”的反馈，进一步把滚动锚点从会被占位/真实列表替换的节点中抽离出来，避免 React lazy 切换时卸载滚动目标导致浏览器中断平滑滚动。
+  6) 新增 `HomeViewDeferredArticles.test.js`，锁定首页文章区必须懒加载、具备空闲/近视口启用、稳定锚点和 CTA 强制启用入口，避免回退到同步挂载或可卸载锚点。
 - 涉及文件：
   - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
   - `SanguiBlog-front/src/appfull/public/HomeViewDeferredArticles.test.js`

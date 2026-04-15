@@ -5,11 +5,10 @@ import { DEFAULT_HERO_TAGLINE, DEFAULT_HOME_QUOTE } from '../shared.js';
 
 const ArticleList = React.lazy(() => import('./ArticleList.jsx'));
 
-function HomeArticleListPlaceholder({ isDarkMode, articleListGateRef }) {
+function HomeArticleListPlaceholder({ isDarkMode }) {
     return (
         <section
             id="posts"
-            ref={articleListGateRef}
             className={`relative z-20 w-full px-4 py-14 md:px-8 ${isDarkMode ? 'bg-[#09111d] text-gray-100' : 'bg-[#f8f8fa] text-gray-900'}`}
         >
             <div
@@ -130,19 +129,19 @@ export default function HomeView({
     }, [articleListEnabled, enableArticleList]);
 
     const handleHeroStartReading = useCallback(() => {
-        enableArticleList();
-
         if (typeof window !== 'undefined') {
-            window.requestAnimationFrame(() => {
-                if (typeof onScrollToPosts === 'function') {
-                    onScrollToPosts();
-                } else {
-                    document.getElementById('posts')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
+            if (articleListGateRef.current) {
+                articleListGateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else if (typeof onScrollToPosts === 'function') {
+                onScrollToPosts();
+            } else {
+                document.getElementById('posts')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            enableArticleList();
             return;
         }
 
+        enableArticleList();
         if (typeof onScrollToPosts === 'function') {
             onScrollToPosts();
         }
@@ -159,8 +158,14 @@ export default function HomeView({
                 backgroundResolved={metaLoaded}
                 backgroundUrl={homeBackgroundUrl}
             />
+            <div
+                id="home-deferred-posts-anchor"
+                ref={articleListGateRef}
+                className={`relative z-20 h-px scroll-mt-0 ${isDarkMode ? 'bg-[#09111d]' : 'bg-[#f8f8fa]'}`}
+                aria-hidden="true"
+            />
             {articleListEnabled ? (
-                <Suspense fallback={<HomeArticleListPlaceholder isDarkMode={isDarkMode} articleListGateRef={articleListGateRef} />}>
+                <Suspense fallback={<HomeArticleListPlaceholder isDarkMode={isDarkMode} />}>
                     <ArticleList
                         setView={setView}
                         setArticleId={setArticleId}
@@ -185,7 +190,7 @@ export default function HomeView({
                     />
                 </Suspense>
             ) : (
-                <HomeArticleListPlaceholder isDarkMode={isDarkMode} articleListGateRef={articleListGateRef} />
+                <HomeArticleListPlaceholder isDarkMode={isDarkMode} />
             )}
             <SiteFooter
                 isDarkMode={isDarkMode}

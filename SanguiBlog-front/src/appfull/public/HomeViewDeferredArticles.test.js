@@ -49,13 +49,18 @@ assert.match(
 );
 assert.match(
     source,
-    /id="posts"[\s\S]*ref=\{articleListGateRef\}/,
-    '文章区未启用前应保留轻量 posts 锚点，供滚动与近视口观察复用'
+    /id="home-deferred-posts-anchor"[\s\S]*ref=\{articleListGateRef\}/,
+    '首页应提供一个不随 ArticleList/占位切换而卸载的稳定滚动锚点'
 );
 assert.match(
     source,
     /id="home-status-strip"/,
     '文章区未启用前应保留系统状态条锚点，CTA 兜底滚动应稳定落到这里'
+);
+assert.match(
+    source,
+    /articleListGateRef\.current\?\.scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\);[\s\S]*enableArticleList\(\);/,
+    'Hero CTA 应先滚到稳定锚点，再启用文章区，避免懒加载替换目标节点导致滚动半路停止'
 );
 assert.doesNotMatch(
     source,
