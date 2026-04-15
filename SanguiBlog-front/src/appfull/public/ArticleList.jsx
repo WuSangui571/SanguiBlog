@@ -841,8 +841,8 @@ const ArticleList = ({
                                                 setArticleId(post.id);
                                                 setView('article');
                                             }}>
-                                                <div className="flex flex-col md:flex-row min-h-[360px]">
-                                                    <div className="md:w-1/3 w-full h-60 md:h-auto md:min-h-[360px] md:max-h-[360px] border-b-2 md:border-b-0 md:border-r-2 border-black relative overflow-hidden group">
+                                                <div className="flex flex-row md:flex-row min-h-[360px]">
+                                                    <div className="w-[38%] md:w-1/3 shrink-0 h-auto md:h-auto md:min-h-[360px] md:max-h-[360px] border-b-0 border-r-2 md:border-b-0 md:border-r-2 border-black relative overflow-hidden group">
                                                         {coverUrl ? (
                                                             <motion.img
                                                                 src={coverUrl}
@@ -914,7 +914,7 @@ const ArticleList = ({
                                                         </div>
                                                     </div>
 
-                                                    <div className={`flex-1 p-6 md:p-8 ${cardBg} group ${hoverBg} flex flex-col rounded-r-[24px]`} style={{ minHeight: '360px' }}>
+                                                    <div className={`flex-1 min-w-0 p-4 md:p-8 ${cardBg} group ${hoverBg} flex flex-col rounded-r-[24px]`} style={{ minHeight: '360px' }}>
                                                         <div className="flex flex-wrap items-center gap-2 mb-3">
                                                             <span className={`px-2 py-1 text-[11px] font-black rounded-full home-ios-chip ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                                                                 {post.parentCategory}
@@ -935,7 +935,7 @@ const ArticleList = ({
                                                         </div>
                                                         <div className="flex items-start gap-2 mb-3">
                                                             <h2
-                                                                className={`text-3xl font-black flex-1 transition-colors group-hover:text-[var(--title-color)] ${text}`}
+                                                                className={`text-xl md:text-3xl font-black flex-1 transition-colors group-hover:text-[var(--title-color)] ${text}`}
                                                                 style={{
                                                                     '--title-color': extractHexFromBgClass(post.color, '#6366F1'),
                                                                     WebkitLineClamp: 2,

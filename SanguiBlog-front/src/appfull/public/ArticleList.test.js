@@ -9,6 +9,11 @@ const source = fs.readFileSync(path.join(__dirname, 'ArticleList.jsx'), 'utf8');
 
 assert.match(source, /className="flex w-\[72px\] shrink-0 justify-end"/);
 assert.match(source, /opacity-0 pointer-events-none/);
+assert.match(source, /className="flex flex-row md:flex-row min-h-\[360px\]"/);
+assert.doesNotMatch(source, /className="flex flex-col md:flex-row min-h-\[360px\]"/);
+assert.match(source, /className="w-\[38%\] md:w-1\/3 shrink-0 h-auto md:h-auto md:min-h-\[360px\] md:max-h-\[360px\] border-b-0 border-r-2 md:border-b-0 md:border-r-2 border-black relative overflow-hidden group"/);
+assert.match(source, /className=\{`flex-1 min-w-0 p-4 md:p-8 \$\{cardBg\} group \$\{hoverBg\} flex flex-col rounded-r-\[24px\]`\}/);
+assert.match(source, /className=\{`text-xl md:text-3xl font-black flex-1 transition-colors group-hover:text-\[var\(--title-color\)\] \$\{text\}`\}/);
 assert.doesNotMatch(source, /\{keyword && \(/);
 assert.match(source, /最新评论/);
 assert.match(source, /home-ios-card--static p-5/);

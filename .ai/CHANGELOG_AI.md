@@ -5,6 +5,32 @@
 
 ---
 
+## [2026-04-15] 适配首页文章卡片手机端左右布局
+- 背景/需求：用户希望首页手机端文章列表卡片不再采用“上方封面、下方标题摘要”的上下结构，而是像桌面端一样改为“左侧图片/文字封面、右侧文章内容”的左右结构，同时明确要求只修改手机端，不改变电脑端，其它内容保持不变。
+- 修改类型：fix
+- 影响范围：首页文章列表手机端卡片布局、文章列表静态回归测试
+- 变更摘要：
+  1) 检索确认首页真实入口为 `HomeView.jsx -> ArticleList.jsx`，文章卡片外层复用 `TiltCard` 与 `home-ios-card--article`，当前上下结构来自 `ArticleList.jsx` 内部的 `flex flex-col md:flex-row`、移动端封面 `w-full h-60` 与移动端底部分割线。
+  2) 在 `ArticleList.test.js` 中先新增手机端左右布局回归断言，锁定移动端卡片必须使用 `flex-row`，并禁止回退到 `flex-col md:flex-row`。
+  3) 将文章卡片移动端外层改为左右结构：封面区域在移动端固定为左侧 `w-[38%] shrink-0`，移动端分割线从底部分割改为右侧分割；桌面端仍保留 `md:w-1/3`、`md:min-h-[360px]`、`md:max-h-[360px]` 与 `md:border-r-2`。
+  4) 为右侧内容区补充 `min-w-0`，并将移动端内边距与标题字号收紧为 `p-4`、`text-xl`，桌面端继续使用 `md:p-8`、`md:text-3xl`，避免手机端左右结构下内容被挤爆，同时不改变桌面端表现。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`ArticleList` / `home-ios-card--article` / `coverImage` / `ImageWithFallback` / `flex flex-col md:flex-row` / `md:w-1/3` / `ArticleList.test.js` / `ArticleListPerformance.test.js`
+  - 候选实现：`ArticleList.jsx` 文章卡片 JSX、`TiltCard.jsx` 玻璃卡片容器、`homeRedesign.css` 文章卡片修饰类、`ArticleList.test.js` 静态回归、`ArticleListPerformance.test.js` 移动性能模式
+  - 最终选择：复用现有 `ArticleList + TiltCard + home-ios-card--article`，仅修改文章卡片移动端 class，不新增组件、不新增接口、不另建移动端文章列表实现
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\ArticleList.test.js`，看到新增的手机端左右布局断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\ArticleListPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\ArticleListEasterEggGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `git diff --check` 通过，仅提示 `ArticleList.jsx` 未来被 Git 触碰时 CRLF 会替换为 LF
+- 版本号说明：本次为首页文章列表手机端展示细节修复，不单独提升站点版本号。
+
 ## [2026-04-15] 精简两个前台彩蛋提示文案
 - 背景/需求：用户希望调整两个彩蛋提示的文字展示：快速连点首页头像触发的“转速过快”类提示去掉“头像彩蛋”标题，只保留随机提示文案并居中放大；快速连点明暗主题切换触发的“超频模式已开启”提示去掉“主题能量已进入玻璃超频态”副文案，只保留主文案并居中放大。
 - 修改类型：fix
