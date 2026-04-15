@@ -96,6 +96,7 @@ const ArticleList = ({
     const [mobilePerformanceMode, setMobilePerformanceMode] = useState(false);
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
     const skipInitialQueryRef = useRef(skipInitialQuery);
+    const skipInitialQueryReleaseTimerRef = useRef(null);
     const warningTimerRef = useRef(null);
     const excerptOverflowTracker = useMemo(() => createArticleExcerptOverflowTracker(), []);
     const lastSpinAtRef = useRef(0);
@@ -265,6 +266,9 @@ const ArticleList = ({
 
     useEffect(() => {
         return () => {
+            if (skipInitialQueryReleaseTimerRef.current) {
+                clearTimeout(skipInitialQueryReleaseTimerRef.current);
+            }
             if (warningTimerRef.current) {
                 clearTimeout(warningTimerRef.current);
             }
@@ -318,7 +322,12 @@ const ArticleList = ({
 
     useEffect(() => {
         if (skipInitialQueryRef.current) {
-            skipInitialQueryRef.current = false;
+            if (skipInitialQueryReleaseTimerRef.current === null) {
+                skipInitialQueryReleaseTimerRef.current = setTimeout(() => {
+                    skipInitialQueryRef.current = false;
+                    skipInitialQueryReleaseTimerRef.current = null;
+                }, 0);
+            }
             return;
         }
         setCurrentPage(1);

@@ -19,7 +19,8 @@
   7) 针对用户指出的根因“下面根本没有东西，浏览器没法继续向下滚”，将文章区未启用前的 `HomeArticleListPlaceholder` 调整为至少预留一屏高度，确保 Hero CTA 刚点击时页面已有足够滚动空间，真实文章列表继续在滚动稳定后加载。
   8) 针对“Articles Preparing”临时占位卡与真实文章区加载态割裂的问题，移除该临时 UI，改为在 `HomeArticleListPlaceholder` 中复用 `StatsStrip` 并渲染轻量文章区骨架（文章搜索、文章加载中、桌面侧栏占位与底部金句），让 CTA 立即下滑时直接接近真实文章区视觉。
   9) 针对“马上点击 CTA 时仍有轻微卡顿”的反馈，确认根因是 `HomeView` 占位骨架与 `ArticleList` 挂载后的 `postsLoading` 卡片形成两段加载态；现改为点击/滚动启用前先通过现有 `onQueryChange({ page: 1, size })` 预取首页第一页，且必须观察到本次请求进入过 `postsLoading=true` 并回到 `false` 后，才显示真实 `ArticleList`；同时通过 `skipInitialQuery` 让 `ArticleList` 首次挂载时跳过重复查询，减少从一套加载态切到另一套加载态的顿挫。
-  10) 新增 `HomeViewDeferredArticles.test.js` 与 `ArticleList.test.js` 断言，锁定首页文章区必须懒加载、具备空闲/近视口启用、稳定锚点、CTA 滚动保护窗口、占位至少一屏高度、文章区同款加载骨架、初始数据就绪后再切换真实列表、预取后跳过 ArticleList 首次自动查询和 CTA 强制启用入口，避免回退到同步挂载、可卸载锚点、短占位、割裂临时提示卡或二次加载态。
+  10) 针对开发环境 `React.StrictMode` 会双执行 effect 导致 `skipInitialQuery` 第一遍跳过、第二遍又触发查询的问题，将 `ArticleList` 的首次跳过标记改为下一轮事件循环再释放，避免真实第一篇文章短暂出现后又被第二次查询打回 loading。
+  11) 新增 `HomeViewDeferredArticles.test.js` 与 `ArticleList.test.js` 断言，锁定首页文章区必须懒加载、具备空闲/近视口启用、稳定锚点、CTA 滚动保护窗口、占位至少一屏高度、文章区同款加载骨架、初始数据就绪后再切换真实列表、预取后跳过 ArticleList 首次自动查询、StrictMode 双 effect 下不重复查询和 CTA 强制启用入口，避免回退到同步挂载、可卸载锚点、短占位、割裂临时提示卡或二次加载态。
 - 涉及文件：
   - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
   - `SanguiBlog-front/src/appfull/public/HomeViewDeferredArticles.test.js`

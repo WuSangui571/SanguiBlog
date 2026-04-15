@@ -12,8 +12,13 @@ assert.match(source, /skipInitialQuery\s*=\s*false/);
 assert.match(source, /const\s+skipInitialQueryRef\s*=\s*useRef\(skipInitialQuery\)/);
 assert.match(
     source,
-    /if\s*\(skipInitialQueryRef\.current\)\s*\{[\s\S]*skipInitialQueryRef\.current\s*=\s*false;[\s\S]*return;[\s\S]*\}/,
-    'ArticleList 应允许首页预取后跳过首次自动查询，避免从占位骨架切换后又进入第二个加载态'
+    /const\s+skipInitialQueryReleaseTimerRef\s*=\s*useRef\(null\)/,
+    'ArticleList 应使用延迟释放计时器兼容 React StrictMode 的双 effect'
+);
+assert.match(
+    source,
+    /if\s*\(skipInitialQueryRef\.current\)\s*\{[\s\S]*setTimeout\(\(\)\s*=>\s*\{[\s\S]*skipInitialQueryRef\.current\s*=\s*false;[\s\S]*\},\s*0\);[\s\S]*return;[\s\S]*\}/,
+    'ArticleList 应延迟到下一轮事件循环再释放 skipInitialQuery，避免 StrictMode 第二次 effect 重新发起查询'
 );
 assert.match(source, /className="flex w-\[72px\] shrink-0 justify-end"/);
 assert.match(source, /opacity-0 pointer-events-none/);
