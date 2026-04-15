@@ -9,7 +9,7 @@ function HomeArticleListPlaceholder({ isDarkMode }) {
     return (
         <section
             id="posts"
-            className={`relative z-20 w-full px-4 py-14 md:px-8 ${isDarkMode ? 'bg-[#09111d] text-gray-100' : 'bg-[#f8f8fa] text-gray-900'}`}
+            className={`relative z-20 w-full min-h-screen px-4 pt-12 pb-16 md:px-8 ${isDarkMode ? 'bg-[#09111d] text-gray-100' : 'bg-[#f8f8fa] text-gray-900'}`}
         >
             <div
                 id="home-status-strip"

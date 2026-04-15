@@ -16,7 +16,8 @@
   4) 为 Hero CTA 增加 `handleHeroStartReading` 包装：用户主动点击“向下探索内容”时会先滚到始终挂载的 `home-deferred-posts-anchor` 稳定锚点，再启用文章区；若真实文章区尚未下载/渲染完成，则停留在轻量 `home-status-strip/#posts` 占位附近，让文章继续加载，不再排队二次跳到首篇文章。
   5) 针对“刚进首页马上点击 CTA 仍会半路停下”的反馈，进一步把滚动锚点从会被占位/真实列表替换的节点中抽离出来，避免 React lazy 切换时卸载滚动目标导致浏览器中断平滑滚动。
   6) 针对 CTA 平滑滚动本身会触发 `scroll` 监听、从而立刻激活 `ArticleList` 抢占滚动动画的问题，新增 `heroCtaScrollInProgressRef` 保护窗口：CTA 触发后的 720ms 内滚动/观察器/空闲预热不会启用文章区，等待滚动稳定后再加载真实列表。
-  7) 新增 `HomeViewDeferredArticles.test.js`，锁定首页文章区必须懒加载、具备空闲/近视口启用、稳定锚点、CTA 滚动保护窗口和 CTA 强制启用入口，避免回退到同步挂载或可卸载锚点。
+  7) 针对用户指出的根因“下面根本没有东西，浏览器没法继续向下滚”，将文章区未启用前的 `HomeArticleListPlaceholder` 调整为至少预留一屏高度，确保 Hero CTA 刚点击时页面已有足够滚动空间，真实文章列表继续在滚动稳定后加载。
+  8) 新增 `HomeViewDeferredArticles.test.js`，锁定首页文章区必须懒加载、具备空闲/近视口启用、稳定锚点、CTA 滚动保护窗口、占位至少一屏高度和 CTA 强制启用入口，避免回退到同步挂载、可卸载锚点或短占位。
 - 涉及文件：
   - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
   - `SanguiBlog-front/src/appfull/public/HomeViewDeferredArticles.test.js`

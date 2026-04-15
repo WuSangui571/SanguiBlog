@@ -59,6 +59,11 @@ assert.match(
 );
 assert.match(
     source,
+    /min-h-screen/,
+    '文章区未启用前的占位必须至少预留一屏高度，否则页面底部空间不足会导致 CTA 半路停下'
+);
+assert.match(
+    source,
     /articleListGateRef\.current\?\.scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\);[\s\S]*enableArticleList\(\);/,
     'Hero CTA 应先滚到稳定锚点，再启用文章区，避免懒加载替换目标节点导致滚动半路停止'
 );
