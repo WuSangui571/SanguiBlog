@@ -54,13 +54,28 @@ assert.match(
 );
 assert.match(
     source,
-    /id="home-status-strip"/,
-    '文章区未启用前应保留系统状态条锚点，CTA 兜底滚动应稳定落到这里'
+    /<StatsStrip\s+isDarkMode=\{isDarkMode\}\s+stats=\{stats\}\s*\/>/,
+    '文章区未启用前应复用 StatsStrip 保留系统状态条锚点，CTA 兜底滚动应稳定落到这里'
 );
 assert.match(
     source,
     /min-h-screen/,
     '文章区未启用前的占位必须至少预留一屏高度，否则页面底部空间不足会导致 CTA 半路停下'
+);
+assert.doesNotMatch(
+    source,
+    /Articles Preparing|文章区正在准备中/,
+    '文章区未启用前不应再显示临时的 Articles Preparing 卡片，应直接使用文章区加载骨架'
+);
+assert.match(
+    source,
+    /import\s+StatsStrip\s+from\s+['"]\.\/StatsStrip\.jsx['"]/,
+    '文章区未启用前的占位应复用 System Status 组件，避免和真实文章区视觉割裂'
+);
+assert.match(
+    source,
+    /文章搜索[\s\S]*文章加载中…/,
+    '文章区未启用前应展示文章搜索与文章加载中的骨架，而不是独立的临时提示卡'
 );
 assert.match(
     source,

@@ -1,32 +1,114 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Filter, Search } from 'lucide-react';
 import Hero from './Hero.jsx';
+import StatsStrip from './StatsStrip.jsx';
 import SiteFooter from '../ui/SiteFooter.jsx';
-import { DEFAULT_HERO_TAGLINE, DEFAULT_HOME_QUOTE } from '../shared.js';
+import { DEFAULT_HERO_TAGLINE, DEFAULT_HOME_QUOTE, MOCK_USER } from '../shared.js';
 
 const ArticleList = React.lazy(() => import('./ArticleList.jsx'));
 
-function HomeArticleListPlaceholder({ isDarkMode }) {
+function HomeArticleListPlaceholder({ isDarkMode, stats, author, homeQuote }) {
+    const displayAuthor = author || MOCK_USER;
+    const quote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
+    const text = isDarkMode ? 'text-gray-100' : 'text-gray-900';
+    const subText = isDarkMode ? 'text-gray-400' : 'text-gray-600';
+    const surface = `home-ios-card home-ios-card--static ${isDarkMode ? 'home-ios-card--dark text-gray-100' : 'text-gray-900'}`;
+    const inner = isDarkMode
+        ? 'border border-white/10 bg-white/[0.04]'
+        : 'border border-white/70 bg-white/55';
+
     return (
-        <section
-            id="posts"
-            className={`relative z-20 w-full min-h-screen px-4 pt-12 pb-16 md:px-8 ${isDarkMode ? 'bg-[#09111d] text-gray-100' : 'bg-[#f8f8fa] text-gray-900'}`}
-        >
-            <div
-                id="home-status-strip"
-                className={`mx-auto max-w-7xl rounded-[28px] border px-5 py-6 text-center backdrop-blur-xl ${
-                    isDarkMode
-                        ? 'border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.24)]'
-                        : 'border-white/70 bg-white/52 shadow-[0_18px_50px_rgba(15,23,42,0.08)]'
-                }`}
-            >
-                <p className="text-xs font-black uppercase tracking-[0.24em] opacity-60">
-                    Articles Preparing
-                </p>
-                <p className="mt-2 text-sm font-bold opacity-75">
-                    文章区正在准备中，滚动后会自动加载。
-                </p>
-            </div>
-        </section>
+        <div className={`relative z-20 home-redesign-surface ${isDarkMode ? 'bg-[#09111d] is-dark' : 'bg-[#f8f8fa]'}`}>
+            <StatsStrip isDarkMode={isDarkMode} stats={stats} />
+            <section id="posts" className="relative w-full min-h-screen pt-12 pb-16 overflow-hidden">
+                <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 flex flex-col lg:flex-row gap-12">
+                    <aside className="hidden lg:block w-full lg:w-1/4 space-y-8" aria-hidden="true">
+                        <div className={`${surface} p-6 text-center relative`}>
+                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border border-white/60 bg-[#FFD700] shadow-[0_8px_20px_rgba(0,0,0,0.16)] overflow-hidden">
+                                <img src={displayAuthor.avatar || MOCK_USER.avatar} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <h3 className={`mt-12 font-black text-2xl ${text}`}>
+                                {displayAuthor.displayName || displayAuthor.username}
+                            </h3>
+                            <p className={`text-sm font-bold mb-4 leading-relaxed ${subText}`}>
+                                {displayAuthor.title || '保持热爱，持续创作。'}
+                            </p>
+                            <div className="flex justify-center gap-2">
+                                <span className={`h-9 w-9 rounded-2xl ${inner}`} />
+                                <span className={`h-9 w-9 rounded-2xl ${inner}`} />
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 className="font-black text-xl mb-4 flex items-center gap-2 bg-black text-white p-2 transform -rotate-1 w-max">
+                                <Filter size={20} /> NAVIGATOR
+                            </h4>
+                            <div className="flex flex-col gap-3">
+                                {['全部', '编程', '研究生', '其他'].map((label, index) => (
+                                    <div
+                                        key={label}
+                                        className={`w-full p-3 font-bold rounded-2xl flex justify-between items-center ${
+                                            index === 0
+                                                ? 'bg-[#FFD700]/90 text-black border border-[#FFD700]/90'
+                                                : `${inner} ${text}`
+                                        }`}
+                                    >
+                                        <span>{label}</span>
+                                        <span className="text-sm">›</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className={`${surface} p-5`}>
+                            <div className="flex items-center justify-between gap-3">
+                                <h4 className={`font-black text-lg ${text}`}>最新评论</h4>
+                                <span className={`text-[10px] font-mono ${subText}`}>LOADING</span>
+                            </div>
+                            <div className="mt-4 space-y-3">
+                                <div className={`h-16 rounded-2xl ${inner}`} />
+                                <div className={`h-16 rounded-2xl ${inner}`} />
+                            </div>
+                        </div>
+                    </aside>
+
+                    <div className="flex-1 flex flex-col">
+                        <div className={`mb-8 ${surface} overflow-hidden ${text}`}>
+                            <div className="flex flex-col md:flex-row md:items-center gap-3 px-5 py-4">
+                                <div className="flex items-center justify-between gap-3 font-black text-lg tracking-tight">
+                                    <div className="flex items-center gap-2">
+                                        <Search size={18} />
+                                        <span>文章搜索</span>
+                                    </div>
+                                    <div className={`md:hidden text-[11px] font-mono font-black px-3 py-2 border border-white/70 rounded-xl ${isDarkMode ? 'bg-[#111827]/75 text-gray-100' : 'bg-[#FFD700]/90 text-black'}`}>
+                                        加载中
+                                    </div>
+                                </div>
+                                <div className="flex-1 flex flex-col md:flex-row md:items-center gap-3">
+                                    <div className={`flex items-center gap-2 flex-1 min-w-0 px-3 py-2 rounded-xl ${inner} ${text}`}>
+                                        <Search size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
+                                        <span className="text-sm font-semibold text-gray-400">请输入关键词搜索</span>
+                                    </div>
+                                    <div className={`hidden md:block text-[11px] font-mono font-black px-3 py-2 border border-white/70 rounded-xl ${isDarkMode ? 'bg-[#111827]/75 text-gray-100' : 'bg-[#FFD700]/90 text-black'}`}>
+                                        加载中
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-8">
+                            <div className={`p-10 text-center ${surface}`}>
+                                <p className={`text-xl font-black ${subText}`}>文章加载中…</p>
+                            </div>
+                        </div>
+                        <div className="flex justify-center mt-20">
+                            <div className={`${surface} px-8 py-4 text-center text-xl md:text-2xl font-black italic ${text}`}>
+                                {quote}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     );
 }
 
@@ -171,7 +253,7 @@ export default function HomeView({
                 aria-hidden="true"
             />
             {articleListEnabled ? (
-                <Suspense fallback={<HomeArticleListPlaceholder isDarkMode={isDarkMode} />}>
+                <Suspense fallback={<HomeArticleListPlaceholder isDarkMode={isDarkMode} stats={meta?.stats} author={meta?.author} homeQuote={homeQuote} />}>
                     <ArticleList
                         setView={setView}
                         setArticleId={setArticleId}
@@ -196,7 +278,7 @@ export default function HomeView({
                     />
                 </Suspense>
             ) : (
-                <HomeArticleListPlaceholder isDarkMode={isDarkMode} />
+                <HomeArticleListPlaceholder isDarkMode={isDarkMode} stats={meta?.stats} author={meta?.author} homeQuote={homeQuote} />
             )}
             <SiteFooter
                 isDarkMode={isDarkMode}
