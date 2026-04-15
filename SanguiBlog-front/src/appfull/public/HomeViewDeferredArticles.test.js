@@ -24,6 +24,21 @@ assert.match(
 );
 assert.match(
     source,
+    /const\s+\[initialArticleListReady,\s*setInitialArticleListReady\]\s*=\s*useState\(false\)/,
+    'HomeView 应区分“已启用 ArticleList”和“初始文章数据已准备好”，避免两套加载态直接切换'
+);
+assert.match(
+    source,
+    /const\s+initialArticleQueryRequestedRef\s*=\s*useRef\(false\)/,
+    'HomeView 应记录是否已经预取过首页第一页文章，避免 ArticleList 挂载后重复请求'
+);
+assert.match(
+    source,
+    /const\s+\[initialArticleQueryRequested,\s*setInitialArticleQueryRequested\]\s*=\s*useState\(false\)/,
+    'HomeView 应用 state 暴露是否已预取给渲染层，避免 render 中直接读取 ref.current'
+);
+assert.match(
+    source,
     /requestIdleCallback/,
     '首页文章区应在首屏动画后通过浏览器空闲时机预热'
 );
@@ -79,6 +94,26 @@ assert.match(
 );
 assert.match(
     source,
+    /const\s+requestInitialArticleList\s*=\s*useCallback/,
+    'HomeView 应在切换真实 ArticleList 前先用现有 onQueryChange 预取第一页文章'
+);
+assert.match(
+    source,
+    /onQueryChange\(\{\s*page:\s*1,\s*size:\s*pageSize\s*\}\)/,
+    'HomeView 首次预取应复用现有文章分页查询参数，不新增第二套接口'
+);
+assert.match(
+    source,
+    /const\s+shouldRenderArticleList\s*=\s*articleListEnabled\s*&&\s*initialArticleListReady/,
+    'HomeView 应等初始文章数据准备好后再从占位骨架切换到真实 ArticleList，减少加载态二次切换'
+);
+assert.match(
+    source,
+    /skipInitialQuery=\{initialArticleQueryRequested\}/,
+    'HomeView 预取过第一页后，应通知 ArticleList 跳过首次自动查询，避免第二个加载态'
+);
+assert.match(
+    source,
     /articleListGateRef\.current\?\.scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\);[\s\S]*enableArticleList\(\);/,
     'Hero CTA 应先滚到稳定锚点，再启用文章区，避免懒加载替换目标节点导致滚动半路停止'
 );
@@ -104,8 +139,8 @@ assert.doesNotMatch(
 );
 assert.match(
     source,
-    /articleListEnabled\s*\?\s*\(/,
-    'ArticleList 应只在文章区启用后渲染'
+    /shouldRenderArticleList\s*\?\s*\(/,
+    'ArticleList 应只在文章区启用且初始数据准备好后渲染'
 );
 
 console.log('HomeView deferred articles tests passed');

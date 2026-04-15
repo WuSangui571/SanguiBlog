@@ -8,6 +8,13 @@ const __dirname = path.dirname(__filename);
 const source = fs.readFileSync(path.join(__dirname, 'ArticleList.jsx'), 'utf8');
 const redesignCss = fs.readFileSync(path.join(__dirname, 'homeRedesign.css'), 'utf8');
 
+assert.match(source, /skipInitialQuery\s*=\s*false/);
+assert.match(source, /const\s+skipInitialQueryRef\s*=\s*useRef\(skipInitialQuery\)/);
+assert.match(
+    source,
+    /if\s*\(skipInitialQueryRef\.current\)\s*\{[\s\S]*skipInitialQueryRef\.current\s*=\s*false;[\s\S]*return;[\s\S]*\}/,
+    'ArticleList 应允许首页预取后跳过首次自动查询，避免从占位骨架切换后又进入第二个加载态'
+);
 assert.match(source, /className="flex w-\[72px\] shrink-0 justify-end"/);
 assert.match(source, /opacity-0 pointer-events-none/);
 assert.match(source, /\{endingQuote \? endingQuote : ''\}/);

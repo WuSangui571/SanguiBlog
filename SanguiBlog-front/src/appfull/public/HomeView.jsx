@@ -3,7 +3,7 @@ import { Filter, Search } from 'lucide-react';
 import Hero from './Hero.jsx';
 import StatsStrip from './StatsStrip.jsx';
 import SiteFooter from '../ui/SiteFooter.jsx';
-import { DEFAULT_HERO_TAGLINE, DEFAULT_HOME_QUOTE, MOCK_USER } from '../shared.js';
+import { DEFAULT_HERO_TAGLINE, DEFAULT_HOME_QUOTE, DEFAULT_PAGE_SIZE, MOCK_USER } from '../shared.js';
 
 const ArticleList = React.lazy(() => import('./ArticleList.jsx'));
 
@@ -131,11 +131,14 @@ export default function HomeView({
     setActiveParent,
     activeSub,
     setActiveSub,
-    pageSize
+    pageSize = DEFAULT_PAGE_SIZE
 }) {
     const [articleListEnabled, setArticleListEnabled] = useState(false);
+    const [initialArticleListReady, setInitialArticleListReady] = useState(false);
+    const [initialArticleQueryRequested, setInitialArticleQueryRequested] = useState(false);
     const articleListGateRef = useRef(null);
     const heroCtaScrollInProgressRef = useRef(false);
+    const initialArticleQueryRequestedRef = useRef(false);
     const footerInfo = meta?.footer || {};
     const footerYear = footerInfo.year || new Date().getFullYear();
     const footerBrand = footerInfo.brand || 'SANGUI BLOG';
@@ -150,6 +153,18 @@ export default function HomeView({
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
     const homeBackgroundUrl = meta?.homeBackgroundUrl || null;
 
+    const requestInitialArticleList = useCallback(() => {
+        if (initialArticleQueryRequestedRef.current) return;
+        if (typeof onQueryChange !== 'function') {
+            setInitialArticleListReady(true);
+            return;
+        }
+        initialArticleQueryRequestedRef.current = true;
+        setInitialArticleQueryRequested(true);
+        setInitialArticleListReady(false);
+        onQueryChange({ page: 1, size: pageSize });
+    }, [onQueryChange, pageSize]);
+
     const enableArticleList = useCallback(() => {
         setArticleListEnabled(true);
     }, []);
@@ -157,6 +172,7 @@ export default function HomeView({
     useEffect(() => {
         if (articleListEnabled) return undefined;
         if (typeof window === 'undefined') {
+            setInitialArticleListReady(true);
             enableArticleList();
             return undefined;
         }
@@ -168,6 +184,7 @@ export default function HomeView({
         const activate = () => {
             if (cancelled) return;
             if (heroCtaScrollInProgressRef.current) return;
+            requestInitialArticleList();
             enableArticleList();
             observer?.disconnect();
             window.removeEventListener('scroll', activate);
@@ -210,11 +227,23 @@ export default function HomeView({
                 window.clearTimeout(idleFallbackTimer);
             }
         };
-    }, [articleListEnabled, enableArticleList]);
+    }, [articleListEnabled, enableArticleList, requestInitialArticleList]);
+
+    useEffect(() => {
+        if (!articleListEnabled) return;
+        if (!initialArticleQueryRequestedRef.current) {
+            setInitialArticleListReady(true);
+            return;
+        }
+        if (!postsLoading) {
+            setInitialArticleListReady(true);
+        }
+    }, [articleListEnabled, postsLoading]);
 
     const handleHeroStartReading = useCallback(() => {
         if (typeof window !== 'undefined') {
             heroCtaScrollInProgressRef.current = true;
+            requestInitialArticleList();
             if (articleListGateRef.current) {
                 articleListGateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else if (typeof onScrollToPosts === 'function') {
@@ -229,11 +258,14 @@ export default function HomeView({
             return;
         }
 
+        requestInitialArticleList();
         enableArticleList();
         if (typeof onScrollToPosts === 'function') {
             onScrollToPosts();
         }
-    }, [enableArticleList, onScrollToPosts]);
+    }, [enableArticleList, onScrollToPosts, requestInitialArticleList]);
+
+    const shouldRenderArticleList = articleListEnabled && initialArticleListReady;
 
     return (
         <>
@@ -252,7 +284,7 @@ export default function HomeView({
                 className={`relative z-20 h-px scroll-mt-0 ${isDarkMode ? 'bg-[#09111d]' : 'bg-[#f8f8fa]'}`}
                 aria-hidden="true"
             />
-            {articleListEnabled ? (
+            {shouldRenderArticleList ? (
                 <Suspense fallback={<HomeArticleListPlaceholder isDarkMode={isDarkMode} stats={meta?.stats} author={meta?.author} homeQuote={homeQuote} />}>
                     <ArticleList
                         setView={setView}
@@ -275,6 +307,7 @@ export default function HomeView({
                         setActiveSub={setActiveSub}
                         homeQuote={homeQuote}
                         pageSize={pageSize}
+                        skipInitialQuery={initialArticleQueryRequested}
                     />
                 </Suspense>
             ) : (

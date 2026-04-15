@@ -69,7 +69,8 @@ const ArticleList = ({
     onScrollToPosts,
     backgroundEnabled = true,
     homeQuote,
-    pageSize = DEFAULT_PAGE_SIZE
+    pageSize = DEFAULT_PAGE_SIZE,
+    skipInitialQuery = false
 }) => {
     const [showWechat, setShowWechat] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -94,6 +95,7 @@ const ArticleList = ({
     const [newBadgeMotionEnabled, setNewBadgeMotionEnabled] = useState(true);
     const [mobilePerformanceMode, setMobilePerformanceMode] = useState(false);
     const endingQuote = (typeof homeQuote === 'string' && homeQuote.trim().length > 0) ? homeQuote : DEFAULT_HOME_QUOTE;
+    const skipInitialQueryRef = useRef(skipInitialQuery);
     const warningTimerRef = useRef(null);
     const excerptOverflowTracker = useMemo(() => createArticleExcerptOverflowTracker(), []);
     const lastSpinAtRef = useRef(0);
@@ -315,6 +317,10 @@ const ArticleList = ({
     }, [keywordText, pageSize, selectedCategoryId, selectedTagId]);
 
     useEffect(() => {
+        if (skipInitialQueryRef.current) {
+            skipInitialQueryRef.current = false;
+            return;
+        }
         setCurrentPage(1);
         paginationScrollReadyRef.current = false;
         if (onQueryChange) {
