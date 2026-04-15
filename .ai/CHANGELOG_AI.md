@@ -5,6 +5,30 @@
 
 ---
 
+## [2026-04-15] 首页文章区分阶段加载以降低首屏卡顿
+- 背景/需求：用户反馈首页进入时有点卡，希望按“首屏 Hero 入场动画优先、下方文章区分开加载”的思路优化，要求先分析后按推荐方案实现。
+- 修改类型：fix
+- 影响范围：首页组合视图、首页文章列表加载时机、Hero CTA 滚动链路、首页性能回归测试、AI 项目记忆
+- 变更摘要：
+  1) 检索确认首页真实主链为 `HomeView -> Hero -> ArticleList`，文章分页请求不是全局 Provider 初始化触发，而是 `ArticleList` 挂载后通过 `onQueryChange(loadPosts)` 发起。
+  2) 将 `HomeView.jsx` 中的 `ArticleList` 改为 `React.lazy(() => import('./ArticleList.jsx'))`，避免文章区代码继续参与首页首屏同步解析。
+  3) 在 `HomeView.jsx` 增加 `articleListEnabled` 门控：首屏先渲染 Hero 与轻量文章区占位，文章列表在滚动、接近视口或首屏动画后浏览器空闲时再启用。
+  4) 为 Hero CTA 增加 `handleHeroStartReading` 包装：用户主动点击“向下探索内容”时会立即启用文章区；移动端若首篇文章尚未渲染，会在文章数据就绪后继续滚到 `#home-first-post`。
+  5) 新增 `HomeViewDeferredArticles.test.js`，锁定首页文章区必须懒加载、具备空闲/近视口启用和 CTA 强制启用入口，避免回退到同步挂载。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `SanguiBlog-front/src/appfull/public/HomeViewDeferredArticles.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`HomeView` / `Hero` / `ArticleList` / `loadPosts` / `fetchPosts` / `onQueryChange` / `IntersectionObserver` / `requestIdleCallback` / `mobilePerformanceMode`
+  - 候选实现：`HomeView.jsx` 首页组合层、`ArticleList.jsx` 首次分页 effect、`useBlogData.jsx` 的 `loadPosts`、`ArchiveView.jsx` 的 `IntersectionObserver` 懒加载模式、已有 `HeroPerformance` 与 `ArticleListPerformance` 回归测试
+  - 最终选择：复用现有 `ArticleList + loadPosts + fetchPosts('/posts')` 链路，只在首页组合层调整挂载和启用时机，不新增第二套首页、不新增第二套文章接口
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\HomeViewDeferredArticles.test.js`，看到新增断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\HomeViewDeferredArticles.test.js`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为首页性能体验优化，未单独提升站点版本号。
+
 ## [2026-04-15] 支持旧站 301 跳转来源记录
 - 背景/需求：用户有其它站点通过 Nginx `return 301 https://sangui.top$request_uri;` 跳转到本站，希望后台 `/admin/analytics` 访问日志“来源”列能看到旧站域名。
 - 修改类型：feat
