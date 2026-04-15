@@ -139,6 +139,7 @@ export default function HomeView({
     const articleListGateRef = useRef(null);
     const heroCtaScrollInProgressRef = useRef(false);
     const initialArticleQueryRequestedRef = useRef(false);
+    const initialArticleLoadingStartedRef = useRef(false);
     const footerInfo = meta?.footer || {};
     const footerYear = footerInfo.year || new Date().getFullYear();
     const footerBrand = footerInfo.brand || 'SANGUI BLOG';
@@ -160,6 +161,7 @@ export default function HomeView({
             return;
         }
         initialArticleQueryRequestedRef.current = true;
+        initialArticleLoadingStartedRef.current = false;
         setInitialArticleQueryRequested(true);
         setInitialArticleListReady(false);
         onQueryChange({ page: 1, size: pageSize });
@@ -230,15 +232,17 @@ export default function HomeView({
     }, [articleListEnabled, enableArticleList, requestInitialArticleList]);
 
     useEffect(() => {
-        if (!articleListEnabled) return;
         if (!initialArticleQueryRequestedRef.current) {
-            setInitialArticleListReady(true);
             return;
         }
-        if (!postsLoading) {
+        if (postsLoading) {
+            initialArticleLoadingStartedRef.current = true;
+            return;
+        }
+        if (initialArticleLoadingStartedRef.current) {
             setInitialArticleListReady(true);
         }
-    }, [articleListEnabled, postsLoading]);
+    }, [initialArticleListReady, postsLoading]);
 
     const handleHeroStartReading = useCallback(() => {
         if (typeof window !== 'undefined') {

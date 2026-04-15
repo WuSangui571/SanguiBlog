@@ -34,6 +34,11 @@ assert.match(
 );
 assert.match(
     source,
+    /const\s+initialArticleLoadingStartedRef\s*=\s*useRef\(false\)/,
+    'HomeView 应记录初始文章请求是否已经真正进入 loading，避免请求刚发出时过早切换到真实 ArticleList'
+);
+assert.match(
+    source,
     /const\s+\[initialArticleQueryRequested,\s*setInitialArticleQueryRequested\]\s*=\s*useState\(false\)/,
     'HomeView 应用 state 暴露是否已预取给渲染层，避免 render 中直接读取 ref.current'
 );
@@ -106,6 +111,16 @@ assert.match(
     source,
     /const\s+shouldRenderArticleList\s*=\s*articleListEnabled\s*&&\s*initialArticleListReady/,
     'HomeView 应等初始文章数据准备好后再从占位骨架切换到真实 ArticleList，减少加载态二次切换'
+);
+assert.match(
+    source,
+    /if\s*\(postsLoading\)\s*\{[\s\S]*initialArticleLoadingStartedRef\.current\s*=\s*true;[\s\S]*return;[\s\S]*\}/,
+    'HomeView 应先观察到初始请求进入 postsLoading=true，再允许后续加载完成切换真实列表'
+);
+assert.match(
+    source,
+    /if\s*\(initialArticleLoadingStartedRef\.current\)\s*\{[\s\S]*setInitialArticleListReady\(true\);[\s\S]*\}/,
+    'HomeView 应在已观察到 loading 后等待 postsLoading=false，再切换真实 ArticleList'
 );
 assert.match(
     source,
