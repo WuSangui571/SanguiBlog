@@ -12,8 +12,20 @@ assert.match(
 
 assert.match(
     source,
-    /<GlassPopupToast[\s\S]*open=\{showSpinWarning\}[\s\S]*title="头像彩蛋"[\s\S]*description=\{spinWarning\}/,
-    '头像彩蛋短提示应通过玻璃模板展示动态提示文案'
+    /<GlassPopupToast[\s\S]*open=\{showSpinWarning\}[\s\S]*>\s*<span className="block w-full text-center text-base font-black tracking-\[0\.08em\]">[\s\S]*\{spinWarning\}[\s\S]*<\/span>\s*<\/GlassPopupToast>/,
+    '头像彩蛋短提示应通过玻璃模板只展示居中放大的动态提示文案'
+);
+
+assert.doesNotMatch(
+    source,
+    /title="头像彩蛋"/,
+    '头像彩蛋短提示不应再显示“头像彩蛋”标题'
+);
+
+assert.doesNotMatch(
+    source,
+    /description=\{spinWarning\}/,
+    '头像彩蛋短提示不应再把随机文案放在默认副标题区域'
 );
 
 assert.doesNotMatch(

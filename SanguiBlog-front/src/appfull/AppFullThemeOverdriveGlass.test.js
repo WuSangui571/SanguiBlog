@@ -12,14 +12,20 @@ assert.match(
 
 assert.match(
     source,
-    /<GlassPopupToast[\s\S]*open=\{themeOverdriveNotice\}[\s\S]*title=\{themeOverdriveMessage \|\| '超频模式'\}/,
-    '主题超频提示应通过玻璃模板承载现有动态文案'
+    /<GlassPopupToast[\s\S]*open=\{themeOverdriveNotice\}[\s\S]*>\s*<span className="block w-full text-center text-base font-black tracking-\[0\.08em\]">[\s\S]*\{themeOverdriveMessage \|\| '超频模式已开启'\}[\s\S]*<\/span>\s*<\/GlassPopupToast>/,
+    '主题超频提示应通过玻璃模板只展示居中放大的主文案'
 );
 
-assert.match(
+assert.doesNotMatch(
+    source,
+    /主题能量已进入玻璃超频态/,
+    '主题超频提示不应再显示“主题能量已进入玻璃超频态”副文案'
+);
+
+assert.doesNotMatch(
     source,
     /description=\{themeOverdriveMessage === '冷却中…请稍候'/,
-    '主题超频提示应为冷却和开启状态提供玻璃模板辅助文案'
+    '主题超频提示不应再使用默认副标题区域'
 );
 
 assert.match(

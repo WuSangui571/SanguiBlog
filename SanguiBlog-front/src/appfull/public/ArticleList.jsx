@@ -448,10 +448,11 @@ const ArticleList = ({
                     open={showSpinWarning}
                     isDarkMode={isDarkMode}
                     top={getGlassPopupToastTop(88)}
-                    icon={<Sparkles size={18} strokeWidth={2.5} />}
-                    title="头像彩蛋"
-                    description={spinWarning}
-                />
+                >
+                    <span className="block w-full text-center text-base font-black tracking-[0.08em]">
+                        {spinWarning}
+                    </span>
+                </GlassPopupToast>
                 <AnimatePresence>
                     {megaSpinActive && (
                         <motion.div

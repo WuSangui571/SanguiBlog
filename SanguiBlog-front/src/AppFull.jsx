@@ -62,7 +62,6 @@ import {
     resetAutoPageViewGuard
 } from "./appfull/shared.js";
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
 const BROADCAST_SESSION_KEY = 'sangui-broadcast-dismissed';
 const LazyAdminPanel = lazy(() =>
     import("./appfull/AdminPanel.jsx").then((module) => ({ default: module.AdminPanel }))
@@ -1511,10 +1510,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 open={themeOverdriveNotice}
                 isDarkMode={isDarkMode}
                 top={getGlassPopupToastTop(layoutContextValue.headerHeight)}
-                icon={<Sparkles size={18} strokeWidth={2.5} />}
-                title={themeOverdriveMessage || '超频模式'}
-                description={themeOverdriveMessage === '冷却中…请稍候' ? '主题系统正在降温' : '主题能量已进入玻璃超频态'}
-            />
+            >
+                <span className="block w-full text-center text-base font-black tracking-[0.08em]">
+                    {themeOverdriveMessage || '超频模式已开启'}
+                </span>
+            </GlassPopupToast>
             <div className="fixed top-0 left-0 right-0 z-50">
                 <div className="flex flex-col w-full">
                             <EmergencyBar

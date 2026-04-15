@@ -5,6 +5,35 @@
 
 ---
 
+## [2026-04-15] 精简两个前台彩蛋提示文案
+- 背景/需求：用户希望调整两个彩蛋提示的文字展示：快速连点首页头像触发的“转速过快”类提示去掉“头像彩蛋”标题，只保留随机提示文案并居中放大；快速连点明暗主题切换触发的“超频模式已开启”提示去掉“主题能量已进入玻璃超频态”副文案，只保留主文案并居中放大。
+- 修改类型：fix
+- 影响范围：首页头像彩蛋短提示、顶部主题超频提示、相关玻璃提示回归测试
+- 变更摘要：
+  1) 检索确认两个短提示都已复用 `GlassPopupToast`：头像彩蛋在 `ArticleList.jsx`，主题超频在 `AppFull.jsx`，共享模板支持通过 `children` 覆盖默认标题/描述结构。
+  2) 更新 `ArticleListEasterEggGlass.test.js`，先锁定头像彩蛋短提示不得再传 `title="头像彩蛋"` 或 `description={spinWarning}`，而是只渲染居中放大的 `{spinWarning}`。
+  3) 更新 `AppFullThemeOverdriveGlass.test.js`，先锁定主题超频提示不得再出现“主题能量已进入玻璃超频态”或默认副标题区域，而是只渲染居中放大的 `{themeOverdriveMessage || '超频模式已开启'}`。
+  4) 在 `ArticleList.jsx` 中将头像短提示改为 `GlassPopupToast` 自定义 children，只保留随机提示文案，去掉图标、标题与副标题结构，让文案在提示框中视觉居中。
+  5) 在 `AppFull.jsx` 中将主题超频提示改为 `GlassPopupToast` 自定义 children，只保留主文案，去掉副文案和图标，并清理不再使用的 `Sparkles` 导入。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/AppFull.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleListEasterEggGlass.test.js`
+  - `SanguiBlog-front/src/appfull/AppFullThemeOverdriveGlass.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`转速过快` / `头像彩蛋` / `超频模式已开启` / `玻璃超频态` / `GlassPopupToast` / `SPIN_WARNINGS` / `themeOverdrive`
+  - 候选实现：`ArticleList.jsx` 头像短提示、`AppFull.jsx` 主题超频提示、`GlassPopupToast.jsx` 共享玻璃模板、`ArticleListEasterEggGlass.test.js` 头像彩蛋玻璃测试、`AppFullThemeOverdriveGlass.test.js` 主题超频玻璃测试
+  - 最终选择：继续复用现有 `GlassPopupToast`，仅在两个调用点使用 `children` 覆盖默认双行结构，不新增提示组件、不修改触发阈值/持续时间/背景光效
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\ArticleListEasterEggGlass.test.js`，看到头像提示单行居中断言按预期失败
+  - 先执行 `node .\src\appfull\AppFullThemeOverdriveGlass.test.js`，看到主题超频提示单行居中断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\ArticleListEasterEggGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\AppFullThemeOverdriveGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\ui\GlassPopupToast.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为前台彩蛋提示文案展示细节修复，不单独提升站点版本号。
+
 ## [2026-04-15] 调整导航设置中彩蛋背景开关状态文字位置
 - 背景/需求：用户反馈首页导航条设置面板里的“彩蛋背景”左右滑动开关中，“已关闭 / 已开启”状态文字居中占满整条轨道，会和滑块圆点重叠；希望滑块在左时文字位于右侧空白区域居中，滑块在右时文字位于左侧空白区域居中，并保持开关位置、大小不变。
 - 修改类型：fix
