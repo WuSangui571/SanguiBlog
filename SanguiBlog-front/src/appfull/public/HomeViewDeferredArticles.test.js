@@ -54,6 +54,16 @@ assert.match(
 );
 assert.match(
     source,
+    /id="home-status-strip"/,
+    '文章区未启用前应保留系统状态条锚点，CTA 兜底滚动应稳定落到这里'
+);
+assert.doesNotMatch(
+    source,
+    /pendingFirstPostScroll|setPendingFirstPostScroll/,
+    '文章未加载完成时 CTA 不应再排队二次跳到首篇文章，避免先跳一半再补跳'
+);
+assert.match(
+    source,
     /articleListEnabled\s*\?\s*\(/,
     'ArticleList 应只在文章区启用后渲染'
 );

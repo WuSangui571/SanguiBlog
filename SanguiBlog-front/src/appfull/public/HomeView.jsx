@@ -13,6 +13,7 @@ function HomeArticleListPlaceholder({ isDarkMode, articleListGateRef }) {
             className={`relative z-20 w-full px-4 py-14 md:px-8 ${isDarkMode ? 'bg-[#09111d] text-gray-100' : 'bg-[#f8f8fa] text-gray-900'}`}
         >
             <div
+                id="home-status-strip"
                 className={`mx-auto max-w-7xl rounded-[28px] border px-5 py-6 text-center backdrop-blur-xl ${
                     isDarkMode
                         ? 'border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.24)]'
@@ -52,7 +53,6 @@ export default function HomeView({
     pageSize
 }) {
     const [articleListEnabled, setArticleListEnabled] = useState(false);
-    const [pendingFirstPostScroll, setPendingFirstPostScroll] = useState(false);
     const articleListGateRef = useRef(null);
     const footerInfo = meta?.footer || {};
     const footerYear = footerInfo.year || new Date().getFullYear();
@@ -130,26 +130,10 @@ export default function HomeView({
     }, [articleListEnabled, enableArticleList]);
 
     const handleHeroStartReading = useCallback(() => {
-        const isMobileViewport = typeof window !== 'undefined'
-            && typeof window.matchMedia === 'function'
-            && window.matchMedia('(max-width: 768px)').matches;
-
         enableArticleList();
-
-        if (isMobileViewport) {
-            setPendingFirstPostScroll(true);
-        }
 
         if (typeof window !== 'undefined') {
             window.requestAnimationFrame(() => {
-                if (isMobileViewport) {
-                    const firstPostElement = document.getElementById('home-first-post');
-                    if (firstPostElement) {
-                        firstPostElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        setPendingFirstPostScroll(false);
-                        return;
-                    }
-                }
                 if (typeof onScrollToPosts === 'function') {
                     onScrollToPosts();
                 } else {
@@ -163,16 +147,6 @@ export default function HomeView({
             onScrollToPosts();
         }
     }, [enableArticleList, onScrollToPosts]);
-
-    useEffect(() => {
-        if (!pendingFirstPostScroll || postsLoading) return;
-        const records = Array.isArray(postsPage?.records) ? postsPage.records : [];
-        if (!records.length || typeof document === 'undefined') return;
-        const firstPostElement = document.getElementById('home-first-post');
-        if (!firstPostElement) return;
-        firstPostElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setPendingFirstPostScroll(false);
-    }, [pendingFirstPostScroll, postsLoading, postsPage?.records]);
 
     return (
         <>
