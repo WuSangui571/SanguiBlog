@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-15] 修复首页文章卡片手机端摘要露半行
+- 背景/需求：用户反馈首页手机端文章卡片摘要如果存在第三行，第三行会只露出上半部分，下半部分被裁掉，视觉不美观；确认采用方案 A：手机端摘要彻底固定显示 2 行，桌面端继续恢复 3 行。
+- 修改类型：fix
+- 影响范围：首页文章卡片手机端摘要裁切、桌面端摘要 3 行展示、文章列表静态回归测试
+- 变更摘要：
+  1) 检索确认问题集中在 `homeRedesign.css` 的 `.sg-home-article-excerpt`：当前只有 `min-height: 3em` 与 `-webkit-line-clamp: 2`，没有显式 `line-height / height / max-height`，在移动端字体渲染下容易露出第三行半截。
+  2) 更新 `ArticleList.test.js`，先锁定手机端摘要必须同时具备 `line-height: 1.45`、`height/min-height/max-height: 2.9em` 与 `-webkit-line-clamp: 2`；桌面端必须恢复 `line-height: normal`、`height: auto`、`max-height: none` 与 `-webkit-line-clamp: 3`。
+  3) 在 `homeRedesign.css` 中将手机端摘要高度从模糊的 `min-height: 3em` 改为固定 2 行高度，彻底避免第三行露半截。
+  4) 在 `min-width: 768px` 桌面断点下恢复自动高度并继续保持 3 行截断，不改变桌面端文章卡片摘要信息量。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`sg-home-article-excerpt` / `line-clamp` / `min-height: 3em` / `ArticleList.test.js` / `homeRedesign.css`
+  - 候选实现：`homeRedesign.css` 摘要样式、`ArticleList.jsx` 摘要节点、`ArticleList.test.js` 静态回归、历史摘要 tooltip 逻辑、上一次手机端紧凑比例记录
+  - 最终选择：复用现有 `sg-home-article-excerpt` 专用类，只修正行高与高度约束，不新增组件、不改数据流、不改摘要 tooltip 逻辑
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\ArticleList.test.js`，看到新增的固定 2 行高度断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\ArticleListPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为首页文章卡片手机端摘要裁切细节修复，不单独提升站点版本号。
+
 ## [2026-04-15] 优化首页文章卡片手机端紧凑比例
 - 背景/需求：用户确认首页手机端文章卡片已经改为左右结构后，反馈当前比例仍显得“挤的地方很挤，空的地方很空”，并选择方案 B：手机端继续保持左右结构，但降低卡片高度和信息量，左图约 35%、右文约 65%、标题和摘要各 2 行、标签限制更紧、底部信息压缩，同时桌面端保持不变。
 - 修改类型：fix

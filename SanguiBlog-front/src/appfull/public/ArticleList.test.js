@@ -24,8 +24,8 @@ assert.match(source, /className=\{`flex-1 min-w-0 p-3\.5 md:p-8 \$\{cardBg\} gro
 assert.doesNotMatch(source, /style=\{\{ minHeight: '360px' \}\}/);
 assert.match(source, /className=\{`sg-home-article-title text-xl md:text-3xl font-black flex-1 transition-colors group-hover:text-\[var\(--title-color\)\] \$\{text\}`\}/);
 assert.match(source, /className=\{`sg-home-article-excerpt text-xs md:text-lg font-medium border-l-2 md:border-l-4 border-gray-300 pl-2 md:pl-4 pr-1 md:pr-2 \$\{subText\} \$\{excerptTooltip \? 'cursor-help' : ''\}`\}/);
-assert.match(redesignCss, /\.sg-home-article-excerpt \{[\s\S]*-webkit-line-clamp: 2;[\s\S]*\}/);
-assert.match(redesignCss, /@media \(min-width: 768px\) \{[\s\S]*\.sg-home-article-excerpt \{[\s\S]*-webkit-line-clamp: 3;[\s\S]*\}/);
+assert.match(redesignCss, /\.sg-home-article-excerpt \{[\s\S]*line-height: 1\.45;[\s\S]*height: 2\.9em;[\s\S]*min-height: 2\.9em;[\s\S]*max-height: 2\.9em;[\s\S]*-webkit-line-clamp: 2;[\s\S]*\}/);
+assert.match(redesignCss, /@media \(min-width: 768px\) \{[\s\S]*\.sg-home-article-excerpt \{[\s\S]*line-height: normal;[\s\S]*height: auto;[\s\S]*min-height: 4\.5em;[\s\S]*max-height: none;[\s\S]*-webkit-line-clamp: 3;[\s\S]*\}/);
 assert.doesNotMatch(source, /\{keyword && \(/);
 assert.match(source, /最新评论/);
 assert.match(source, /home-ios-card--static p-5/);

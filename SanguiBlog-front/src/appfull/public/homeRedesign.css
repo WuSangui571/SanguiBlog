@@ -498,7 +498,10 @@
 }
 
 .sg-home-article-excerpt {
-  min-height: 3em;
+  line-height: 1.45;
+  height: 2.9em;
+  min-height: 2.9em;
+  max-height: 2.9em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -512,7 +515,10 @@
   }
 
   .sg-home-article-excerpt {
+    line-height: normal;
+    height: auto;
     min-height: 4.5em;
+    max-height: none;
     -webkit-line-clamp: 3;
   }
 }
