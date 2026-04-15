@@ -5,6 +5,35 @@
 
 ---
 
+## [2026-04-15] 修复文章详情页“首页”悬浮按钮偶发竖向闪块
+- 背景/需求：用户反馈 `/article/xxx` 文章详情页左侧“首页”悬浮按钮在鼠标上下滚动或静止时，会偶发出现一条竖向分界线/闪块，希望定位原因并修复，同时保持文章页悬浮按钮和目录布局不回退。
+- 修改类型：fix
+- 影响范围：文章详情页桌面端“首页/评论”悬浮按钮、共享玻璃卡片样式的文章悬浮按钮专用修饰、文章悬浮按钮静态回归测试
+- 变更摘要：
+  1) 检索确认“首页/评论”悬浮按钮真实入口集中在 `ArticleDetail.jsx` 的 `floatingActionButtons` portal 中，当前按钮直接复用大卡片级 `home-ios-card` 玻璃样式。
+  2) 根因判断为：小型 fixed 悬浮按钮叠加了 `home-ios-card` 的 `backdrop-filter`、整面 `::before` 高光层、`overflow:hidden` 与 hover 位移，再叠加 Framer Motion transform 后，浏览器容易在透明玻璃层上出现 compositing/repaint 接缝，表现为截图中的竖向闪块。
+  3) 在 `ArticleDetailFloatingButtons.test.js` 中新增回归约束，锁定文章页 fixed 悬浮按钮必须挂载稳定修饰类，并关闭大卡片伪高光层与 hover 位移。
+  4) 在 `ArticleDetail.jsx` 中给三个桌面端文章悬浮按钮统一补充 `sg-article-floating-button` 修饰类，不改返回首页、跳评论、目录外轨、手机端隐藏等业务逻辑。
+  5) 在 `homeRedesign.css` 中为 `.home-ios-card.sg-article-floating-button` 增加专用覆盖：圆角保持胶囊、开启 `background-clip/isolation/backface-visibility/contain` 等绘制稳定兜底，关闭 `::before` 整面高光层，并禁用大卡片 hover 位移，避免后续滚动时再次出现竖向分界线。
+  6) 移除文章页 fixed 悬浮按钮自身的 Framer Motion hover 缩放，仅保留背景 hover 反馈，减少滚动或悬停时额外创建合成层的机会。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleDetail.jsx`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `SanguiBlog-front/src/appfull/public/ArticleDetailFloatingButtons.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`首页` / `评论` / `目录` / `sg-article-floating-actions` / `FLOATING_ACTION` / `home-ios-card` / `backdrop-filter` / `ArticleDetailFloatingButtons` / `闪` / `分界线`
+  - 候选实现：`ArticleDetail.jsx` 的 `floatingActionButtons` portal、`homeRedesign.css` 的 `home-ios-card` 玻璃样式、`ArticleDetailFloatingButtons.test.js` 文章悬浮按钮测试、`index.css` 的图片预览态浮层隐藏规则、历史 changelog 中文章页外轨布局修复记录
+  - 最终选择：复用现有文章详情页和共享玻璃样式体系，只新增文章悬浮按钮修饰类和 CSS 覆盖，不新增第二套按钮组件、页面入口或样式文件
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`，看到新增的 `sg-article-floating-button` 断言按预期失败
+  - 继续补充并执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`，看到移除 Framer Motion hover 缩放的断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\ArticleDetailFloatingButtons.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\ArticleDetailImagePreviewOverlay.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\ArticleDetailCodeBlockScrollbar.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为文章详情页前端视觉绘制稳定性修复，不单独提升站点版本号。
+
 ## [2026-04-14] 修复超级管理员文章封面上传长期停留在上传中的问题
 - 背景/需求：用户反馈超级管理员在后台新建/编辑文章时上传封面图会一直显示“上传中”，但失败尝试产生的文件已经落在 `/admin/settings` -> “存储清理” -> “未引用图片”中并可预览，说明封面文件已写入 `uploads/covers`，但上传链路没有正常收口到前端成功态；同时要求保留上一轮对文章上传权限的收紧，不重新放开给普通登录用户。
 - 修改类型：fix

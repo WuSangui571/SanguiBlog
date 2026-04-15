@@ -1077,8 +1077,7 @@ const ArticleDetail = ({
                     }}
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    whileHover={{ scale: 1.05 }}
-                    className={`pointer-events-auto absolute px-4 font-black inline-flex items-center justify-center transition-all ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white hover:bg-[#162033]/78' : 'bg-white/82 text-black hover:bg-white/95'}`}
+                    className={`sg-article-floating-button pointer-events-auto absolute px-4 font-black inline-flex items-center justify-center transition-all ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/72 text-white hover:bg-[#162033]/78' : 'bg-white/82 text-black hover:bg-white/95'}`}
                     style={{
                         top: 0,
                         left: articleRailOffset,
@@ -1094,9 +1093,8 @@ const ArticleDetail = ({
                         onClick={scrollToComments}
                         initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ scale: 1.05 }}
                         ref={commentJumpRef}
-                        className={`pointer-events-auto absolute px-4 font-black inline-flex items-center justify-center transition-all z-[66] ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/82 text-white hover:bg-[#162033]/88' : 'bg-white/90 text-black hover:bg-white'}`}
+                        className={`sg-article-floating-button pointer-events-auto absolute px-4 font-black inline-flex items-center justify-center transition-all z-[66] ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/82 text-white hover:bg-[#162033]/88' : 'bg-white/90 text-black hover:bg-white'}`}
                         style={{
                             top: 0,
                             right: 16,
@@ -1121,9 +1119,8 @@ const ArticleDetail = ({
                             onClick={scrollToComments}
                             initial={{ opacity: 0, y: -24 }}
                             animate={{ opacity: 1, y: 0 }}
-                            whileHover={{ scale: 1.05 }}
                             ref={commentJumpRef}
-                            className={`pointer-events-auto px-4 font-black inline-flex items-center justify-center transition-all z-[66] ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/82 text-white hover:bg-[#162033]/88' : 'bg-white/90 text-black hover:bg-white'}`}
+                            className={`sg-article-floating-button pointer-events-auto px-4 font-black inline-flex items-center justify-center transition-all z-[66] ${glassCard} ${isDarkMode ? 'bg-[#0F172A]/82 text-white hover:bg-[#162033]/88' : 'bg-white/90 text-black hover:bg-white'}`}
                             style={{
                                 width: FLOATING_ACTION_WIDTH,
                                 height: FLOATING_ACTION_HEIGHT

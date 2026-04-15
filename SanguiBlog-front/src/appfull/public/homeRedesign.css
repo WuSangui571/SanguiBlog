@@ -519,6 +519,24 @@
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+.home-ios-card.sg-article-floating-button {
+  border-radius: 999px;
+  background-clip: padding-box;
+  isolation: isolate;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: paint;
+  will-change: background-color, border-color, box-shadow, opacity;
+}
+
+.home-ios-card.sg-article-floating-button::before {
+  display: none;
+}
+
+.home-ios-card.sg-article-floating-button:hover {
+  transform: none;
+}
+
 .home-ios-card--shimmer::after {
   content: "";
   position: absolute;
