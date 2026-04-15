@@ -1097,7 +1097,7 @@ const ArticleList = ({
                         <div className="py-12 text-center mt-8">
                             <div className="inline-block relative">
                                 <div
-                                    className={`relative px-8 py-4 text-2xl font-black italic rounded-2xl ${glassSurface} ${cardBg} ${text}`}>
+                                    className={`relative px-8 py-4 text-lg md:text-2xl font-black italic rounded-2xl ${glassSurface} ${cardBg} ${text}`}>
                                     {endingQuote ? endingQuote : ''}
                                 </div>
                             </div>

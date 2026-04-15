@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-04-15] 调小首页底部金句手机端字号
+- 背景/需求：用户反馈去掉双引号后，首页文章页码下方、页脚上方的底部金句在手机端仍因字号偏大导致默认文案“阻挡你的不是别人，而是你自己。”换成两行，希望只调小手机端文本，桌面端保持不变。
+- 修改类型：fix
+- 影响范围：首页文章列表底部金句移动端字号、文章列表静态回归测试
+- 变更摘要：
+  1) 检索确认底部金句唯一渲染点仍位于 `ArticleList.jsx` 分页区之后、页脚之前，当前容器使用 `text-2xl`，会同时作用于手机端和桌面端。
+  2) 在 `ArticleList.test.js` 中新增回归断言，锁定金句容器必须使用 `text-lg md:text-2xl`，并禁止回退到无响应式断点的 `text-2xl`。
+  3) 将 `ArticleList.jsx` 金句容器字号改为 `text-lg md:text-2xl`：手机端降为 `text-lg`，`md` 及以上继续保持原桌面 `text-2xl`，其余间距、位置、圆角、字体粗细、斜体、颜色和渲染文案均不变。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`endingQuote` / `DEFAULT_HOME_QUOTE` / `homeQuote` / `signature-quote` / `text-2xl` / `分页金句` / `金句`
+  - 候选实现：`ArticleList.jsx` 底部金句渲染、`HomeView.jsx` 的 `homeQuote` 传参、`shared.js` 默认金句、`PROJECT_MEMORY.md` 中首页分页金句说明、`ArticleList.test.js` 静态回归
+  - 最终选择：复用现有 `ArticleList` 金句容器，仅把字号 class 改为 Tailwind 响应式写法，不新增 CSS、不新增组件、不改配置链路
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\ArticleList.test.js`，看到新增的移动端字号断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为首页底部文案移动端展示细节修复，不单独提升站点版本号。
+
 ## [2026-04-15] 去掉首页底部金句左右双引号
 - 背景/需求：用户希望去掉首页文章页码下方、页脚上方那句警示/金句两侧自动添加的中文双引号，直接显示后台或默认配置中的文字内容。
 - 修改类型：fix
