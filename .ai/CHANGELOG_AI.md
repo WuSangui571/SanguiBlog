@@ -5,6 +5,31 @@
 
 ---
 
+## [2026-04-15] 调整导航设置中彩蛋背景开关状态文字位置
+- 背景/需求：用户反馈首页导航条设置面板里的“彩蛋背景”左右滑动开关中，“已关闭 / 已开启”状态文字居中占满整条轨道，会和滑块圆点重叠；希望滑块在左时文字位于右侧空白区域居中，滑块在右时文字位于左侧空白区域居中，并保持开关位置、大小不变。
+- 修改类型：fix
+- 影响范围：导航设置浮层桌面端彩蛋背景开关、导航开关回归测试
+- 变更摘要：
+  1) 检索确认彩蛋背景桌面端设置入口集中在 `Navigation.jsx` 设置浮层中，按钮尺寸为 `w-24 h-9`，滑块尺寸为 `h-7 w-7`，开启态位移 `translate-x-0`，关闭态位移 `translate-x-[56px]`。
+  2) 在 `NavigationMobileBackgroundToggle.test.js` 中新增回归约束，锁定状态文字不能继续使用整轨 `w-full text-center`，必须根据 `backgroundEnabled` 在左右空白半区切换。
+  3) 将状态文字 span 改为 `absolute inset-y-0 flex items-center justify-center`，开启态使用 `left-9 right-2.5` 让“已开启”落在右侧空白区，关闭态使用 `left-2.5 right-9` 让“已关闭”落在左侧空白区。
+  4) 保持开关按钮 `w-24 h-9`、滑块 `h-7 w-7`、滑块 `translate-x-0 / translate-x-[56px]`、文字字号与字距不变，只调整状态文字所在区域。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `SanguiBlog-front/src/appfull/ui/NavigationMobileBackgroundToggle.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`彩蛋背景` / `已开启` / `已关闭` / `backgroundEnabled` / `onToggleBackground` / `sg_background_enabled` / `首页每页文章数`
+  - 候选实现：`Navigation.jsx` 桌面端设置浮层开关、`Navigation.jsx` 手机端抽屉区域、`AppFull.jsx` 的 `backgroundEnabled` 状态与本地持久化、`NavigationMobileBackgroundToggle.test.js` 现有导航背景开关测试、历史 changelog 中彩蛋背景开关尺寸与可读性调整记录
+  - 最终选择：复用现有桌面端设置浮层开关，只改状态文字 span 的定位，不新增组件、不改手机端、不改状态持久化
+- 验证方式：
+  - 先执行 `node .\src\appfull\ui\NavigationMobileBackgroundToggle.test.js`，看到新增的左右空白区文字定位断言按预期失败
+  - 修改后执行 `node .\src\appfull\ui\NavigationMobileBackgroundToggle.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\ui\NavigationNotificationSelect.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\backgroundEnabledDefault.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为导航设置开关视觉细节修复，不单独提升站点版本号。
+
 ## [2026-04-15] 修复文章详情页“首页”悬浮按钮偶发竖向闪块
 - 背景/需求：用户反馈 `/article/xxx` 文章详情页左侧“首页”悬浮按钮在鼠标上下滚动或静止时，会偶发出现一条竖向分界线/闪块，希望定位原因并修复，同时保持文章页悬浮按钮和目录布局不回退。
 - 修改类型：fix

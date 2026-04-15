@@ -575,7 +575,9 @@ const Navigation = ({
                                     isDarkMode ? 'border border-white/14 bg-white/90' : 'border border-black/8 bg-white'
                                 } ${backgroundEnabled ? 'translate-x-0' : 'translate-x-[56px]'}`}
                             />
-                            <span className={`relative z-[1] w-full text-center text-[10px] font-black tracking-[0.14em] transition-colors ${
+                            <span className={`pointer-events-none absolute inset-y-0 z-[1] flex items-center justify-center text-[10px] font-black tracking-[0.14em] transition-colors ${
+                                backgroundEnabled ? 'left-9 right-2.5' : 'left-2.5 right-9'
+                            } ${
                                 backgroundEnabled
                                     ? (isDarkMode ? 'text-amber-50' : 'text-amber-950')
                                     : (isDarkMode ? 'text-gray-300' : 'text-slate-500')
