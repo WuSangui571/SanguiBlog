@@ -5,6 +5,32 @@
 
 ---
 
+## [2026-04-15] 更新首页站点版本到 V2.2.21
+- 背景/需求：用户要求将项目当前版本号从 `V2.2.20` 更新到 `V2.2.21`，只需要首页版本展示同步，不生成 release 文档；同时检查根目录英文 README 与中文 README，若存在过时内容则同步更新。
+- 修改类型：docs
+- 影响范围：首页版本展示来源、首页/导航版本兜底值、根目录英文 README、根目录中文 README、AI 修改日志
+- 变更摘要：
+  1) 检索确认首页版本主链路为后端 `application.yaml` 的 `site.version` -> `/api/site/meta` -> `HomeView.jsx` 的 Hero `version` 与 `Navigation.jsx` 的 `siteVersion` 展示，不新增第二套版本配置。
+  2) 将 `SanguiBlog-server/src/main/resources/application.yaml` 中的 `site.version` 从 `V2.2.20` 更新为 `V2.2.21`。
+  3) 将 `HomeView.jsx` 与 `Navigation.jsx` 中仅用于 meta 未返回时的兜底版本同步为 `V2.2.21`，避免接口异常或本地静态预览时继续显示旧版本。
+  4) 检查 `README.md` 与 `README.zh-CN.md`：技术栈版本与当前 `pom.xml/package.json` 基本一致；仅“当前站点版本”相关说明仍停留在 `V2.2.20`，已同步更新为 `V2.2.21`，并补充近期首页移动端布局、重定向来源统计、文章区分阶段加载等 V2.2.20 之后的主要体验优化概述。
+  5) 按用户要求不新增 `release/V2.2.21.md`，README 中“当前仓库内最新现有对外 release 文档为 `release/V2.2.20.md`”保持不变。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `README.md`
+  - `README.zh-CN.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`V2.2.20` / `V2.2.21` / `site.version` / `siteVersion` / `meta?.version` / `release/V2` / `Current site version` / `当前站点版本号`
+  - 候选实现：`application.yaml` 的 `site.version`、`SiteService` 注入并返回 `SiteMetaDto.version`、`HomeView.jsx` Hero 版本传参、`Navigation.jsx` 品牌版本展示、`scripts/bump-version.ps1` 版本更新脚本、根目录中英文 README 当前版本说明
+  - 最终选择：复用现有 `site.version` 单一来源，只同步配置、展示兜底与 README 描述，不新增接口、不新增 release 文档、不改包版本号
+- 验证方式：
+  - 执行版本号检索，确认 `application.yaml`、首页兜底与 README 当前版本说明均已更新为 `V2.2.21`
+  - 执行 `git diff --check` 做静态格式检查
+- 版本号说明：本次为用户明确要求的小版本更新，按项目规则仅提升第三位：`V2.2.20` -> `V2.2.21`。
+
 ## [2026-04-15] 首页文章区分阶段加载以降低首屏卡顿
 - 背景/需求：用户反馈首页进入时有点卡，希望按“首屏 Hero 入场动画优先、下方文章区分开加载”的思路优化，要求先分析后按推荐方案实现。
 - 修改类型：fix
