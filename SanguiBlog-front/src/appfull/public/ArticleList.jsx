@@ -113,6 +113,7 @@ const ArticleList = ({
     const now = Date.now();
     const keywordText = appliedKeyword.trim();
     const cardEffectsDisabled = mobilePerformanceMode || !newBadgeMotionEnabled;
+    const visibleTagLimit = mobilePerformanceMode ? 1 : 3;
     const isPostNew = (dateStr) => {
         if (!dateStr) return false;
         const parsed = Date.parse(`${dateStr}T00:00:00`);
@@ -841,8 +842,8 @@ const ArticleList = ({
                                                 setArticleId(post.id);
                                                 setView('article');
                                             }}>
-                                                <div className="flex flex-row md:flex-row min-h-[360px]">
-                                                    <div className="w-[38%] md:w-1/3 shrink-0 h-auto md:h-auto md:min-h-[360px] md:max-h-[360px] border-b-0 border-r-2 md:border-b-0 md:border-r-2 border-black relative overflow-hidden group">
+                                                <div className="flex flex-row md:flex-row min-h-[200px] md:min-h-[360px]">
+                                                    <div className="w-[35%] md:w-1/3 shrink-0 min-h-[200px] md:min-h-[360px] md:max-h-[360px] border-b-0 border-r-2 md:border-b-0 md:border-r-2 border-black relative overflow-hidden group">
                                                         {coverUrl ? (
                                                             <motion.img
                                                                 src={coverUrl}
@@ -900,11 +901,11 @@ const ArticleList = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        <div className="relative z-10 p-6 h-full flex flex-col justify-between text-white">
-                                                            <span className="font-black text-5xl opacity-60 drop-shadow">
+                                                        <div className="relative z-10 p-3 md:p-6 h-full flex flex-col justify-between text-white">
+                                                            <span className="font-black text-2xl md:text-5xl opacity-60 drop-shadow">
                                                                 {(idx + 1 + (currentPage - 1) * pageSize).toString().padStart(2, '0')}
                                                             </span>
-                                                            <div>
+                                                            <div className="hidden md:block">
                                                                 <span
                                                                     className="bg-black/80 text-white px-2 py-1 text-xs font-bold uppercase mb-2 inline-block rounded">
                                                                     {post.parentCategory}
@@ -914,8 +915,8 @@ const ArticleList = ({
                                                         </div>
                                                     </div>
 
-                                                    <div className={`flex-1 min-w-0 p-4 md:p-8 ${cardBg} group ${hoverBg} flex flex-col rounded-r-[24px]`} style={{ minHeight: '360px' }}>
-                                                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                                                    <div className={`flex-1 min-w-0 p-3.5 md:p-8 ${cardBg} group ${hoverBg} flex flex-col rounded-r-[24px] min-h-[200px] md:min-h-[360px]`}>
+                                                        <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-2 md:mb-3">
                                                             <span className={`px-2 py-1 text-[11px] font-black rounded-full home-ios-chip ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                                                                 {post.parentCategory}
                                                             </span>
@@ -924,26 +925,24 @@ const ArticleList = ({
                                                                 {post.category}
                                                             </span>
                                                             <div className="flex flex-wrap gap-1 ml-auto">
-                                                                {tags.slice(0, 3).map(t => (
+                                                                {tags.slice(0, visibleTagLimit).map(t => (
                                                                     <span key={t}
                                                                         className={`px-2 py-0.5 text-[11px] font-black rounded-full home-ios-chip ${isDarkMode ? 'text-gray-200' : ''}`}>#{t}</span>
                                                                 ))}
-                                                                {tags.length > 3 && (
-                                                                    <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-black/80 text-white border border-white/35">+{tags.length - 3}</span>
+                                                                {tags.length > visibleTagLimit && (
+                                                                    <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-black/80 text-white border border-white/35">+{tags.length - visibleTagLimit}</span>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-start gap-2 mb-3">
+                                                        <div className="flex items-start gap-2 mb-2 md:mb-3">
                                                             <h2
-                                                                className={`text-xl md:text-3xl font-black flex-1 transition-colors group-hover:text-[var(--title-color)] ${text}`}
+                                                                className={`sg-home-article-title text-xl md:text-3xl font-black flex-1 transition-colors group-hover:text-[var(--title-color)] ${text}`}
                                                                 style={{
                                                                     '--title-color': extractHexFromBgClass(post.color, '#6366F1'),
                                                                     WebkitLineClamp: 2,
                                                                     display: '-webkit-box',
                                                                     WebkitBoxOrient: 'vertical',
-                                                                    overflow: 'hidden',
-                                                                    minHeight: '4.6rem',
-                                                                    maxHeight: '4.6rem'
+                                                                    overflow: 'hidden'
                                                                 }}
                                                             >
                                                                 {post.title}
@@ -964,14 +963,7 @@ const ArticleList = ({
                                                             <p
                                                                 ref={(element) => registerExcerptElement(post.id, element)}
                                                                 aria-label={excerptTooltip ? `文章摘要：${excerptTooltip}` : undefined}
-                                                                className={`text-base md:text-lg font-medium border-l-4 border-gray-300 pl-4 pr-2 ${subText} ${excerptTooltip ? 'cursor-help' : ''}`}
-                                                                style={{
-                                                                    minHeight: '4.5em',
-                                                                    display: '-webkit-box',
-                                                                    WebkitLineClamp: 3,
-                                                                    WebkitBoxOrient: 'vertical',
-                                                                    overflow: 'hidden'
-                                                                }}
+                                                                className={`sg-home-article-excerpt text-xs md:text-lg font-medium border-l-2 md:border-l-4 border-gray-300 pl-2 md:pl-4 pr-1 md:pr-2 ${subText} ${excerptTooltip ? 'cursor-help' : ''}`}
                                                             >
                                                                 {post.excerpt}
                                                             </p>
@@ -984,13 +976,13 @@ const ArticleList = ({
                                                             )}
                                                         </div>
 
-                                                        <div className="mt-auto pt-4">
+                                                        <div className="mt-auto pt-2 md:pt-4">
                                                             <div
-                                                                className={`flex justify-between items-center border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-black'} pt-4 border-dashed`}>
-                                                                <span className="font-mono font-bold text-xs bg-black text-white px-2 py-1 flex items-center gap-1">
+                                                                className={`flex justify-between items-center border-t md:border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-black'} pt-2 md:pt-4 border-dashed`}>
+                                                                <span className="font-mono font-bold text-[10px] md:text-xs bg-black text-white px-1.5 md:px-2 py-0.5 md:py-1 flex items-center gap-1">
                                                                     <Clock size={14} /> {post.date}
                                                                 </span>
-                                                                <div className={`flex gap-4 font-bold text-sm items-center ${text}`}>
+                                                                <div className={`flex gap-2 md:gap-4 font-bold text-xs md:text-sm items-center ${text}`}>
                                                                     <span className="flex items-center gap-1 hover:text-[#FF0080]">
                                                                         <Eye size={18} /> {viewCount}
                                                                     </span>

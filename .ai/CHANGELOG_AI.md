@@ -5,6 +5,33 @@
 
 ---
 
+## [2026-04-15] 优化首页文章卡片手机端紧凑比例
+- 背景/需求：用户确认首页手机端文章卡片已经改为左右结构后，反馈当前比例仍显得“挤的地方很挤，空的地方很空”，并选择方案 B：手机端继续保持左右结构，但降低卡片高度和信息量，左图约 35%、右文约 65%、标题和摘要各 2 行、标签限制更紧、底部信息压缩，同时桌面端保持不变。
+- 修改类型：fix
+- 影响范围：首页文章列表手机端卡片比例、文章卡片移动端信息密度、文章列表静态回归测试、首页重设计 CSS
+- 变更摘要：
+  1) 检索确认比例失衡根因仍集中在 `ArticleList.jsx` 文章卡片：移动端外层仍继承 `min-h-[360px]`，正文区还存在 inline `minHeight: '360px'`，导致手机端卡片过高；左侧 38% 封面和右侧完整桌面信息密度叠加后形成“左侧空、右侧挤”。
+  2) 更新 `ArticleList.test.js`，先锁定方案 B 的移动端约束：手机端卡片高度约 200px、左图 35%、右侧移除 inline 360px、高度通过 `md:` 保留桌面端、移动端标签限制为 1 个、摘要移动端 2 行桌面 3 行。
+  3) 在 `ArticleList.jsx` 中将手机端卡片外层改为 `min-h-[200px] md:min-h-[360px]`，封面改为 `w-[35%] md:w-1/3`，正文改为 `p-3.5 md:p-8 min-h-[200px] md:min-h-[360px]`，去掉正文区 inline 固定高度。
+  4) 降低移动端左侧封面叠加信息量：序号从移动端 `text-5xl` 收为 `text-2xl md:text-5xl`，左侧分类块仅桌面显示，避免手机端重复占用封面空间。
+  5) 移动端标签数量通过现有 `mobilePerformanceMode` 控制为 1 个，桌面仍显示 3 个；底部日期/浏览/评论区域的 gap、字号、padding、分割线厚度均只在移动端压缩，桌面端通过 `md:` 保持原节奏。
+  6) 在 `homeRedesign.css` 中新增 `sg-home-article-title` 与 `sg-home-article-excerpt` 两个文章卡片专用类，移动端标题保持 2 行紧凑高度，摘要 2 行；`min-width: 768px` 后恢复桌面标题高度与摘要 3 行。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.test.js`
+  - `SanguiBlog-front/src/appfull/public/homeRedesign.css`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`ArticleList` / `home-ios-card--article` / `min-h-[360px]` / `visibleTagLimit` / `mobilePerformanceMode` / `line-clamp` / `homeRedesign.css`
+  - 候选实现：`ArticleList.jsx` 文章卡片 JSX、`TiltCard.jsx` 玻璃卡片容器、`homeRedesign.css` 文章卡片样式、`ArticleList.test.js` 静态回归、历史 CHANGELOG 中首页文章卡片移动端左右布局记录
+  - 最终选择：继续复用现有 `ArticleList + TiltCard + homeRedesign.css`，只做手机端比例与信息密度的原位优化，不新增第二套移动端文章卡片组件
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\ArticleList.test.js`，看到方案 B 新增断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\ArticleListPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\ArticleListEasterEggGlass.test.js`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为首页文章列表手机端视觉比例优化，不单独提升站点版本号。
+
 ## [2026-04-15] 适配首页文章卡片手机端左右布局
 - 背景/需求：用户希望首页手机端文章列表卡片不再采用“上方封面、下方标题摘要”的上下结构，而是像桌面端一样改为“左侧图片/文字封面、右侧文章内容”的左右结构，同时明确要求只修改手机端，不改变电脑端，其它内容保持不变。
 - 修改类型：fix
