@@ -565,6 +565,7 @@ ole_permissions in bulk.
   * 自 V2.1.271 起，`/sitemap.xml` 支持当 URL 规模超出阈值时返回 `<sitemapindex>` 并通过 `page` 参数分片拉取（`/sitemap.xml?page=1..N`），同时 `/sitemap.xml` 与 `/robots.txt` 支持 `ETag/If-None-Match` 条件请求以返回 304，降低爬虫重复抓取成本。
   * 若前端打点失败，`PostController` → `PostService.incrementViews` 仍会执行 +1，并调用 `recordAnalyticsPageView` 写入 `analytics_page_views`；同时使用 Caffeine（IP+post）做 10 分钟 TTL 限流 + 10 分钟数据库去重，避免刷量并降低短时间重复请求的 DB 压力。
   * 自 V1.3.93 起，文章详情页仅保留后端埋点（`PostService.recordAnalyticsPageView`），前端不再重复调用 `recordPageView`，确保单次访问仅计一次 PV；为解决 SPA 下 `document.referrer` 不可靠的问题，前端在请求文章详情 `GET /api/posts/{id}` 时会附带 `X-SG-Referrer`（外部来源或站内上一页 URL）与可选的 `X-SG-Source-Label`（站内跳转中文描述），后端据此写入正确来源。
+  * 自 2026-04-15 起，前端访问来源支持旧站 301 跳转显式参数：若当前 URL 带 `sg_redirect_from` 或 `redirect_from`，普通页面埋点与文章详情 `X-SG-*` 头都会优先记录为“来自重定向：<旧站域名>”。注意：纯 `return 301 https://sangui.top$request_uri;` 不会稳定把旧域名传到新站；旧站 Nginx 需要在 Location 中追加 `sg_redirect_from=$host`（或 `redirect_from=$host`）才能在 `/admin/analytics` 来源列看到旧站域名。
   * 自 V2.1.223 起，访问不存在的文章（例如 `/article/999999` 或 `/article/xxxx`）会在前端明确展示 404；不再回退展示 `MOCK_POSTS[0]`（最新文章占位）导致的“标题/摘要像对、正文为空”的错觉。
   * 自 V1.3.94 起，AppFull.jsx 在 Home/Archive/Admin 视图外层增加 `claimAutoPageView/resetAutoPageViewGuard` 守卫，避免 React StrictMode 或多重渲染导致的 analytics_page_views 连续重复记录（同一视图 key 不变时不会重复写入；切换到其它视图会重置标记）。
   * 自 V2.1.250 起，首页访问日志 `pageTitle` 由 `Home` 调整为 `home(当前页/总页数)`（例如 `home(1/16)`）；由于首页 URL 不体现页码，前端会在文章列表分页请求完成后，根据 `postsPage.page + postsPage.total/pageSize` 计算并写入标题，同时将守卫 key 细化为 `home-<page>-<totalPages>-size-<pageSize>`，从而支持“翻页也能打点”，且同一页不会重复记录。

@@ -1,5 +1,6 @@
 import logger from "./utils/logger.js";
 import { consumeSseStream } from "./utils/aiStream.js";
+import { getRedirectSourceMeta } from "./utils/analyticsReferrer.js";
 
 // 这是本机测试的 API_BASE
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
@@ -165,12 +166,21 @@ const buildAnalyticsReferrerHeaders = () => {
   }
 
   const prevUrl = takeSpaPrevUrl();
+  const redirectSourceMeta = getRedirectSourceMeta();
   const docReferrer = document.referrer || "";
-  const referrer = encodeHeaderValue(prevUrl || docReferrer, 900);
+  const referrer = encodeHeaderValue((redirectSourceMeta && redirectSourceMeta.referrer) || prevUrl || docReferrer, 900);
 
   const headers = {};
   if (referrer) {
     headers[ANALYTICS_REFERRER_HEADER] = referrer;
+  }
+
+  if (redirectSourceMeta && redirectSourceMeta.sourceLabel) {
+    const label = encodeHeaderValue(redirectSourceMeta.sourceLabel, 200);
+    if (label) {
+      headers[ANALYTICS_SOURCE_LABEL_HEADER] = label;
+    }
+    return headers;
   }
 
   // 站内跳转由前端给出中文来源；外部来源（尤其搜索引擎）交给后端解析关键词并展示

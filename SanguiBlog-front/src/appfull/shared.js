@@ -1,5 +1,6 @@
 import { visit } from 'unist-util-visit';
 import { AlertTriangle, Sparkles } from 'lucide-react';
+import { getRedirectSourceMeta } from '../utils/analyticsReferrer.js';
 
 export const THEME_COLOR_PRESETS = [
     'bg-[#00E096]',
@@ -264,6 +265,11 @@ export const getReferrerMeta = () => {
             if (path.startsWith('/login')) return '来自登录页';
             return `来自站内：${path}`;
         };
+
+        const redirectSourceMeta = getRedirectSourceMeta();
+        if (redirectSourceMeta) {
+            return redirectSourceMeta;
+        }
 
         const spaPrevUrl = takeSpaPrevUrl();
         const docReferrer = document.referrer || '';

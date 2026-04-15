@@ -5,6 +5,34 @@
 
 ---
 
+## [2026-04-15] 支持旧站 301 跳转来源记录
+- 背景/需求：用户有其它站点通过 Nginx `return 301 https://sangui.top$request_uri;` 跳转到本站，希望后台 `/admin/analytics` 访问日志“来源”列能看到旧站域名。
+- 修改类型：feat
+- 影响范围：前端访问来源解析、普通页面埋点、文章详情请求头埋点、后台访问日志来源展示、AI 项目记忆
+- 变更摘要：
+  1) 检索确认 `/admin/analytics` 来源列展示 `analytics_page_views.referrer_url`，该字段由 `AnalyticsService.resolveReferrerDisplayLabel()` 根据前端上报的 `referrer/sourceLabel` 写入；普通页面走 `getReferrerMeta()`，文章详情走 `api.js` 的 `X-SG-Referrer/X-SG-Source-Label`。
+  2) 新增 `src/utils/analyticsReferrer.js`，统一解析 `sg_redirect_from` 与 `redirect_from` 查询参数，生成 `{ referrer, sourceLabel: "来自重定向：<host>" }`，并忽略等于当前站点 host 的无效来源。
+  3) `shared.js` 的 `getReferrerMeta()` 优先使用重定向来源参数，覆盖首页/归档/关于/工具等普通页面埋点。
+  4) `api.js` 的 `buildAnalyticsReferrerHeaders()` 同步优先使用重定向来源参数，覆盖文章详情后端埋点，避免文章页访问来源漏记。
+  5) 补充 `analyticsReferrer.test.js` 与 `analyticsReferrerIntegration.test.js`，验证 host/full URL/参数别名/当前站点忽略，以及两个埋点入口均接入统一工具。
+  6) 更新 `PROJECT_MEMORY.md` 记录运维约束：纯 301 不会稳定携带旧域名，旧站 Nginx 需要追加 `sg_redirect_from=$host` 或 `redirect_from=$host`。
+- 涉及文件：
+  - `SanguiBlog-front/src/utils/analyticsReferrer.js`
+  - `SanguiBlog-front/src/utils/analyticsReferrer.test.js`
+  - `SanguiBlog-front/src/utils/analyticsReferrerIntegration.test.js`
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/shared.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`analytics` / `page-view` / `referrer` / `sourceLabel` / `X-SG-Referrer` / `X-SG-Source-Label` / `/admin/analytics` / `renderReferrer`
+  - 候选实现：`AnalyticsService.recordPageView`、`ReferrerUtils`、`PageViewRequest`、`api.js buildAnalyticsReferrerHeaders`、`shared.js getReferrerMeta`、`AdminPanel.jsx renderReferrer`
+  - 最终选择：复用现有访问日志字段和展示链路，仅新增前端来源参数解析工具并接入两个现有埋点入口，不新增数据库字段、不改后台列表接口
+- 验证方式：
+  - 先执行 `node .\src\utils\analyticsReferrer.test.js` 与 `node .\src\utils\analyticsReferrerIntegration.test.js`，确认新增断言按预期失败
+  - 修改后执行上述两个测试通过
+- 版本号说明：本次为访问来源识别能力增强，未同步提升站点版本号。
+
 ## [2026-04-15] 优化首页文章搜索卡片手机端布局
 - 背景/需求：用户反馈手机端首页文章搜索卡片当前分成三行展示：第一行“文章搜索”、第二行输入框、第三行“共 xx 篇/已筛选 xx 篇”，视觉不佳；希望仅在手机端改为第一行左侧标题、右侧统计文案，第二行输入框，不再出现第三行，同时桌面端保持原样。
 - 修改类型：fix
