@@ -53,6 +53,7 @@ export default function HomeView({
 }) {
     const [articleListEnabled, setArticleListEnabled] = useState(false);
     const articleListGateRef = useRef(null);
+    const heroCtaScrollInProgressRef = useRef(false);
     const footerInfo = meta?.footer || {};
     const footerYear = footerInfo.year || new Date().getFullYear();
     const footerBrand = footerInfo.brand || 'SANGUI BLOG';
@@ -84,6 +85,7 @@ export default function HomeView({
         let idleFallbackTimer = null;
         const activate = () => {
             if (cancelled) return;
+            if (heroCtaScrollInProgressRef.current) return;
             enableArticleList();
             observer?.disconnect();
             window.removeEventListener('scroll', activate);
@@ -130,6 +132,7 @@ export default function HomeView({
 
     const handleHeroStartReading = useCallback(() => {
         if (typeof window !== 'undefined') {
+            heroCtaScrollInProgressRef.current = true;
             if (articleListGateRef.current) {
                 articleListGateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else if (typeof onScrollToPosts === 'function') {
@@ -137,7 +140,10 @@ export default function HomeView({
             } else {
                 document.getElementById('posts')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-            enableArticleList();
+            window.setTimeout(() => {
+                heroCtaScrollInProgressRef.current = false;
+                enableArticleList();
+            }, 720);
             return;
         }
 

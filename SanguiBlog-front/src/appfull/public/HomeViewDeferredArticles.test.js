@@ -62,6 +62,21 @@ assert.match(
     /articleListGateRef\.current\?\.scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\);[\s\S]*enableArticleList\(\);/,
     'Hero CTA 应先滚到稳定锚点，再启用文章区，避免懒加载替换目标节点导致滚动半路停止'
 );
+assert.match(
+    source,
+    /const\s+heroCtaScrollInProgressRef\s*=\s*useRef\(false\)/,
+    'Hero CTA 平滑滚动期间应有保护标记，避免滚动事件立即激活 ArticleList'
+);
+assert.match(
+    source,
+    /if\s*\(heroCtaScrollInProgressRef\.current\)\s*return;/,
+    '滚动/观察器/空闲预热触发文章区前，应跳过 Hero CTA 正在进行的平滑滚动窗口'
+);
+assert.match(
+    source,
+    /window\.setTimeout\(\(\)\s*=>\s*\{[\s\S]*heroCtaScrollInProgressRef\.current\s*=\s*false;[\s\S]*enableArticleList\(\);[\s\S]*\},\s*720\)/,
+    'Hero CTA 应等平滑滚动稳定后再启用 ArticleList，避免渲染抢占滚动动画'
+);
 assert.doesNotMatch(
     source,
     /pendingFirstPostScroll|setPendingFirstPostScroll/,
