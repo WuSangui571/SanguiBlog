@@ -298,6 +298,10 @@ const ArticleList = ({
         const id = typeof matched === 'string' ? null : matched?.id;
         return normalizeNumericId(id);
     }, [activeTag, tagsData, normalizeNumericId]);
+    const hasSearchFilters = Boolean(selectedCategoryId || selectedTagId || keywordText);
+    const searchTotal = Number(postsPage?.total ?? 0) || 0;
+    const searchGlobalTotal = Number(stats?.posts ?? 0) || searchTotal;
+    const searchSummaryText = hasSearchFilters ? `已筛选 ${searchTotal} 篇` : `共 ${searchGlobalTotal} 篇`;
 
     const buildQueryParams = useCallback((overrides = {}) => {
         const params = {
@@ -744,11 +748,17 @@ const ArticleList = ({
                         <div
                             className={`mb-8 ${glassSurface} overflow-hidden ${isDarkMode ? 'text-white' : 'text-black'}`}>
                             <div className="flex flex-col md:flex-row md:items-center gap-3 px-5 py-4">
-                                <div className="flex items-center gap-2 font-black text-lg tracking-tight">
-                                    <Search size={18} />
-                                    <span>文章搜索</span>
+                                <div className="flex items-center justify-between gap-3 font-black text-lg tracking-tight">
+                                    <div className="flex items-center gap-2">
+                                        <Search size={18} />
+                                        <span>文章搜索</span>
+                                    </div>
+                                    <div
+                                        className={`md:hidden text-[11px] font-mono font-black px-3 py-2 border border-white/70 rounded-xl ${isDarkMode ? 'bg-[#111827]/75 text-gray-100' : 'bg-[#FFD700]/90 text-black'}`}>
+                                        {searchSummaryText}
+                                    </div>
                                 </div>
-                                <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                                <div className="flex-1 flex flex-col md:flex-row md:items-center gap-3">
                                     <div
                                         className={`flex items-center gap-2 flex-1 min-w-0 px-3 py-2 rounded-xl border ${glassInner} ${isDarkMode ? 'text-white' : 'text-black'}`}>
                                         <Search size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
@@ -789,14 +799,8 @@ const ArticleList = ({
                                         </div>
                                     </div>
                                     <div
-                                        className={`text-[11px] font-mono font-black px-3 py-2 border border-white/70 rounded-xl ${isDarkMode ? 'bg-[#111827]/75 text-gray-100' : 'bg-[#FFD700]/90 text-black'}`}>
-                                        {(() => {
-                                            const hasFilters = Boolean(selectedCategoryId || selectedTagId || keywordText);
-                                            const total = Number(postsPage?.total ?? 0) || 0;
-                                            const globalTotal = Number(stats?.posts ?? 0) || total;
-                                            if (hasFilters) return `已筛选 ${total} 篇`;
-                                            return `共 ${globalTotal} 篇`;
-                                        })()}
+                                        className={`hidden md:block text-[11px] font-mono font-black px-3 py-2 border border-white/70 rounded-xl ${isDarkMode ? 'bg-[#111827]/75 text-gray-100' : 'bg-[#FFD700]/90 text-black'}`}>
+                                        {searchSummaryText}
                                     </div>
                                 </div>
                             </div>

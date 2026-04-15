@@ -35,6 +35,12 @@ assert.match(source, /最新评论/);
 assert.match(source, /home-ios-card--static p-5/);
 assert.match(source, /transition-transform duration-200 hover:-translate-y-0\.5/);
 assert.match(source, /placeholder="请输入关键词搜索"/);
+assert.match(source, /const searchSummaryText = hasSearchFilters \? `已筛选 \$\{searchTotal\} 篇` : `共 \$\{searchGlobalTotal\} 篇`;/);
+assert.match(source, /className="flex items-center justify-between gap-3 font-black text-lg tracking-tight"/);
+assert.match(source, /className=\{`md:hidden text-\[11px\] font-mono font-black px-3 py-2 border border-white\/70 rounded-xl/);
+assert.match(source, /className="flex-1 flex flex-col md:flex-row md:items-center gap-3"/);
+assert.match(source, /className=\{`hidden md:block text-\[11px\] font-mono font-black px-3 py-2 border border-white\/70 rounded-xl/);
+assert.doesNotMatch(source, /className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3"/);
 assert.doesNotMatch(source, /输入关键词后按回车搜索（标题\/摘要模糊匹配）/);
 
 const authorCardIndex = source.indexOf('home-ios-card--overflow-visible p-6 text-center relative');

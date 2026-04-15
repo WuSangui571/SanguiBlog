@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-15] 优化首页文章搜索卡片手机端布局
+- 背景/需求：用户反馈手机端首页文章搜索卡片当前分成三行展示：第一行“文章搜索”、第二行输入框、第三行“共 xx 篇/已筛选 xx 篇”，视觉不佳；希望仅在手机端改为第一行左侧标题、右侧统计文案，第二行输入框，不再出现第三行，同时桌面端保持原样。
+- 修改类型：fix
+- 影响范围：首页文章搜索卡片手机端布局、文章列表静态回归测试
+- 变更摘要：
+  1) 检索确认首页文章搜索卡片唯一实现位于 `ArticleList.jsx`，统计文案原本作为输入框容器后的独立块，在手机端因 `flex-col` 形成第三行。
+  2) 在 `ArticleList.test.js` 中新增回归断言，锁定搜索统计文案必须抽成统一的 `searchSummaryText`，手机端统计徽章使用 `md:hidden` 出现在标题行右侧，桌面统计徽章使用 `hidden md:block` 继续保留在输入框右侧。
+  3) 在 `ArticleList.jsx` 中复用原统计计算逻辑，新增 `hasSearchFilters/searchTotal/searchGlobalTotal/searchSummaryText`，避免手机端和桌面端出现两套统计计算。
+  4) 调整搜索卡片结构：标题行改为 `justify-between`，左侧保留搜索图标与“文章搜索”，右侧仅手机端显示统计徽章；输入框容器从 `sm:flex-row` 改为 `md:flex-row`，确保手机端第二行只显示输入框，桌面端布局不变。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`文章搜索` / `keywordText` / `placeholder` / `已筛选` / `共 ` / `ArticleList.test.js`
+  - 候选实现：`ArticleList.jsx` 搜索卡片 JSX、`ArticleList.jsx` 搜索参数构建逻辑、`ArticleList.test.js` 搜索回归断言、`PROJECT_MEMORY.md` 移动端首页保留文章搜索说明、历史 `CHANGELOG_AI.md` 中搜索条占位文案与宽度抖动记录
+  - 最终选择：复用现有 `ArticleList` 搜索卡片，只调整响应式 class 和统计徽章位置，不新增组件、不新增 CSS、不改搜索行为或接口参数
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\ArticleList.test.js`，看到新增的手机端搜索布局断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为首页文章搜索卡片手机端展示细节优化，不单独提升站点版本号。
+
 ## [2026-04-15] 调小首页底部金句手机端字号
 - 背景/需求：用户反馈去掉双引号后，首页文章页码下方、页脚上方的底部金句在手机端仍因字号偏大导致默认文案“阻挡你的不是别人，而是你自己。”换成两行，希望只调小手机端文本，桌面端保持不变。
 - 修改类型：fix
