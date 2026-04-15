@@ -1098,7 +1098,7 @@ const ArticleList = ({
                             <div className="inline-block relative">
                                 <div
                                     className={`relative px-8 py-4 text-2xl font-black italic rounded-2xl ${glassSurface} ${cardBg} ${text}`}>
-                                    {endingQuote ? `“${endingQuote}”` : ''}
+                                    {endingQuote ? endingQuote : ''}
                                 </div>
                             </div>
                         </div>

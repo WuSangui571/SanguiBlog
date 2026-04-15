@@ -10,6 +10,8 @@ const redesignCss = fs.readFileSync(path.join(__dirname, 'homeRedesign.css'), 'u
 
 assert.match(source, /className="flex w-\[72px\] shrink-0 justify-end"/);
 assert.match(source, /opacity-0 pointer-events-none/);
+assert.match(source, /\{endingQuote \? endingQuote : ''\}/);
+assert.doesNotMatch(source, /`“\$\{endingQuote\}”`/);
 assert.match(source, /const visibleTagLimit = mobilePerformanceMode \? 1 : 3/);
 assert.match(source, /className="flex flex-row md:flex-row min-h-\[200px\] md:min-h-\[360px\]"/);
 assert.doesNotMatch(source, /className="flex flex-col md:flex-row min-h-\[360px\]"/);

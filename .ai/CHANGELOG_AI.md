@@ -5,6 +5,28 @@
 
 ---
 
+## [2026-04-15] 去掉首页底部金句左右双引号
+- 背景/需求：用户希望去掉首页文章页码下方、页脚上方那句警示/金句两侧自动添加的中文双引号，直接显示后台或默认配置中的文字内容。
+- 修改类型：fix
+- 影响范围：首页文章列表底部金句展示、文章列表静态回归测试
+- 变更摘要：
+  1) 检索确认该文案渲染位于 `ArticleList.jsx` 分页区之后、页脚之前，当前表达式为 `{endingQuote ? `“${endingQuote}”` : ''}`，会在配置文案外额外包一层中文双引号。
+  2) 在 `ArticleList.test.js` 中先新增回归断言，锁定底部金句应直接渲染 `endingQuote`，并禁止回退到模板字符串包裹中文双引号。
+  3) 将 `ArticleList.jsx` 底部金句渲染改为 `{endingQuote ? endingQuote : ''}`，不改变 `DEFAULT_HOME_QUOTE`、`site.home.signature-quote` 配置来源、样式、分页或页脚结构。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/public/ArticleList.jsx`
+  - `SanguiBlog-front/src/appfull/public/ArticleList.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`endingQuote` / `homeQuote` / `DEFAULT_HOME_QUOTE` / `site.home.signature-quote` / `“${endingQuote}”` / `ArticleList.test.js`
+  - 候选实现：`ArticleList.jsx` 底部金句渲染、`shared.js` 默认金句、`PROJECT_MEMORY.md` 中首页分页金句配置说明、`ArticleList.test.js` 静态回归、`HomeView.jsx` 的首页文章列表接入点
+  - 最终选择：复用现有 `endingQuote` 与配置链路，仅移除展示层额外双引号，不新增组件、不改配置、不改后端字段
+- 验证方式：
+  - 先执行 `node .\src\appfull\public\ArticleList.test.js`，看到新增的无双引号断言按预期失败
+  - 修改后执行 `node .\src\appfull\public\ArticleList.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 修改后执行 `node .\src\appfull\public\ArticleListPerformance.test.js`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为首页底部文案展示细节修复，不单独提升站点版本号。
+
 ## [2026-04-15] 修复首页文章卡片手机端摘要露半行
 - 背景/需求：用户反馈首页手机端文章卡片摘要如果存在第三行，第三行会只露出上半部分，下半部分被裁掉，视觉不美观；确认采用方案 A：手机端摘要彻底固定显示 2 行，桌面端继续恢复 3 行。
 - 修改类型：fix
