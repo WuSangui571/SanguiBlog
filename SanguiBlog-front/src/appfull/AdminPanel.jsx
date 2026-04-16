@@ -6964,7 +6964,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         },
         {
             key: 'uptime',
-            label: '运行时长',
+            label: '项目运行时长',
             value: formatDuration(systemMonitorHost?.uptimeSeconds),
             detail: systemMonitorHost?.displayName || '服务器系统',
             icon: Server,

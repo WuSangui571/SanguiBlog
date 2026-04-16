@@ -34,6 +34,12 @@ assert.match(
 
 assert.match(
     adminPanelSource,
+    /项目运行时长/,
+    '系统监控分组应明确展示项目运行时长，而不是服务器开机时长'
+);
+
+assert.match(
+    adminPanelSource,
     /综合评分/,
     '系统监控分组应展示综合评分'
 );

@@ -11,6 +11,7 @@ import oshi.software.os.OperatingSystem;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.lang.management.ManagementFactory;
 import java.util.Comparator;
 import java.util.List;
 
@@ -66,13 +67,14 @@ public class OshiSystemMonitorMetricsProvider implements SystemMonitorMetricsPro
         long totalSent = interfaces.stream().mapToLong(NetworkInterfaceSnapshot::sentBytes).sum();
         long totalPacketsReceived = interfaces.stream().mapToLong(NetworkInterfaceSnapshot::receivedPackets).sum();
         long totalPacketsSent = interfaces.stream().mapToLong(NetworkInterfaceSnapshot::sentPackets).sum();
+        long projectUptimeSeconds = Math.max(0L, ManagementFactory.getRuntimeMXBean().getUptime() / 1000L);
 
         return new SystemMonitorRawSnapshot(
                 Instant.now(),
                 operatingSystem.getFamily(),
                 operatingSystem.getVersionInfo().getVersion(),
                 operatingSystem.toString(),
-                Math.max(0L, operatingSystem.getSystemUptime()),
+                projectUptimeSeconds,
                 processor.getProcessorIdentifier().getName(),
                 processor.getPhysicalProcessorCount(),
                 processor.getLogicalProcessorCount(),

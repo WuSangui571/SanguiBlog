@@ -16,6 +16,7 @@
   4) 采集层优先复用开源 `oshi-core`，通过 `OshiSystemMonitorMetricsProvider` 获取 Linux/Windows 跨平台系统指标，不手写 `/proc`、WMI 或平台专属底层解析；在服务层补一层轻量聚合，计算实时吞吐量、分时段流量与综合评分。
   5) 为支持“今天 / 近 7 天 / 全部记录”总流量，新增 `system_monitor_snapshots` 历史快照表与定时采样服务；若部署环境尚未执行 SQL 导致表不存在，服务会自动降级为“仅展示本次开机累计流量”，并在接口返回里显式给出历史不可用说明，避免因为新表缺失导致后台白屏或接口报 500。
   6) 新增前端静态回归脚本 `SystemSettingsSystemMonitor.test.js` 与后端服务测试 `SystemMonitorServiceTest.java`，约束默认分组、系统监控接口接线、综合评分与流量区间结构。
+  7) 根据 Windows 实测反馈修正“运行时长”语义：页面显示项改为“项目运行时长”，后端 uptime 从 OSHI 的 `operatingSystem.getSystemUptime()` 切换为 `RuntimeMXBean.getUptime()`，即当前 Java 项目进程运行时间，而不是服务器开机时间。
 - 涉及文件：
   - `SanguiBlog-front/src/api.js`
   - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
@@ -31,6 +32,7 @@
   - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/OshiSystemMonitorMetricsProvider.java`
   - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SystemMonitorService.java`
   - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/SystemMonitorServiceTest.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/OshiSystemMonitorMetricsProviderTest.java`
   - `sanguiblog_db.sql`
   - `.ai/PROJECT_MEMORY.md`
   - `.ai/CHANGELOG_AI.md`
@@ -40,6 +42,7 @@
   - 最终选择：复用现有设置页和后台接口模式，底层指标采集复用 OSHI，只新增一层最小聚合服务与历史快照表，不引入第二套系统维护入口，不手写平台专属采集实现
 - 验证方式：
   - 执行 `mvn -q -DskipTests compile`（工作目录 `SanguiBlog-server`）通过，确认新增后端类、依赖与导入无编译错误
+  - 执行 `mvn -q "-Dtest=OshiSystemMonitorMetricsProviderTest,SystemMonitorServiceTest" test`（工作目录 `SanguiBlog-server`）通过，确认项目运行时长与系统监控聚合逻辑可用
   - 执行 `node .\\src\\appfull\\SystemSettingsSystemMonitor.test.js`（工作目录 `SanguiBlog-front`）通过
   - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过，确认新增监控分组 JSX 与前端导入可正常构建
 - 版本号说明：本次为后台功能增强，未单独提升站点版本号。
