@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS role_permissions;
 DROP TABLE IF EXISTS permissions;
 DROP TABLE IF EXISTS analytics_page_views;
 DROP TABLE IF EXISTS analytics_traffic_sources;
+DROP TABLE IF EXISTS system_monitor_snapshots;
 DROP TABLE IF EXISTS comment_notifications;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS post_tags;
@@ -285,6 +286,23 @@ CREATE TABLE analytics_page_view_daily_stats (
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (stat_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE system_monitor_snapshots (
+    id                     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    sampled_at             DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    os_family              VARCHAR(128) NULL,
+    os_version             VARCHAR(255) NULL,
+    uptime_seconds         BIGINT UNSIGNED NULL,
+    cpu_load_percent       DECIMAL(5,2) NULL,
+    memory_total_bytes     BIGINT UNSIGNED NULL,
+    memory_used_bytes      BIGINT UNSIGNED NULL,
+    disk_total_bytes       BIGINT UNSIGNED NULL,
+    disk_used_bytes        BIGINT UNSIGNED NULL,
+    network_bytes_received BIGINT UNSIGNED NULL,
+    network_bytes_sent     BIGINT UNSIGNED NULL,
+    PRIMARY KEY (id),
+    KEY idx_system_monitor_sampled_at (sampled_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- =============================

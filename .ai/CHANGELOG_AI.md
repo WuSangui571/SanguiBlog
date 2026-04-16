@@ -5,6 +5,45 @@
 
 ---
 
+## [2026-04-16] 在后台设置页新增系统监控分组
+- 背景/需求：用户希望在 `/admin/settings` 增设“系统监控”分组，并把它调成默认第一个显示的设置分组；监控目标是部署本项目的服务器操作系统，而不是 Java 应用自身，要求覆盖运行时长、实时网络流量、分时段总流量、CPU、内存、磁盘、实时吞吐量和综合评分，优先兼容 Linux，同时可在 Windows 上测试，并尽量复用成熟开源模块。
+- 修改类型：feat
+- 影响范围：后台设置页默认分组顺序、前端系统监控展示、后台超级管理员监控接口、后端系统指标采集、监控历史快照 SQL、AI 项目记忆
+- 变更摘要：
+  1) 检索确认 `/admin/settings` 的唯一真实入口为 `AdminPanel.jsx` 内部 `SystemSettingsView`，当前分组由 `SETTINGS_TABS + activeSettingsTab` 控制，默认首项与默认激活值都是 `broadcast`；因此直接复用这条链路新增 `system-monitor` 分组，并将其调整为第一项和默认项，不新增第二套设置页入口。
+  2) 在前端 `api.js` 中新增 `adminFetchSystemMonitor()`，并在 `SystemSettingsView` 中加入“系统监控”卡片区：展示 OS、运行时长、CPU、系统内存、磁盘、实时吞吐量、综合评分、网卡明细，以及“今天 / 近 7 天 / 全部记录 / 本次开机”的网络总流量概览；打开该分组时会自动拉取并每 15 秒静默刷新一次。
+  3) 后端新增 `/api/admin/system-monitor` 超级管理员接口，统一返回 `ApiResponse<SystemMonitorDto>`；控制器与现有后台接口风格保持一致，不新增第二套返回包装或鉴权模式。
+  4) 采集层优先复用开源 `oshi-core`，通过 `OshiSystemMonitorMetricsProvider` 获取 Linux/Windows 跨平台系统指标，不手写 `/proc`、WMI 或平台专属底层解析；在服务层补一层轻量聚合，计算实时吞吐量、分时段流量与综合评分。
+  5) 为支持“今天 / 近 7 天 / 全部记录”总流量，新增 `system_monitor_snapshots` 历史快照表与定时采样服务；若部署环境尚未执行 SQL 导致表不存在，服务会自动降级为“仅展示本次开机累计流量”，并在接口返回里显式给出历史不可用说明，避免因为新表缺失导致后台白屏或接口报 500。
+  6) 新增前端静态回归脚本 `SystemSettingsSystemMonitor.test.js` 与后端服务测试 `SystemMonitorServiceTest.java`，约束默认分组、系统监控接口接线、综合评分与流量区间结构。
+- 涉及文件：
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/SystemSettingsSystemMonitor.test.js`
+  - `SanguiBlog-server/pom.xml`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminSystemMonitorController.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/SystemMonitorDto.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/entity/SystemMonitorSnapshot.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/SystemMonitorSnapshotRepository.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SystemMonitorMetricsProvider.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SystemMonitorRawSnapshot.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/NetworkInterfaceSnapshot.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/OshiSystemMonitorMetricsProvider.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SystemMonitorService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/SystemMonitorServiceTest.java`
+  - `sanguiblog_db.sql`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`SystemSettingsView` / `broadcast` / `activeSettingsTab` / `SYSTEM_CLEAN_STORAGE` / `/admin/settings` / `@Scheduled` / `oshi` / `network` / `uptime`
+  - 候选实现：`SystemSettingsView` 的分组切换链路、`/api/admin/home-backgrounds` 与 `/api/admin/maintenance` 的管理接口模式、现有 `ApiResponse` 包装、Spring `@EnableScheduling` 定时能力、OSHI 跨平台系统指标采集库
+  - 最终选择：复用现有设置页和后台接口模式，底层指标采集复用 OSHI，只新增一层最小聚合服务与历史快照表，不引入第二套系统维护入口，不手写平台专属采集实现
+- 验证方式：
+  - 执行 `mvn -q -DskipTests compile`（工作目录 `SanguiBlog-server`）通过，确认新增后端类、依赖与导入无编译错误
+  - 执行 `node .\\src\\appfull\\SystemSettingsSystemMonitor.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）通过，确认新增监控分组 JSX 与前端导入可正常构建
+- 版本号说明：本次为后台功能增强，未单独提升站点版本号。
+
 ## [2026-04-15] 更新首页站点版本到 V2.2.21
 - 背景/需求：用户要求将项目当前版本号从 `V2.2.20` 更新到 `V2.2.21`，只需要首页版本展示同步，不生成 release 文档；同时检查根目录英文 README 与中文 README，若存在过时内容则同步更新。
 - 修改类型：docs

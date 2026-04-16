@@ -843,5 +843,8 @@ npm run dev
 - AI 默认空窗口欢迎文案支持“浏览器会话首次进入”动效：使用 `sessionStorage` 控制，只在首次打开空白 AI 窗口时播放一次，关闭再打开不重播，重新打开浏览器后恢复首播。
 - AI 系统事实层已接入 `SiteService.currentStats()`：文章数、总浏览量、总评论数、总标签数、最后更新时间必须优先走实时站点统计，不再依赖模型自由推断。
 - 首页新版首屏当前通过 `Hero.jsx + homeRedesign.css` 实现“负 margin 向上铺到固定导航后面”的结构；如果后续再调整导航首屏透图效果，优先检查 `--home-header-offset`、`.home-hero` 的负偏移，以及 `Navigation.jsx` 的 `heroMode` 切换阈值，不要另起第二套首页头图实现。
+- `/admin/settings` 现已新增“系统监控”分组，并调整为设置页默认首个分组；该页唯一真实入口仍是 `SystemSettingsView`，不要再新增第二套“系统监控页”或把系统监控散落到其它后台模块中。
+- 服务器系统监控后端统一走 `GET /api/admin/system-monitor`，底层采集优先复用 `oshi-core`，目标是读取部署服务器操作系统（Linux/Windows）指标，而不是 JVM 专属指标；若以后扩展更多系统监控项，应继续在 `SystemMonitorService + SystemMonitorDto` 这条链路上增量扩展，不要另写平台专属采集实现。
+- “今天 / 近 7 天 / 全部记录”网络总流量依赖 `system_monitor_snapshots` 历史快照表与定时采样；若部署库尚未执行最新 SQL，接口会自动降级为“仅显示本次开机累计流量”并返回历史不可用说明，因此部署新版本时需要同步执行 `sanguiblog_db.sql` 中的 `system_monitor_snapshots` 建表语句。
 
 

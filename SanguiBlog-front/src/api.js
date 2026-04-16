@@ -836,6 +836,8 @@ export const adminDeleteEmptyFolders = (paths = []) =>
     body: JSON.stringify({ paths }),
   });
 
+export const adminFetchSystemMonitor = () => request("/admin/system-monitor");
+
 // 游戏 / 自定义 HTML 页面
 export const fetchGames = () => request("/games");
 export const fetchGameDetail = (id) => request(`/games/${id}`);

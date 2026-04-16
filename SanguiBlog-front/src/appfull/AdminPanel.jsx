@@ -36,6 +36,7 @@ import {
     adminDeleteUnusedAssets,
     adminScanEmptyFolders,
     adminDeleteEmptyFolders,
+    adminFetchSystemMonitor,
     adminFetchGames,
     adminCreateGame,
     adminUpdateGame,
@@ -79,7 +80,8 @@ import {
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
     ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail, Megaphone,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
-    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy, Calendar, Database, Ticket
+    RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy, Calendar, Database, Ticket,
+    Cpu, Gauge, HardDrive, MemoryStick, Server, Wifi
 } from 'lucide-react';
 import {
     THEME,
@@ -6168,6 +6170,7 @@ const PermissionsView = ({ isDarkMode }) => {
 const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, onGameChanged, onAiAssistantChanged, onHomeBackgroundChanged }) => {
     const MAX_BROADCAST_LEN = 180;
     const SETTINGS_TABS = [
+        { key: 'system-monitor', label: '系统监控' },
         { key: 'broadcast', label: '广播管理' },
         { key: 'home-background', label: '首页背景' },
         { key: 'knowledge', label: 'AI助理' },
@@ -6175,7 +6178,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         { key: 'games', label: '游戏管理' },
         { key: 'cleanup', label: '存储清理' }
     ];
-    const [activeSettingsTab, setActiveSettingsTab] = useState('broadcast');
+    const [activeSettingsTab, setActiveSettingsTab] = useState('system-monitor');
     const [broadcastDraft, setBroadcastDraft] = useState({
         content: notification?.content || '',
         style: (notification?.style || 'ALERT').toUpperCase(),
@@ -6183,6 +6186,9 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     });
     const [broadcastSaving, setBroadcastSaving] = useState(false);
     const [broadcastError, setBroadcastError] = useState('');
+    const [systemMonitor, setSystemMonitor] = useState(null);
+    const [systemMonitorLoading, setSystemMonitorLoading] = useState(false);
+    const [systemMonitorError, setSystemMonitorError] = useState('');
 
     const [gameList, setGameList] = useState([]);
     const [gameLoading, setGameLoading] = useState(false);
@@ -6234,6 +6240,33 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         setBroadcastDraft((prev) => ({ ...prev, content: next }));
     }, []);
     const broadcastContentLength = (broadcastDraft.content || '').length;
+
+    const loadSystemMonitor = useCallback(async ({ silent = false } = {}) => {
+        if (!silent) {
+            setSystemMonitorLoading(true);
+        }
+        setSystemMonitorError('');
+        try {
+            const res = await adminFetchSystemMonitor();
+            const data = res?.data || res;
+            setSystemMonitor(data || null);
+        } catch (err) {
+            setSystemMonitorError(err?.message || '加载系统监控失败');
+        } finally {
+            if (!silent) {
+                setSystemMonitorLoading(false);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (activeSettingsTab !== 'system-monitor') return undefined;
+        loadSystemMonitor();
+        const timer = setInterval(() => {
+            loadSystemMonitor({ silent: true });
+        }, 15000);
+        return () => clearInterval(timer);
+    }, [activeSettingsTab, loadSystemMonitor]);
 
     const loadAiAssistantSettings = useCallback(async () => {
         setAiAssistantLoading(true);
@@ -6820,6 +6853,34 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         }
         return `${value % 1 === 0 ? value : value.toFixed(1)} ${units[idx]}`;
     }, []);
+    const formatBytesPerSecond = useCallback((bytes) => `${formatBytes(bytes)}/s`, [formatBytes]);
+    const formatPercent = useCallback((value) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return '--';
+        return `${numeric >= 10 || numeric === 0 ? numeric.toFixed(0) : numeric.toFixed(1)}%`;
+    }, []);
+    const formatDuration = useCallback((seconds) => {
+        const totalSeconds = Math.max(0, Number(seconds || 0));
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        if (days > 0) return `${days}天 ${hours}小时`;
+        if (hours > 0) return `${hours}小时 ${minutes}分钟`;
+        return `${minutes}分钟`;
+    }, []);
+    const scoreToneClass = useCallback((value) => {
+        if (value >= 85) return isDarkMode ? 'text-emerald-200' : 'text-emerald-700';
+        if (value >= 70) return isDarkMode ? 'text-sky-200' : 'text-sky-700';
+        if (value >= 55) return isDarkMode ? 'text-amber-200' : 'text-amber-700';
+        return isDarkMode ? 'text-red-200' : 'text-red-700';
+    }, [isDarkMode]);
+    const pressureBarClass = useCallback((percent) => {
+        const value = Number(percent || 0);
+        if (value >= 85) return 'bg-red-500';
+        if (value >= 70) return 'bg-amber-500';
+        if (value >= 45) return 'bg-sky-500';
+        return 'bg-emerald-500';
+    }, []);
 
     const handleBroadcastSave = useCallback(async (forceActive) => {
         const content = (broadcastDraft.content || '').trim();
@@ -6850,6 +6911,67 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         }
     }, [broadcastDraft, setNotification, showNotice]);
 
+    const systemMonitorHost = systemMonitor?.host || {};
+    const systemMonitorCpu = systemMonitor?.cpu || {};
+    const systemMonitorMemory = systemMonitor?.memory || {};
+    const systemMonitorDisk = systemMonitor?.disk || {};
+    const systemMonitorNetwork = systemMonitor?.network || {};
+    const systemMonitorThroughput = systemMonitor?.throughput || {};
+    const systemMonitorScore = systemMonitor?.score || {};
+    const systemMonitorRanges = Array.isArray(systemMonitor?.trafficRanges) ? systemMonitor.trafficRanges : [];
+    const systemMonitorInterfaces = Array.isArray(systemMonitorNetwork?.interfaces) ? systemMonitorNetwork.interfaces.slice(0, 4) : [];
+
+    const systemMonitorMetricCards = [
+        {
+            key: 'score',
+            label: '综合评分',
+            value: `${systemMonitorScore?.value ?? '--'} 分`,
+            detail: systemMonitorScore?.label || '等待采样',
+            icon: Gauge,
+            percent: Math.max(0, Math.min(100, Number(systemMonitorScore?.value || 0)))
+        },
+        {
+            key: 'cpu',
+            label: 'CPU',
+            value: formatPercent(systemMonitorCpu?.percent),
+            detail: systemMonitorCpu?.description || '系统负载',
+            icon: Cpu,
+            percent: Math.max(0, Math.min(100, Number(systemMonitorCpu?.percent || 0)))
+        },
+        {
+            key: 'memory',
+            label: '系统内存',
+            value: formatPercent(systemMonitorMemory?.percent),
+            detail: `${formatBytes(systemMonitorMemory?.usedBytes)} / ${formatBytes(systemMonitorMemory?.totalBytes)}`,
+            icon: MemoryStick,
+            percent: Math.max(0, Math.min(100, Number(systemMonitorMemory?.percent || 0)))
+        },
+        {
+            key: 'disk',
+            label: '磁盘',
+            value: formatPercent(systemMonitorDisk?.percent),
+            detail: `${formatBytes(systemMonitorDisk?.usedBytes)} / ${formatBytes(systemMonitorDisk?.totalBytes)}`,
+            icon: HardDrive,
+            percent: Math.max(0, Math.min(100, Number(systemMonitorDisk?.percent || 0)))
+        },
+        {
+            key: 'throughput',
+            label: '实时吞吐量',
+            value: formatBytesPerSecond(systemMonitorThroughput?.totalBytesPerSecond),
+            detail: `↓ ${formatBytesPerSecond(systemMonitorThroughput?.receivedBytesPerSecond)} · ↑ ${formatBytesPerSecond(systemMonitorThroughput?.sentBytesPerSecond)}`,
+            icon: Wifi,
+            percent: Math.max(0, Math.min(100, Number(systemMonitorScore?.value || 0)))
+        },
+        {
+            key: 'uptime',
+            label: '运行时长',
+            value: formatDuration(systemMonitorHost?.uptimeSeconds),
+            detail: systemMonitorHost?.displayName || '服务器系统',
+            icon: Server,
+            percent: 100
+        }
+    ];
+
     if (!hasPermission('SYSTEM_CLEAN_STORAGE') || user?.role !== 'SUPER_ADMIN') {
         return <PermissionNotice title="仅超级管理员可用" description="系统设置仅限超级管理员访问。" />;
     }
@@ -6873,6 +6995,196 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             {tab.label}
                         </button>
                     ))}
+                </div>
+            </div>
+
+            {/* 系统监控 */}
+            <div className={`${surface} rounded-[30px] overflow-hidden ${activeSettingsTab === 'system-monitor' ? '' : 'hidden'}`}>
+                <div className="p-6 pb-4 flex flex-wrap items-start gap-4 justify-between">
+                    <div className="flex items-start gap-3">
+                        <div className={`h-11 w-11 rounded-2xl flex items-center justify-center border backdrop-blur-xl ${
+                            isDarkMode
+                                ? 'border-emerald-300/20 bg-emerald-300/12 text-emerald-100'
+                                : 'border-white/80 bg-white/90 text-emerald-700'
+                        }`}>
+                            <Activity size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold">系统监控 · 服务器运行态</h3>
+                            <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                基于 OSHI 读取部署服务器系统数据，覆盖 Linux，并兼容 Windows 本地测试。
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className={chipClass}>仅 SUPER_ADMIN</span>
+                        <span className={chipClass}>{systemMonitor?.sampledAt ? `采样：${formatDateTime(systemMonitor.sampledAt)}` : '等待采样'}</span>
+                        <button
+                            type="button"
+                            onClick={() => loadSystemMonitor()}
+                            disabled={systemMonitorLoading}
+                            className={primaryButtonClass}
+                        >
+                            <RefreshCw size={15} className={systemMonitorLoading ? 'animate-spin' : ''} />
+                            {systemMonitorLoading ? '刷新中...' : '刷新监控'}
+                        </button>
+                    </div>
+                </div>
+
+                {systemMonitorError && (
+                    <div className={`mx-6 mb-0 px-4 py-3 border-2 font-semibold rounded-xl ${
+                        isDarkMode
+                            ? 'border-red-500/70 bg-red-500/10 text-red-200'
+                            : 'border-red-400 bg-red-50 text-red-700'
+                    }`}>
+                        {systemMonitorError}
+                    </div>
+                )}
+
+                <div className="p-6 pt-4 space-y-6">
+                    <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {systemMonitorMetricCards.map((metric) => {
+                            const MetricIcon = metric.icon;
+                            const isScore = metric.key === 'score';
+                            return (
+                                <div key={metric.key} className={`${softPanelClass} space-y-4`}>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`h-10 w-10 rounded-2xl flex items-center justify-center border ${
+                                                isDarkMode ? 'border-white/10 bg-white/[0.07]' : 'border-white/80 bg-white/85'
+                                            }`}>
+                                                <MetricIcon size={18} />
+                                            </div>
+                                            <div>
+                                                <div className={`text-xs font-black uppercase tracking-[0.22em] ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                                    {metric.label}
+                                                </div>
+                                                <div className={`text-2xl font-black mt-1 ${isScore ? scoreToneClass(metric.percent) : ''}`}>
+                                                    {metric.value}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className={`h-2 rounded-full overflow-hidden ${isDarkMode ? 'bg-white/[0.07]' : 'bg-slate-200/70'}`}>
+                                            <div
+                                                className={`h-full rounded-full ${isScore ? 'bg-emerald-500' : pressureBarClass(metric.percent)}`}
+                                                style={{ width: `${Math.max(0, Math.min(100, metric.percent || 0))}%` }}
+                                            ></div>
+                                        </div>
+                                        <p className={`text-xs mt-2 leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                            {metric.detail}
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="grid xl:grid-cols-[1.1fr_0.9fr] gap-5">
+                        <div className={formPanelClass}>
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <h4 className="text-base font-bold">网络总流量</h4>
+                                    <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        今天、近 7 天和全部记录依赖历史快照；本次开机读取系统网卡累计计数。
+                                    </p>
+                                </div>
+                                <BarChart3 size={20} className={isDarkMode ? 'text-sky-200' : 'text-sky-700'} />
+                            </div>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                                {systemMonitorRanges.map((range) => (
+                                    <div key={range.key} className={softPanelClass}>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="font-bold">{range.label}</span>
+                                            <span className={`text-xs font-mono ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                                {formatBytes(range.totalBytes)}
+                                            </span>
+                                        </div>
+                                        <div className={`mt-3 text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                            下载 {formatBytes(range.receivedBytes)} · 上传 {formatBytes(range.sentBytes)}
+                                        </div>
+                                    </div>
+                                ))}
+                                {systemMonitorRanges.length === 0 && (
+                                    <div className={`sm:col-span-2 ${dashedPanelClass} p-6 text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        暂无网络历史采样，点击“刷新监控”后会先展示本次开机累计流量。
+                                    </div>
+                                )}
+                            </div>
+                            {systemMonitor?.historyNote && (
+                                <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                    {systemMonitor.historyNote}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className={formPanelClass}>
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <h4 className="text-base font-bold">系统与网卡明细</h4>
+                                    <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        OS、CPU 核心数与前 4 个网卡接口的吞吐明细。
+                                    </p>
+                                </div>
+                                <Terminal size={20} className={isDarkMode ? 'text-emerald-200' : 'text-emerald-700'} />
+                            </div>
+                            <div className={softPanelClass}>
+                                <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <div className={`text-xs font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>系统</div>
+                                        <div className="font-bold mt-1">{systemMonitorHost?.displayName || '--'}</div>
+                                    </div>
+                                    <div>
+                                        <div className={`text-xs font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>CPU</div>
+                                        <div className="font-bold mt-1">{systemMonitorHost?.processorName || '--'}</div>
+                                    </div>
+                                    <div>
+                                        <div className={`text-xs font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>核心</div>
+                                        <div className="font-bold mt-1">{systemMonitorHost?.physicalCores ?? '--'} 核 / {systemMonitorHost?.logicalCores ?? '--'} 线程</div>
+                                    </div>
+                                    <div>
+                                        <div className={`text-xs font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>总流量</div>
+                                        <div className="font-bold mt-1">↓ {formatBytes(systemMonitorNetwork?.receivedBytes)} · ↑ {formatBytes(systemMonitorNetwork?.sentBytes)}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {systemMonitorInterfaces.map((item) => (
+                                    <div key={`${item.name}-${item.macAddress || ''}`} className={softPanelClass}>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="font-bold truncate">{item.displayName || item.name || '网卡接口'}</div>
+                                                <div className={`text-xs mt-1 truncate ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                                    {item.name || '--'} · {item.macAddress || '无 MAC'}
+                                                </div>
+                                            </div>
+                                            <span className={chipClass}>{item.speedBitsPerSecond ? `${(item.speedBitsPerSecond / 1000 / 1000).toFixed(0)} Mbps` : '未知速率'}</span>
+                                        </div>
+                                        <div className={`mt-3 text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                            实时 ↓ {formatBytesPerSecond(item.throughputReceivedBytesPerSecond)} · ↑ {formatBytesPerSecond(item.throughputSentBytesPerSecond)}
+                                        </div>
+                                    </div>
+                                ))}
+                                {systemMonitorInterfaces.length === 0 && (
+                                    <div className={`${dashedPanelClass} p-6 text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        暂未读取到活动网卡接口，可能是系统权限、容器网络或采样间隔导致。
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {systemMonitorScore?.summary && (
+                        <div className={`${softPanelClass} flex flex-wrap items-center gap-3 justify-between`}>
+                            <div>
+                                <div className="text-sm font-bold">系统评分说明</div>
+                                <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>{systemMonitorScore.summary}</p>
+                            </div>
+                            <span className={`${chipClass} ${scoreToneClass(systemMonitorScore.value)}`}>当前：{systemMonitorScore.label || '--'}</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
