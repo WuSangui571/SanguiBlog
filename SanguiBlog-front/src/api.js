@@ -697,13 +697,31 @@ export const uploadPostAssets = async (files, folder) => {
 export const uploadPostCover = async (file, postSlug) => {
   const token = localStorage.getItem("sg_token");
   const formData = new FormData();
+  const POST_COVER_UPLOAD_TIMEOUT_MS = 45000;
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutId = controller
+    ? setTimeout(() => controller.abort(), POST_COVER_UPLOAD_TIMEOUT_MS)
+    : null;
   if (postSlug) formData.append("postSlug", postSlug);
   formData.append("file", file);
-  const res = await fetch(`${API_ORIGIN}/api/upload/post-cover`, {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  });
+  let res;
+  try {
+    res = await fetch(`${API_ORIGIN}/api/upload/post-cover`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+      signal: controller?.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error("封面上传超时，请重试");
+    }
+    throw error;
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
   if (!res.ok) {
     const txt = await res.text();
     throw new Error(txt || res.statusText);

@@ -2153,7 +2153,8 @@ const CreatePostView = ({ isDarkMode }) => {
         title.trim() &&
         mdContent.trim() &&
         selectedCategoryId &&
-        selectedTags.length > 0
+        selectedTags.length > 0 &&
+        !coverUploading
     );
 
     if (permLoading) {
@@ -2585,10 +2586,10 @@ const CreatePostView = ({ isDarkMode }) => {
                             variant={canPublish ? "primary" : "ghost"}
                             icon={Send}
                             className="w-full justify-center"
-                            disabled={!canPublish || submitting}
+                            disabled={!canPublish || submitting || coverUploading}
                             onClick={handlePublish}
                         >
-                            {submitting ? "发布中..." : "立即发布"}
+                            {coverUploading ? '封面上传中...' : submitting ? "发布中..." : "发布文章"}
                         </PopButton>
                         {submitError && (
                             <p className="text-xs text-rose-500">
@@ -3663,7 +3664,8 @@ const EditPostView = ({ isDarkMode }) => {
         form.mdContent.trim() &&
         selectedCategoryId &&
         selectedTags.length > 0 &&
-        form.status
+        form.status &&
+        !coverUploading
     );
 
     const handleSave = async () => {
@@ -4189,10 +4191,10 @@ const EditPostView = ({ isDarkMode }) => {
                             {submitError && <div className="text-sm text-red-500">{submitError}</div>}
                             <button
                                 onClick={handleSave}
-                                disabled={!canSave || saving}
+                                disabled={!canSave || saving || coverUploading}
                                 className={`w-full px-4 py-3 font-bold border-2 border-black ${canSave ? 'bg-[#FFD700] text-black hover:translate-y-0.5 transition-transform' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
                             >
-                                {saving ? '保存中...' : '保存修改'}
+                                {coverUploading ? '封面上传中...' : saving ? '保存中...' : '保存修改'}
                             </button>
                         </div>
                     </div>

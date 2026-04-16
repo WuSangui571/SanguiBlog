@@ -238,7 +238,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   前端未连后端时，首页作者头像与文章列表使用“加载中”占位（SVG 头像 + 2 条 loading 卡片），接口返回后由真实数据覆盖，无额外分支逻辑。
 *   首页作者卡片的“个人简介”支持 HTML 渲染（`dangerouslySetInnerHTML`），仅用于站长资料展示，内容来源于后台个人资料的 `bio` 字段。
 *   上传策略：文章资源单文件 ≤20MB、单次总量 ≤50MB（后端 `UploadController` 校验）；Spring `multipart` 全局上限 60MB。部署 Nginx 时需将站点级 `client_max_body_size` 配置为 `60m` 及以上，否则会返回 413。
-*   文章封面/正文资源上传接口（`/api/upload/post-cover`、`/api/upload/post-assets/reserve`、`/api/upload/post-assets`）当前采用“`SUPER_ADMIN` 角色兜底 + `PERM_POST_CREATE/PERM_POST_EDIT` 文章权限”双保险，不要只保留权限码而移除超级管理员兜底；封面上传保存文件时需显式关闭 `MultipartFile` 输入流，避免前端长期停留在“上传中”。
+*   文章封面/正文资源上传接口（`/api/upload/post-cover`、`/api/upload/post-assets/reserve`、`/api/upload/post-assets`）当前采用“`SUPER_ADMIN` 角色兜底 + `PERM_POST_CREATE/PERM_POST_EDIT` 文章权限”双保险，不要只保留权限码而移除超级管理员兜底；封面上传保存文件时需显式关闭 `MultipartFile` 输入流，避免前端长期停留在“上传中”。前端文章新建/编辑页也必须在 `coverUploading=true` 时禁止发布/保存，并为 `uploadPostCover` 保留超时兜底，避免上传响应悬挂时以空 `coverImage` 发布文章，导致封面文件落盘但首页只能显示默认图。
 *   自 V1.3.101 起，ArticleList 在页码、一级/二级分类或 “Reset Filters” 改变筛选时都会统一调用 `scrollToPostsTop()`，再次点击已激活的一级分类会退回到“全部”并折叠子分类；首页 Hero 文案与分页金句分别读取 `application.yaml` 中的 `site.hero.tagline` 与 `site.home.signature-quote`，默认仍为 “拒绝平庸…” 与 “阻挡你的不是别人…”，并移除了列表包裹层的 `flex:1` 占位以避免分页下沉。
 *   自 V2.1.29 起，文章列表上方新增关键词搜索条（标题/摘要模糊匹配），实时过滤并重置到第 1 页；“清空”按钮只移除关键词，保留分类/标签筛选，右侧同时展示当前匹配篇数，分页与滚动逻辑保持不变。
 *   自 V1.3.102 起，首页作者头像新增“转速过快”彩蛋：400ms 内连续点击 ≥4 次会随机弹出提示；自 V2.2.20 起，这类短提示已改为复用 `GlassPopupToast` 玻璃模板，不再使用旧的黑边赛博弹层。V1.3.104+ 若短时间内高频点击（默认阈值 10 次）会触发“眼冒金星”全屏动画并锁定旋转；自 V2.2.20 起，其中心提示卡片也已适配为站点玻璃风格。冷却时间保持 60 秒，可通过 `SPIN_WARNINGS`、`MEGA_SPIN_THRESHOLD`、`SPIN_LOCK_DURATION` 调整。

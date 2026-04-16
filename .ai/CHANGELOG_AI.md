@@ -5,6 +5,31 @@
 
 ---
 
+## [2026-04-16] 加固文章封面上传中的发布/保存护栏
+- 背景/需求：用户反馈超级管理员新建发布文章时，封面上传会一直显示“上传中”；后台未引用图片中能看到封面文件，说明文件已落盘，但首页文章仍显示默认图，疑似文章发布时未绑定 `coverImage`。
+- 修改类型：fix
+- 影响范围：后台新建/编辑文章的封面上传状态、文章发布/保存按钮门禁、封面上传 API 前端超时兜底、封面上传回归测试
+- 变更摘要：
+  1) 检索确认封面上传后端唯一入口仍是 `UploadController.uploadPostCover`，当前已按历史修复使用 `try-with-resources` 主动关闭 `MultipartFile` 输入流；首页文章卡片仍通过 `PostSummaryDto.coverImage -> ArticleList -> buildAssetUrl` 展示，不新增第二套展示逻辑。
+  2) 定位到前端状态边界风险：`AdminPanel.jsx` 在 `coverUploading=true` 时仍允许发布/保存文章；如果上传响应悬挂，文章会以空 `coverImage` 提交，导致封面文件落在 `uploads/covers` 但文章未引用，首页只能显示默认图。
+  3) 在 `uploadPostCover` 前端请求中加入 `AbortController` 与 45 秒超时兜底，避免界面无限停留在“上传中”；超时后显示“封面上传超时，请重试”。
+  4) 新建文章与编辑文章的发布/保存门禁都加入 `!coverUploading`，并在按钮文案上显示“封面上传中...”，避免用户误以为可以继续提交。
+  5) 新增 `PostCoverUploadGuard.test.js` 静态回归脚本，锁定上传中禁止发布/保存、按钮提示与上传超时兜底。
+- 涉及文件：
+  - `SanguiBlog-front/src/api.js`
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/PostCoverUploadGuard.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`uploadPostCover` / `coverUploading` / `coverImage` / `UploadController` / `buildAssetUrl` / `ArticleList` / `上传中` / `uploads/covers`
+  - 候选实现：`UploadController.uploadPostCover` 上传入口、`AdminPanel.jsx` 新建/编辑文章封面上传处理、`PostService.saveOrUpdate/updateMeta` 封面入库链路、`PostService.toSummary/toSummaryPrefetched` 首页封面出参链路、`ArticleList.jsx` 首页封面渲染链路
+  - 最终选择：复用现有 `/api/upload/post-cover`、`coverImage` 字段和首页展示链路，只在现有前端状态机补超时兜底与提交门禁，不新增接口、不新增字段、不新增第二套封面模块
+- 验证方式：
+  - 先执行 `node .\src\appfull\PostCoverUploadGuard.test.js`（工作目录 `SanguiBlog-front`），确认新增断言按预期失败
+  - 修改后执行 `node .\src\appfull\PostCoverUploadGuard.test.js`（工作目录 `SanguiBlog-front`）通过
+- 版本号说明：本次为缺陷修复与前端状态护栏加固，未单独提升站点版本号。
+
 ## [2026-04-16] 更新首页站点版本到 V2.2.22
 - 背景/需求：用户要求将项目当前版本号从 `V2.2.21` 更新到 `V2.2.22`，只同步首页版本展示，不新增 release 文档；同时检查根目录英文 README 与中文 README，若存在过时版本或功能概述则一起同步更新。
 - 修改类型：docs
