@@ -5,6 +5,32 @@
 
 ---
 
+## [2026-04-16] 更新首页站点版本到 V2.2.22
+- 背景/需求：用户要求将项目当前版本号从 `V2.2.21` 更新到 `V2.2.22`，只同步首页版本展示，不新增 release 文档；同时检查根目录英文 README 与中文 README，若存在过时版本或功能概述则一起同步更新。
+- 修改类型：docs
+- 影响范围：首页版本展示来源、首页/导航版本兜底值、根目录英文 README、根目录中文 README、AI 修改日志
+- 变更摘要：
+  1) 检索确认首页版本主链路仍然是后端 `application.yaml` 的 `site.version` -> `/api/site/meta` -> `HomeView.jsx` Hero `version` 与 `Navigation.jsx` 品牌版本展示，不新增第二套版本配置。
+  2) 将 `SanguiBlog-server/src/main/resources/application.yaml` 中的 `site.version` 从 `V2.2.21` 更新为 `V2.2.22`。
+  3) 将 `HomeView.jsx` 与 `Navigation.jsx` 中仅在 meta 未返回时生效的兜底版本同步更新为 `V2.2.22`，避免接口异常或静态预览时仍显示旧版本。
+  4) 检查 `README.md` 与 `README.zh-CN.md`：主要过时点为“当前站点版本号”和顶部当前版本概述仍停留在 `V2.2.21`；现已统一更新为 `V2.2.22`，并补充自上一版本以来新增的后台服务器系统监控分组能力说明。
+  5) 按用户要求不新增 `release/V2.2.22.md`，README 中“当前仓库内最新现有对外 release 文档为 `release/V2.2.20.md`”保持不变。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `README.md`
+  - `README.zh-CN.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`V2.2.21` / `V2.2.22` / `site.version` / `siteVersion` / `meta?.version` / `Current site version` / `当前站点版本号` / `系统监控`
+  - 候选实现：`application.yaml` 的 `site.version`、`HomeView.jsx` Hero 版本传参、`Navigation.jsx` 品牌版本展示、根目录中英文 README 当前版本说明、`.ai/CHANGELOG_AI.md` 中自 `V2.2.21` 以来的系统监控更新记录
+  - 最终选择：复用现有 `site.version` 单一来源，只同步配置、首页兜底与 README 描述，不新增接口、不新增 release 文档、不改包版本号
+- 验证方式：
+  - 执行版本号检索，确认 `application.yaml`、首页兜底与 README 当前版本说明均已更新为 `V2.2.22`
+  - 执行 `git diff --check` 做静态格式检查
+- 版本号说明：本次为用户明确要求的小版本更新，按项目规则仅提升第三位：`V2.2.21` -> `V2.2.22`。
+
 ## [2026-04-16] 在后台设置页新增系统监控分组
 - 背景/需求：用户希望在 `/admin/settings` 增设“系统监控”分组，并把它调成默认第一个显示的设置分组；监控目标是部署本项目的服务器操作系统，而不是 Java 应用自身，要求覆盖运行时长、实时网络流量、分时段总流量、CPU、内存、磁盘、实时吞吐量和综合评分，优先兼容 Linux，同时可在 Windows 上测试，并尽量复用成熟开源模块。
 - 修改类型：feat
