@@ -55,6 +55,7 @@ public class AiChatService {
     private final AiAssistantSettingService aiAssistantSettingService;
     private final AiAssistantCapabilityService aiAssistantCapabilityService;
     private final AiCurrentPageContextService aiCurrentPageContextService;
+    private final AiReferencedPostContextService aiReferencedPostContextService;
     private final AiCurrentUserContextService aiCurrentUserContextService;
     private final AiChatSessionVisibilityService aiChatSessionVisibilityService;
     private final AiGuestAccessService aiGuestAccessService;
@@ -142,9 +143,20 @@ public class AiChatService {
             return completeDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
         }
 
-        AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
+        List<String> contextMessageTexts = loadContextMessageTexts(accessContext, session != null ? session.getId() : null, localHistory);
+        AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice =
+                aiReferencedPostContextService.advise(userMessage, contextMessageTexts);
+        AiBlogRagService.AiBlogRagContext ragContext = referencedPostAdvice.useContext()
+                ? AiBlogRagService.AiBlogRagContext.empty()
+                : aiBlogRagService.retrieve(userMessage);
         AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
                 aiCurrentPageContextService.advise(userMessage, currentPageContext);
+        if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
+            pageContextAdvice = AiCurrentPageContextService.PageContextAdvice.unused();
+        }
+        if (shouldPreferCurrentArticlePageContext(currentPageContext, pageContextAdvice, referencedPostAdvice)) {
+            referencedPostAdvice = AiReferencedPostContextService.ReferencedPostAdvice.unused();
+        }
         List<Message> promptMessages = buildPromptMessages(
                 accessContext,
                 session != null ? session.getId() : null,
@@ -152,6 +164,7 @@ public class AiChatService {
                 userMessage,
                 ragContext,
                 pageContextAdvice,
+                referencedPostAdvice,
                 currentUser
         );
 
@@ -206,9 +219,20 @@ public class AiChatService {
             return streamDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
         }
 
-        AiBlogRagService.AiBlogRagContext ragContext = aiBlogRagService.retrieve(userMessage);
+        List<String> contextMessageTexts = loadContextMessageTexts(accessContext, session != null ? session.getId() : null, localHistory);
+        AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice =
+                aiReferencedPostContextService.advise(userMessage, contextMessageTexts);
+        AiBlogRagService.AiBlogRagContext ragContext = referencedPostAdvice.useContext()
+                ? AiBlogRagService.AiBlogRagContext.empty()
+                : aiBlogRagService.retrieve(userMessage);
         AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
                 aiCurrentPageContextService.advise(userMessage, currentPageContext);
+        if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
+            pageContextAdvice = AiCurrentPageContextService.PageContextAdvice.unused();
+        }
+        if (shouldPreferCurrentArticlePageContext(currentPageContext, pageContextAdvice, referencedPostAdvice)) {
+            referencedPostAdvice = AiReferencedPostContextService.ReferencedPostAdvice.unused();
+        }
         List<Message> promptMessages = buildPromptMessages(
                 accessContext,
                 session != null ? session.getId() : null,
@@ -216,6 +240,7 @@ public class AiChatService {
                 userMessage,
                 ragContext,
                 pageContextAdvice,
+                referencedPostAdvice,
                 currentUser
         );
 
@@ -318,10 +343,11 @@ public class AiChatService {
             String userMessage,
             AiBlogRagService.AiBlogRagContext ragContext,
             AiCurrentPageContextService.PageContextAdvice pageContextAdvice,
+            AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice,
             User currentUser
     ) {
         List<Message> promptMessages = new ArrayList<>();
-        promptMessages.add(new SystemMessage(buildSystemPrompt(accessContext, ragContext, pageContextAdvice, currentUser)));
+        promptMessages.add(new SystemMessage(buildSystemPrompt(accessContext, ragContext, pageContextAdvice, referencedPostAdvice, currentUser)));
         promptMessages.addAll(loadContextMessages(accessContext, sessionId, localHistory));
         promptMessages.add(new UserMessage(userMessage));
         return promptMessages;
@@ -331,6 +357,7 @@ public class AiChatService {
             AiGuestAccessService.AccessContext accessContext,
             AiBlogRagService.AiBlogRagContext ragContext,
             AiCurrentPageContextService.PageContextAdvice pageContextAdvice,
+            AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice,
             User currentUser
     ) {
         List<String> sections = new ArrayList<>();
@@ -342,6 +369,9 @@ public class AiChatService {
         if (StringUtils.hasText(userContext)) {
             sections.add(userContext);
         }
+        if (referencedPostAdvice.useContext()) {
+            sections.add(referencedPostAdvice.systemContext());
+        }
         if (ragContext.hasContext()) {
             sections.add(ragContext.getSystemContext());
         }
@@ -349,6 +379,31 @@ public class AiChatService {
             sections.add(pageContextAdvice.systemContext());
         }
         return String.join(System.lineSeparator() + System.lineSeparator(), sections);
+    }
+
+    private boolean shouldPreferReferencedPostContext(
+            AiCurrentPageContextDto currentPageContext,
+            AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice
+    ) {
+        return referencedPostAdvice.useContext()
+                && (!isArticlePageContext(currentPageContext) || referencedPostAdvice.explicitReference());
+    }
+
+    private boolean shouldPreferCurrentArticlePageContext(
+            AiCurrentPageContextDto currentPageContext,
+            AiCurrentPageContextService.PageContextAdvice pageContextAdvice,
+            AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice
+    ) {
+        return pageContextAdvice.useContext()
+                && referencedPostAdvice.useContext()
+                && isArticlePageContext(currentPageContext)
+                && !referencedPostAdvice.explicitReference();
+    }
+
+    private boolean isArticlePageContext(AiCurrentPageContextDto currentPageContext) {
+        return currentPageContext != null
+                && StringUtils.hasText(currentPageContext.getPageType())
+                && "article".equalsIgnoreCase(currentPageContext.getPageType().trim());
     }
 
     private List<Message> loadContextMessages(
@@ -465,6 +520,33 @@ public class AiChatService {
         return "assistant".equals(message.getRole())
                 ? new AssistantMessage(content)
                 : new UserMessage(content);
+    }
+
+    private List<String> loadContextMessageTexts(
+            AiGuestAccessService.AccessContext accessContext,
+            Long sessionId,
+            List<AiLocalChatMessageDto> localHistory
+    ) {
+        if (!accessContext.guest()) {
+            return aiChatMessageRepository.findBySessionIdOrderByCreatedAtDescIdDesc(
+                            sessionId,
+                            PageRequest.of(0, Math.max(1, maxContextMessages)))
+                    .stream()
+                    .sorted(Comparator.comparing(AiChatMessage::getCreatedAt).thenComparing(AiChatMessage::getId))
+                    .map(AiChatMessage::getContent)
+                    .filter(StringUtils::hasText)
+                    .toList();
+        }
+
+        if (localHistory == null || localHistory.isEmpty()) {
+            return List.of();
+        }
+
+        int fromIndex = Math.max(0, localHistory.size() - Math.max(1, maxContextMessages));
+        return localHistory.subList(fromIndex, localHistory.size()).stream()
+                .filter(item -> item != null && StringUtils.hasText(item.getContent()))
+                .map(item -> item.getContent().trim())
+                .toList();
     }
 
     private String extractChunk(ChatResponse response) {

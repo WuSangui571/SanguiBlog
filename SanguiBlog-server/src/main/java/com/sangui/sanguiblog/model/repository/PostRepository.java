@@ -45,6 +45,8 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
 
     Optional<Post> findFirstByStatusOrderByPublishedAtDesc(String status);
 
+    Optional<Post> findFirstByTitleAndStatus(String title, String status);
+
     boolean existsByIdAndStatus(Long id, String status);
 
     long countByStatus(String status);

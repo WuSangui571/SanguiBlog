@@ -5,6 +5,33 @@
 
 ---
 
+## [2026-04-20] 为 AI 助手增加会话级站内文章指代上下文
+- 背景/需求：用户反馈在首页询问“最新的一篇文章是什么”后，AI 能精确回答文章标题并提示可继续总结；但用户随后追问“总结此文的内容”时，因为当前不在 `/article/{id}` 详情页，后端没有注入该文章正文上下文，模型会开始胡编与真实文章不符的内容。用户希望当用户或 AI 已经明确提出某篇站内文章或文章链接后，后续指代“此文/这篇文章”时能把该真实文章接入上下文。
+- 修改类型：fix
+- 影响范围：AI 助手聊天编排、站内文章指代解析、首页/非文章页追问总结场景、AI 单元测试、AI 项目记忆
+- 变更摘要：
+  1) 检索确认既有能力分为两条：`AiAssistantCapabilityService` 会对“最新文章是什么”做系统事实直答；`AiCurrentPageContextService` 只在当前页面上下文有效时注入页面内容，文章详情页能总结“此文”，但首页只有静态首页说明，无法承接上一轮提到的文章正文。
+  2) 新增 `AiReferencedPostContextService`：从当前问题和最近会话文本中解析确定的站内已发布文章，支持 `《文章标题》` 与 `/article/{id|slug}` 链接；命中后从 `posts` 表读取真实标题、链接、摘要和正文，构建临时 system context。
+  3) 在 `AiChatService` 的同步与流式聊天链路中接入会话级文章指代上下文：当非文章页命中“此文/本文/这篇文章 + 总结/概括/主要内容”等追问时，优先注入解析到的文章上下文，并避免把首页静态上下文混入同一次文章总结请求。
+  4) 保留文章详情页现有优先级：如果用户正处于 `/article/{id}` 页面且没有显式提到另一篇文章，仍优先使用 `AiCurrentPageContextService` 的当前文章上下文；若用户显式粘贴另一篇文章链接或标题，则以显式提到的文章为准。
+  5) 为 `PostRepository` 增加按标题与状态精确查找的方法，避免仅凭模糊 RAG 或标题自由生成文章内容。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiReferencedPostContextService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java`
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/PostRepository.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiReferencedPostContextServiceTest.java`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`AiCurrentPageContextService` / `AiAssistantCapabilityService` / `最新文章` / `此文` / `这篇文章` / `currentPageContext` / `localHistory` / `AiChatService` / `/article/`
+  - 候选实现：`AiAssistantCapabilityService` 最新文章系统事实直答、`AiCurrentPageContextService` 当前页面临时上下文、`AiChatService.loadContextMessages/loadContextMessageTexts` 会话历史加载、`PostRepository` 已发布文章查询、`AiBlogRagService` 站点知识 RAG
+  - 最终选择：不改现有当前页面上下文、不新增前端字段、不新增数据库表；新增一个后端小服务复用会话历史和 `posts` 表，只在明确解析到站内已发布文章时注入临时上下文，避免重复实现 RAG 或第二套聊天链路
+- 验证方式：
+  - 先执行 `mvn -q "-Dtest=AiReferencedPostContextServiceTest" test`，确认新增测试因缺少服务和仓储方法按预期失败
+  - 实现后执行 `mvn -q "-Dtest=AiReferencedPostContextServiceTest" test` 通过
+  - 执行 `mvn -q "-Dtest=AiReferencedPostContextServiceTest,AiCurrentPageContextServiceTest,AiAssistantCapabilityServiceTest,AiChatServiceTest" test` 通过，确认新逻辑不破坏文章详情页上下文、最新文章直答与聊天完成事件
+- 版本号说明：本次为 AI 助手行为修复，未按用户要求单独提升站点版本号。
+
 ## [2026-04-20] 新增 V2.2.23 发布说明并同步 README 的 release 引用
 - 背景/需求：用户准备基于当前最新版本 `V2.2.23` 发布新版本，需要在 `release/` 目录补齐中文 release 文档；同时检查根目录英文 README 与中文 README，若仍引用旧的公开 release 文档，则同步更新到当前版本，其他内容保持不变。
 - 修改类型：docs

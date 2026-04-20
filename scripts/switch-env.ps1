@@ -19,7 +19,7 @@ $config = @{
     }
     prod = @{
         Port      = "8082"
-        DbUrl     = "jdbc:mysql://123.56.244.121:3306/sanguiblog_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"
+        DbUrl     = "jdbc:mysql://127.0.0.1:3306/sanguiblog_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"
         Storage   = "/home/sangui/uploads"
         AssetBase = "http://sangui.top/uploads"
         ApiBase   = "/api"
