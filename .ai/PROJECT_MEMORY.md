@@ -843,7 +843,7 @@ npm run dev
 - AI 聊天在手机端采用单独适配：打开后全屏铺满视口，小屏下不允许进入浮动窗口模式；点击浮动按钮仅提示手机端暂不支持该能力。
 - AI 默认空窗口欢迎文案支持“浏览器会话首次进入”动效：使用 `sessionStorage` 控制，只在首次打开空白 AI 窗口时播放一次，关闭再打开不重播，重新打开浏览器后恢复首播。
 - AI 系统事实层已接入 `SiteService.currentStats()`：文章数、总浏览量、总评论数、总标签数、最后更新时间必须优先走实时站点统计，不再依赖模型自由推断。
-- AI 助手支持“会话级站内文章指代上下文”：当当前问题或最近几轮用户/助手消息中已经明确出现某篇已发布站内文章的 `《标题》` 或 `/article/{id|slug}` 链接时，后续用户在首页、归档页等非文章详情页继续说“总结此文 / 本文 / 这篇文章 / 这篇博客”时，后端会通过 `AiReferencedPostContextService` 查询真实已发布文章，并把标题、链接、摘要和正文作为临时 system context 注入，避免模型只凭上一轮文字胡编文章内容。该能力只复用 `posts` 表与现有会话消息，不新增数据库表；如果用户当前正在 `/article/{id}` 页面且没有显式提到另一篇文章，仍以 `AiCurrentPageContextService` 的当前文章页面上下文优先。
+- AI 助手支持“会话级站内文章指代上下文”：当当前问题或最近几轮用户/助手消息中已经明确出现某篇已发布站内文章的 `《标题》` 或 `/article/{id|slug}` 链接时，后续用户在首页、归档页等非文章详情页继续说“总结此文 / 本文 / 这篇文章 / 这篇博客”时，后端会通过 `AiReferencedPostContextService` 查询真实已发布文章，并把标题、链接、摘要和正文作为临时 system context 注入，避免模型只凭上一轮文字胡编文章内容。该能力只复用 `posts` 表与现有会话消息，不新增数据库表；如果用户当前正在 `/article/{id}` 页面且没有显式提到另一篇文章，仍以 `AiCurrentPageContextService` 的当前文章页面上下文优先。自 2026-04-20 起，这条指代规则已从“总结/概括此文”扩展到“讲解/介绍/说说/解读/分析这篇文章”等自然表达；如果用户本轮引用的 `《标题》` 未精确命中，但最近 AI 或用户消息中已明确列出唯一匹配的真实站内文章，也会回看最近候选并接入该文章正文上下文。
 - 首页新版首屏当前通过 `Hero.jsx + homeRedesign.css` 实现“负 margin 向上铺到固定导航后面”的结构；如果后续再调整导航首屏透图效果，优先检查 `--home-header-offset`、`.home-hero` 的负偏移，以及 `Navigation.jsx` 的 `heroMode` 切换阈值，不要另起第二套首页头图实现。
 - `/admin/settings` 现已新增“系统监控”分组，并调整为设置页默认首个分组；该页唯一真实入口仍是 `SystemSettingsView`，不要再新增第二套“系统监控页”或把系统监控散落到其它后台模块中。
 - 服务器系统监控后端统一走 `GET /api/admin/system-monitor`，底层采集优先复用 `oshi-core`，目标是读取部署服务器操作系统（Linux/Windows）指标；但页面里的“项目运行时长”必须使用当前 Java 进程运行时长（`RuntimeMXBean.getUptime()`），不要使用 OSHI 的系统开机时长 `operatingSystem.getSystemUptime()`。若以后扩展更多系统监控项，应继续在 `SystemMonitorService + SystemMonitorDto` 这条链路上增量扩展，不要另写平台专属采集实现。

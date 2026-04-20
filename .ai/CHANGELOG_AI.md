@@ -32,6 +32,30 @@
   - 执行 `mvn -q "-Dtest=AiReferencedPostContextServiceTest,AiCurrentPageContextServiceTest,AiAssistantCapabilityServiceTest,AiChatServiceTest" test` 通过，确认新逻辑不破坏文章详情页上下文、最新文章直答与聊天完成事件
 - 版本号说明：本次为 AI 助手行为修复，未按用户要求单独提升站点版本号。
 
+## [2026-04-20] 放宽 AI 助手对“刚刚提到的文章”继续追问的指代解析
+- 背景/需求：在首页先询问某个主题下是否有相关文章后，AI 能列出真实站内文章；但用户继续说“你刚刚提出的《xxx》这篇文章，给我讲解一下”时，后端原有会话级文章指代逻辑仍偏死板，只对“总结/概括/此文”这类窄表达更稳，对“讲解一下/介绍一下/说说这篇文章”以及标题略缩写的追问容易漏接真实文章正文，导致模型又开始自由发挥。
+- 修改类型：fix
+- 影响范围：AI 文章指代解析、首页/归档页等非文章详情页的继续追问体验、AI 单元测试、AI 项目记忆
+- 变更摘要：
+  1) 保留现有 `AiReferencedPostContextService` 主体职责，不新增第二套文章指代模块，只在现有服务上增强解析策略。
+  2) 扩展“继续讲这篇文章”的意图词，新增 `讲解 / 介绍 / 说说 / 展开讲 / 解读 / 分析一下` 等表达，避免只有“总结/概括”才会回看最近会话。
+  3) 新增“当前问题里带《标题》但未精确命中时，回看最近消息候选文章做唯一匹配”的兜底：如果最近会话中已经明确出现真实站内文章标题或链接，而用户本轮只引用了标题的一部分或轻微变体，则优先从最近候选里唯一匹配到真实文章并注入正文上下文。
+  4) 最近消息中的文章解析从“只取第一篇”改为“收集最近消息里明确提到的全部站内文章并去重”，为后续唯一匹配和更自然的承接打基础。
+  5) 新增回归测试覆盖“AI 列出 OpenClaw 候选文章后，用户继续说《OpenClaw》这篇文章，给我讲解一下”场景，确保该场景稳定接入真实文章正文而不是胡编。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiReferencedPostContextService.java`
+  - `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiReferencedPostContextServiceTest.java`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`AiReferencedPostContextService` / `讲解一下` / `《标题》` / `recentMessages` / `quoted title` / `总结此文`
+  - 候选实现：现有 `AiReferencedPostContextService` 精确标题/链接解析、最近消息回看逻辑、`AiAssistantCapabilityService` 候选文章输出、`AiChatService` 会话文本加载
+  - 最终选择：继续复用现有会话级文章指代服务，按最小改动扩展触发词和最近消息匹配，不新增数据库表、不新增接口、不改聊天主链路
+- 验证方式：
+  - 执行 `mvn -q "-Dtest=AiReferencedPostContextServiceTest" test`，确认新增失败用例先红后绿
+  - 执行 `mvn -q "-Dtest=AiReferencedPostContextServiceTest,AiCurrentPageContextServiceTest,AiAssistantCapabilityServiceTest,AiChatServiceTest" test` 通过
+- 版本号说明：本次为 AI 助手文章追问行为修复，未单独提升站点版本号。
+
 ## [2026-04-20] 新增 V2.2.23 发布说明并同步 README 的 release 引用
 - 背景/需求：用户准备基于当前最新版本 `V2.2.23` 发布新版本，需要在 `release/` 目录补齐中文 release 文档；同时检查根目录英文 README 与中文 README，若仍引用旧的公开 release 文档，则同步更新到当前版本，其他内容保持不变。
 - 修改类型：docs

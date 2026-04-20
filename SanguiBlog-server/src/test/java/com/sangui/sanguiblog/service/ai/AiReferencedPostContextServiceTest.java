@@ -79,6 +79,73 @@ class AiReferencedPostContextServiceTest {
         assertFalse(advice.useContext());
     }
 
+    @Test
+    void shouldResolveReferencedPostFromRecentCandidateListWhenUserAsksToExplainRecentlyMentionedArticle() {
+        PostRepository postRepository = mock(PostRepository.class);
+        when(postRepository.findFirstByTitleAndStatus("OpenClaw", "PUBLISHED"))
+                .thenReturn(Optional.empty());
+        when(postRepository.findFirstByTitleAndStatus("OpenClaw 安装与通关记录", "PUBLISHED"))
+                .thenReturn(Optional.of(buildPost(
+                        301L,
+                        "OpenClaw 安装与通关记录",
+                        "关于 OpenClaw 安装、兼容性与通关体验的记录。",
+                        "正文详细记录了 OpenClaw 的安装步骤、运行环境配置、常见报错与通关体验。"
+                )));
+
+        AiReferencedPostContextService service = new AiReferencedPostContextService(postRepository);
+        AiReferencedPostContextService.ReferencedPostAdvice advice = service.advise(
+                "你刚刚提出的《OpenClaw》这篇文章，给我讲解一下",
+                List.of(
+                        "博客有关于OpenClaw的文章吗？",
+                        """
+                                我先优先从站内已发布文章里帮你找，下面是和“OpenClaw”更匹配的候选：
+                                - 《OpenClaw 安装与通关记录》：https://www.sangui.top/article/301
+                                如果你想继续看其中某一篇，我也可以直接按那篇文章帮你总结重点。
+                                """.trim()
+                )
+        );
+
+        assertTrue(advice.useContext());
+        assertTrue(advice.explicitReference());
+        assertTrue(advice.systemContext().contains("OpenClaw 安装与通关记录"));
+        assertTrue(advice.systemContext().contains("安装步骤"));
+        assertTrue(advice.systemContext().contains("/article/301"));
+    }
+
+    @Test
+    void shouldNotFallbackToFirstCandidateWhenRecentConversationContainsMultipleArticlesButUserDidNotIdentifyOne() {
+        PostRepository postRepository = mock(PostRepository.class);
+        when(postRepository.findFirstByTitleAndStatus("OpenClaw 安装与通关记录", "PUBLISHED"))
+                .thenReturn(Optional.of(buildPost(
+                        301L,
+                        "OpenClaw 安装与通关记录",
+                        "关于 OpenClaw 安装、兼容性与通关体验的记录。",
+                        "正文详细记录了 OpenClaw 的安装步骤。"
+                )));
+        when(postRepository.findFirstByTitleAndStatus("OpenClaw Mod 配置笔记", "PUBLISHED"))
+                .thenReturn(Optional.of(buildPost(
+                        302L,
+                        "OpenClaw Mod 配置笔记",
+                        "关于 OpenClaw Mod 的配置整理。",
+                        "正文详细记录了 OpenClaw Mod 的资源替换与配置流程。"
+                )));
+
+        AiReferencedPostContextService service = new AiReferencedPostContextService(postRepository);
+        AiReferencedPostContextService.ReferencedPostAdvice advice = service.advise(
+                "这篇文章给我讲解一下",
+                List.of(
+                        """
+                                我先优先从站内已发布文章里帮你找，下面是和“OpenClaw”更匹配的候选：
+                                - 《OpenClaw 安装与通关记录》：https://www.sangui.top/article/301
+                                - 《OpenClaw Mod 配置笔记》：https://www.sangui.top/article/302
+                                如果你想继续看其中某一篇，我也可以直接按那篇文章帮你总结重点。
+                                """.trim()
+                )
+        );
+
+        assertFalse(advice.useContext());
+    }
+
     private static Post buildPost(Long id, String title, String excerpt, String contentMd) {
         Post post = new Post();
         post.setId(id);
