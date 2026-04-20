@@ -5,6 +5,33 @@
 
 ---
 
+## [2026-04-20] 修复 AI 助手 Markdown 代码块复制按钮无效
+- 背景/需求：用户反馈 AI 聊天回答中的 Markdown 代码块虽带“复制”按钮，但点击后没有任何反应，剪贴板也没有内容；希望补上真实复制功能，并为复制成功/失败增加流畅、克制的反馈动效。
+- 修改类型：fix
+- 影响范围：前台 AI 助手 Markdown 代码块复制链路、复制失败兜底逻辑、代码块复制反馈样式、前端静态回归测试、项目记忆
+- 变更摘要：
+  1) 检索确认 AI 助手代码块唯一入口仍是 `AiMessageMarkdown.js -> MarkdownCodeBlock.jsx`，复制按钮并非未绑定，而是旧逻辑在浏览器暴露 `navigator.clipboard.writeText` 但实际被权限/安全上下文拒绝时，会直接走错误分支，不再降级到旧式复制方案。
+  2) 新增 `src/appfull/ui/clipboardCopy.js`，抽出统一的 `copyTextWithFallback(...)`：先尝试现代 Clipboard API，若 reject 再自动降级到隐藏 `textarea + document.execCommand('copy')`，避免 AI 代码块再单独维护第二套复制实现。
+  3) `MarkdownCodeBlock.jsx` 改为复用统一复制工具；复制成功后进入 `success` 状态，按钮切换为绿色轻微放大与阴影反馈，失败时切换为红色提示，并通过 `aria-live="polite"` 向辅助技术播报状态文本。
+  4) 复制按钮补充 `select-none`，避免按钮文字混入 AI 回复正文拖选区域；交互动效保持 `duration-200` 的轻量过渡，不引入过强动画。
+  5) 新增 `clipboardCopy.test.js` 与 `MarkdownCodeBlock.test.js`，分别锁定“Clipboard API 成功 / reject 后 fallback 成功”和“代码块必须复用统一复制工具并保留反馈动效”。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/clipboardCopy.js`
+  - `SanguiBlog-front/src/appfull/ui/clipboardCopy.test.js`
+  - `SanguiBlog-front/src/appfull/ui/MarkdownCodeBlock.jsx`
+  - `SanguiBlog-front/src/appfull/ui/MarkdownCodeBlock.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`MarkdownCodeBlock` / `AiMessageMarkdown` / `navigator.clipboard.writeText` / `execCommand('copy')` / `复制代码` / `已复制` / `复制失败`
+  - 候选实现：`AiMessageMarkdown.js` 的 AI Markdown 渲染入口、`MarkdownCodeBlock.jsx` 现有复制按钮、`ArticleDetail.jsx` 与 `AboutView.jsx` 的前台代码块复制按钮、上一轮 `sg-ai-message-text` 与 `aiSelectionGuard` 的可选文本约束
+  - 最终选择：继续复用现有 `MarkdownCodeBlock` 作为 AI 助手唯一代码块实现，只抽一个小型复制工具承接 Clipboard API 失败后的兜底，不新增第二套 AI Markdown 渲染器
+- 验证方式：
+  - 先执行 `node .\src\appfull\ui\clipboardCopy.test.js` 与 `node .\src\appfull\ui\MarkdownCodeBlock.test.js`，确认新增断言先红后绿
+  - 执行 `node .\src\appfull\ui\AiMessageMarkdown.test.js`、`node .\src\appfull\DarkScrollbarCoverage.test.js`、`node .\src\appfull\ui\AiAssistantSelection.test.js`、`node .\src\appfull\ui\AiAssistantSelectionGuard.test.js` 通过
+  - 执行 `cmd /c npm run build` 通过
+- 版本号说明：本次为 AI 助手前端交互缺陷修复，未单独提升站点版本号。
+
 ## [2026-04-20] 修复 AI 助手回复文字首次拖选不稳定
 - 背景/需求：用户反馈 AI 聊天中助手回复文字概率无法直接用鼠标拖动选中，导致无法复制；但如果先选中过用户提出的问题，本次页面生命周期内再选择 AI 回复就能生效，关闭页面重开后又复现。该现象指向 AI 面板首次 `pointerdown` 时的层级提升状态更新打断了浏览器刚开始建立的文本选区。
 - 修改类型：fix
