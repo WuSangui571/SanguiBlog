@@ -5,6 +5,35 @@
 
 ---
 
+## [2026-04-20] 修复 AI 助手回复文字首次拖选不稳定
+- 背景/需求：用户反馈 AI 聊天中助手回复文字概率无法直接用鼠标拖动选中，导致无法复制；但如果先选中过用户提出的问题，本次页面生命周期内再选择 AI 回复就能生效，关闭页面重开后又复现。该现象指向 AI 面板首次 `pointerdown` 时的层级提升状态更新打断了浏览器刚开始建立的文本选区。
+- 修改类型：fix
+- 影响范围：前台 AI 助手消息拖选复制体验、AI 面板层级提升保护逻辑、AI 消息选择回归测试、前端构建
+- 变更摘要：
+  1) 检索确认项目已有 `aiSelectionGuard.js` 和 `AiAssistantSelection.test.js`，此前已避免“已有选区/右键时提升层级”导致选区丢失，但仍未覆盖“首次从助手回复文本区开始拖选时当前选区为空”的场景。
+  2) 在 `aiSelectionGuard.js` 中新增 `isAiSelectableTextTarget(...)`，通过 `data-ai-message-selectable="true"` 或 `.sg-ai-message-text` 识别消息文本区域。
+  3) `AiAssistantWidget.jsx` 的 `handlePanelPointerDownCapture` 在判断是否提升 AI 面板层级时，将当前 pointer 目标是否属于可选文本区域纳入 guard；如果用户是从消息正文开始拖选，即便当前还没有选区，也不会先触发层级 state 更新打断首次拖选。
+  4) 给 AI 消息内容容器补充 `data-ai-message-selectable="true"`，复用现有消息渲染结构，不新增第二套助手消息组件；`sg-ai-message-text` 的 `user-select: text` 兜底继续保留。
+  5) 增强 `AiAssistantSelectionGuard.test.js` 与 `AiAssistantSelection.test.js`，锁定“首次从消息文本区拖选不提升层级”和“消息容器必须显式标记可选文本区域”的回归约束。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/aiSelectionGuard.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantSelectionGuard.test.js`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantSelection.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`sg-ai-message-text` / `user-select` / `pointerdown` / `onPointerDownCapture` / `raiseAssistantOverlay` / `aiSelectionGuard` / `select-text`
+  - 候选实现：现有 `AiMessageMarkdown` Markdown 渲染根节点、`index.css` 的 `.sg-ai-message-text` 选择样式、`AiAssistantWidget` 的 `handlePanelPointerDownCapture`、`aiSelectionGuard.js` 的层级提升保护函数、`aiMessagePresentation.js` 的消息布局样式
+  - 最终选择：继续复用现有 Markdown 渲染、消息布局和选择保护 guard，只扩展“可选文本目标”判断，不新增组件、不改消息视觉、不移除层级提升能力
+- 验证方式：
+  - 先执行 `node .\src\appfull\ui\AiAssistantSelectionGuard.test.js` 与 `node .\src\appfull\ui\AiAssistantSelection.test.js`，确认新增断言按预期失败
+  - 修改后执行 `node .\src\appfull\ui\AiAssistantSelectionGuard.test.js` 通过
+  - 执行 `node .\src\appfull\ui\AiAssistantSelection.test.js` 通过
+  - 执行 `node .\src\appfull\ui\AiMessageMarkdown.test.js` 与 `node .\src\appfull\ui\aiMessagePresentation.test.js` 通过
+  - 执行 `cmd /c npm run build` 通过
+- 版本号说明：本次为 AI 助手前端交互缺陷修复，未单独提升站点版本号。
+
 ## [2026-04-20] 为 AI 助手增加会话级站内文章指代上下文
 - 背景/需求：用户反馈在首页询问“最新的一篇文章是什么”后，AI 能精确回答文章标题并提示可继续总结；但用户随后追问“总结此文的内容”时，因为当前不在 `/article/{id}` 详情页，后端没有注入该文章正文上下文，模型会开始胡编与真实文章不符的内容。用户希望当用户或 AI 已经明确提出某篇站内文章或文章链接后，后续指代“此文/这篇文章”时能把该真实文章接入上下文。
 - 修改类型：fix

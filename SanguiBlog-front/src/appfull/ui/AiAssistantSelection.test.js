@@ -20,8 +20,18 @@ assert.doesNotMatch(
 );
 assert.match(
     widgetSource,
+    /isAiSelectableTextTarget/,
+    'AI 面板应识别从消息文本区开始的拖选，避免首次拖选时因为提升层级而打断选区'
+);
+assert.match(
+    widgetSource,
     /onPointerDownCapture=\{handlePanelPointerDownCapture\}/,
     'AI 面板根层应改为通过选择保护函数决定是否提升层级'
+);
+assert.match(
+    widgetSource,
+    /data-ai-message-selectable="true"/,
+    '消息文本容器应显式标记为可选择文本区域，供面板层级保护逻辑识别'
 );
 assert.match(
     cssSource,

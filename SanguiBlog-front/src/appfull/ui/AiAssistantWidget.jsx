@@ -39,7 +39,11 @@ import { buildAiSessionDeleteDialog } from './aiSessionDeleteDialog.js';
 import { buildAiLauncherBadge } from './aiLauncherBadge.js';
 import { buildAiGuestAccessNotice } from './aiGuestAccessNotice.js';
 import { claimOverlayStackBase, OVERLAY_STACK_BASE } from './overlayStack.js';
-import { normalizeSelectedText, shouldRaiseAssistantOverlayOnPointerDown } from './aiSelectionGuard.js';
+import {
+    isAiSelectableTextTarget,
+    normalizeSelectedText,
+    shouldRaiseAssistantOverlayOnPointerDown
+} from './aiSelectionGuard.js';
 import {
     buildAiWelcomeIntroLines,
     shouldPlayAiWelcomeIntro
@@ -169,7 +173,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
         if (!shouldRaiseAssistantOverlayOnPointerDown({
             button: event.button,
-            selectedText
+            selectedText,
+            selectableTextTarget: isAiSelectableTextTarget(event.target)
         })) {
             return;
         }
@@ -1361,6 +1366,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                                 >
                                                     <div
                                                         className={presentation.contentClassName}
+                                                        data-ai-message-selectable="true"
                                                     >
                                                         {isAssistant ? (
                                                             <AiMessageMarkdown
