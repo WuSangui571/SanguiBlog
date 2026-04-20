@@ -5,6 +5,32 @@
 
 ---
 
+## [2026-04-20] 更新首页站点版本到 V2.2.23
+- 背景/需求：用户要求将项目当前版本号从 `V2.2.22` 更新到 `V2.2.23`，只同步首页版本展示，不新增 release 文档；同时检查根目录英文 README 与中文 README，若存在过时版本或近期功能概述则同步更新，并参考自上一个版本以来的 AI 修改日志整理更新内容。
+- 修改类型：docs
+- 影响范围：首页版本展示来源、首页/导航版本兜底值、根目录英文 README、根目录中文 README、AI 修改日志
+- 变更摘要：
+  1) 检索确认首页版本主链路仍是后端 `application.yaml` 的 `site.version` -> `/api/site/meta` -> `HomeView.jsx` Hero `version` 与 `Navigation.jsx` 品牌版本展示，不新增第二套版本配置。
+  2) 将 `SanguiBlog-server/src/main/resources/application.yaml` 中的 `site.version` 从 `V2.2.22` 更新为 `V2.2.23`。
+  3) 将 `HomeView.jsx` 与 `Navigation.jsx` 中仅在 meta 未返回时生效的兜底版本同步更新为 `V2.2.23`，避免接口异常或静态预览时仍显示旧版本。
+  4) 检查 `README.md` 与 `README.zh-CN.md`：当前版本号与 AI 助理章节版本描述仍停留在 `V2.2.22`；现已统一更新为 `V2.2.23`，并根据自 `V2.2.22` 以来的记录补充“文章封面上传护栏加固”和“桌面端后台侧栏折叠且与移动端抽屉分离”等近期改动概述。
+  5) 按用户要求不新增 `release/V2.2.23.md`，README 中“当前仓库内最新现有对外 release 文档为 `release/V2.2.20.md`”保持不变。
+- 涉及文件：
+  - `SanguiBlog-server/src/main/resources/application.yaml`
+  - `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+  - `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+  - `README.md`
+  - `README.zh-CN.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`V2.2.22` / `V2.2.23` / `site.version` / `siteVersion` / `meta?.version` / `Current site version` / `当前站点版本号` / `release/V2` / `后台左侧导航` / `封面上传`
+  - 候选实现：`application.yaml` 的 `site.version`、`HomeView.jsx` Hero 版本传参、`Navigation.jsx` 品牌版本展示、根目录中英文 README 当前版本说明、`.ai/CHANGELOG_AI.md` 中自 `V2.2.22` 以来的封面上传护栏与后台侧栏折叠记录
+  - 最终选择：复用现有 `site.version` 单一来源，只同步配置、首页兜底与 README 描述，不新增接口、不新增 release 文档、不改包版本号
+- 验证方式：
+  - 执行版本号检索，确认 `application.yaml`、首页兜底与 README 当前版本说明均已更新为 `V2.2.23`
+  - 执行 `git diff --check` 做静态格式检查
+- 版本号说明：本次为用户明确要求的小版本更新，按项目规则仅提升第三位：`V2.2.22` -> `V2.2.23`。
+
 ## [2026-04-20] 为后台左侧导航新增桌面端折叠/展开能力
 - 背景/需求：用户希望 `/admin` 左侧导航不再始终固定为宽侧栏，而是增加一个位于当前页面标题左侧附近的图标按钮；点击后桌面端侧栏收缩为仅显示图标的窄栏，右侧内容区同步增宽，再次点击恢复原样，并要求动画流畅、克制，不影响其他未提及区域。
 - 修改类型：fix
