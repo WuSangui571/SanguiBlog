@@ -268,7 +268,7 @@ SanguiBlog 是一个前后端分离的个人博客系统。
 *   自 V2.1.158 起，移动端“返回顶部”按钮轻触即可触发回顶，拖拽仍保持原有可移动逻辑，避免触控端无法点击的问题。
 *   自 V2.1.159 起，移动端导航抽屉按钮可正常打开菜单，避免因视图切换监听过度导致的“点击无响应”，登录入口同步恢复可用。
 *   自 V2.1.160 起，后台移动端默认收起左侧导航，顶部“菜单”按钮可展开抽屉；主体区域开启横向滚动以适配表格等宽内容，桌面端布局保持不变。
-*   自 2026-04-20 起，后台 `/admin` 桌面端左侧导航支持折叠/展开：入口仍是 `src/appfull/AdminPanel.jsx` 的同一套 `navSections + adminNavContent`，顶部当前页面标题左侧按钮控制 `adminSidebarCollapsed`；折叠时桌面侧栏从 `md:w-64` 收为 `md:w-20`，主内容偏移从 `md:ml-64` 同步变为 `md:ml-20`，导航仅显示图标并保留 `title` 提示。移动端抽屉继续通过 `adminNavOpen` 控制，并强制展示完整文字；后续不要为桌面折叠或移动端菜单另起第二套后台导航实现。
+*   自 2026-04-20 起，后台 `/admin` 桌面端左侧导航支持折叠/展开：入口仍是 `src/appfull/AdminPanel.jsx` 的同一套 `navSections + adminNavContent`，顶部当前页面标题左侧按钮控制 `adminSidebarCollapsed`；折叠时桌面侧栏从 `md:w-64` 收为 `md:w-20`，主内容偏移从 `md:ml-64` 同步变为 `md:ml-20`，导航仅显示图标并保留 `title` 提示。移动端抽屉继续通过 `adminNavOpen` 控制，并强制展示完整文字；同时 `ghostButtonClass` 这类通用按钮样式不要再内置 `inline-flex/block/flex` 等 display 类，避免覆盖 `hidden md:*` 响应式显示规则，导致桌面专属按钮误出现在手机端。后续不要为桌面折叠或移动端菜单另起第二套后台导航实现。
 *   自 V2.1.93 起，漂浮的“返回顶部”按钮改用非被动的 `touchstart` 监听并设置 `touch-action: none`，移动端拖动时不再出现 `Unable to preventDefault inside passive event listener` 报错，拖拽与回顶交互保持原有逻辑。
 
 

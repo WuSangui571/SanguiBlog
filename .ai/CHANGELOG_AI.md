@@ -15,6 +15,7 @@
   3) 将桌面侧栏宽度与主内容左侧偏移改为由同一状态驱动，在 `md:w-64 / md:ml-64` 与 `md:w-20 / md:ml-20` 之间切换，并为侧栏与内容区补充低调的宽度/间距过渡，保证收放顺滑但不过分抢眼。
   4) 顶部栏在当前页面标题左侧新增桌面端折叠按钮，复用已导入的 `ChevronsLeft / ChevronsRight` 图标；折叠后桌面侧栏仅保留导航图标、隐藏分组标题与文字标签，同时为每个导航项保留 `title` 提示，移动端抽屉继续强制显示完整文字。
   5) 新增 `AdminSidebarCollapse.test.js` 静态回归脚本，约束折叠状态、宽度/偏移联动、顶部按钮、只显示图标与移动端抽屉强制展示标签这些关键点，避免未来回退到固定宽侧栏或误把桌面折叠逻辑带进移动端。
+  6) 根据手机端反馈修正响应式显示冲突：`ghostButtonClass` 不再内置 `inline-flex`，避免覆盖 `hidden/md` 显示规则；手机端顶部只保留原有侧拉菜单按钮，桌面折叠按钮仅在 `md` 及以上显示。
 - 涉及文件：
   - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
   - `SanguiBlog-front/src/appfull/AdminSidebarCollapse.test.js`
@@ -27,6 +28,7 @@
 - 验证方式：
   - 先执行 `node .\src\appfull\AdminSidebarCollapse.test.js`（工作目录 `SanguiBlog-front`），确认新增断言按预期失败
   - 修改后执行 `node .\src\appfull\AdminSidebarCollapse.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 针对手机端按钮误显示追加静态断言：通用按钮样式不得内置 `inline-flex`，手机端菜单按钮使用 `inline-flex md:hidden`，桌面折叠按钮使用 `hidden md:inline-flex`
   - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）确认前端可构建
 - 版本号说明：本次为后台交互体验优化，未单独提升站点版本号。
 

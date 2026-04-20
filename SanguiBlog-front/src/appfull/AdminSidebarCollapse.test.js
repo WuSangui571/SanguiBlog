@@ -48,4 +48,22 @@ assert.match(
     '共享导航内容应支持移动端强制展示标签，避免桌面折叠影响抽屉'
 );
 
+assert.doesNotMatch(
+    source,
+    /const ghostButtonClass = `inline-flex/,
+    '通用幽灵按钮样式不应内置 inline-flex，否则会覆盖 hidden/md 响应式显示逻辑'
+);
+
+assert.match(
+    source,
+    /className=\{`hidden md:inline-flex \$\{ghostButtonClass\} p-2`\}/,
+    '桌面侧栏折叠按钮应只在 md 及以上显示'
+);
+
+assert.match(
+    source,
+    /className=\{`inline-flex md:hidden \$\{ghostButtonClass\} p-2`\}/,
+    '手机端应只保留原有侧拉菜单按钮，不应显示桌面折叠按钮'
+);
+
 console.log('Admin sidebar collapse static checks passed.');

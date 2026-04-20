@@ -8430,7 +8430,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         : `${navItemBaseClass} text-slate-700 border-transparent hover:bg-white/60 hover:border-white/70 hover:text-slate-900`;
     const desktopSidebarWidthClass = adminSidebarCollapsed ? 'md:w-20' : 'md:w-64';
     const desktopContentOffsetClass = adminSidebarCollapsed ? 'md:ml-20' : 'md:ml-64';
-    const ghostButtonClass = `inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold backdrop-blur-xl transition-all duration-300 ${
+    const ghostButtonClass = `items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold backdrop-blur-xl transition-all duration-300 ${
         isDarkMode
             ? 'border-white/10 bg-white/[0.04] text-gray-100 hover:bg-white/[0.08]'
             : 'border-white/70 bg-white/70 text-slate-800 hover:bg-white/85'
@@ -8540,7 +8540,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                         handleCloseAdminNav();
                     }}
                     title="返回前台"
-                    className={`${ghostButtonClass} w-full justify-center`}
+                    className={`inline-flex ${ghostButtonClass} w-full justify-center`}
                 >
                     <LogOut size={14} /> {showNavLabels && <span>返回前台</span>}
                 </button>
@@ -8591,7 +8591,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                                 <button
                                     type="button"
                                     onClick={handleCloseAdminNav}
-                                    className={`${ghostButtonClass} p-2`}
+                                    className={`inline-flex ${ghostButtonClass} p-2`}
                                     aria-label="关闭后台菜单"
                                 >
                                     <X size={16} />
@@ -8612,7 +8612,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                         <button
                             type="button"
                             onClick={handleToggleAdminNav}
-                            className={`md:hidden ${ghostButtonClass} p-2`}
+                            className={`inline-flex md:hidden ${ghostButtonClass} p-2`}
                             aria-label="打开后台菜单"
                         >
                             <Menu size={18} />
@@ -8634,7 +8634,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             {ROLES[user.role].label}
                         </span>
                         <button onClick={handleLogout}
-                            className={ghostButtonClass}>
+                            className={`inline-flex ${ghostButtonClass}`}>
                             <LogOut size={16} /> 退出登录
                         </button>
                     </div>
