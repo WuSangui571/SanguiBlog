@@ -8329,6 +8329,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     const [analyticsRange, setAnalyticsRange] = useState(7);
     const { loading: permissionLoading, error: permissionError, hasPermission } = usePermissionContext();
     const [adminNavOpen, setAdminNavOpen] = useState(false);
+    const [adminSidebarCollapsed, setAdminSidebarCollapsed] = useState(false);
 
     const pathSegments = location.pathname.split('/').filter(Boolean);
     const lastSegment = pathSegments[pathSegments.length - 1] || 'dashboard';
@@ -8420,13 +8421,15 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
     } border-b ${sidebarBorder}`;
     const panelTitleClass = isDarkMode ? 'text-gray-400' : 'text-slate-500';
     const panelGroupClass = isDarkMode ? 'pl-3 border-l border-white/10' : 'pl-3 border-l border-white/60';
-    const navItemBaseClass = 'group w-full text-left pl-3.5 pr-3.5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-3 transition-all duration-300 border backdrop-blur-xl';
+    const navItemBaseClass = 'group w-full text-left rounded-2xl text-sm font-medium flex items-center transition-all duration-300 border backdrop-blur-xl';
     const activeNavItemClass = isDarkMode
         ? `${navItemBaseClass} bg-white/[0.14] text-white border-white/14 shadow-[0_14px_32px_rgba(0,0,0,0.28)]`
         : `${navItemBaseClass} bg-white/85 text-slate-900 border-white/80 shadow-[0_14px_32px_rgba(99,102,241,0.14)]`;
     const inactiveNavItemClass = isDarkMode
         ? `${navItemBaseClass} text-gray-300 border-transparent hover:bg-white/[0.06] hover:border-white/10 hover:text-white`
         : `${navItemBaseClass} text-slate-700 border-transparent hover:bg-white/60 hover:border-white/70 hover:text-slate-900`;
+    const desktopSidebarWidthClass = adminSidebarCollapsed ? 'md:w-20' : 'md:w-64';
+    const desktopContentOffsetClass = adminSidebarCollapsed ? 'md:ml-20' : 'md:ml-64';
     const ghostButtonClass = `inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold backdrop-blur-xl transition-all duration-300 ${
         isDarkMode
             ? 'border-white/10 bg-white/[0.04] text-gray-100 hover:bg-white/[0.08]'
@@ -8437,6 +8440,9 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         : 'border border-white/75 bg-white/80 text-slate-800';
     const handleToggleAdminNav = useCallback(() => {
         setAdminNavOpen((prev) => !prev);
+    }, []);
+    const handleToggleAdminSidebar = useCallback(() => {
+        setAdminSidebarCollapsed((prev) => !prev);
     }, []);
     const handleCloseAdminNav = useCallback(() => {
         setAdminNavOpen(false);
@@ -8494,52 +8500,61 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
         reload: reloadAnalytics
     }), [analyticsSummary, analyticsLoading, analyticsError, analyticsRangeValue, reloadAnalytics]);
 
-    const adminNavContent = (
+    const adminNavContent = (forceLabels = false) => {
+        const showNavLabels = forceLabels || !adminSidebarCollapsed;
+        const navPaddingClass = showNavLabels ? 'p-4 pt-6 space-y-6' : 'px-3 py-5 space-y-4';
+        const navItemSizingClass = showNavLabels ? 'pl-3.5 pr-3.5 py-2.5 gap-3' : 'justify-center px-0 py-3';
+        const footerPaddingClass = showNavLabels ? 'p-4' : 'p-3';
+
+        return (
         <>
-            <nav className={`flex-1 p-4 pt-6 space-y-6 overflow-y-auto ${adminDarkScrollbarClass}`}>
+            <nav className={`flex-1 ${navPaddingClass} overflow-y-auto ${adminDarkScrollbarClass}`}>
                 {navSections.map((section, idx) => (
                     <div key={section.title || `section-${idx}`} className="space-y-2">
-                        {section.title && (
+                        {section.title && showNavLabels && (
                             <div className={`px-2 text-[11px] font-semibold uppercase tracking-[0.08em] ${panelTitleClass}`}>
                                 {section.title}
                             </div>
                         )}
-                        <div className={`space-y-1 ${section.title ? panelGroupClass : ''}`}>
+                        <div className={`space-y-1 ${section.title && showNavLabels ? panelGroupClass : ''}`}>
                             {section.items.map(({ key, label, icon: Icon }) => (
                                 <Link
                                     key={key}
                                     to={key === 'dashboard' ? '/admin' : `/admin/${key}`}
                                     onClick={handleCloseAdminNav}
-                                    className={activeTab === key ? activeNavItemClass : inactiveNavItemClass}
+                                    title={label}
+                                    className={`${activeTab === key ? activeNavItemClass : inactiveNavItemClass} ${navItemSizingClass}`}
                                 >
                                     <Icon size={18} className="shrink-0" />
-                                    <span>{label}</span>
+                                    {showNavLabels && (<span>{label}</span>)}
                                 </Link>
                             ))}
                         </div>
                     </div>
                 ))}
             </nav>
-            <div className={`p-4 border-t ${sidebarBorder}`}>
+            <div className={`${footerPaddingClass} border-t ${sidebarBorder}`}>
                 <button
                     onClick={() => {
                         setView('home');
                         handleCloseAdminNav();
                     }}
+                    title="返回前台"
                     className={`${ghostButtonClass} w-full justify-center`}
                 >
-                    <LogOut size={14} /> 返回前台
+                    <LogOut size={14} /> {showNavLabels && <span>返回前台</span>}
                 </button>
             </div>
         </>
-    );
+        );
+    };
 
     return (
         <div className={`min-h-screen flex ${adminSurfaceClass} ${bgClass} ${textClass}`}>
             {/* Sidebar (Desktop) */}
             <aside
-                className={`hidden md:flex w-64 flex-shrink-0 ${sidebarBg} flex-col fixed h-full z-40 transition-colors`}>
-                {adminNavContent}
+                className={`hidden md:flex ${desktopSidebarWidthClass} flex-shrink-0 ${sidebarBg} flex-col fixed h-full z-40 transition-all duration-300 ease-out`}>
+                {adminNavContent()}
             </aside>
 
             {/* Sidebar (Mobile Drawer) */}
@@ -8582,14 +8597,14 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                                     <X size={16} />
                                 </button>
                             </div>
-                            {adminNavContent}
+                            {adminNavContent(true)}
                         </motion.aside>
                     </motion.div>
                 )}
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <div className="flex-1 md:ml-64 ml-0 flex flex-col min-w-0">
+            <div className={`flex-1 ${desktopContentOffsetClass} ml-0 flex flex-col min-w-0 transition-all duration-300 ease-out`}>
                 {/* Top Bar */}
                 <header
                     className={`relative z-20 h-16 flex items-center justify-between px-4 md:px-8 ${topbarBg} mb-4`}>
@@ -8601,6 +8616,16 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             aria-label="打开后台菜单"
                         >
                             <Menu size={18} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleToggleAdminSidebar}
+                            className={`hidden md:inline-flex ${ghostButtonClass} p-2`}
+                            aria-label={adminSidebarCollapsed ? '展开后台导航' : '收起后台导航'}
+                            aria-expanded={!adminSidebarCollapsed}
+                            title={adminSidebarCollapsed ? '展开后台导航' : '收起后台导航'}
+                        >
+                            {adminSidebarCollapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
                         </button>
                         <h1 className="text-lg md:text-xl font-bold">{activeLabel}</h1>
                     </div>

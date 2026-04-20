@@ -5,6 +5,31 @@
 
 ---
 
+## [2026-04-20] 为后台左侧导航新增桌面端折叠/展开能力
+- 背景/需求：用户希望 `/admin` 左侧导航不再始终固定为宽侧栏，而是增加一个位于当前页面标题左侧附近的图标按钮；点击后桌面端侧栏收缩为仅显示图标的窄栏，右侧内容区同步增宽，再次点击恢复原样，并要求动画流畅、克制，不影响其他未提及区域。
+- 修改类型：fix
+- 影响范围：后台桌面端壳层布局、后台导航项展示方式、顶部栏操作按钮、后台导航静态回归检查
+- 变更摘要：
+  1) 检索确认后台真实壳层唯一入口仍是 `SanguiBlog-front/src/appfull/AdminPanel.jsx`：桌面侧栏使用固定 `w-64`，主内容区使用固定 `md:ml-64`，移动端抽屉与桌面端共用 `adminNavContent`，仓库内不存在可直接复用的后台侧栏折叠实现。
+  2) 在 `AdminPanel.jsx` 中新增独立的桌面侧栏折叠状态 `adminSidebarCollapsed`，不复用移动端 `adminNavOpen` 抽屉开关，避免桌面折叠误伤手机端菜单行为。
+  3) 将桌面侧栏宽度与主内容左侧偏移改为由同一状态驱动，在 `md:w-64 / md:ml-64` 与 `md:w-20 / md:ml-20` 之间切换，并为侧栏与内容区补充低调的宽度/间距过渡，保证收放顺滑但不过分抢眼。
+  4) 顶部栏在当前页面标题左侧新增桌面端折叠按钮，复用已导入的 `ChevronsLeft / ChevronsRight` 图标；折叠后桌面侧栏仅保留导航图标、隐藏分组标题与文字标签，同时为每个导航项保留 `title` 提示，移动端抽屉继续强制显示完整文字。
+  5) 新增 `AdminSidebarCollapse.test.js` 静态回归脚本，约束折叠状态、宽度/偏移联动、顶部按钮、只显示图标与移动端抽屉强制展示标签这些关键点，避免未来回退到固定宽侧栏或误把桌面折叠逻辑带进移动端。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/AdminPanel.jsx`
+  - `SanguiBlog-front/src/appfull/AdminSidebarCollapse.test.js`
+  - `.ai/PROJECT_MEMORY.md`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`AdminPanel` / `navSections` / `adminNavOpen` / `w-64` / `md:ml-64` / `ChevronsLeft` / `ChevronsRight` / `collapsed` / `collapse` / `sidebar`
+  - 候选实现：`AdminPanel.jsx` 桌面固定侧栏、同文件 `adminNavContent` 共享导航列表、同文件移动端 `AnimatePresence` 抽屉、已导入未使用的 `ChevronsLeft/ChevronsRight` 图标
+  - 最终选择：复用现有后台壳层与导航内容，只在同一入口上补桌面折叠状态与样式联动，不新增第二套后台导航组件、不新增接口、不改路由
+- 验证方式：
+  - 先执行 `node .\src\appfull\AdminSidebarCollapse.test.js`（工作目录 `SanguiBlog-front`），确认新增断言按预期失败
+  - 修改后执行 `node .\src\appfull\AdminSidebarCollapse.test.js`（工作目录 `SanguiBlog-front`）通过
+  - 执行 `cmd /c npm run build`（工作目录 `SanguiBlog-front`）确认前端可构建
+- 版本号说明：本次为后台交互体验优化，未单独提升站点版本号。
+
 ## [2026-04-16] 加固文章封面上传中的发布/保存护栏
 - 背景/需求：用户反馈超级管理员新建发布文章时，封面上传会一直显示“上传中”；后台未引用图片中能看到封面文件，说明文件已落盘，但首页文章仍显示默认图，疑似文章发布时未绑定 `coverImage`。
 - 修改类型：fix
