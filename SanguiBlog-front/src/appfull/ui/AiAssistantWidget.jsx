@@ -68,6 +68,7 @@ function mapServerMessage(message) {
 const MIN_TEXTAREA_HEIGHT = 54;
 const MAX_TEXTAREA_HEIGHT = 132;
 const WELCOME_INTRO_DURATION_MS = 2400;
+const AI_ASSISTANT_DISCLAIMER_TEXT = '三桂 AI 助理的回答未必正确无误，请注意甄别。';
 const launcherGlowShapeClass = 'rounded-[24px]';
 const launcherGlowInnerShapeClass = 'rounded-[22px]';
 
@@ -837,6 +838,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         : 'ring-1 ring-black/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.985),rgba(239,244,250,0.95))] text-black backdrop-blur-2xl shadow-[0_32px_96px_rgba(15,23,42,0.22)]';
     const panelBorderClass = isDarkMode ? 'border-white/10' : 'border-black/8';
     const subTextClass = isDarkMode ? 'text-gray-300' : 'text-gray-600';
+    const disclaimerTextClass = isDarkMode ? 'text-gray-400/90' : 'text-gray-500';
     const panelAccentClass = isDarkMode
         ? 'bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]'
         : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0.38))]';
@@ -1423,6 +1425,9 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                     >
                                         <SendHorizontal size={18} />
                                     </button>
+                                    <p className={`mt-2 px-1 text-[11px] leading-5 font-semibold ${disclaimerTextClass}`}>
+                                        {AI_ASSISTANT_DISCLAIMER_TEXT}
+                                    </p>
                                 </div>
                             </form>
                         </motion.section>

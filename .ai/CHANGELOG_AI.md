@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-21] 为 AI 聊天输入区增加回答风险提示语
+- 背景/需求：用户希望在 AI 聊天模块中加入“`三桂 AI 助理的回答未必正确无误，请注意甄别。`”这句提示语，并兼顾手机端与桌面端展示；用户担心若把提示语重复加在每条 AI 回答后面，会显得冗余且不美观，因此更倾向于放在输入区附近，但要求尽量不要大改结构。
+- 修改类型：fix
+- 影响范围：前台 AI 聊天面板底部输入区、手机端/桌面端 AI 面板排版、AI 助手静态回归测试
+- 变更摘要：
+  1) 检索确认真实入口仍是 `AiAssistantWidget.jsx`，底部输入区由同一个 `form` 承载 `textarea + 发送按钮`，因此无需新增第二套提示组件或消息尾注实现。
+  2) 结合用户给出的两个候选位置，最终选择将提示语放在输入框下方，作为常驻的小字辅助说明；这样比“每条回答后都重复一遍”更克制，也比改动消息渲染链路更稳。
+  3) 在 `AiAssistantWidget.jsx` 中新增常量 `AI_ASSISTANT_DISCLAIMER_TEXT`，并在输入区下方补一行 `text-[11px]` 的说明文字；暗色/亮色模式分别走现有面板配色体系，避免视觉过重。
+  4) 新增 `AiAssistantDisclaimer.test.js`，锁定“提示语存在”以及“提示语位于输入区附近而不是追加到每条回复后面”这两个约束。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantDisclaimer.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `inputPlaceholder` / `请输入你的问题` / `textarea` / `form` / `AI 助手`
+  - 候选实现：`AiAssistantWidget.jsx` 底部输入区 `form`、`aiAssistantConfig.js` 的 `inputPlaceholder` 配置、`AiMessageMarkdown.js` 的消息正文渲染链路、现有 `AiAssistantWidget*.test.js` 静态回归测试
+  - 最终选择：复用现有输入区结构，在同一个 `form` 内补一行弱化辅助文案，不新增配置字段、不改消息列表、不为每条回答重复插入提示语
+- 验证方式：
+  - 先执行 `node .\src\appfull\ui\AiAssistantDisclaimer.test.js`，确认新增断言先失败
+  - 修改后执行 `node .\src\appfull\ui\AiAssistantDisclaimer.test.js` 通过
+  - 执行 `node .\src\appfull\ui\AiAssistantWidget.test.js`、`node .\src\appfull\ui\AiAssistantMobileViewport.test.js`、`cmd /c npm run build` 通过
+- 版本号说明：本次为 AI 面板文案与交互提示优化，未单独提升站点版本号。
+
 ## [2026-04-20] 修复 AI 助手 Markdown 代码块复制按钮无效
 - 背景/需求：用户反馈 AI 聊天回答中的 Markdown 代码块虽带“复制”按钮，但点击后没有任何反应，剪贴板也没有内容；希望补上真实复制功能，并为复制成功/失败增加流畅、克制的反馈动效。
 - 修改类型：fix
