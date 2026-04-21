@@ -19,4 +19,10 @@ assert.match(
     '风险提示语应放在输入区附近，而不是为每条助手回复重复追加一遍'
 );
 
+assert.match(
+    source,
+    /<div className="relative">[\s\S]*assistantConfig\.inputPlaceholder[\s\S]*<button[\s\S]*<\/button>\s*<\/div>\s*<p className=\{`mt-2 text-center[\s\S]*AI_ASSISTANT_DISCLAIMER_TEXT/,
+    '发送按钮应继续跟随输入框区域定位，提示语应放在该相对定位容器外并居中显示'
+);
+
 console.log('AiAssistant disclaimer tests passed');

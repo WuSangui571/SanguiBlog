@@ -5,6 +5,29 @@
 
 ---
 
+## [2026-04-21] 修正 AI 聊天免责声明的发送按钮定位与居中布局
+- 背景/需求：在上一轮把 AI 风险提示语放到输入框下方后，用户发现发送按钮仍按外层容器底部定位，视觉上压在输入框边框附近；同时用户希望该提示语改为居中显示，而不是靠左。
+- 修改类型：fix
+- 影响范围：前台 AI 聊天输入区局部布局、发送按钮定位参照系、免责声明文案排版、AI 输入区静态回归测试
+- 变更摘要：
+  1) 复查后确认根因是发送按钮的 `absolute bottom-3` 仍相对包含免责声明的外层容器定位；提示语加入后，按钮参考底边被一起下移。
+  2) 在 `AiAssistantWidget.jsx` 中将“输入框 + 发送按钮”收回单独的 `relative` 容器，把免责声明移到该容器外层，保持按钮继续只跟随输入框区域定位。
+  3) 将免责声明小字改为 `text-center` 居中展示，维持现有 `text-[11px]` 与亮暗色弱化配色，不增加额外视觉负担。
+  4) 更新 `AiAssistantDisclaimer.test.js`，锁定“按钮定位容器与免责声明分离”以及“免责声明必须居中显示”。
+- 涉及文件：
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx`
+  - `SanguiBlog-front/src/appfull/ui/AiAssistantDisclaimer.test.js`
+  - `.ai/CHANGELOG_AI.md`
+- 检索与复用策略：
+  - 检索关键词：`AiAssistantWidget` / `bottom-3` / `relative` / `AI_ASSISTANT_DISCLAIMER_TEXT` / `text-center`
+  - 候选实现：现有输入区 `form`、发送按钮绝对定位、已新增免责声明小字、`AiAssistantDisclaimer.test.js` 静态回归
+  - 最终选择：继续复用现有输入区 DOM，只微调局部容器层级与文本对齐，不改消息区、不改按钮行为、不新增样式文件
+- 验证方式：
+  - 先执行 `node .\src\appfull\ui\AiAssistantDisclaimer.test.js`，确认新增断言按预期失败
+  - 修改后执行 `node .\src\appfull\ui\AiAssistantDisclaimer.test.js`、`node .\src\appfull\ui\AiAssistantWidget.test.js`、`node .\src\appfull\ui\AiAssistantMobileViewport.test.js` 通过
+  - 执行 `cmd /c npm run build` 通过
+- 版本号说明：本次为前端布局小修正，未单独提升站点版本号。
+
 ## [2026-04-21] 为 AI 聊天输入区增加回答风险提示语
 - 背景/需求：用户希望在 AI 聊天模块中加入“`三桂 AI 助理的回答未必正确无误，请注意甄别。`”这句提示语，并兼顾手机端与桌面端展示；用户担心若把提示语重复加在每条 AI 回答后面，会显得冗余且不美观，因此更倾向于放在输入区附近，但要求尽量不要大改结构。
 - 修改类型：fix

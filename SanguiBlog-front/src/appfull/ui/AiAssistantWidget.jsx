@@ -1394,38 +1394,40 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                                 className={`border-t p-3 ${panelBorderClass} ${shellClass}`}
                                 style={isMobileViewport ? { paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' } : undefined}
                             >
-                                <div className="relative">
-                                    <label className="block">
-                                        <span className="sr-only">输入消息</span>
-                                        <textarea
-                                            ref={textareaRef}
-                                            rows={1}
-                                            value={draft}
-                                            onChange={(event) => setDraft(event.target.value)}
-                                            onFocus={handleTextareaFocus}
-                                            onKeyDown={handleTextareaKeyDown}
-                                            placeholder={assistantConfig.inputPlaceholder}
-                                            style={{
-                                                minHeight: `${MIN_TEXTAREA_HEIGHT}px`,
-                                                maxHeight: `${MAX_TEXTAREA_HEIGHT}px`
-                                            }}
-                                            className={`sg-scrollbar w-full resize-none overflow-y-auto rounded-[22px] border px-4 pt-[15px] pb-[15px] pr-[72px] text-sm leading-5 font-semibold outline-none backdrop-blur-xl ${textareaGlassClass}`}
-                                        />
-                                    </label>
-                                    <button
-                                        type="submit"
-                                        disabled={sendDisabled}
-                                        className={`absolute right-3 bottom-3 shrink-0 w-[42px] h-[42px] rounded-[14px] border flex items-center justify-center transition-transform backdrop-blur-xl ${panelBorderClass} ${
-                                            sendDisabled
-                                                ? 'bg-gray-300/80 text-gray-500 cursor-not-allowed'
-                                                : isDarkMode
-                                                    ? 'bg-[linear-gradient(180deg,rgba(255,215,0,0.9),rgba(255,215,0,0.74))] text-black hover:-translate-y-0.5'
-                                                    : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.72))] text-[#111827] hover:-translate-y-0.5'
-                                        }`}
-                                    >
-                                        <SendHorizontal size={18} />
-                                    </button>
-                                    <p className={`mt-2 px-1 text-[11px] leading-5 font-semibold ${disclaimerTextClass}`}>
+                                <div>
+                                    <div className="relative">
+                                        <label className="block">
+                                            <span className="sr-only">输入消息</span>
+                                            <textarea
+                                                ref={textareaRef}
+                                                rows={1}
+                                                value={draft}
+                                                onChange={(event) => setDraft(event.target.value)}
+                                                onFocus={handleTextareaFocus}
+                                                onKeyDown={handleTextareaKeyDown}
+                                                placeholder={assistantConfig.inputPlaceholder}
+                                                style={{
+                                                    minHeight: `${MIN_TEXTAREA_HEIGHT}px`,
+                                                    maxHeight: `${MAX_TEXTAREA_HEIGHT}px`
+                                                }}
+                                                className={`sg-scrollbar w-full resize-none overflow-y-auto rounded-[22px] border px-4 pt-[15px] pb-[15px] pr-[72px] text-sm leading-5 font-semibold outline-none backdrop-blur-xl ${textareaGlassClass}`}
+                                            />
+                                        </label>
+                                        <button
+                                            type="submit"
+                                            disabled={sendDisabled}
+                                            className={`absolute right-3 bottom-3 shrink-0 w-[42px] h-[42px] rounded-[14px] border flex items-center justify-center transition-transform backdrop-blur-xl ${panelBorderClass} ${
+                                                sendDisabled
+                                                    ? 'bg-gray-300/80 text-gray-500 cursor-not-allowed'
+                                                    : isDarkMode
+                                                        ? 'bg-[linear-gradient(180deg,rgba(255,215,0,0.9),rgba(255,215,0,0.74))] text-black hover:-translate-y-0.5'
+                                                        : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.72))] text-[#111827] hover:-translate-y-0.5'
+                                            }`}
+                                        >
+                                            <SendHorizontal size={18} />
+                                        </button>
+                                    </div>
+                                    <p className={`mt-2 text-center text-[11px] leading-5 font-semibold ${disclaimerTextClass}`}>
                                         {AI_ASSISTANT_DISCLAIMER_TEXT}
                                     </p>
                                 </div>
