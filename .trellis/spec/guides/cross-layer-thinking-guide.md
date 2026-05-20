@@ -180,6 +180,46 @@ curl -i http://localhost/sitemap.xml
 curl -i http://localhost/robots.txt
 ```
 
+### Docker Data Sync / Restore
+
+Production-to-local Docker data restore is also an infra/cross-layer contract. Keep the executable workflow in:
+
+| Concern | File / Command | Contract |
+|---------|----------------|----------|
+| Main guide | `docs/docker-data-sync.md` | Documents Linux server export, Windows local restore, rollback, sensitive data rules, troubleshooting, and verification. |
+| Local entry | `scripts/docker-data-sync-local-restore.ps1` | Supports `-ServerHost`, `-ServerUser`, `-RemoteBackupDir`, `-LocalBackupDir`, `-SshPort`, `-ComposeProjectDir`, `-RestoreUploadsMode Replace|Merge`, `-SkipDownload`, `-SkipMysql`, `-SkipPgVector`, `-SkipUploads`, and `-DryRun`. |
+| MySQL export | `mysqldump --single-transaction --routines --triggers --events --default-character-set=utf8mb4` | Produces `mysql.sql`; restore copies the file into the `mysql` container and imports with `mysql --default-character-set=utf8mb4`. |
+| PgVector export | `pg_dump -Fc` | Produces binary `pgvector.dump`; restore must copy the dump into the `pgvector` container and run `pg_restore` from that file. Do not pipe this binary through PowerShell text streams. |
+| uploads export | `tar -czf uploads.tar.gz -C <uploads-parent> <uploads-dir-name>` | Restore must reject absolute paths, `..` path traversal, and then copy safe files into `/data/uploads`. |
+| Integrity files | `SHA256SUMS`, optional `manifest.json` | Checksum mismatch stops before DB import or volume writes. Manifest records file sizes, table/row counts, upload counts, and non-secret source labels. |
+
+Validation/error matrix:
+
+| Case | Expected Result |
+|------|-----------------|
+| Missing local `.env` key | Stop before restore and print only key names, not values. |
+| Missing remote backup file or checksum mismatch | Stop before touching local Docker volumes. |
+| Existing local volumes | Back up `mysql_data`, `pgvector_data`, and `uploads_data` before overwrite; never default to `docker compose down -v`. |
+| PgVector extension missing | Run/check `CREATE EXTENSION IF NOT EXISTS vector`; stop if unavailable. |
+| uploads archive contains unsafe path | Stop before extraction. |
+| Static upload URL returns SPA HTML | Treat as restore failure; inspect `docker/nginx/default.conf` aliases and `/data/uploads` volume content. |
+
+Good/Base/Bad cases:
+
+| Case | Expected Result |
+|------|-----------------|
+| Good | MySQL, PgVector, and uploads restore; `/api/site/meta`, `/api/games`, uploaded assets, and RAG checks pass. |
+| Base | AI/RAG intentionally disabled or DashScope key absent; core blog/admin/uploads pass and RAG is marked skipped. |
+| Bad | Stale MySQL schema, missing vector rows when RAG is enabled, unsafe uploads archive, or SPA fallback for static uploads. |
+
+Required verification for docs/script-only restore work:
+
+```bash
+git diff --check
+docker compose config
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-data-sync-local-restore.ps1 -ServerHost localhost -ServerUser test -RemoteBackupDir /tmp/test -DryRun
+```
+
 ---
 
 ## Validation & Error Matrix Example

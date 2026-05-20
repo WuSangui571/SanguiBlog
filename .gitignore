@@ -116,3 +116,10 @@ SanguiBlog-server/.env.template
 *.bak
 *.swp
 *.swo
+
+# Docker data sync backup artifacts
+backups/
+*.dump
+*.sql
+!sanguiblog_db.sql
+!docker/postgres/init/*.sql

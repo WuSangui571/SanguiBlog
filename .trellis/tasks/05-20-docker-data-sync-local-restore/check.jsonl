@@ -1,0 +1,19 @@
+{"file": ".cursor/commands/trellis-finish-work.md", "reason": "Finish work checklist"}
+{"file": ".cursor/commands/trellis-check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Mandatory infra cross-layer contract for Docker, DB, uploads, RAG, validation matrix, and verification."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first rule and duplicate implementation boundaries."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "MySQL schema, Docker schema drift, AI/RAG MySQL and PgVector persistence contracts."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend ownership boundaries; avoid business service/controller changes for infra docs task."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "API and upload/AI error contracts used by validation checklist."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Sensitive data logging limits for any script/doc command output."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verification matrix and high-risk Docker/AI/RAG contracts."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend source-of-truth and asset URL routing boundaries; avoid UI changes."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend verification expectations if implementation unexpectedly touches frontend."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Asset URL and site meta field contract for restore validation."}
+{"file": "docs/docker-deploy.md", "reason": "Existing Docker deployment guide, persistence volumes, backup snippets, AI table repair notes."}
+{"file": "docker-compose.yml", "reason": "Compose service names, volumes, env keys, health checks, and init mounts."}
+{"file": ".env.example", "reason": "Non-secret env key template and required Docker settings."}
+{"file": "SanguiBlog-server/src/main/resources/application-docker.yaml", "reason": "Docker profile storage path, site asset URL, and PgVector config."}
+{"file": "docker/nginx/default.conf", "reason": "Uploads, games, avatar aliases and SPA fallback boundary."}
+{"file": "docker/postgres/init/01-enable-pgvector.sql", "reason": "PgVector extension initialization order."}
+{"file": "scripts/sync_uploads.bat", "reason": "Legacy Windows uploads-only sync reference; do not treat as complete restore."}
