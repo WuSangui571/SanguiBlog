@@ -1,0 +1,33 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend AI chat placement and no parallel pipeline"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "AI assistant high-risk contracts and targeted tests"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "AI chat settings/session/RAG persistence contracts"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "ApiResponse/SSE/AI upstream error handling contract"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe DashScope/RAG diagnostic logging"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend API and AI UI ownership"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "AI assistant regression and build requirements"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "AiAssistantWidget and helper contracts"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "site meta loading through useBlogData"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "AI assistant local state and site meta ownership"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "SSE and SiteMeta field contracts"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first report and reuse map"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Docker/SSE/API/env cross-layer contract"}
+{"file": ".trellis/tasks/05-20-docker-ai-chat-unavailable/prd.md", "reason": "Task requirements and acceptance criteria"}
+{"file": "docker-compose.yml", "reason": "Docker env injection and service wiring pattern"}
+{"file": ".env.example", "reason": "Operator-facing Docker env template"}
+{"file": "SanguiBlog-server/src/main/resources/application.yaml", "reason": "Spring AI DashScope and RAG default binding"}
+{"file": "SanguiBlog-server/src/main/resources/application-docker.yaml", "reason": "Docker profile overrides for datasource/storage/RAG"}
+{"file": "docker/nginx/default.conf", "reason": "Docker Nginx API and SSE proxy behavior"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AiChatController.java", "reason": "Existing AI chat JSON/SSE endpoints"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java", "reason": "Existing AI chat orchestration and upstream error path"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingService.java", "reason": "AI assistant enabled/site config source"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/rag/AiBlogRagService.java", "reason": "RAG retrieval fallback behavior"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogRagProperties.java", "reason": "RAG enabled/configured contract"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogVectorStoreConfig.java", "reason": "PgVector VectorStore conditional creation"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SiteService.java", "reason": "/api/site/meta aiAssistant assembly"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "AI SSE request and error parsing"}
+{"file": "SanguiBlog-front/src/utils/aiStream.js", "reason": "SSE chunk/complete/error terminal semantics"}
+{"file": "SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx", "reason": "AI chat UI error/notice behavior"}
+{"file": "docs/docker-deploy.md", "reason": "Docker deployment and troubleshooting documentation"}

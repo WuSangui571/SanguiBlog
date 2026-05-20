@@ -168,6 +168,29 @@ When adding or changing persistent fields:
 
 There is no automatic migration runner in this repo. Production operators must apply SQL manually.
 
+### Docker Schema Drift
+
+Docker MySQL initialization uses `sanguiblog_db.sql` through `/docker-entrypoint-initdb.d/`, but that script only runs for an empty `mysql_data` volume. It is not a migration runner for existing Docker deployments.
+
+When a Docker-only failure suggests stale schema, verify the live schema before changing Java code:
+
+```bash
+docker compose exec mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW TABLES LIKE '\''ai_%'\'';"'
+docker compose exec mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW COLUMNS FROM ai_chat_sessions;"'
+```
+
+For AI chat/RAG schema drift, the expected MySQL tables are `ai_chat_sessions`, `ai_chat_messages`, `ai_blog_knowledge_documents`, `ai_blog_knowledge_chunks`, `ai_custom_knowledge_documents`, and `ai_custom_knowledge_chunks`. If an existing Docker volume is missing these tables or `ai_chat_sessions` compatibility columns, apply only the relevant `CREATE TABLE IF NOT EXISTS` / `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements from `sanguiblog_db.sql`:
+
+```bash
+docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < missing-ai-tables.sql
+```
+
+Do not validate AI credentials by printing secret values. Use a presence check such as:
+
+```bash
+docker compose exec backend sh -c 'test -n "$SPRING_AI_DASHSCOPE_API_KEY" && echo "SPRING_AI_DASHSCOPE_API_KEY is set" || echo "SPRING_AI_DASHSCOPE_API_KEY is empty"'
+```
+
 ---
 
 ## Validation & Error Matrix
@@ -209,4 +232,3 @@ return toDetail(saved);
 - Repository aggregation: assert result shape and ordering.
 - Service transactions: assert side effects such as sitemap dirty mark, visibility hiding, RAG sync calls, or fallback behavior.
 - Schema-impacting work: at minimum run targeted Maven tests and inspect `sanguiblog_db.sql` diff.
-
