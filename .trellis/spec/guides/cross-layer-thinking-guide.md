@@ -136,6 +136,49 @@ Chinese analytics labels are URL-encoded in frontend headers and decoded in `Pos
 
 Do not put raw non-ISO-8859-1 strings into `fetch` headers.
 
+### Docker Compose Deployment
+
+Containerized deployment is an infra/cross-layer contract, not a business API change. Keep the executable contract in these files:
+
+| Concern | File / Command | Contract |
+|---------|----------------|----------|
+| Compose entry | `docker-compose.yml` | `docker compose up -d --build`, `docker compose down`, `docker compose ps`, and `docker compose logs -f backend` must work from the repo root. |
+| Env template | `.env.example` | May list sensitive keys, but default sensitive values stay blank. Compose must fail fast when `JWT_SECRET`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, or `POSTGRES_PASSWORD` is missing. |
+| Backend profile | `SanguiBlog-server/src/main/resources/application-docker.yaml` | Uses `spring.profiles.active=docker`, container hosts (`mysql`, `pgvector`), and `/data/uploads`; it must not depend on ignored `application-local.yaml`. |
+| Frontend image | `SanguiBlog-front/Dockerfile` | Builds Vite output in the image and serves it through Nginx. Production API calls stay same-origin under `/api`. |
+| Nginx routes | `docker/nginx/default.conf` | `/sitemap.xml` and `/robots.txt` proxy to backend before SPA fallback; `/api/ai/chat/stream` disables buffering; `/uploads/games/` preserves same-origin iframe CSP. |
+| MySQL init | `sanguiblog_db.sql` mounted at `/docker-entrypoint-initdb.d/` | Initializes only empty Docker data volumes. It is not a migration path for existing data. |
+| PgVector init | `docker/postgres/init/01-enable-pgvector.sql` | Creates `vector` extension for the RAG vector store. |
+| Upload storage | `uploads_data` volume mounted at `/data/uploads` | URLs remain `/uploads/...`; `StoragePathResolver` still owns directory initialization. |
+
+Good/Base/Bad cases:
+
+| Case | Expected Result |
+|------|-----------------|
+| Good | Fresh server with Docker and a filled `.env` starts `web`, `backend`, `mysql`, and `pgvector`; `/`, `/api/site/meta`, `/sitemap.xml`, `/robots.txt`, and `/uploads/...` keep existing semantics. |
+| Base | `AI_RAG_ENABLED=false` and no DashScope key still allow core blog pages, admin, uploads, and MySQL-backed features to run. |
+| Bad | Backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, or SSE is buffered by Nginx. |
+
+Required verification for Docker/infra work:
+
+```bash
+docker compose config
+cd SanguiBlog-server
+mvn -q -DskipTests compile
+cd ../SanguiBlog-front
+npm run build
+```
+
+When Docker is available, also verify:
+
+```bash
+docker compose up -d --build
+docker compose ps
+curl -i http://localhost/api/site/meta
+curl -i http://localhost/sitemap.xml
+curl -i http://localhost/robots.txt
+```
+
 ---
 
 ## Validation & Error Matrix Example
@@ -180,4 +223,3 @@ Example for site meta field:
 | AI/SSE | AI service tests plus `aiStream`/AI widget tests where relevant |
 
 If a test is skipped, say so and document residual risk.
-

@@ -1,0 +1,68 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Trellis (meta files only, not needed in Docker context)
+.trellis/
+.cursor/
+.kilo/
+.kilocode/
+.opencode/
+AGENTS.md
+
+# Node
+**/node_modules/
+**/dist/
+SanguiBlog-front/.vite/
+SanguiBlog-front/.cache/
+.eslintcache
+.stylelintcache
+
+# Maven / Java
+**/target/
+*.class
+*.jar
+*.war
+
+# Logs & temp
+*.log
+logs/
+log/
+temp/
+*.pid
+*.tmp
+
+# Local config (secrets)
+.env
+.env.*
+!SanguiBlog-server/src/main/resources/application-docker.yaml
+application-local.yaml
+application-local.yml
+**/.env.local
+
+# Uploads (mounted as volume at runtime)
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs & scripts (not needed in image)
+docs/
+scripts/
+release/
+fake-nginx-config/
+ChangeEnv.md
+README.md
+README.zh-CN.md
+
+# Docker compose file itself (not needed inside images)
+docker-compose.yml
+compose.yaml
+.dockerignore

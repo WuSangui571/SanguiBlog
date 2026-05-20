@@ -1,0 +1,26 @@
+{"file": ".cursor/commands/trellis-finish-work.md", "reason": "Finish work checklist"}
+{"file": ".cursor/commands/trellis-check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/tasks/05-20-containerize-sanguiblog/prd.md", "reason": "任务 PRD、跨层契约、验收标准、禁止越界范围"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "后端目录与配置/存储边界"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端 retrieve-first、测试和高风险契约"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "MySQL/PgVector/schema 初始化与 RAG 持久化契约"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "上传/API/AI 错误契约和 Nginx 413 边界"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "容器日志与 secret 脱敏要求"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "前端 Vite build、api.js、静态资源路径契约"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端构建/静态测试和禁止重复 API wrapper"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "VITE_API_BASE、asset origin 与 API 响应安全"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "检索优先和避免重复实现"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "infra/env/storage/DB/API 跨层契约"}
+{"file": "fake-nginx-config/nginx.conf", "reason": "现有生产 Nginx 反代、SSE、sitemap、robots、uploads 规则参考"}
+{"file": "SanguiBlog-server/src/main/resources/application.yaml", "reason": "后端通用配置、AI/RAG env、multipart、site 配置"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/StoragePathResolver.java", "reason": "uploads 根路径和默认目录初始化契约"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/WebConfig.java", "reason": "后端静态资源映射契约"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/SecurityConfig.java", "reason": "CORS、CSP、uploads games iframe、公开路径契约"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogRagProperties.java", "reason": "RAG PgVector 配置字段"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogVectorStoreConfig.java", "reason": "PgVector datasource 和 VectorStore 初始化契约"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "前端同源 /api、SSE 和 asset origin 契约"}
+{"file": "SanguiBlog-front/vite.config.js", "reason": "前端生产构建与 manualChunks"}
+{"file": "SanguiBlog-front/package.json", "reason": "前端 build/lint scripts"}
+{"file": "SanguiBlog-server/pom.xml", "reason": "后端 Java 21/Maven/Spring AI/MySQL/PostgreSQL 依赖"}
+{"file": "sanguiblog_db.sql", "reason": "MySQL 初始化 schema 和 AI/RAG metadata tables"}
+{"file": "ChangeEnv.md", "reason": "当前手工环境切换说明，Docker 文档需区别对待"}

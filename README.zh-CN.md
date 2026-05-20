@@ -9,8 +9,10 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 ## 1. 目录索引
 
 - 发布说明目录：`release/`（当前仓库内最新现有对外 release 文档为 `release/V2.2.23.md`）
-- Nginx 反代示例：`fake-nginx-config/nginx.conf`
-- 环境切换说明：`ChangeEnv.md`
+- Nginx 反代示例（宿主机部署）：`fake-nginx-config/nginx.conf`
+- Nginx 反代配置（Docker 部署）：`docker/nginx/default.conf`
+- Docker 部署指南：`docs/docker-deploy.md`
+- 环境切换说明（宿主机部署）：`ChangeEnv.md`
 - 数据库初始化脚本：`sanguiblog_db.sql`
 
 ## 2. 项目结构
@@ -38,6 +40,18 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 > Windows / Linux 均可部署。生产环境建议：在 CI/构建机完成前后端构建，线上仅部署产物（后端 Jar + 前端 dist + 持久化 uploads）。
 >
 > 如果你暂时不启用 AI RAG，则 PostgreSQL / PgVector 不是必需项；只使用基础 AI 聊天时，MySQL 仍是唯一必需数据库。
+
+### Docker 部署（推荐）
+
+如果你使用 Docker 部署，无需手动安装 JDK/Maven/Node/MySQL/PostgreSQL：
+
+```bash
+cp .env.example .env
+# 编辑 .env 填入必填项（JWT_SECRET、数据库密码）
+docker compose up -d --build
+```
+
+详细说明见 `docs/docker-deploy.md`。以下第 4-8 节适用于宿主机手工部署。
 
 ## 4. 初始化数据库
 
@@ -220,9 +234,10 @@ server {
 | 前端接口 404 | Nginx 未做 `/api/` 转发 | 增加 `location /api/` 并重载 Nginx |
 | `/sitemap.xml` 打开变首页 | `try_files` 先于 sitemap location | 添加 `location = /sitemap.xml` 与 `location = /robots.txt` 并放在 `try_files` 前 |
 | 上传失败/找不到文件 | `storage.base-path` 无写权限或 Nginx `/uploads/` 未映射 | 确保目录可写，配置 `alias` 或由后端静态映射提供 |
-| 服务启动失败提示 JWT_SECRET | 未设置 JWT 密钥 | 设置环境变量 `JWT_SECRET` 后再启动 |
+| 服务启动失败提示 JWT_SECRET | 未设置 JWT 密钥 | 设置环境变量 `JWT_SECRET` 后再启动；Docker 部署在 `.env` 中配置 |
 | AI 聊天不可用 | DashScope Key 未配置，或后台已关闭 AI 助理 | 检查 `SPRING_AI_DASHSCOPE_API_KEY` / `/admin/settings -> AI助理` |
 | AI RAG 不生效 | `AI_RAG_ENABLED` 未开启，或 PgVector 未就绪 | 检查 PostgreSQL / PgVector、`vector_store`、启动同步日志 |
 | 控制台出现 `content_script.js` 报错 | 浏览器扩展注入脚本噪声 | 无痕窗口/禁用扩展验证（通常与站点无关） |
+| Docker 容器启动失败 | 未复制 `.env` 或必填变量缺失 | 检查 `docker compose config` 输出，确保 `.env` 已配置 |
 
 如需了解更深入的实现细节，可参考仓库内的历史发布说明与源码注释。

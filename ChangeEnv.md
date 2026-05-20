@@ -1,4 +1,6 @@
-﻿### jar包提取的过程
+﻿> **Docker 部署说明**：如果你使用 Docker Compose 部署（`docker compose up -d --build`），请参考 `docs/docker-deploy.md`，通过 `.env` 文件管理环境变量，**不需要**使用本文档中的 `switch-env.ps1` 脚本。
+
+### jar包提取的过程
 
 #### 一键切换（推荐）
 
