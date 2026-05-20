@@ -97,7 +97,7 @@ docker compose exec pgvector psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 | `MYSQL_USER` | yes | mysql/backend | 不建议 root 作为业务用户 |
 | `MYSQL_PASSWORD` | yes | mysql/backend | secret，仅 `.env` 本地保存 |
 | `MYSQL_ROOT_PASSWORD` | yes | mysql | secret，仅 `.env` 本地保存 |
-| `SPRING_DATASOURCE_URL` | yes | backend | `jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?...` |
+| `SPRING_DATASOURCE_URL` | yes | backend | `jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true`；MySQL 服务端仍使用 `utf8mb4` |
 | `SPRING_DATASOURCE_USERNAME` | yes | backend | 与 `MYSQL_USER` 对齐 |
 | `SPRING_DATASOURCE_PASSWORD` | yes | backend | 与 `MYSQL_PASSWORD` 对齐 |
 | `JWT_SECRET` or `SPRING_JWT_SECRET` | yes | backend | 必填；长度应足够 JWT HMAC |
@@ -301,4 +301,3 @@ Assertion points:
 - [ ] uploads 持久化且路径仍兼容 `/uploads/...`。
 - [ ] 构建和静态验证命令通过，或清楚记录未运行原因。
 - [ ] 文档说明首次部署、升级、停止、查看日志、数据卷备份/清理、RAG 开关、HTTPS 选择。
-

@@ -145,8 +145,9 @@ Containerized deployment is an infra/cross-layer contract, not a business API ch
 | Compose entry | `docker-compose.yml` | `docker compose up -d --build`, `docker compose down`, `docker compose ps`, and `docker compose logs -f backend` must work from the repo root. |
 | Env template | `.env.example` | May list sensitive keys, but default sensitive values stay blank. Compose must fail fast when `JWT_SECRET`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, or `POSTGRES_PASSWORD` is missing. |
 | Backend profile | `SanguiBlog-server/src/main/resources/application-docker.yaml` | Uses `spring.profiles.active=docker`, container hosts (`mysql`, `pgvector`), and `/data/uploads`; it must not depend on ignored `application-local.yaml`. |
+| MySQL JDBC URL | `.env.example`, `docker-compose.yml`, `application-docker.yaml` | Use `characterEncoding=utf8` or omit the parameter. Do not use `characterEncoding=utf8mb4`; MySQL Connector/J treats it as a Java charset and fails startup. Keep `utf8mb4` at MySQL server/table collation level. |
 | Frontend image | `SanguiBlog-front/Dockerfile` | Builds Vite output in the image and serves it through Nginx. Production API calls stay same-origin under `/api`. |
-| Nginx routes | `docker/nginx/default.conf` | `/sitemap.xml` and `/robots.txt` proxy to backend before SPA fallback; `/api/ai/chat/stream` disables buffering; `/uploads/games/` preserves same-origin iframe CSP. |
+| Nginx routes | `docker/nginx/default.conf` | `/sitemap.xml` and `/robots.txt` proxy to backend before SPA fallback; `/api/ai/chat/stream` disables buffering; `/uploads/games/` preserves same-origin iframe CSP; `/avatar/` maps to `/data/uploads/avatar/` and must not fall through to SPA HTML. |
 | MySQL init | `sanguiblog_db.sql` mounted at `/docker-entrypoint-initdb.d/` | Initializes only empty Docker data volumes. It is not a migration path for existing data. |
 | PgVector init | `docker/postgres/init/01-enable-pgvector.sql` | Creates `vector` extension for the RAG vector store. |
 | Upload storage | `uploads_data` volume mounted at `/data/uploads` | URLs remain `/uploads/...`; `StoragePathResolver` still owns directory initialization. |
