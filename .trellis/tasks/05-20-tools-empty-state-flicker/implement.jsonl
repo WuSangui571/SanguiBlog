@@ -1,0 +1,16 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend routing and AppFull ownership for /tools."}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Effect dependency and async loader guard requirements."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "State ownership and explicit loading/loaded-empty/error separation."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Use existing page/UI patterns and avoid new transient toast system."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Normalize /api/games response shape defensively."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Regression test and build verification requirements."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first decision: modify existing AppFull/fetchGames path only."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Existing /api/games response contract and Good/Base/Bad cases."}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Primary implementation owner for /tools list loading, empty state, and auto-load effect."}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Existing fetchGames/fetchGameDetail facade; do not create a second API wrapper."}
+{"file": "SanguiBlog-front/src/App.jsx", "reason": "Route contract for /tools, /tools/:id, and /games compatibility redirects."}
+{"file": "SanguiBlog-front/src/pages/Games.jsx", "reason": "Page shell that maps /tools to AppFull initialView=games."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/GamePageController.java", "reason": "Existing backend list/detail endpoint contract for confirmation only."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GamePageService.java", "reason": "Existing active-list and DTO mapping behavior for /api/games empty-list contract."}

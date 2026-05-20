@@ -1,0 +1,16 @@
+{"file": ".cursor/commands/trellis-finish-work.md", "reason": "Finish work checklist"}
+{"file": ".cursor/commands/trellis-check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify route ownership and no duplicate public route/API path."}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Check that effect dependencies do not re-trigger empty-list loading loop."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify empty server state is distinct from not-yet-loaded and error state."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check empty state stays in-page and no duplicate toast/overlay implementation appears."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Check response guards and no blind records/map assumptions."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify targeted static test and build expectations."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check no second route/API/component implementation is introduced."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify no API/DTO/schema contract drift and Base empty case is covered."}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Review tools empty-state loop fix in the existing AppFull owner."}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Confirm API facade remains unchanged unless a documented contract issue is found."}
+{"file": "SanguiBlog-front/src/App.jsx", "reason": "Verify public route compatibility remains intact."}
+{"file": "SanguiBlog-front/src/pages/Games.jsx", "reason": "Verify /tools page shell remains unchanged unless necessary."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/GamePageController.java", "reason": "Check implementation did not drift the existing public /api/games contract."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GamePageService.java", "reason": "Check frontend fix respects active-list empty response semantics."}

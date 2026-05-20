@@ -63,6 +63,14 @@ import {
 } from "./appfull/shared.js";
 import { AnimatePresence, motion } from 'framer-motion';
 const BROADCAST_SESSION_KEY = 'sangui-broadcast-dismissed';
+const gameListCache = {
+    attempted: false,
+    loaded: false,
+    loading: false,
+    error: '',
+    list: [],
+    promise: null
+};
 const LazyAdminPanel = lazy(() =>
     import("./appfull/AdminPanel.jsx").then((module) => ({ default: module.AdminPanel }))
 );
@@ -96,9 +104,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const [user, setUser] = useState(null);
     const [articleId, setArticleId] = useState(initialArticleId);
     const [gameId, setGameId] = useState(initialGameId);
-    const [gameList, setGameList] = useState([]);
-    const [gameListLoading, setGameListLoading] = useState(false);
-    const [gameListError, setGameListError] = useState('');
+    const [gameList, setGameList] = useState(() => gameListCache.list);
+    const [gameListLoading, setGameListLoading] = useState(() => gameListCache.loading);
+    const [gameListError, setGameListError] = useState(() => gameListCache.error);
+    const [gameListLoadAttempted, setGameListLoadAttempted] = useState(() => gameListCache.attempted);
+    const [gameListLoaded, setGameListLoaded] = useState(() => gameListCache.loaded);
     const [gameDetail, setGameDetail] = useState(null);
     const [gameDetailLoading, setGameDetailLoading] = useState(false);
     const [gameDetailError, setGameDetailError] = useState('');
@@ -440,9 +450,33 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, [setArticleId, setView]);
 
     const loadGameList = useCallback(async () => {
+        const syncGameListCache = () => {
+            setGameList(gameListCache.list);
+            setGameListLoading(gameListCache.loading);
+            setGameListError(gameListCache.error);
+            setGameListLoadAttempted(gameListCache.attempted);
+            setGameListLoaded(gameListCache.loaded);
+        };
+
+        if (gameListCache.promise) {
+            syncGameListCache();
+            try {
+                await gameListCache.promise;
+            } catch {
+                // The owner request records the visible error state.
+            }
+            syncGameListCache();
+            return;
+        }
+
+        gameListCache.attempted = true;
+        gameListCache.loading = true;
+        gameListCache.error = '';
+        setGameListLoadAttempted(true);
         setGameListLoading(true);
         setGameListError('');
-        try {
+
+        const request = (async () => {
             const res = await fetchGames();
             const data = res?.data || res;
             const list = Array.isArray(data) ? data : (data?.records || []);
@@ -457,11 +491,25 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                 const idB = Number(b?.id ?? 0);
                 return idB - idA;
             });
+            gameListCache.list = sorted;
+            gameListCache.loaded = true;
+            gameListCache.error = '';
             setGameList(sorted);
+            setGameListLoaded(true);
+        })();
+
+        gameListCache.promise = request;
+        try {
+            await request;
         } catch (err) {
+            gameListCache.error = err?.message || '加载页面失败';
             logger.warn('load games failed', err);
             setGameListError(err?.message || '加载页面失败');
         } finally {
+            if (gameListCache.promise === request) {
+                gameListCache.promise = null;
+            }
+            gameListCache.loading = false;
             setGameListLoading(false);
         }
     }, []);
@@ -848,13 +896,13 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         } else if (view === 'article' && articleId) {
             loadArticle && loadArticle(articleId);
         } else if (view === 'games') {
-            if (!gameListLoading && gameList.length === 0) {
+            if (!gameListLoading && !gameListLoadAttempted && !gameListLoaded) {
                 loadGameList();
             }
         } else if (view === 'game' && gameId) {
             loadGameDetail(gameId);
         }
-    }, [view, articleId, loadPosts, loadArticle, gameId, loadGameDetail, loadGameList, gameList.length, gameListLoading]);
+    }, [view, articleId, loadPosts, loadArticle, gameId, loadGameDetail, loadGameList, gameListLoadAttempted, gameListLoaded, gameListLoading]);
 
     useEffect(() => {
         if (view === 'archive' && !archiveSummary && !archiveLoading) {
@@ -1002,6 +1050,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             ? `${glassCard} bg-[#0F172A]/55 text-gray-100`
             : `${glassCard} bg-white/45 text-gray-900`;
         const cardSurface = isDarkMode ? 'bg-[#0F172A]/55 text-gray-100' : 'bg-white/45 text-gray-900';
+        const showGameListEmpty = !gameListLoading && gameListLoaded && !gameListError && gameList.length === 0;
         return (
             <div className="relative pt-28 pb-20 px-4">
                 <div className={`max-w-5xl mx-auto space-y-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1040,7 +1089,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 </div>
                             ))}
 
-                            {!gameListLoading && gameList.length === 0 && (
+                            {showGameListEmpty && (
                                 <div className={`md:col-span-2 text-center py-12 text-sm font-semibold ${glassInner} rounded-2xl`}>
                                     还没有发布的独立页面，敬请期待。
                                 </div>
@@ -1364,7 +1413,6 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                             isDarkMode={isDarkMode}
                             handleLogout={handleLogout}
                             onAboutSaved={loadAbout}
-                            loadGameList={loadGameList}
                             onAiAssistantChanged={loadMeta}
                             onHomeBackgroundChanged={loadMeta}
                         />

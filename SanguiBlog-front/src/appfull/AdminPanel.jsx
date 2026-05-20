@@ -6303,8 +6303,9 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     }, []);
 
     useEffect(() => {
+        if (activeSettingsTab !== 'games') return;
         loadGames();
-    }, [loadGames]);
+    }, [activeSettingsTab, loadGames]);
 
     const resetGameForm = useCallback((defaults = {}, clearEditing = true) => {
         setGameForm({
@@ -8315,7 +8316,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
 
 // 4.5 The main Admin Panel structure
 // 4.5 The main Admin Panel structure
-const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, loadGameList, onAiAssistantChanged, onHomeBackgroundChanged }) => {
+const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, handleLogout, onAboutSaved, onAiAssistantChanged, onHomeBackgroundChanged }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const adminDarkScrollbarClass = getAdminDarkScrollbarClass(isDarkMode);
@@ -8671,7 +8672,7 @@ const AdminPanel = ({ setView, notification, setNotification, user, isDarkMode, 
                             <Route path="posts/edit" element={<EditPostView isDarkMode={isDarkMode} />} />
                             <Route path="users" element={<UserManagementView isDarkMode={isDarkMode} />} />
                             <Route path="permissions" element={<PermissionsView isDarkMode={isDarkMode} />} />
-                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} onGameChanged={loadGameList} onAiAssistantChanged={onAiAssistantChanged} onHomeBackgroundChanged={onHomeBackgroundChanged} />} />
+                            <Route path="settings" element={<SystemSettingsView isDarkMode={isDarkMode} user={user} notification={notification} setNotification={setNotification} onAiAssistantChanged={onAiAssistantChanged} onHomeBackgroundChanged={onHomeBackgroundChanged} />} />
                             <Route path="profile" element={<AdminProfile isDarkMode={isDarkMode} />} />
                             <Route path="*" element={<div className="text-xl p-8 text-center">功能开发中...</div>} />
                         </Routes>
