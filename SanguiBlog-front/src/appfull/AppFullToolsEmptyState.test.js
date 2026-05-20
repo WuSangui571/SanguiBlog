@@ -10,10 +10,12 @@ const appFullSource = fs.readFileSync(path.join(__dirname, '..', 'AppFull.jsx'),
 // 1) gameListLoaded success state and one-shot auto-load attempt guard exist
 assert.match(appFullSource, /gameListLoaded/,
     'Expected gameListLoaded state to be present in AppFull.jsx');
-assert.match(appFullSource, /setGameListLoaded\s*\(\s*true\s*\)/,
-    'Expected setGameListLoaded(true) to be called on successful fetch');
-assert.match(appFullSource, /useState\s*\(\s*false\s*\).*gameListLoaded|gameListLoaded.*useState\s*\(\s*false\s*\)/s,
-    'Expected gameListLoaded to be initialized with useState(false)');
+assert.match(appFullSource, /gameListCache\.loaded\s*=\s*true/,
+    'Expected successful fetch to mark the shared game list cache as loaded');
+assert.match(appFullSource, /setGameListLoaded\s*\(\s*gameListCache\.loaded\s*\)/,
+    'Expected component state to sync loaded status from the shared game list cache');
+assert.match(appFullSource, /useState\s*\(\s*\(\s*\)\s*=>\s*gameListCache\.loaded\s*\)/,
+    'Expected gameListLoaded to initialize from the shared game list cache');
 assert.match(appFullSource, /gameListLoadAttempted/,
     'Expected gameListLoadAttempted guard to prevent automatic error retry loops');
 assert.match(appFullSource, /setGameListLoadAttempted\s*\(\s*true\s*\)/,
@@ -22,8 +24,8 @@ assert.match(appFullSource, /const\s+gameListCache\s*=\s*\{/,
     'Expected module-level gameListCache to survive AppFull remounts');
 assert.match(appFullSource, /if\s*\(\s*gameListCache\.promise\s*\)/,
     'Expected loadGameList to coalesce in-flight /api/games requests');
-assert.match(appFullSource, /useState\s*\(\s*\(\s*\)\s*=>\s*gameListCache\.loaded\s*\)/,
-    'Expected gameListLoaded to initialize from module cache after remount');
+assert.match(appFullSource, /gameListCache\.loading\s*=\s*false[\s\S]*gameListCache\.promise\s*=\s*null/,
+    'Expected shared request promise to finish only after loading is cleared');
 
 // 2) The view === 'games' effect uses explicit guards, NOT gameList.length === 0
 assert.match(appFullSource, /view\s*===\s*['"]games['"]/,

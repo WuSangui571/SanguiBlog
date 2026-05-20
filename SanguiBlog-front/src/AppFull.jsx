@@ -477,41 +477,43 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         setGameListError('');
 
         const request = (async () => {
-            const res = await fetchGames();
-            const data = res?.data || res;
-            const list = Array.isArray(data) ? data : (data?.records || []);
-            const sorted = [...list].sort((a, b) => {
-                const orderA = Number(a?.sortOrder ?? 0);
-                const orderB = Number(b?.sortOrder ?? 0);
-                if (orderA !== orderB) return orderB - orderA;
-                const timeA = a?.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-                const timeB = b?.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-                if (timeA !== timeB) return timeB - timeA;
-                const idA = Number(a?.id ?? 0);
-                const idB = Number(b?.id ?? 0);
-                return idB - idA;
-            });
-            gameListCache.list = sorted;
-            gameListCache.loaded = true;
-            gameListCache.error = '';
-            setGameList(sorted);
-            setGameListLoaded(true);
+            try {
+                const res = await fetchGames();
+                const data = res?.data || res;
+                const list = Array.isArray(data) ? data : (data?.records || []);
+                const sorted = [...list].sort((a, b) => {
+                    const orderA = Number(a?.sortOrder ?? 0);
+                    const orderB = Number(b?.sortOrder ?? 0);
+                    if (orderA !== orderB) return orderB - orderA;
+                    const timeA = a?.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                    const timeB = b?.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                    if (timeA !== timeB) return timeB - timeA;
+                    const idA = Number(a?.id ?? 0);
+                    const idB = Number(b?.id ?? 0);
+                    return idB - idA;
+                });
+                gameListCache.list = sorted;
+                gameListCache.loaded = true;
+                gameListCache.error = '';
+            } catch (err) {
+                gameListCache.error = err?.message || '加载页面失败';
+                logger.warn('load games failed', err);
+                throw err;
+            } finally {
+                gameListCache.loading = false;
+                if (gameListCache.promise === request) {
+                    gameListCache.promise = null;
+                }
+            }
         })();
 
         gameListCache.promise = request;
         try {
             await request;
         } catch (err) {
-            gameListCache.error = err?.message || '加载页面失败';
-            logger.warn('load games failed', err);
-            setGameListError(err?.message || '加载页面失败');
-        } finally {
-            if (gameListCache.promise === request) {
-                gameListCache.promise = null;
-            }
-            gameListCache.loading = false;
-            setGameListLoading(false);
+            setGameListError(gameListCache.error || err?.message || '加载页面失败');
         }
+        syncGameListCache();
     }, []);
 
     const loadGameDetail = useCallback(async (id) => {
