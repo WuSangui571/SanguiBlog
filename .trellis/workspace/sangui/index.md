@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
+- **Total Sessions**: 6
 - **Last Active**: 2026-05-21
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~297 | Active |
+| `journal-1.md` | ~363 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-05-21 | 修复上传工具页 CSP 与 Docker Maven 构建 | `ebc9903` | `feat/docker` |
 | 5 | 2026-05-21 | Docker uploads 恢复写权限修复 | `b9c17ee` | `feat/docker` |
 | 4 | 2026-05-21 | Docker 数据同步恢复文档收尾 | `be11779`, `8c15fb8` | `feat/docker` |
 | 3 | 2026-05-20 | 修复工具页空状态闪烁 | `0a62f4e`, `b41a972` | `feat/docker` |
