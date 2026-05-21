@@ -27,6 +27,10 @@ services:
     container_name: sanguiblog-backend
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Shanghai"
+      SPRING_JACKSON_TIME_ZONE: Asia/Shanghai
+      SPRING_JACKSON_DATE_FORMAT: "yyyy-MM-dd HH:mm:ss"
       SPRING_DATASOURCE_URL: "${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-sanguiblog_db}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
       SPRING_DATASOURCE_USERNAME: "${SPRING_DATASOURCE_USERNAME:-${MYSQL_USER:-sanguiblog_user}}"
       SPRING_DATASOURCE_PASSWORD: "${SPRING_DATASOURCE_PASSWORD:-${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}}"
@@ -57,6 +61,7 @@ services:
     image: mysql:8.0
     container_name: sanguiblog-mysql
     environment:
+      TZ: Asia/Shanghai
       MYSQL_DATABASE: "${MYSQL_DATABASE:-sanguiblog_db}"
       MYSQL_USER: "${MYSQL_USER:-sanguiblog_user}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
@@ -68,6 +73,7 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_general_ci
       --default-authentication-plugin=mysql_native_password
+      --default-time-zone=+08:00
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
