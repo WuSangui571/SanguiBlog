@@ -38,7 +38,7 @@ services:
       STORAGE_BASE_PATH: "${STORAGE_BASE_PATH:-/data/uploads}"
       SITE_BASE_URL: "${SITE_BASE_URL:-http://localhost}"
       SITE_ALLOWED_HOSTS: "${SITE_ALLOWED_HOSTS:-localhost}"
-      SITE_ASSET_BASE_URL: "${SITE_ASSET_BASE_URL:-/uploads}"
+      SITE_ASSET_BASE_URL: "${SITE_ASSET_BASE_URL:-}"
       SECURITY_CORS_ALLOWED_ORIGINS: "${SECURITY_CORS_ALLOWED_ORIGINS:-http://localhost}"
       AI_RAG_ENABLED: "${AI_RAG_ENABLED:-false}"
       AI_RAG_PGVECTOR_URL: "${AI_RAG_PGVECTOR_URL:-jdbc:postgresql://pgvector:5432/${POSTGRES_DB:-sanguiblog_ai}}"

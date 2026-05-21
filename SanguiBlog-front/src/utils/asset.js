@@ -1,6 +1,7 @@
 import logger from "./logger.js";
 
 export const buildAssetUrl = (path, fallback = null) => {
+    const viteEnv = import.meta.env || {};
     const upgradeToHttpsIfSecure = (url) => {
         if (!url) return url;
         if (typeof window === 'undefined' || window.location?.protocol !== 'https:') return url;
@@ -23,11 +24,25 @@ export const buildAssetUrl = (path, fallback = null) => {
     const runtimeOrigin = typeof window !== 'undefined' && window.__SG_ASSET_ORIGIN__
         ? window.__SG_ASSET_ORIGIN__
         : '';
-    const assetOrigin = (runtimeOrigin || import.meta.env.VITE_ASSET_ORIGIN || '').replace(/\/$/, '');
+    const assetOrigin = (runtimeOrigin || viteEnv.VITE_ASSET_ORIGIN || '').replace(/\/$/, '');
 
     const resolveWithOrigin = (origin) => {
         if (!origin) return null;
         const sanitizedOrigin = origin.replace(/\/+$/, '');
+        const resolveWithPathPrefix = (basePathValue) => {
+            const basePath = basePathValue.startsWith('/') ? basePathValue : `/${basePathValue}`;
+            let suffix = normalized;
+            if (!suffix.startsWith('/')) suffix = `/${suffix}`;
+            if (suffix.toLowerCase().startsWith(basePath.toLowerCase())) {
+                suffix = suffix.slice(basePath.length);
+                if (suffix && !suffix.startsWith('/')) suffix = `/${suffix}`;
+            }
+            const combined = `${basePath}${suffix}`.replace(/\/+/g, '/');
+            return combined.endsWith('/') && !suffix ? combined.slice(0, -1) : combined;
+        };
+        if (sanitizedOrigin.startsWith('/') && !sanitizedOrigin.startsWith('//')) {
+            return resolveWithPathPrefix(sanitizedOrigin);
+        }
         try {
             const parsed = new URL(sanitizedOrigin);
             const prefix = `${parsed.protocol}//${parsed.host}`;
@@ -52,7 +67,7 @@ export const buildAssetUrl = (path, fallback = null) => {
     const directOrigin = upgradeToHttpsIfSecure(resolveWithOrigin(assetOrigin));
     if (directOrigin) return directOrigin;
 
-    const apiBase = import.meta.env.VITE_API_BASE || '';
+    const apiBase = viteEnv.VITE_API_BASE || '';
     if (apiBase.startsWith('http')) {
         try {
             const origin = new URL(apiBase).origin.replace(/\/$/, '');

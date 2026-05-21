@@ -734,9 +734,43 @@ if (-not $SkipUploads) {
                 throw "Failed to copy uploads to volume"
             }
 
-            # Verify
+            # Verify file count after copy
             $fileCount = docker compose exec -T web sh -c 'find /data/uploads -type f | wc -l' 2>&1
             Write-Ok "Restored $($fileCount.Trim()) files to uploads_data volume"
+
+            # Fix ownership: docker compose cp creates files/dirs as root.
+            # Backend runs as non-root user 'sangui:sangui', so restored
+            # subdirectories (avatar, posts, covers) must be writable by that user.
+            Write-Host "  Fixing uploads ownership for backend non-root user..."
+            docker compose exec -T -u root backend sh -c 'chown -R sangui:sangui /data/uploads' 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                Write-Fail "chown command failed; uploads may not be writable by backend"
+                Write-Host "    Run manual fix: docker compose exec -u root backend sh -c 'chown -R sangui:sangui /data/uploads'" -ForegroundColor Yellow
+                throw "Failed to repair uploads ownership"
+            } else {
+                Write-Ok "Ownership set to sangui:sangui on /data/uploads"
+            }
+
+            # Write probes: verify backend user can create files in key upload dirs
+            Write-Host "  Verifying backend write access to upload directories..."
+            $writeDirs = @("posts", "covers", "avatar")
+            $writeFailed = $false
+            foreach ($dir in $writeDirs) {
+                $probe = docker compose exec -T backend sh -c "mkdir -p /data/uploads/$dir && touch /data/uploads/$dir/.write-test && rm -f /data/uploads/$dir/.write-test" 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Fail "Backend cannot write to /data/uploads/$dir"
+                    Write-Host "    Run manual fix: docker compose exec -u root backend sh -c 'chown -R sangui:sangui /data/uploads'" -ForegroundColor Yellow
+                    $writeFailed = $true
+                } else {
+                    Write-Ok "/data/uploads/$dir is writable by backend"
+                }
+            }
+            if ($writeFailed) {
+                Write-Fail "Upload write probe failed. Restored files may be root-owned."
+                Write-Host "  Uploads files were copied but backend may not be able to create new uploads." -ForegroundColor Yellow
+                Write-Host "  Data and existing files are preserved. Fix ownership manually, then rerun restore verification." -ForegroundColor Yellow
+                throw "Upload write probe failed"
+            }
 
         } finally {
             Pop-Location

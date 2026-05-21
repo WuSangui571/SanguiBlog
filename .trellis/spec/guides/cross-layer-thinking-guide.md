@@ -144,6 +144,7 @@ Containerized deployment is an infra/cross-layer contract, not a business API ch
 |---------|----------------|----------|
 | Compose entry | `docker-compose.yml` | `docker compose up -d --build`, `docker compose down`, `docker compose ps`, and `docker compose logs -f backend` must work from the repo root. |
 | Env template | `.env.example` | May list sensitive keys, but default sensitive values stay blank. Compose must fail fast when `JWT_SECRET`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, or `POSTGRES_PASSWORD` is missing. |
+| Asset URL config | `.env.example`, `docker-compose.yml`, `SanguiBlog-server/src/main/resources/application-docker.yaml`, `SanguiBlog-front/src/utils/asset.js` | Same-origin Docker deployments must leave `SITE_ASSET_BASE_URL` / `site.asset-base-url` empty so `buildAssetUrl` resolves `/uploads/...`, `/avatar/...`, and `/uploads/games/...` against the browser origin. Cross-domain/CDN deployments must use a complete `http(s)://host[/path]` value; relative path prefixes such as `/uploads` are legacy-compatible only and must not duplicate path segments. |
 | Backend profile | `SanguiBlog-server/src/main/resources/application-docker.yaml` | Uses `spring.profiles.active=docker`, container hosts (`mysql`, `pgvector`), and `/data/uploads`; it must not depend on ignored `application-local.yaml`. |
 | MySQL JDBC URL | `.env.example`, `docker-compose.yml`, `application-docker.yaml` | Use `characterEncoding=utf8` or omit the parameter. Do not use `characterEncoding=utf8mb4`; MySQL Connector/J treats it as a Java charset and fails startup. Keep `utf8mb4` at MySQL server/table collation level. |
 | Frontend image | `SanguiBlog-front/Dockerfile` | Builds Vite output in the image and serves it through Nginx. Production API calls stay same-origin under `/api`. |
@@ -156,9 +157,9 @@ Good/Base/Bad cases:
 
 | Case | Expected Result |
 |------|-----------------|
-| Good | Fresh server with Docker and a filled `.env` starts `web`, `backend`, `mysql`, and `pgvector`; `/`, `/api/site/meta`, `/sitemap.xml`, `/robots.txt`, and `/uploads/...` keep existing semantics. |
+| Good | Fresh server with Docker and a filled `.env` starts `web`, `backend`, `mysql`, and `pgvector`; `/`, `/api/site/meta`, `/sitemap.xml`, `/robots.txt`, and `/uploads/...` keep existing semantics. `/api/site/meta.assetBaseUrl` is `""` for same-origin Docker and `buildAssetUrl('/uploads/foo.png')` resolves to the browser origin path without `/uploads/uploads`. |
 | Base | `AI_RAG_ENABLED=false` and no DashScope key still allow core blog pages, admin, uploads, and MySQL-backed features to run. |
-| Bad | Backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, or SSE is buffered by Nginx. |
+| Bad | Backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, SSE is buffered by Nginx, or asset URL config causes duplicated `/uploads/uploads/...` requests. |
 
 Required verification for Docker/infra work:
 
@@ -167,6 +168,7 @@ docker compose config
 cd SanguiBlog-server
 mvn -q -DskipTests compile
 cd ../SanguiBlog-front
+node src/utils/asset.test.js
 npm run build
 ```
 
@@ -190,7 +192,7 @@ Production-to-local Docker data restore is also an infra/cross-layer contract. K
 | Local entry | `scripts/docker-data-sync-local-restore.ps1` | Supports `-ServerHost`, `-ServerUser`, `-RemoteBackupDir`, `-LocalBackupDir`, `-SshPort`, `-ComposeProjectDir`, `-RestoreUploadsMode Replace|Merge`, `-SkipDownload`, `-SkipMysql`, `-SkipPgVector`, `-SkipUploads`, and `-DryRun`. |
 | MySQL export | `mysqldump --single-transaction --routines --triggers --events --default-character-set=utf8mb4` | Produces `mysql.sql`; restore copies the file into the `mysql` container and imports with `mysql --default-character-set=utf8mb4`. |
 | PgVector export | `pg_dump -Fc` | Produces binary `pgvector.dump`; restore must copy the dump into the `pgvector` container and run `pg_restore` from that file. Do not pipe this binary through PowerShell text streams. |
-| uploads export | `tar -czf uploads.tar.gz -C <uploads-parent> <uploads-dir-name>` | Restore must reject absolute paths, `..` path traversal, and then copy safe files into `/data/uploads`. |
+| uploads export | `tar -czf uploads.tar.gz -C <uploads-parent> <uploads-dir-name>` | Restore must reject absolute paths, `..` path traversal, and then copy safe files into `/data/uploads`. After copy, restore must run root `chown -R sangui:sangui /data/uploads` through the `backend` container and verify backend non-root user can write to `avatar/`, `posts/`, and `covers/` directories. |
 | Integrity files | `SHA256SUMS`, optional `manifest.json` | Checksum mismatch stops before DB import or volume writes. Manifest records file sizes, table/row counts, upload counts, and non-secret source labels. |
 
 Validation/error matrix:
@@ -202,7 +204,9 @@ Validation/error matrix:
 | Existing local volumes | Back up `mysql_data`, `pgvector_data`, and `uploads_data` before overwrite; never default to `docker compose down -v`. |
 | PgVector extension missing | Run/check `CREATE EXTENSION IF NOT EXISTS vector`; stop if unavailable. |
 | uploads archive contains unsafe path | Stop before extraction. |
+| Restored uploads subdirectories owned by root | Restore script runs `chown -R sangui:sangui /data/uploads` from backend container as root; if chown or write probe fails, fail restore with clear message and manual fix command. |
 | Static upload URL returns SPA HTML | Treat as restore failure; inspect `docker/nginx/default.conf` aliases and `/data/uploads` volume content. |
+| Backend startup detects non-writable upload directory | `StoragePathResolver` throws `IllegalStateException` naming the path and Docker chown hint; backend fails fast rather than failing silently at upload time. |
 
 Good/Base/Bad cases:
 

@@ -1,0 +1,28 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\05-21-docker-uploads-missing-analysis\\prd.md", "reason": "PRD: Docker uploads volume ownership repair scope, contracts, acceptance criteria"}
+{"file": ".trellis\\tasks\\05-21-docker-uploads-missing-analysis\\research.md", "reason": "Focused research: existing owners, patterns, risks, required tests"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Docker Compose/Data Sync restore contract and upload storage verification"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Reuse-first rule for upload/storage/restore owners"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend upload/storage owner boundaries"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend upload verification and retrieve-first requirements"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "Storage/upload error semantics"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Safe diagnostics for storage permission failures"}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "Frontend asset helper owner boundary; avoid frontend URL changes"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend verification only if frontend files change"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Asset URL safety contract"}
+{"file": "scripts\\docker-data-sync-local-restore.ps1", "reason": "Restore script uploads copy and permission repair owner"}
+{"file": "docs\\docker-data-sync.md", "reason": "Restore workflow documentation owner"}
+{"file": "docs\\docker-deploy.md", "reason": "Docker upload permission troubleshooting documentation owner"}
+{"file": "SanguiBlog-server\\Dockerfile", "reason": "Backend non-root user and /data/uploads image-layer owner"}
+{"file": "docker-compose.yml", "reason": "uploads_data shared volume contract"}
+{"file": "docker\\nginx\\default.conf", "reason": "Static upload aliases should stay unchanged unless evidence changes"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application-docker.yaml", "reason": "Docker storage root contract"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\StoragePathResolver.java", "reason": "Storage directory initialization and writability check owner"}
+{"file": "SanguiBlog-server\\src\\test\\java\\com\\sangui\\sanguiblog\\config\\StoragePathResolverTest.java", "reason": "Targeted tests for storage path behavior"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\UploadController.java", "reason": "Article asset and cover upload write paths"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\PostAssetService.java", "reason": "Article body image storage owner"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\AvatarStorageService.java", "reason": "Avatar storage owner"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\HomeBackgroundAdminService.java", "reason": "Home background storage owner"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\GamePageService.java", "reason": "Game HTML storage owner"}

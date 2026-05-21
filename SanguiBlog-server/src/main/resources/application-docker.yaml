@@ -17,7 +17,7 @@ storage:
 site:
   base-url: ${SITE_BASE_URL:http://localhost}
   allowed-hosts: ${SITE_ALLOWED_HOSTS:localhost}
-  asset-base-url: ${SITE_ASSET_BASE_URL:/uploads}
+  asset-base-url: ${SITE_ASSET_BASE_URL:}
 
 security:
   cors:

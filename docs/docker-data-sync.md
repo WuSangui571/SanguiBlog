@@ -633,6 +633,35 @@ scp -r local-backup-dir user@new-server:/tmp/sanguiblog-restore/
 | 从服务器 scp 下载速度慢 | 网络带宽限制或 uploads 包过大 | 考虑在服务器端分段压缩，或使用 rsync 按需同步 |
 | Docker volume 路径在 Windows 下无法直接访问 | Docker Desktop 将 volumes 存储在 WSL2 虚拟机中 | 使用 `docker compose cp` 或 `docker run --rm -v` 操作 volume 数据 |
 | 本地 `.env` 中 `SPRING_DATASOURCE_URL` 包含 `characterEncoding=utf8mb4` | MySQL Connector/J 不支持此 Java charset 名称 | 改为 `characterEncoding=utf8`，依赖 MySQL server collation 保持 utf8mb4 |
+| 恢复后上传失败："无法创建存储目录" | `docker compose cp` 或 tar 解压时创建的目录 user/group 为 root，backend 以非 root 用户 `sangui:sangui` 运行无法写入子目录 | 见下方 "uploads 权限修复" 章节 |
+
+### 9.1 uploads 权限修复
+
+Backend 容器以非 root 用户 `sangui:sangui`（uid=100, gid=101）运行。恢复 uploads 时，`docker compose cp` 会将上传的 `avatar/`、`posts/`、`covers/` 等子目录写为 `root:root 755`，导致 backend 无法在子目录下创建新文件，报错 "无法创建存储目录"。
+
+**自动化脚本已内置修复**：`scripts/docker-data-sync-local-restore.ps1` 在 STEP 8 重新复制 uploads 后，会自动通过 backend 容器以 root 执行 `chown -R sangui:sangui /data/uploads`，然后验证 `posts`、`covers`、`avatar` 三个关键目录可写。
+
+**手动修复命令**（如果脚本未覆盖或需要事后修复）：
+
+```bash
+docker compose exec -u root backend sh -c "chown -R sangui:sangui /data/uploads"
+```
+
+**验证写入权限**：
+
+```bash
+docker compose exec backend sh -c 'id && ls -ld /data/uploads /data/uploads/avatar /data/uploads/covers /data/uploads/posts'
+docker compose exec backend sh -c 'touch /data/uploads/posts/.write-test && rm -f /data/uploads/posts/.write-test'
+docker compose exec backend sh -c 'touch /data/uploads/covers/.write-test && rm -f /data/uploads/covers/.write-test'
+docker compose exec backend sh -c 'touch /data/uploads/avatar/.write-test && rm -f /data/uploads/avatar/.write-test'
+```
+
+**原因说明**：`docker compose cp` 在未指定 `--archive` 时默认以 root 身份复制文件，恢复的目录 owner 变为 `root:root`。Backend Dockerfile 已将运行用户切换为 `sangui`，但没有写权限的 `root:root 755` 子目录会阻止 backend 在其中创建子目录。`chown -R sangui:sangui` 将所有权交还给 backend 运行用户，同时保持 755 权限允许 Nginx（web 容器）继续读取静态文件。
+
+**不要做的操作**：
+- 不要把 backend 容器改为 root 长期运行。
+- 不要执行 `docker compose down -v` 清空 volume。
+- 不要修改前端 asset URL 或 Nginx alias。
 
 ---
 
