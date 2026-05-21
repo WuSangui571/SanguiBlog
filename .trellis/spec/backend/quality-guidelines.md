@@ -59,7 +59,16 @@ Do not remove the role fallback when tightening permission checks.
 
 ### Site Security Headers
 
-`SecurityConfig` defines CSP, referrer policy, frame options, HSTS, permissions policy, and content type options. `/uploads/games/**` is special: same-origin iframe is allowed. Other routes remain `frame-ancestors 'none'` and `X-Frame-Options: DENY`.
+`SecurityConfig` defines CSP, referrer policy, frame options, HSTS, permissions policy, and content type options. `/uploads/games/**` is special: same-origin iframe is allowed and uploaded standalone HTML tools may run inline scripts plus scripts from `https://cdn.jsdelivr.net`. Other routes remain stricter: `script-src 'self'`, `frame-ancestors 'none'`, and `X-Frame-Options: DENY`.
+
+Required game static resource header contract:
+
+| Route | CSP / frame contract |
+|-------|----------------------|
+| `/uploads/games/**` | `Content-Security-Policy` includes `script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net` and `frame-ancestors 'self'`; `X-Frame-Options` is `SAMEORIGIN`. |
+| Non-game routes such as `/uploads/posts/**`, SPA routes, and API routes | Must not inherit game script allowances; default CSP keeps `script-src 'self'` and `frame-ancestors 'none'`; `X-Frame-Options` is `DENY`. |
+
+When changing `/uploads/games/**` CSP, keep the Spring Security policy in `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/SecurityConfig.java` aligned with Docker Nginx `location /uploads/games/` in `docker/nginx/default.conf`.
 
 ### Swagger Contract
 
@@ -152,6 +161,13 @@ The previous `.ai` workflow said the AI does not run the full test suite by defa
 | Cross-layer API change | backend targeted tests plus frontend build/static tests |
 | AI chat/RAG change | relevant AI service tests, including Good/Base/Bad cases |
 
+For `/uploads/games/**` CSP changes, also run:
+
+```bash
+mvn -q "-Dtest=SecurityConfigTest" test
+docker compose config
+```
+
 If tests are not run, state that explicitly and explain why.
 
 ---
@@ -166,4 +182,3 @@ If tests are not run, state that explicitly and explain why.
 - [ ] Logs are useful and do not expose secrets/content.
 - [ ] Tests or static assertions cover the changed contract.
 - [ ] Trellis spec was updated for any new pattern or contract.
-

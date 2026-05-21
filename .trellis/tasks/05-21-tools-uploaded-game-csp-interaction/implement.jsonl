@@ -1,0 +1,24 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\05-21-tools-uploaded-game-csp-interaction\\prd.md", "reason": "Task PRD, acceptance criteria, cross-layer CSP contract, and implementation boundaries"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend config/static resource placement rules"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Security headers contract, /uploads/games special case, and verification rules"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "Static/upload error behavior must remain stable"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Review any added logging for safe content"}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "/tools and uploaded game HTML route contract"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend regression verification and retrieve-first rules"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "Existing UI/component boundaries if frontend is touched"}
+{"file": ".trellis\\spec\\frontend\\hook-guidelines.md", "reason": "Existing data loading patterns if frontend is touched"}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "/tools route/local state ownership"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Asset URL safety via buildAssetUrl"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate implementation prevention"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Docker/static route cross-layer contract"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\SecurityConfig.java", "reason": "Existing Spring Security CSP definitions and /uploads/games filter chain"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\WebConfig.java", "reason": "Existing static resource handler mapping for /uploads/**"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\GamePageService.java", "reason": "Existing uploaded game storage and URL generation"}
+{"file": "docker\\nginx\\default.conf", "reason": "Docker /uploads/games static serving and CSP header"}
+{"file": "SanguiBlog-front\\src\\AppFull.jsx", "reason": "Existing /tools open-new-tab and iframe render behavior"}
+{"file": "SanguiBlog-front\\src\\utils\\asset.js", "reason": "Existing runtime asset URL builder"}
+{"file": "uploads\\games\\2048\\index.html", "reason": "Existing uploaded tool using inline script and inline handlers"}
+{"file": "uploads\\games\\timer\\index.html", "reason": "Existing uploaded tool using inline script and jsDelivr Chart.js"}

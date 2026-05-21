@@ -4,9 +4,10 @@
 FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /build
 COPY pom.xml .
-RUN mvn -B dependency:go-offline -DskipTests -q
+COPY .mvn/ .mvn/
+RUN mvn -B dependency:go-offline -DskipTests
 COPY src/ src/
-RUN mvn -B -DskipTests package -q
+RUN mvn -B -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
 RUN addgroup -S sangui && adduser -S sangui -G sangui

@@ -51,7 +51,7 @@ public class SecurityConfig {
     @Value("${security.cors.allowed-origins:}")
     private String corsAllowedOrigins;
 
-    private static final String DEFAULT_CSP = String.join("; ",
+    static final String DEFAULT_CSP = String.join("; ",
             "default-src 'self'",
             "base-uri 'self'",
             "object-src 'none'",
@@ -65,16 +65,19 @@ public class SecurityConfig {
             "form-action 'self'",
             "upgrade-insecure-requests");
 
+    static final String GAME_CSP = DEFAULT_CSP
+            .replace("frame-ancestors 'none'", "frame-ancestors 'self'")
+            .replace("script-src 'self'", "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net");
+
     @Bean
     @Order(0)
     public SecurityFilterChain uploadsGamesSecurityFilterChain(HttpSecurity http) throws Exception {
-        String gamesCsp = DEFAULT_CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
         http
                 .securityMatcher("/uploads/games/**")
                 .cors(c -> c.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> {
-                    headers.contentSecurityPolicy(csp -> csp.policyDirectives(gamesCsp));
+                    headers.contentSecurityPolicy(csp -> csp.policyDirectives(GAME_CSP));
                     headers.referrerPolicy(rp -> rp
                             .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN));
                     headers.frameOptions(frame -> frame.sameOrigin());

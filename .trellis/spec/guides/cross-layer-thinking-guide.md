@@ -146,9 +146,10 @@ Containerized deployment is an infra/cross-layer contract, not a business API ch
 | Env template | `.env.example` | May list sensitive keys, but default sensitive values stay blank. Compose must fail fast when `JWT_SECRET`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, or `POSTGRES_PASSWORD` is missing. |
 | Asset URL config | `.env.example`, `docker-compose.yml`, `SanguiBlog-server/src/main/resources/application-docker.yaml`, `SanguiBlog-front/src/utils/asset.js` | Same-origin Docker deployments must leave `SITE_ASSET_BASE_URL` / `site.asset-base-url` empty so `buildAssetUrl` resolves `/uploads/...`, `/avatar/...`, and `/uploads/games/...` against the browser origin. Cross-domain/CDN deployments must use a complete `http(s)://host[/path]` value; relative path prefixes such as `/uploads` are legacy-compatible only and must not duplicate path segments. |
 | Backend profile | `SanguiBlog-server/src/main/resources/application-docker.yaml` | Uses `spring.profiles.active=docker`, container hosts (`mysql`, `pgvector`), and `/data/uploads`; it must not depend on ignored `application-local.yaml`. |
+| Backend Docker build | `SanguiBlog-server/Dockerfile`, `SanguiBlog-server/.mvn/settings.xml`, `SanguiBlog-server/.mvn/maven.config` | Docker Maven builds must use the project Maven settings and the `aliyun-public` mirror instead of relying on host-local Maven settings. Build steps should not hide Maven package progress with `-q`, so dependency resolution failures are visible during `docker compose up -d --build`. |
 | MySQL JDBC URL | `.env.example`, `docker-compose.yml`, `application-docker.yaml` | Use `characterEncoding=utf8` or omit the parameter. Do not use `characterEncoding=utf8mb4`; MySQL Connector/J treats it as a Java charset and fails startup. Keep `utf8mb4` at MySQL server/table collation level. |
 | Frontend image | `SanguiBlog-front/Dockerfile` | Builds Vite output in the image and serves it through Nginx. Production API calls stay same-origin under `/api`. |
-| Nginx routes | `docker/nginx/default.conf` | `/sitemap.xml` and `/robots.txt` proxy to backend before SPA fallback; `/api/ai/chat/stream` disables buffering; `/uploads/games/` preserves same-origin iframe CSP; `/avatar/` maps to `/data/uploads/avatar/` and must not fall through to SPA HTML. |
+| Nginx routes | `docker/nginx/default.conf` | `/sitemap.xml` and `/robots.txt` proxy to backend before SPA fallback; `/api/ai/chat/stream` disables buffering; `/uploads/games/` preserves same-origin iframe CSP and allows uploaded tool scripts with `script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net`; `/avatar/` maps to `/data/uploads/avatar/` and must not fall through to SPA HTML. |
 | MySQL init | `sanguiblog_db.sql` mounted at `/docker-entrypoint-initdb.d/` | Initializes only empty Docker data volumes. It is not a migration path for existing data. |
 | PgVector init | `docker/postgres/init/01-enable-pgvector.sql` | Creates `vector` extension for the RAG vector store. |
 | Upload storage | `uploads_data` volume mounted at `/data/uploads` | URLs remain `/uploads/...`; `StoragePathResolver` still owns directory initialization. |
@@ -160,6 +161,14 @@ Good/Base/Bad cases:
 | Good | Fresh server with Docker and a filled `.env` starts `web`, `backend`, `mysql`, and `pgvector`; `/`, `/api/site/meta`, `/sitemap.xml`, `/robots.txt`, and `/uploads/...` keep existing semantics. `/api/site/meta.assetBaseUrl` is `""` for same-origin Docker and `buildAssetUrl('/uploads/foo.png')` resolves to the browser origin path without `/uploads/uploads`. |
 | Base | `AI_RAG_ENABLED=false` and no DashScope key still allow core blog pages, admin, uploads, and MySQL-backed features to run. |
 | Bad | Backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, SSE is buffered by Nginx, or asset URL config causes duplicated `/uploads/uploads/...` requests. |
+
+Uploaded game CSP contract:
+
+| Case | Expected Result |
+|------|-----------------|
+| `GET /uploads/games/{slug}/index.html` through Spring Boot static resources | Response CSP is `SecurityConfig.GAME_CSP`, allowing inline scripts, `https://cdn.jsdelivr.net`, and `frame-ancestors 'self'`; `X-Frame-Options` is `SAMEORIGIN`. |
+| `GET /uploads/games/{slug}/index.html` through Docker Nginx | `docker/nginx/default.conf` `location /uploads/games/` uses the same CSP text as `SecurityConfig.GAME_CSP` and `X-Frame-Options SAMEORIGIN`. |
+| Non-game uploaded assets or app/API routes | Do not receive uploaded-game script allowances; default Spring Security CSP remains `script-src 'self'` and `frame-ancestors 'none'`. |
 
 Required verification for Docker/infra work:
 
@@ -200,6 +209,7 @@ Validation/error matrix:
 | Case | Expected Result |
 |------|-----------------|
 | Missing local `.env` key | Stop before restore and print only key names, not values. |
+| Backend Docker build downloads from Maven Central and stalls | Treat as build configuration drift; verify `SanguiBlog-server/.mvn/settings.xml` is copied before Maven runs and logs show `Downloading from aliyun-public`. |
 | Missing remote backup file or checksum mismatch | Stop before touching local Docker volumes. |
 | Existing local volumes | Back up `mysql_data`, `pgvector_data`, and `uploads_data` before overwrite; never default to `docker compose down -v`. |
 | PgVector extension missing | Run/check `CREATE EXTENSION IF NOT EXISTS vector`; stop if unavailable. |
