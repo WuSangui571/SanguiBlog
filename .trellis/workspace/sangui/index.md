@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 3
-- **Last Active**: 2026-05-20
+- **Total Sessions**: 4
+- **Last Active**: 2026-05-21
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~184 | Active |
+| `journal-1.md` | ~227 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 4 | 2026-05-21 | Docker 数据同步恢复文档收尾 | `be11779`, `8c15fb8` | `feat/docker` |
 | 3 | 2026-05-20 | 修复工具页空状态闪烁 | `0a62f4e`, `b41a972` | `feat/docker` |
 | 2 | 2026-05-20 | Docker AI 聊天缺表排障收尾 | `61c3855` | `feat/docker` |
 | 1 | 2026-05-20 | Docker Compose 容器化部署 | `cfa5026`, `f8e9ab2` | `feat/docker` |
