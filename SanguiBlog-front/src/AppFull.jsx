@@ -898,7 +898,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         } else if (view === 'article' && articleId) {
             loadArticle && loadArticle(articleId);
         } else if (view === 'games') {
-            if (!gameListLoading && !gameListLoadAttempted && !gameListLoaded) {
+            if (!gameListLoaded && (!gameListLoadAttempted || gameListLoading)) {
                 loadGameList();
             }
         } else if (view === 'game' && gameId) {

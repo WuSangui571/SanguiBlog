@@ -93,6 +93,7 @@ const RETRY_NO_AUTH_ON_401_PATHS = [
   "/tags",
   "/about",
   "/comments",
+  "/games",
 ];
 
 const shouldRetryNoAuthOn401 = (path = "") =>

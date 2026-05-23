@@ -1,0 +1,23 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/05-23-fix-tools-initial-loading/prd.md", "reason": "PRD, acceptance criteria, cross-layer contract, non-goals for implementation"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend routing/API ownership and AppFull organization"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Regression test/build requirements and retrieve-first constraints"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Async loader/effect dependency/cancellation patterns"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Local server-state ownership and route state contracts"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "API response guards and runtime payload normalization"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing loadGameList/fetchGames/test patterns"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "GET /api/games public API contract and Good/Base/Bad cases"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Primary /tools list loader, loading state, refresh button, /tools/:id route behavior"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "fetchGames wrapper and public GET 401 retry behavior"}
+{"file": "SanguiBlog-front/src/appfull/AppFullToolsEmptyState.test.js", "reason": "Existing static regression test for tools loading/empty-state behavior"}
+{"file": "SanguiBlog-front/src/App.jsx", "reason": "Route mapping for /tools and /tools/:id"}
+{"file": "SanguiBlog-front/src/pages/viewNavigation.js", "reason": "View-to-route navigation for tools/game detail"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/GamePageController.java", "reason": "Backend GET /api/games contract reference only if API response is abnormal"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GamePageService.java", "reason": "Backend listActive/detail behavior reference only if API response is abnormal"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "UI/loading/empty/error rendering patterns for public component changes"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend controller/service ownership if API response is proven abnormal"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "ApiResponse/error semantics for conditional backend investigation"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend retrieve-first and targeted Maven verification if backend is touched"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "GamePage listActive repository/DTO reference; no schema change expected"}
+{"file": ".trellis/tasks/05-23-fix-tools-initial-loading/research.md", "reason": "Focused code research, likely root cause, file boundaries, and test plan"}

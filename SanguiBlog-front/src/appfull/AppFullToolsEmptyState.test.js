@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const appFullSource = fs.readFileSync(path.join(__dirname, '..', 'AppFull.jsx'), 'utf8');
+const apiSource = fs.readFileSync(path.join(__dirname, '..', 'api.js'), 'utf8');
 
 // 1) gameListLoaded success state and one-shot auto-load attempt guard exist
 assert.match(appFullSource, /gameListLoaded/,
@@ -34,6 +35,8 @@ assert.match(appFullSource, /!gameListLoaded/,
     'Expected effect guard to use !gameListLoaded');
 assert.match(appFullSource, /!gameListLoadAttempted/,
     'Expected effect guard to use !gameListLoadAttempted');
+assert.match(appFullSource, /!gameListLoaded\s*&&\s*\(\s*!gameListLoadAttempted\s*\|\|\s*gameListLoading\s*\)/,
+    'Expected view === \'games\' effect guard to join an in-flight StrictMode game list request');
 
 // Extract the effect block between the view-switching useEffect and verify its games branch
 const viewEffectMatch = appFullSource.match(/useEffect\s*\(\s*\([^)]*\)\s*=>\s*\{[\s\S]*?view\s*===\s*['"]games['"]\s*\)\s*\{[\s\S]*?\}\s*else[\s\S]*?\},\s*\[[\s\S]*?\]\s*\)/);
@@ -66,4 +69,18 @@ const gamesViewBlock = gamesViewBlockMatch ? gamesViewBlockMatch[0] : '';
 if (gamesViewBlock) {
     assert.doesNotMatch(gamesViewBlock, /GlassPopupToast/,
         'Expected renderGamesView not to use GlassPopupToast');
+}
+
+// 6) /games must be in the public GET stale-token no-auth retry whitelist
+assert.match(apiSource, /RETRY_NO_AUTH_ON_401_PATHS\s*=\s*\[[\s\S]*?"\/games"[\s\S]*?\]/,
+    'Expected /games to be in RETRY_NO_AUTH_ON_401_PATHS for public stale-token retry');
+
+// 7) Verify shouldRetryNoAuthOn401 uses startsWith, so /admin/games is NOT accidentally made public
+assert.match(apiSource, /shouldRetryNoAuthOn401\s*=\s*\(path\s*=\s*""\)\s*=>\s*RETRY_NO_AUTH_ON_401_PATHS\.some\(\(prefix\)\s*=>\s*path\.startsWith\(prefix\)\)/,
+    'Expected shouldRetryNoAuthOn401 to use path.startsWith(prefix) for prefix matching');
+// "/admin/games" does not start with "/games", so it is safe — verify the whitelist does not contain "/admin/"
+const retryPatternsMatch = apiSource.match(/const\s+RETRY_NO_AUTH_ON_401_PATHS\s*=\s*\[([\s\S]*?)\]\s*;/);
+if (retryPatternsMatch) {
+    assert.doesNotMatch(retryPatternsMatch[1], /\/admin/,
+        'Expected RETRY_NO_AUTH_ON_401_PATHS to NOT contain /admin paths');
 }

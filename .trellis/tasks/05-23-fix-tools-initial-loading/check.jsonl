@@ -1,0 +1,23 @@
+{"file": ".cursor/commands/trellis-finish-work.md", "reason": "Finish work checklist"}
+{"file": ".cursor/commands/trellis-check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/tasks/05-23-fix-tools-initial-loading/prd.md", "reason": "Check implementation against acceptance criteria and non-goals"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify no duplicate API wrapper or route ownership drift"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality checklist for frontend bugfix and required verification"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Review useEffect/useCallback ordering and state convergence"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify loading/error/list state ownership remains local and stable"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Check defensive response parsing and no blind res.data assumptions"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Verify no duplicate implementation path was introduced"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review API/frontend contract alignment"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Verify loading convergence, effect guards, and iframe behavior did not regress"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Verify /games stays in central API facade and stale-token handling is safe"}
+{"file": "SanguiBlog-front/src/appfull/AppFullToolsEmptyState.test.js", "reason": "Ensure test is updated or still covers the fixed contract"}
+{"file": "SanguiBlog-front/src/App.jsx", "reason": "Verify route mapping remains unchanged"}
+{"file": "SanguiBlog-front/src/pages/viewNavigation.js", "reason": "Verify route switching behavior remains compatible"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/GamePageController.java", "reason": "Check backend contract only if implementation touches backend"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GamePageService.java", "reason": "Check backend service only if implementation touches backend"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify UI change stays scoped and accessible"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Verify no duplicate backend entry point if backend is touched"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify backend response/status contract if backend is touched"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check backend changes only if required by API abnormality"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify no DB/schema drift introduced"}
+{"file": ".trellis/tasks/05-23-fix-tools-initial-loading/research.md", "reason": "Check implementation against research findings and boundaries"}
