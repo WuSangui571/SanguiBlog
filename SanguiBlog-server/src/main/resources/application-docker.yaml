@@ -1,6 +1,9 @@
 # Docker 容器部署配置 (spring.profiles.active=docker)
 # 本文件提交 Git；密钥通过环境变量注入
 
+server:
+  forward-headers-strategy: native
+
 jwt:
   secret: ${JWT_SECRET:${SPRING_JWT_SECRET:}}
 

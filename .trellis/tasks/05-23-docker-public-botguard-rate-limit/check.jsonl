@@ -1,0 +1,24 @@
+{"file": ".cursor/commands/trellis-finish-work.md", "reason": "Finish work checklist"}
+{"file": ".cursor/commands/trellis-check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/tasks/05-23-docker-public-botguard-rate-limit/prd.md", "reason": "Check implementation against PRD scope, acceptance criteria, non-goals, and required tests"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Verify backend files stay in existing security/config/util boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check no duplicate business path and required backend verification"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify BotGuard 403/429 response shape and frontend compatibility"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Review new logs/headers do not expose secrets or noisy public request logs"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify no hidden schema changes or DB side effects"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify no second API wrapper or duplicate public app shell"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check frontend changes are narrow and verified if any"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify loader/effect changes preserve hooks and cancellation conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check no duplicated server state or stale auth behavior regression"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify API payload/error/header handling remains compatible"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check reuse decision and duplicate risk"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Validate Good/Base/Bad and tests across backend/frontend/infra"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardEngine.java", "reason": "Review risk scoring preserves malicious high-frequency protection"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardFilter.java", "reason": "Check 403/429 ApiResponse compatibility and auth boundary"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardProperties.java", "reason": "Check config defaults are safe and documented if changed"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java", "reason": "Verify proxy/IP behavior does not create spoofing or collapse clients"}
+{"file": "docker/nginx/default.conf", "reason": "Check Nginx forwarding, SPA fallback, and existing CSP/upload behavior remain intact"}
+{"file": "SanguiBlog-server/src/main/resources/application-docker.yaml", "reason": "Verify Docker config aligns with Nginx and non-Docker behavior"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Check no direct fetch/API wrapper duplication and BotGuard error parsing remains compatible"}
+{"file": "SanguiBlog-front/src/hooks/useBlogData.jsx", "reason": "Verify boot requests and auth restore behavior stay compatible"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Verify route-specific public page behavior and analytics remain scoped"}

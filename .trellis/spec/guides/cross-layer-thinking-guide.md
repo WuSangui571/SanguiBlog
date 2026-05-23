@@ -170,6 +170,48 @@ Uploaded game CSP contract:
 | `GET /uploads/games/{slug}/index.html` through Docker Nginx | `docker/nginx/default.conf` `location /uploads/games/` uses the same CSP text as `SecurityConfig.GAME_CSP` and `X-Frame-Options SAMEORIGIN`. |
 | Non-game uploaded assets or app/API routes | Do not receive uploaded-game script allowances; default Spring Security CSP remains `script-src 'self'` and `frame-ancestors 'none'`. |
 
+Docker BotGuard/public-read contract:
+
+| Concern | File / Command | Contract |
+|---------|----------------|----------|
+| Reverse proxy headers | `docker/nginx/default.conf` | Backend-proxied locations such as `/api/`, `/api/ai/chat/stream`, `/sitemap.xml`, and `/robots.txt` must forward `X-Real-IP`, `X-Forwarded-For`, and `X-Forwarded-Proto`. |
+| Docker forwarded headers | `SanguiBlog-server/src/main/resources/application-docker.yaml` | Docker profile must set `server.forward-headers-strategy: native` so Spring/Tomcat can consume trusted proxy headers from the Docker bridge/Nginx path. |
+| IP risk key | `IpUtils.resolveIp(HttpServletRequest request)` | BotGuard, analytics, sitemap analytics, auth audit, and post detail view tracking reuse the same resolver. With `X-Forwarded-For: 203.0.113.10, 172.18.0.1`, the resolved IP is `203.0.113.10`; with no proxy headers, fallback is `request.getRemoteAddr()`. Do not add a second IP resolver for Docker. |
+| Public read scoring | `BotGuardProperties.publicReadPathPrefixes`, `BotGuardEngine.decide(HttpServletRequest request)` | Only `GET` requests whose servlet path starts with a configured public read prefix skip `noCookie` and `emptyReferer` counter increments and receive `security.bot-guard.public-read-good-score`. `total`, `content`, user-agent, scanner path, stable interval, C-segment, captcha, and block logic remain active. |
+| Default public read prefixes | `BotGuardProperties` | Defaults must cover first-screen public reads: `/api/site`, `/api/categories`, `/api/tags`, `/api/comments/recent`, `/api/about`, `/api/analytics/client-ip`, `/api/games`, and `/api/posts`. |
+| Captcha/block compatibility | `BotGuardFilter` | Captcha remains HTTP `403` with `captchaRequired`, `captchaUrl`, `verifyUrl`, and `riskScore`; block remains HTTP `429` with `Retry-After`, `retryAfterSeconds`, and `riskScore`. Auth/admin/upload routes still rely on JWT/Spring Security boundaries. |
+
+Docker BotGuard validation matrix:
+
+| Case | Expected Result |
+|------|-----------------|
+| Normal unauthenticated Docker visitor opens `/`, `/archive`, or `/tools` once | First-screen public APIs complete without BotGuard `403`/`429`. |
+| `GET /api/posts?page=1&size=10` after normal app boot | Treated as a public read for BotGuard scoring and does not require captcha solely due to prior app boot reads. |
+| `POST /api/posts/{postId}/comments` or other non-GET request under a public prefix | Does not receive public-read scoring relief; authorization and normal BotGuard risk controls still apply. |
+| High-frequency loop against public read endpoints from one IP | BotGuard still delays, challenges, or blocks according to accumulated `total`/`content`/stable-interval risk. |
+| Scanner-like path or hostile user-agent | Risk score still increases; public-read prefixes must not hide scanner detection. |
+| Docker request has no forwarded headers | Resolver falls back to `request.getRemoteAddr()` without crashing. |
+
+Required verification for Docker BotGuard/public-read work:
+
+```bash
+docker compose config
+cd SanguiBlog-server
+mvn -q -DskipTests compile
+mvn -q "-Dtest=BotGuardEngineTest,IpUtilsTest,SecurityConfigTest" test
+```
+
+When Docker is available, also verify:
+
+```bash
+docker compose up -d --build
+curl -i http://localhost/api/analytics/client-ip
+curl -i http://localhost/api/site/meta
+curl -i "http://localhost/api/posts?page=1&size=10"
+curl -i http://localhost/api/posts/archive/summary
+curl -i http://localhost/api/games
+```
+
 Required verification for Docker/infra work:
 
 ```bash

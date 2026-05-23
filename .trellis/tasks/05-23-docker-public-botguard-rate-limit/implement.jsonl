@@ -1,0 +1,25 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/05-23-docker-public-botguard-rate-limit/prd.md", "reason": "PRD with scope, acceptance criteria, cross-layer contract, non-goals, and test plan"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend placement rules for config, security, util, controller/service boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend retrieve-first, security contracts, Docker/CSP testing expectations"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "BotGuard response contract and public/static resource risk-control semantics"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe security/risk diagnostic logging rules"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Confirm no DB/schema work and preserve analytics/query side effects if touched"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend API wrapper/useBlogData/AppFull ownership for public routes"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend retrieve-first and static test/build expectations"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Public data loader and useBlogData effect patterns"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Public server-state/cache ownership and analytics/page-view state boundaries"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "API response guards, BotGuard payload shape, header encoding contract"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first report and no duplicate BotGuard/IP/API implementation"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer Docker/BotGuard/API/frontend contract template and required cases"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardEngine.java", "reason": "Primary BotGuard scoring and public GET challenge/block behavior"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardFilter.java", "reason": "Filter response shape, valid JWT bypass, debug headers"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardProperties.java", "reason": "BotGuard thresholds/path prefixes/config keys"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java", "reason": "Existing IP resolver used by BotGuard, analytics, post detail"}
+{"file": "docker/nginx/default.conf", "reason": "Docker reverse-proxy header forwarding and backend route contracts"}
+{"file": "SanguiBlog-server/src/main/resources/application-docker.yaml", "reason": "Docker profile config, potential forwarded headers/BotGuard config"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Frontend API facade and public first-screen request functions"}
+{"file": "SanguiBlog-front/src/hooks/useBlogData.jsx", "reason": "Global public data loader boot sequence"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Route-specific archive/tools/page-view/client-ip first-screen flows"}

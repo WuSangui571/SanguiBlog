@@ -72,12 +72,14 @@ public class BotGuardEngine {
         String guardToken = findCookieValue(request.getCookies(), props.getGuardCookieName());
         boolean verified = captchaService.isVerified(guardToken, ua, cSegment);
 
+        boolean isPublicRead = isPublicReadPath(path, method);
+
         IpRiskState state = ipStates.get(ip, k -> new IpRiskState());
         state.total.increment(nowSec);
-        if (!hasCookie) {
+        if (!hasCookie && !isPublicRead) {
             state.noCookie.increment(nowSec);
         }
-        if (!StringUtils.hasText(referer)) {
+        if (!StringUtils.hasText(referer) && !isPublicRead) {
             state.emptyReferer.increment(nowSec);
         }
         boolean assetReq = isAssetRequest(path);
@@ -138,6 +140,9 @@ public class BotGuardEngine {
         if (StringUtils.hasText(referer)) {
             good += 2;
         }
+        if (isPublicRead) {
+            good += props.getPublicReadGoodScore();
+        }
         delta -= good;
 
         long halfLifeMs = Math.max(1, props.getScoreHalfLife().toMillis());
@@ -195,6 +200,15 @@ public class BotGuardEngine {
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/api-docs")
                 || Objects.equals(path, "/error");
+    }
+
+    private boolean isPublicReadPath(String path, String method) {
+        if (!StringUtils.hasText(path) || !"GET".equalsIgnoreCase(method)) {
+            return false;
+        }
+        return props.getPublicReadPathPrefixes().stream()
+                .filter(StringUtils::hasText)
+                .anyMatch(path::startsWith);
     }
 
     private boolean shouldDelay(String path) {
