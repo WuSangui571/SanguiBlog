@@ -1,0 +1,18 @@
+{"file": ".cursor/commands/trellis-finish-work.md", "reason": "Finish work checklist"}
+{"file": ".cursor/commands/trellis-check.md", "reason": "Code quality check spec"}
+{"file": ".trellis\\tasks\\05-23-debug-docker-cold-start-after-down-v\\prd.md", "reason": "Check implementation against task requirements, acceptance criteria, allowed scope, validation matrix, and Docker cold-start contract."}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Verify Docker/infra contract, env/config alignment, validation matrix, Good/Base/Bad cases, and required checks."}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "Check schema/source-of-truth assumptions, Docker init-only-empty-volume semantics, and DB readiness diagnostics."}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Review retrieval report, scope control, verification commands, and no duplicate backend path assumptions."}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Review any new startup/readiness logs for level, usefulness, and secret safety."}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Check retrieval-first decision and duplicate implementation risk."}
+{"file": "docker-compose.yml", "reason": "Verify final healthchecks, depends_on conditions, env usage, and volume/init mounts."}
+{"file": "SanguiBlog-server\\Dockerfile", "reason": "Check backend healthcheck endpoint, timing, and any startup/wait changes."}
+{"file": "SanguiBlog-front\\Dockerfile", "reason": "Check web healthcheck/build/runtime changes if web startup behavior is adjusted."}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application-docker.yaml", "reason": "Verify Docker profile remains container-local and does not depend on host/local config."}
+{"file": "sanguiblog_db.sql", "reason": "Check no unintended schema/business data changes and validate any chosen readiness table exists early and reliably."}
+{"file": "docs\\docker-deploy.md", "reason": "Check cold-start docs, troubleshooting, and down -v destructive warning if updated."}
+{"file": "README.md", "reason": "Check English Docker docs if updated."}
+{"file": "README.zh-CN.md", "reason": "Check Chinese Docker docs if updated."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\bootstrap\\DataInitializer.java", "reason": "Check startup initialization remains narrow and does not hide schema/auth failures."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\SiteService.java", "reason": "If health endpoint changes are considered, avoid breaking /api/site/meta semantics and repository contracts."}

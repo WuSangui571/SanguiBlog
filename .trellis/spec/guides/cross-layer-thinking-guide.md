@@ -206,6 +206,7 @@ Containerized deployment is an infra/cross-layer contract, not a business API ch
 | Frontend image | `SanguiBlog-front/Dockerfile` | Builds Vite output in the image and serves it through Nginx. Production API calls stay same-origin under `/api`. |
 | Nginx routes | `docker/nginx/default.conf` | `/sitemap.xml` and `/robots.txt` proxy to backend before SPA fallback; `/api/ai/chat/stream` disables buffering; `/uploads/games/` preserves same-origin iframe CSP and allows uploaded tool scripts with `script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net`; `/avatar/` maps to `/data/uploads/avatar/` and must not fall through to SPA HTML. |
 | MySQL init | `sanguiblog_db.sql` mounted at `/docker-entrypoint-initdb.d/` | Initializes only empty Docker data volumes. It is not a migration path for existing data. |
+| MySQL readiness | `docker-compose.yml` `mysql.healthcheck.test` | Must authenticate to `$MYSQL_DATABASE` over TCP (`--protocol=TCP -h 127.0.0.1`) and query a stable core table such as `roles`. Do not use socket-only probes for schema readiness because the MySQL image can expose a local init socket before `/docker-entrypoint-initdb.d/` has fully completed. |
 | PgVector init | `docker/postgres/init/01-enable-pgvector.sql` | Creates `vector` extension for the RAG vector store. |
 | Upload storage | `uploads_data` volume mounted at `/data/uploads` | URLs remain `/uploads/...`; `StoragePathResolver` still owns directory initialization. |
 
@@ -215,7 +216,7 @@ Good/Base/Bad cases:
 |------|-----------------|
 | Good | Fresh server with Docker and a filled `.env` starts `web`, `backend`, `mysql`, and `pgvector`; `/`, `/api/site/meta`, `/sitemap.xml`, `/robots.txt`, and `/uploads/...` keep existing semantics. `/api/site/meta.assetBaseUrl` is `""` for same-origin Docker and `buildAssetUrl('/uploads/foo.png')` resolves to the browser origin path without `/uploads/uploads`. |
 | Base | `AI_RAG_ENABLED=false` and no DashScope key still allow core blog pages, admin, uploads, and MySQL-backed features to run. |
-| Bad | Backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, SSE is buffered by Nginx, or asset URL config causes duplicated `/uploads/uploads/...` requests. |
+| Bad | MySQL reports healthy from a socket-only init probe before `sanguiblog_db.sql` is complete, backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, SSE is buffered by Nginx, or asset URL config causes duplicated `/uploads/uploads/...` requests. |
 
 Uploaded game CSP contract:
 

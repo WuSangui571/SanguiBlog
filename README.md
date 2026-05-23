@@ -150,6 +150,8 @@ docker compose logs -f mysql
 docker compose down
 
 # Stop and remove all data volumes (⚠ deletes all database and upload data)
+# Note: next startup re-imports sanguiblog_db.sql (~731 lines); first cold start is slower (~1–2 min)
+# but all services should converge to healthy/running without a second restart
 docker compose down -v
 
 # Restart a single service
@@ -249,5 +251,6 @@ npm run build        # Production build output in dist/
 | Upload fails | Upload directory permissions | Backend writes to `/data/uploads`; if subdirectories are root-owned, run `docker compose exec -u root backend sh -c "chown -R sangui:sangui /data/uploads"` |
 | Port conflict | Host port 80 occupied | Set `WEB_PORT=8080` (or another free port) in `.env` |
 | Data lost after restart | Volumes not persisted | Confirm `docker-compose.yml` defines and uses `mysql_data`, `pgvector_data`, `uploads_data` volumes |
+| Services unhealthy after first `down -v && up` | MySQL healthcheck raced past schema init | Fixed: MySQL healthcheck now verifies over TCP that a core table is queryable before marking healthy. Allow ~1-2 min for cold start |
 
 For detailed deployment help, see [docs/docker-deploy.md](./docs/docker-deploy.md). For data migration and restore, see [docs/docker-data-sync.md](./docs/docker-data-sync.md). For deeper implementation details, refer to the historical release notes in `release/` and source code comments.

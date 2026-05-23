@@ -1,0 +1,19 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\05-23-debug-docker-cold-start-after-down-v\\prd.md", "reason": "Primary task requirements, acceptance criteria, allowed scope, validation matrix, and Docker cold-start command contract."}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Docker Compose deployment is an infra/cross-layer contract; includes Docker deployment readiness, env/config, validation matrix, and required verification commands."}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "MySQL schema source, Docker init semantics, stale schema diagnostics, and DB readiness constraints are central to this bug."}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Risk-based verification, retrieve-first workflow, Docker config checks, and scoped backend changes."}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "If backend startup/wait logging is changed, logs must be operationally useful and avoid secrets."}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Implementation should modify existing Docker/startup paths rather than add duplicate wrappers or services without evidence."}
+{"file": "docker-compose.yml", "reason": "Current service dependency and healthcheck contract: mysql ping-only healthcheck, backend depends on mysql/pgvector, web depends on backend healthy."}
+{"file": "SanguiBlog-server\\Dockerfile", "reason": "Backend image healthcheck currently calls /api/site/meta with 60s start period and 3 retries; likely part of cold-start timing window."}
+{"file": "SanguiBlog-front\\Dockerfile", "reason": "Web image healthcheck and Nginx runtime readiness may interact with backend dependency."}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application-docker.yaml", "reason": "Docker profile datasource, storage, forwarded headers, and PgVector configuration must remain aligned with Compose."}
+{"file": "sanguiblog_db.sql", "reason": "Canonical MySQL empty-volume init script; choose stable core table probe and verify init completeness."}
+{"file": "docs\\docker-deploy.md", "reason": "Docker deployment guide already documents startup, down -v, logs, and init-only-empty-volume behavior; update if cold-start docs change."}
+{"file": "README.md", "reason": "Root Docker quick-start and command docs may need cold-start note and verification expectations."}
+{"file": "README.zh-CN.md", "reason": "Chinese Docker quick-start and command docs may need cold-start note and verification expectations."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\bootstrap\\DataInitializer.java", "reason": "Backend startup currently runs repository-backed initialization; missing schema or DB not ready can fail startup here."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\SiteService.java", "reason": "Backend healthcheck calls /api/site/meta, which fans out to multiple repositories and can fail if schema is not ready."}

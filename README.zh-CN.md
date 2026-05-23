@@ -148,6 +148,8 @@ docker compose logs -f mysql
 docker compose down
 
 # 停止并清理全部数据卷（⚠ 会删除所有数据库和上传数据）
+# 注意：再次启动时 MySQL 需重新导入 sanguiblog_db.sql（~731 行），首次冷启动会比平时慢
+# 约 1-2 分钟内全部服务应进入 healthy/running 状态，无需手动重启
 docker compose down -v
 
 # 重启单个服务
@@ -247,5 +249,6 @@ npm run build        # 生产构建，输出在 dist/
 | 上传失败 | 上传目录权限不足 | 后端写入 `/data/uploads`；若子目录属主为 root，运行 `docker compose exec -u root backend sh -c "chown -R sangui:sangui /data/uploads"` |
 | 端口冲突 | 宿主机 80 端口被占用 | 在 `.env` 中设置 `WEB_PORT=8080`（或其他空闲端口） |
 | 重启后数据丢失 | 未使用 Docker 数据卷 | 确认 `docker-compose.yml` 中定义并使用了 `mysql_data`、`pgvector_data`、`uploads_data` 卷 |
+| `down -v` 后首次启动全部服务 unhealthy | MySQL 健康检查未等待 schema 初始化完成 | 已修复：MySQL 健康检查现通过 TCP 验证核心表可查询后才标记 healthy。冷启动约需 1-2 分钟 |
 
 详细部署帮助请参见 [docs/docker-deploy.md](./docs/docker-deploy.md)。数据迁移与恢复请参见 [docs/docker-data-sync.md](./docs/docker-data-sync.md)。如需深入了解实现细节，可参考仓库内 `release/` 目录下的历史发布说明与源码注释。
