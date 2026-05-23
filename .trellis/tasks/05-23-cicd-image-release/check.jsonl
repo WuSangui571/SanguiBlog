@@ -1,0 +1,17 @@
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\workflow.md", "reason": "Trellis workflow and finish/check expectations from the Docker worktree"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\index.md", "reason": "Backend spec index for check context"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\frontend\\index.md", "reason": "Frontend spec index for check context"}
+{"file": ".trellis\\tasks\\05-23-cicd-image-release\\prd.md", "reason": "Acceptance criteria, required tests, and scope boundaries for check"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Check Docker/infra changes against compose, storage, Nginx, BotGuard, and deployment contracts"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Check no duplicate deployment/docs implementation is introduced"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\quality-guidelines.md", "reason": "Check backend/infra verification matrix and version boundary"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\database-guidelines.md", "reason": "Check production compose keeps database persistence and does not imply migration runner"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\logging-guidelines.md", "reason": "Check CI/deploy docs do not expose secrets or tokens"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Check frontend lint/build CI coverage"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\docker-compose.yml", "reason": "Compare production compose against existing Docker baseline volumes, env, healthchecks"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\SanguiBlog-server\\Dockerfile", "reason": "Check backend buildx workflow matches Dockerfile context"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\SanguiBlog-front\\Dockerfile", "reason": "Check frontend buildx workflow uses correct root context"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\docs\\docker-deploy.md", "reason": "Check deploy docs include image pull deployment, rollback, secret safety"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\workspace\\sangui\\journal-1.md", "reason": "Check against previous Dockerization verification and known caveats"}
+{"file": "SanguiBlog-front\\package.json", "reason": "Check workflow uses existing frontend scripts"}
+{"file": "SanguiBlog-server\\pom.xml", "reason": "Check workflow uses existing backend Maven project"}

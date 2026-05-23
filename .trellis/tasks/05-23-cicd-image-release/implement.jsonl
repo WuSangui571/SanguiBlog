@@ -1,0 +1,17 @@
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\workflow.md", "reason": "Trellis workflow and task lifecycle conventions from the Docker worktree"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\index.md", "reason": "Backend development guide index from the active SanguiBlog spec set"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\frontend\\index.md", "reason": "Frontend development guide index from the active SanguiBlog spec set"}
+{"file": ".trellis\\tasks\\05-23-cicd-image-release\\prd.md", "reason": "PRD with release strategy, acceptance criteria, boundaries, and test plan"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Docker Compose Deployment contract, infra validation, secrets and storage boundaries"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Retrieve-first rules and duplicate implementation boundaries"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend/infra verification, version, secret logging, and test expectations"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\database-guidelines.md", "reason": "MySQL/PgVector volume, schema init, and migration boundary rules"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\logging-guidelines.md", "reason": "Secret-safe logging requirements for CI/deploy scripts and docs"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend lint/build expectations for CI"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\docker-compose.yml", "reason": "Existing Docker baseline compose from feat/docker worktree; use as source for prod image compose"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\SanguiBlog-server\\Dockerfile", "reason": "Backend image build baseline"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\SanguiBlog-front\\Dockerfile", "reason": "Frontend image build baseline and repository-root build context"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\docs\\docker-deploy.md", "reason": "Existing Docker deploy guide to extend with image pull deployment and rollback"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\workspace\\sangui\\journal-1.md", "reason": "Previous Dockerization journal summary and verified commands"}
+{"file": "SanguiBlog-front\\package.json", "reason": "Frontend CI scripts: npm ci, lint, build"}
+{"file": "SanguiBlog-server\\pom.xml", "reason": "Backend CI Maven compile/test entry"}

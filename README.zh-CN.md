@@ -13,7 +13,23 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 - 环境切换说明：`ChangeEnv.md`
 - 数据库初始化脚本：`sanguiblog_db.sql`
 
-## 2. 项目结构
+## 2. Docker 容器化部署（推荐）
+
+SanguiBlog 支持 Docker Compose 一键部署。`main` 分支 push 后由 GitHub Actions 自动构建并推送镜像到 GHCR，服务器直接拉取镜像运行，无需在服务器安装 Maven/Node。
+
+详见：[docs/docker-deploy.md](./docs/docker-deploy.md)
+
+```bash
+# 生产环境（镜像拉取部署）：
+cp .env.example .env
+# 编辑 .env 填入必填项和 SANGUI_IMAGE_TAG
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml ps
+curl -i http://localhost/api/site/meta
+```
+
+## 3. 项目结构
 
 ```
 ├─ SanguiBlog-server/      # Spring Boot 服务端（REST API、鉴权、站点地图等）
@@ -21,10 +37,12 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 ├─ uploads/                # 默认上传目录（生产环境建议挂载到持久化存储）
 ├─ release/                # Release Notes（例如 V2.1.287 / V2.2.0，当前最新文档为 V2.2.23）
 ├─ sanguiblog_db.sql       # 初始化建库脚本（表结构 + 基础数据）
+├─ docker-compose.yml      # 开发/本地 Docker Compose（本地构建镜像）
+├─ docker-compose.prod.yml # 生产 Docker Compose（从 GHCR 拉取镜像）
 └─ README.md               # 本文档
 ```
 
-## 3. 环境准备
+## 4. 环境准备
 
 | 组件 | 版本建议 | 说明 |
 | --- | --- | --- |
@@ -39,7 +57,7 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
 >
 > 如果你暂时不启用 AI RAG，则 PostgreSQL / PgVector 不是必需项；只使用基础 AI 聊天时，MySQL 仍是唯一必需数据库。
 
-## 4. 初始化数据库
+## 5. 初始化数据库
 
 1. 创建数据库（示例）：
    ```sql
@@ -55,7 +73,7 @@ SanguiBlog 是一个前后端分离的个人博客系统：后端基于 Spring B
    - 博客 RAG 跟踪表
    - 超级管理员文本知识库表
 
-## 5. 后端配置与启动（SanguiBlog-server）
+## 6. 后端配置与启动（SanguiBlog-server）
 后端配置文件：
 - 通用配置（提交 Git）：`SanguiBlog-server/src/main/resources/application.yaml`
 - 私有配置（不提交 Git）：`SanguiBlog-server/src/main/resources/application-local.yaml`
@@ -155,7 +173,7 @@ AI_DASHSCOPE_EMBEDDING_MODEL=text-embedding-v4
 - AI 入口支持在后台 `/admin/settings` 的 `AI助理` 分组中统一开启/关闭
 - 超级管理员可在后台管理 AI 知识库与 AI 会话审计
 
-## 6. 前端构建与部署（SanguiBlog-front）
+## 7. 前端构建与部署（SanguiBlog-front）
 
 前端 API 默认走同源 `/api`，生产环境通常无需额外配置。若你需要跨域/分域名部署，可在 `SanguiBlog-front/.env` 或 `.env.production` 设置：
 
@@ -182,7 +200,7 @@ npm run dev
 ```
 默认开发地址：`http://localhost:5173`。
 
-## 7. Nginx 反代建议（含 sitemap/robots）
+## 8. Nginx 反代建议（含 sitemap/robots）
 
 如果你使用 SPA 回退（`try_files $uri /index.html`），务必让 `sitemap.xml/robots.txt` 优先走后端，否则会被回退到前端首页导致访问异常。
 
@@ -203,7 +221,7 @@ server {
 }
 ```
 
-## 8. sitemap/robots 说明（V2.1.275+）
+## 9. sitemap/robots 说明（V2.1.275+）
 
 - 站点地图：`GET /sitemap.xml`
   - URL 超阈值时返回 `<sitemapindex>`，并通过 `GET /sitemap.xml?page=1..N` 分片拉取
@@ -213,7 +231,7 @@ server {
 
 阈值配置项：`site.sitemap.max-urls-per-file`（默认 45000，对应环境变量 `SITE_SITEMAP_MAX_URLS_PER_FILE`）。
 
-## 9. 常见问题排查
+## 10. 常见问题排查
 
 | 现象 | 可能原因 | 解决方案 |
 | --- | --- | --- |

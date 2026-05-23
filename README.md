@@ -15,7 +15,23 @@ SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backen
 - Environment switching notes: `ChangeEnv.md`
 - Database initialization script: `sanguiblog_db.sql`
 
-## 2. Project Structure
+## 2. Docker 容器化部署（推荐）
+
+SanguiBlog 支持 Docker Compose 一键部署。`main` 分支 push 后由 GitHub Actions 自动构建并推送镜像到 GHCR，服务器直接拉取镜像运行，无需在服务器安装 Maven/Node。
+
+详见：[docs/docker-deploy.md](./docs/docker-deploy.md)
+
+```bash
+# 生产环境（镜像拉取部署）：
+cp .env.example .env
+# 编辑 .env 填入必填项和 SANGUI_IMAGE_TAG
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml ps
+curl -i http://localhost/api/site/meta
+```
+
+## 3. Project Structure
 
 ```
 ├─ SanguiBlog-server/      # Spring Boot backend service (REST API, auth, sitemap, etc.)
@@ -23,10 +39,12 @@ SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backen
 ├─ uploads/                # Default upload directory (mount to persistent storage in production)
 ├─ release/                # Release notes (for example V2.1.287 / V2.2.0, current latest document is V2.2.23)
 ├─ sanguiblog_db.sql       # Database bootstrap script (schema + seed data)
+├─ docker-compose.yml      # Dev/local Docker Compose (builds images locally)
+├─ docker-compose.prod.yml # Production Docker Compose (pulls images from GHCR)
 └─ README.md               # This document
 ```
 
-## 3. Environment Requirements
+## 4. Environment Requirements
 
 | Component | Recommended Version | Notes |
 | --- | --- | --- |
@@ -41,7 +59,7 @@ SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backen
 >
 > If you are not enabling AI RAG for now, PostgreSQL / PgVector is not required. For basic AI chat only, MySQL remains the only required database.
 
-## 4. Initialize the Database
+## 5. Initialize the Database
 
 1. Create the database (example):
    ```sql
@@ -57,7 +75,7 @@ SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backen
    - Blog RAG tracking tables
    - Super-admin text knowledge base tables
 
-## 5. Backend Configuration and Startup (`SanguiBlog-server`)
+## 6. Backend Configuration and Startup (`SanguiBlog-server`)
 
 Backend configuration files:
 - Shared config (committed to Git): `SanguiBlog-server/src/main/resources/application.yaml`
@@ -161,7 +179,7 @@ Notes:
 - The AI entry can be enabled/disabled centrally in the `AI助理` section of backend `/admin/settings`
 - Super admins can manage AI knowledge bases and AI session audits in the backend
 
-## 6. Frontend Build and Deployment (`SanguiBlog-front`)
+## 7. Frontend Build and Deployment (`SanguiBlog-front`)
 
 The frontend uses same-origin `/api` by default, so production usually does not require extra frontend config. If you need cross-origin or separate-domain deployment, set the following in `SanguiBlog-front/.env` or `.env.production`:
 
@@ -192,7 +210,7 @@ npm run dev
 
 Default dev URL: `http://localhost:5173`.
 
-## 7. Nginx Reverse Proxy Recommendations (including sitemap/robots)
+## 8. Nginx Reverse Proxy Recommendations (including sitemap/robots)
 
 If you use SPA fallback (`try_files $uri /index.html`), make sure `sitemap.xml/robots.txt` is routed to the backend first; otherwise they may fall back to the frontend homepage and behave incorrectly.
 
@@ -213,7 +231,7 @@ server {
 }
 ```
 
-## 8. sitemap/robots Notes (`V2.1.275+`)
+## 9. sitemap/robots Notes (`V2.1.275+`)
 
 - Sitemap: `GET /sitemap.xml`
   - Returns `<sitemapindex>` when URL count exceeds the threshold, and supports paged retrieval via `GET /sitemap.xml?page=1..N`
@@ -223,7 +241,7 @@ server {
 
 Threshold config: `site.sitemap.max-urls-per-file` (default `45000`, corresponding env var `SITE_SITEMAP_MAX_URLS_PER_FILE`).
 
-## 9. Common Troubleshooting
+## 10. Common Troubleshooting
 
 | Symptom | Possible Cause | Solution |
 | --- | --- | --- |

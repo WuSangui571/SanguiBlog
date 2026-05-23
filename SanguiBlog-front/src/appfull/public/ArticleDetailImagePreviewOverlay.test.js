@@ -21,7 +21,7 @@ assert.match(
 assert.match(
     articleDetailSource,
     /sg-article-floating-actions/,
-    '文章页“首页\/评论”悬浮按钮容器应暴露稳定类名，便于在大图预览打开时统一隐藏并禁点'
+    '文章页“首页/评论”悬浮按钮容器应暴露稳定类名，便于在大图预览打开时统一隐藏并禁点'
 );
 
 assert.match(
