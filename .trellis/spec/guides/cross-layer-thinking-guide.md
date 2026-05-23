@@ -130,6 +130,61 @@ Current limits:
 - article asset count: 10
 - Spring multipart: 60 MB
 
+### Home Author WeChat QR
+
+The public home author card uses the SUPER_ADMIN profile QR image as site-level author data.
+
+Contract:
+
+```text
+/admin/profile QR controls
+-> src/api.js adminUploadWechatQr(file) / adminDeleteWechatQr()
+-> POST/DELETE /api/admin/site/wechat-qr
+-> users.wechat_qr_url
+-> GET /api/site/meta data.author.wechatQr
+-> ArticleList author QR rendering
+```
+
+Signatures and payloads:
+
+| Layer | Contract |
+|-------|----------|
+| Backend upload | `POST /api/admin/site/wechat-qr`, `multipart/form-data`, field `file`, `@PreAuthorize("hasRole('SUPER_ADMIN')")` |
+| Backend delete | `DELETE /api/admin/site/wechat-qr`, `@PreAuthorize("hasRole('SUPER_ADMIN')")` |
+| Response | `ApiResponse<SiteWechatQrDto>` with `data.url` as `/uploads/site/wechat/{uuid}.{ext}` on upload and `null` on delete |
+| Existing profile hardening | `PUT /api/users/me` must reject non-`SUPER_ADMIN` attempts to mutate `wechatQrUrl` |
+| Public read | `GET /api/site/meta` continues returning `data.author.wechatQr` from `UserProfileDto.wechatQr` |
+| Frontend fallback | `author.wechatQr` through `buildAssetUrl`; if missing, try legacy `/contact/wechat.jpg`; if image load fails, show empty-state text and no broken image |
+| Storage | Reuse `StoragePathResolver`; files live under the existing upload root as `site/wechat/{uuid}.{ext}` and are served as `/uploads/site/wechat/...` |
+| DB | Reuse existing `users.wechat_qr_url`; no new table or schema field |
+
+Validation/error matrix:
+
+| Case | Expected Result |
+|------|-----------------|
+| SUPER_ADMIN uploads png/jpg/jpeg/webp/gif/avif within QR size limit | 200 `ApiResponse.ok({url})`; stored URL starts with `/uploads/site/wechat/` |
+| SUPER_ADMIN replaces QR | new owned local file is saved, previous owned local `/uploads/site/wechat/...` file is deleted, external/legacy URLs are ignored |
+| SUPER_ADMIN deletes QR | `users.wechat_qr_url` is cleared and owned local QR file is deleted if present |
+| ADMIN/USER uploads/deletes QR | 403 via method security |
+| ADMIN/USER sends `wechatQrUrl` to `PUT /api/users/me` | 403 or service-level `SecurityException` |
+| Missing/empty/too-large/unsupported QR file | 400-style validation failure through `GlobalExceptionHandler` |
+| `author.wechatQr` absent and `/contact/wechat.jpg` exists | home author card shows the legacy image |
+| configured or legacy QR image fails to load | home author card hides the image and shows empty-state text |
+
+Required tests:
+
+```bash
+cd SanguiBlog-server
+mvn -q "-Dtest=SiteWechatQrServiceTest,SiteWechatQrControllerAuthorizationTest,AuthServiceTest" test
+mvn -q "-Dtest=UploadControllerAuthorizationTest,StoragePathResolverTest" test
+
+cd SanguiBlog-front
+node src/appfull/public/ArticleListWechatQr.test.js
+node src/appfull/noNativeBlockingDialogs.test.js
+npm run lint
+npm run build
+```
+
 ### Custom Headers
 
 Chinese analytics labels are URL-encoded in frontend headers and decoded in `PostController`.

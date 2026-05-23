@@ -169,6 +169,7 @@ export const MOCK_USER = {
     title: "Fullstack Developer",
     bio: "个人学习记录  |  三桂醒着就行，沉住气慢慢努力；只要灯还亮着，就还不算困。Stay sober, keep striving. As long as the light burns, I will not drift into the dark.",
     avatar: DEFAULT_AVATAR,
+    wechatQr: "/contact/wechat.jpg",
     role: "SUPER_ADMIN",
     social: {
         github: "https://github.com/Wusangui571",

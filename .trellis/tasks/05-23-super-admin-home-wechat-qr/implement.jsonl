@@ -1,0 +1,30 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\05-23-super-admin-home-wechat-qr\\prd.md", "reason": "PRD, cross-layer contract, acceptance criteria, fallback compatibility"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend controller/service/storage placement rules"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend retrieve-first, authorization, upload, testing contracts"}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "Existing users.wechat_qr_url persistence and schema alignment rules"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "ApiResponse, validation, upload, 403/400 error mapping"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Safe upload/admin mutation logging"}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "Frontend api/useBlogData/public/admin file ownership"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend retrieve-first, static tests, build checks"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "Admin profile and home component UI patterns"}
+{"file": ".trellis\\spec\\frontend\\hook-guidelines.md", "reason": "useBlogData site meta cache and loader rules"}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "Site meta and admin local state ownership"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Runtime guards, API field alignment, buildAssetUrl rules"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate implementation guard"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "API/DB/frontend/upload/permission contract checklist"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\SiteService.java", "reason": "Existing site meta author source and homeBackground URL pattern"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\AuthService.java", "reason": "Existing profile mapping and wechatQrUrl update path to harden"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\UploadController.java", "reason": "Existing upload validation and authorization examples"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\HomeBackgroundAdminService.java", "reason": "Existing admin image upload/delete/storage pattern"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\StoragePathResolver.java", "reason": "Storage root normalization and Docker uploads path contract"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\dto\\UserProfileDto.java", "reason": "Existing public author wechatQr field"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\entity\\User.java", "reason": "Existing users.wechat_qr_url entity field"}
+{"file": "SanguiBlog-front\\src\\api.js", "reason": "Single frontend API facade and multipart helper reuse"}
+{"file": "SanguiBlog-front\\src\\hooks\\useBlogData.jsx", "reason": "Site meta cache and asset origin application"}
+{"file": "SanguiBlog-front\\src\\pages\\admin\\Profile.jsx", "reason": "Active /admin/profile component for QR management block"}
+{"file": "SanguiBlog-front\\src\\appfull\\public\\ArticleList.jsx", "reason": "Active hardcoded public QR rendering to replace with configured field plus fallback"}
+{"file": "SanguiBlog-front\\src\\utils\\asset.js", "reason": "buildAssetUrl handling for /uploads and legacy /contact paths"}
+{"file": "SanguiBlog-front\\public\\contact\\wechat.jpg", "reason": "Legacy QR fallback asset that must remain usable"}

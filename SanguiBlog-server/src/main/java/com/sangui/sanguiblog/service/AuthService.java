@@ -163,6 +163,9 @@ public class AuthService {
             user.setGithubUrl(request.getGithubUrl());
         }
         if (request.getWechatQrUrl() != null) {
+            if (!"SUPER_ADMIN".equals(user.getRole() != null ? user.getRole().getCode() : null)) {
+                throw new SecurityException("无权修改微信二维码");
+            }
             user.setWechatQrUrl(request.getWechatQrUrl());
         }
 

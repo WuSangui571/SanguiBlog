@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ImageWithFallback from '../../components/common/ImageWithFallback.jsx';
 import { useBlog } from "../../hooks/useBlogData";
-import { updateProfile, uploadAvatar } from "../../api";
+import { updateProfile, uploadAvatar, adminUploadWechatQr, adminDeleteWechatQr } from "../../api";
 import { buildAssetUrl } from "../../utils/asset.js";
 import {
   User,
@@ -17,6 +17,8 @@ import {
   Lock,
   CheckCircle,
   AlertTriangle,
+  QrCode,
+  Trash2,
 } from "lucide-react";
 
 const FieldLabel = ({ icon: Icon, children }) => (
@@ -72,6 +74,13 @@ export default function AdminProfile({ isDarkMode = false }) {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const fileRef = useRef(null);
 
+  const [wechatQrUrl, setWechatQrUrl] = useState("");
+  const [wechatQrPreview, setWechatQrPreview] = useState("");
+  const [qrStatus, setQrStatus] = useState({ type: "", text: "" });
+  const [uploadingQr, setUploadingQr] = useState(false);
+  const [deletingQr, setDeletingQr] = useState(false);
+  const qrFileRef = useRef(null);
+
   useEffect(() => {
     if (!currentUser) return;
     setForm((prev) => ({
@@ -87,6 +96,9 @@ export default function AdminProfile({ isDarkMode = false }) {
       newPassword: "",
     }));
     setAvatarPreview(buildAssetUrl(currentUser.avatar || currentUser.avatarUrl || currentUser.avatar_url, ""));
+    const qrUrl = currentUser.wechatQr || currentUser.wechatQrUrl || "";
+    setWechatQrUrl(qrUrl);
+    setWechatQrPreview(qrUrl ? buildAssetUrl(qrUrl, "") : "");
     setMeta({
       role: mapRole(currentUser.role),
       id: currentUser.id ?? "-",
@@ -174,6 +186,49 @@ export default function AdminProfile({ isDarkMode = false }) {
       setPasswordStatus({ type: "error", text: `原密码验证失败：${err.message}` });
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const handleQrUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setQrStatus({ type: "error", text: "请选择图片文件" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setQrStatus({ type: "error", text: "微信二维码图片需小于 5MB" });
+      return;
+    }
+    setUploadingQr(true);
+    setQrStatus({ type: "", text: "" });
+    try {
+      const response = await adminUploadWechatQr(file);
+      const newUrl = response?.data?.url || response?.url || "";
+      if (!newUrl) throw new Error("上传返回结果为空");
+      setWechatQrUrl(newUrl);
+      setWechatQrPreview(buildAssetUrl(newUrl, ""));
+      setQrStatus({ type: "success", text: "微信二维码上传成功" });
+    } catch (err) {
+      setQrStatus({ type: "error", text: `微信二维码上传失败：${err.message}` });
+    } finally {
+      setUploadingQr(false);
+      if (qrFileRef.current) qrFileRef.current.value = "";
+    }
+  };
+
+  const handleQrDelete = async () => {
+    setDeletingQr(true);
+    setQrStatus({ type: "", text: "" });
+    try {
+      await adminDeleteWechatQr();
+      setWechatQrUrl("");
+      setWechatQrPreview("");
+      setQrStatus({ type: "success", text: "微信二维码已删除" });
+    } catch (err) {
+      setQrStatus({ type: "error", text: `删除失败：${err.message}` });
+    } finally {
+      setDeletingQr(false);
     }
   };
 
@@ -305,6 +360,66 @@ export default function AdminProfile({ isDarkMode = false }) {
             </div>
           </div>
         </section>
+
+        {currentUser?.role === "SUPER_ADMIN" && (
+        <section className={cardClass}>
+          <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">
+            <QrCode size={18} />
+            微信二维码
+          </h2>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className={`w-32 h-32 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden backdrop-blur-xl ${
+              isDarkMode ? "border-white/16 bg-white/[0.06]" : "border-slate-300 bg-white/70"
+            }`}>
+              {wechatQrPreview ? (
+                <ImageWithFallback src={wechatQrPreview} alt="微信二维码预览" className="w-full h-full object-contain p-1" />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-400 gap-1">
+                  <QrCode size={36} />
+                  <span className="text-[10px] font-bold">暂无</span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <input ref={qrFileRef} type="file" accept="image/*" onChange={handleQrUpload} className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => qrFileRef.current?.click()}
+                  disabled={uploadingQr || deletingQr}
+                  className={accentButtonClass}
+                >
+                  {uploadingQr ? "上传中..." : wechatQrUrl ? "替换二维码" : "上传二维码"}
+                </button>
+                {wechatQrUrl && (
+                  <button
+                    type="button"
+                    onClick={handleQrDelete}
+                    disabled={uploadingQr || deletingQr}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3 font-semibold backdrop-blur-xl transition-all duration-300 disabled:opacity-50 border-red-400/28 bg-red-500/14 text-red-600 hover:bg-red-500/20"
+                  >
+                    <Trash2 size={16} />
+                    {deletingQr ? "删除中..." : "删除"}
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                支持 PNG/JPG/WebP/GIF/AVIF，最大 5MB。上传后首页作者卡片将展示此二维码。
+              </p>
+            </div>
+          </div>
+          {qrStatus.text && (
+            <div className={`mt-4 flex items-center gap-3 rounded-[24px] border p-3 backdrop-blur-xl ${
+              qrStatus.type === "success"
+                ? (isDarkMode ? "border-emerald-400/24 bg-emerald-500/12 text-emerald-100" : "border-emerald-200 bg-emerald-500/12 text-emerald-700")
+                : (isDarkMode ? "border-red-400/24 bg-red-500/12 text-red-100" : "border-red-200 bg-red-500/12 text-red-700")
+            }`}>
+              {qrStatus.type === "success" ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+              <span className="font-semibold text-sm">{qrStatus.text}</span>
+            </div>
+          )}
+        </section>
+        )}
 
         <section className={cardClass}>
           <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-[#FF0080]">

@@ -73,6 +73,7 @@ const ArticleList = ({
     skipInitialQuery = false
 }) => {
     const [showWechat, setShowWechat] = useState(false);
+    const [wechatQrImgError, setWechatQrImgError] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const paginationScrollReadyRef = useRef(false);
     const [konamiActive, setKonamiActive] = useState(false);
@@ -416,7 +417,12 @@ const ArticleList = ({
     const displayAuthor = author || MOCK_USER;
     const buildMediaUrl = (path, fallback) => buildAssetUrl(path, fallback);
     const authorAvatar = buildMediaUrl(displayAuthor.avatar, MOCK_USER.avatar);
-    const authorWechat = buildMediaUrl("/contact/wechat.jpg");
+    const authorWechatQr = typeof displayAuthor.wechatQr === 'string' && displayAuthor.wechatQr.trim().length > 0
+        ? displayAuthor.wechatQr.trim()
+        : null;
+    const authorWechat = authorWechatQr
+        ? buildMediaUrl(authorWechatQr)
+        : buildMediaUrl("/contact/wechat.jpg");
     const authorBioHtml = typeof displayAuthor.bio === 'string' ? displayAuthor.bio.trim() : '';
     const safeAuthorBioHtml = useMemo(() => (authorBioHtml ? sanitizeHtml(authorBioHtml) : ''), [authorBioHtml]);
     const fallbackBio = displayAuthor.title || '保持热爱，持续创作。';
@@ -574,7 +580,10 @@ const ArticleList = ({
 
                                 <div
                                     className="relative"
-                                    onMouseEnter={() => setShowWechat(true)}
+                                    onMouseEnter={() => {
+                                        setShowWechat(true);
+                                        setWechatQrImgError(false);
+                                    }}
                                     onMouseLeave={() => setShowWechat(false)}
                                 >
                                     <PopButton variant="ghost"
@@ -591,10 +600,18 @@ const ArticleList = ({
                                             >
                                                 <div
                                                     className="bg-white p-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] w-40 h-40 flex flex-col items-center justify-center">
-                                                    <img src={authorWechat}
-                                                        className="w-32 h-32 object-contain border border-gray-200 block" />
-                                                    <p className="text-center text-[10px] font-bold mt-1 bg-black text-white w-full">SCAN
-                                                        ME</p>
+                                                    {wechatQrImgError ? (
+                                                        <p className="text-center text-[11px] font-bold px-1 leading-tight text-gray-700">超级管理员暂未设置微信二维码</p>
+                                                    ) : (
+                                                        <>
+                                                            <img src={authorWechat}
+                                                                className="w-32 h-32 object-contain border border-gray-200 block"
+                                                                onError={() => setWechatQrImgError(true)}
+                                                                alt="微信二维码" />
+                                                            <p className="text-center text-[10px] font-bold mt-1 bg-black text-white w-full">SCAN
+                                                                ME</p>
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <div
                                                     className="w-4 h-4 bg-black rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2"></div>

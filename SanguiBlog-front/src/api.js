@@ -962,6 +962,17 @@ export const adminDeleteKnowledgeDocument = (id) =>
 export const adminFetchAiAssistantSettings = () =>
   request("/admin/ai-assistant-settings");
 
+export const adminUploadWechatQr = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return authFormRequest("/api/admin/site/wechat-qr", "POST", formData);
+};
+
+export const adminDeleteWechatQr = () =>
+  request("/admin/site/wechat-qr", {
+    method: "DELETE",
+  });
+
 export const adminUpdateAiAssistantSettings = (payload) =>
   request("/admin/ai-assistant-settings", {
     method: "PUT",
