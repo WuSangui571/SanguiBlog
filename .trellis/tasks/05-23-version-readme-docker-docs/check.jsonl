@@ -1,0 +1,23 @@
+{"file": ".cursor/commands/trellis-finish-work.md", "reason": "Finish work checklist"}
+{"file": ".cursor/commands/trellis-check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check version contract and risk-based verification"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Check backend version source remains in existing config/service path"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Check active frontend fallback changes avoid prototypes/legacy"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check frontend edits are minimal and verified"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check no new UI/component path is introduced"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Check site meta flow remains centralized"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check no duplicated site meta state is added"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Check frontend/backend version field alignment"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check reuse decisions are respected"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Check Docker/env contract and Good/Base/Bad coverage"}
+{"file": "SanguiBlog-server/src/main/resources/application.yaml", "reason": "Check site.version is V2.3.0"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SiteService.java", "reason": "Check mapping remains unchanged"}
+{"file": "SanguiBlog-front/src/hooks/useBlogData.jsx", "reason": "Check site meta flow remains centralized"}
+{"file": "SanguiBlog-front/src/appfull/public/HomeView.jsx", "reason": "Check fallback version update only"}
+{"file": "SanguiBlog-front/src/appfull/ui/Navigation.jsx", "reason": "Check fallback version update only"}
+{"file": ".env.example", "reason": "Check README env lists match template"}
+{"file": "docker-compose.yml", "reason": "Check README commands and required envs match Compose"}
+{"file": "docs/docker-deploy.md", "reason": "Check README links and summaries align"}
+{"file": "docs/docker-data-sync.md", "reason": "Check README links and scope boundaries"}
+{"file": "README.md", "reason": "Check English README structure, links, commands, version"}
+{"file": "README.zh-CN.md", "reason": "Check Chinese README structure, links, commands, version"}

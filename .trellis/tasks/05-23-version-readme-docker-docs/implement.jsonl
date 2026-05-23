@@ -1,0 +1,24 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Version contract and docs/config verification rules"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend config/source location and site meta ownership"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend active homepage/navigation path and legacy boundaries"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend docs/fallback verification and build decision matrix"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "HomeView/Navigation component fallback conventions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Site meta loading flow through useBlogData"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Site meta cache and data ownership"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "SiteMetaDto/version frontend field contract"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first report and no duplicate docs/code path"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Docker/env command contract and version display chain"}
+{"file": "SanguiBlog-server/src/main/resources/application.yaml", "reason": "Canonical site.version source"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SiteService.java", "reason": "site.version to SiteMetaDto.version mapping"}
+{"file": "SanguiBlog-front/src/hooks/useBlogData.jsx", "reason": "Frontend site meta loading/caching flow"}
+{"file": "SanguiBlog-front/src/appfull/public/HomeView.jsx", "reason": "Homepage version fallback/display source"}
+{"file": "SanguiBlog-front/src/appfull/ui/Navigation.jsx", "reason": "Navigation banner version display"}
+{"file": ".env.example", "reason": "Docker env variable source for README"}
+{"file": "docker-compose.yml", "reason": "Docker Compose command/env fail-fast contract"}
+{"file": "docs/docker-deploy.md", "reason": "Detailed Docker deployment doc to link instead of duplicating"}
+{"file": "docs/docker-data-sync.md", "reason": "Detailed Docker data sync/restore doc link"}
+{"file": "README.md", "reason": "Primary English README to update"}
+{"file": "README.zh-CN.md", "reason": "Primary Chinese README to update"}
