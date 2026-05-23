@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 9
+- **Total Sessions**: 10
 - **Last Active**: 2026-05-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~563 | Active |
+| `journal-1.md` | ~640 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 10 | 2026-05-23 | 超级管理员配置首页微信二维码 | `9261040` | `feat/docker` |
 | 9 | 2026-05-23 | 更新 V2.3.0 Docker 部署文档 | `4351810` | `feat/docker` |
 | 8 | 2026-05-23 | 修复 Docker 公共页 BotGuard 误触发 | `657535d` | `feat/docker` |
 | 7 | 2026-05-23 | 修复工具页首次加载卡住 | `6fb6382` | `feat/docker` |
