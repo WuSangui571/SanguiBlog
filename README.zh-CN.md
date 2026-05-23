@@ -251,4 +251,4 @@ npm run build        # 生产构建，输出在 dist/
 | 重启后数据丢失 | 未使用 Docker 数据卷 | 确认 `docker-compose.yml` 中定义并使用了 `mysql_data`、`pgvector_data`、`uploads_data` 卷 |
 | `down -v` 后首次启动全部服务 unhealthy | MySQL 健康检查未等待 schema 初始化完成 | 已修复：MySQL 健康检查现通过 TCP 验证核心表可查询后才标记 healthy。冷启动约需 1-2 分钟 |
 
-详细部署帮助请参见 [docs/docker-deploy.md](./docs/docker-deploy.md)。数据迁移与恢复请参见 [docs/docker-data-sync.md](./docs/docker-data-sync.md)。如需深入了解实现细节，可参考仓库内 `release/` 目录下的历史发布说明与源码注释。
+临时上线 / 备用服务器部署验证请参见 Docker 部署指南中的[临时上线部署验证清单](./docs/docker-deploy.md#13-临时上线--备用服务器部署验证清单)。详细部署帮助请参见 [docs/docker-deploy.md](./docs/docker-deploy.md)。数据迁移与恢复请参见 [docs/docker-data-sync.md](./docs/docker-data-sync.md)。如需深入了解实现细节，可参考仓库内 `release/` 目录下的历史发布说明与源码注释。

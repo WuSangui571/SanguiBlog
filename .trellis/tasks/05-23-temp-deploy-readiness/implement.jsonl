@@ -1,0 +1,22 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\05-23-temp-deploy-readiness\\prd.md", "reason": "PRD and deployment acceptance contract"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Reuse existing deployment docs instead of duplicating"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Docker Compose infra contract and validation matrix"}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "MySQL schema init and Docker volume drift rules"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend deploy verification and sitemap/uploads contracts"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend endpoint/storage ownership for deployment docs"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Site meta and asset URL deployment contract"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend build/static verification for deploy docs"}
+{"file": "docs\\docker-deploy.md", "reason": "Existing Docker deployment guide to extend"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "Upload and API error/deployment boundary notes"}
+{"file": "docker-compose.yml", "reason": "Compose service/env/healthcheck contract"}
+{"file": ".env.example", "reason": "Environment template and required secrets"}
+{"file": "docker\\nginx\\default.conf", "reason": "Nginx routing for API sitemap robots uploads"}
+{"file": "README.zh-CN.md", "reason": "Top-level Chinese deploy quickstart"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application-docker.yaml", "reason": "Docker profile env and storage config"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\SiteController.java", "reason": "HTTP verification endpoint for site meta"}
+{"file": "README.md", "reason": "Top-level English deploy quickstart"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\StoragePathResolver.java", "reason": "Upload storage writable directory behavior"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\SitemapController.java", "reason": "HTTP verification endpoints for sitemap and robots"}

@@ -1,0 +1,22 @@
+{"file": ".cursor/commands/trellis-finish-work.md", "reason": "Finish work checklist"}
+{"file": ".cursor/commands/trellis-check.md", "reason": "Code quality check spec"}
+{"file": ".trellis\\tasks\\05-23-temp-deploy-readiness\\prd.md", "reason": "Check against PRD and acceptance criteria"}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "Check schema/init guidance consistency"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Check retrieval and duplicate-doc risk"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Verify Docker Compose infra contract alignment"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Check verification matrix and backend contracts"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Check endpoint/storage ownership references"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Check asset URL/site meta contract"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "Check upload/API error expectations"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Check frontend verification requirements"}
+{"file": "docs\\docker-deploy.md", "reason": "Review final runbook consistency"}
+{"file": ".env.example", "reason": "Check env documentation for required/blank secrets"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application-docker.yaml", "reason": "Check Docker profile docs alignment"}
+{"file": "docker-compose.yml", "reason": "Check documented commands/env against Compose"}
+{"file": "docker\\nginx\\default.conf", "reason": "Check documented route expectations against Nginx"}
+{"file": "README.zh-CN.md", "reason": "Check Chinese quickstart consistency"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\SiteController.java", "reason": "Check site meta docs against controller"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\SitemapController.java", "reason": "Check sitemap/robots docs against controller"}
+{"file": "SanguiBlog-front\\src\\utils\\asset.test.js", "reason": "Check asset URL verification command"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\StoragePathResolver.java", "reason": "Check upload permission runbook against resolver"}
+{"file": "README.md", "reason": "Check English quickstart consistency"}
