@@ -772,3 +772,89 @@ Recorded completion of Docker image release workflow after user manual testing a
 ### Next Steps
 
 - None - task complete
+
+
+## Session 14: production docker deployment hardening completed
+
+**Date**: 2026-05-24
+**Task**: production docker deployment hardening completed
+**Branch**: `main`
+
+### Summary
+
+Completed production Docker hardening, server verification fixes, task archive, and upload/env documentation.
+
+### Main Changes
+
+## Production Docker hardening completion
+
+Commits recorded:
+- 8501eeb feat:production-docker-hardening
+- 7d15346 fix:production-upload-and-env-hardening
+
+Main changed modules:
+- Production Docker deployment contract: docker-compose.prod.yml, .env.example, docs/docker-deploy.md.
+- MySQL bootstrap SQL: sanguiblog_db.sql idempotency and MySQL 8.0 compatible AI session column migration.
+- Docker profile backend startup configuration: application-docker.yaml Hikari timing and RAG startup flag.
+- AI/RAG startup sync: AiBlogKnowledgeSyncService and AiCustomKnowledgeSyncService startup guards plus targeted tests.
+- Frontend upload behavior: post cover upload timeout increased after production network testing.
+
+Updated files:
+- .env.example
+- README.md
+- README.zh-CN.md
+- docker-compose.prod.yml
+- docs/docker-deploy.md
+- sanguiblog_db.sql
+- SanguiBlog-server/src/main/resources/application-docker.yaml
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/rag/AiBlogKnowledgeSyncService.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/rag/AiCustomKnowledgeSyncService.java
+- SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/rag/AiBlogKnowledgeSyncServiceTest.java
+- SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/rag/AiCustomKnowledgeSyncServiceTest.java
+- SanguiBlog-front/src/api.js
+
+Verification performed:
+- git diff --check: passed.
+- docker compose -f docker-compose.prod.yml config --quiet: passed.
+- docker compose config --quiet: passed.
+- mvn -q -DskipTests compile: passed after approved dependency/network execution.
+- mvn -q "-Dtest=AiBlogKnowledgeSyncServiceTest,AiCustomKnowledgeSyncServiceTest" test: passed with Mockito/JDK dynamic-agent warnings only.
+- mvn -q "-Dtest=AiAssistantSettingServiceTest,AiAssistantCapabilityServiceTest,AiGuestAccessServiceTest" test: passed with Mockito/JDK dynamic-agent warnings only.
+- node src/appfull/PostCoverUploadGuard.test.js: passed.
+- cmd /c npm run lint: passed.
+- cmd /c npm run build: passed.
+- User manually verified local docker-compose.yml deployment.
+- User manually verified production docker-compose.prod.yml deployment after server-side fixes: MySQL/PgVector/backend/web healthy, page reachable, login CORS fixed, article image upload fixed, cover upload fixed.
+
+Codex check fixes during this task:
+- Replaced fragile production MySQL healthcheck table probe with SELECT 1.
+- Fixed .env guidance for JWT $ interpolation, production CORS origins, SITE_ALLOWED_HOSTS, same-origin SITE_ASSET_BASE_URL, and invalid DashScope URL-as-key usage.
+- Hardened uploads_data ownership with uploads-init one-shot service before backend starts.
+- Increased post cover upload timeout from 45s to 180s for slower production links.
+- Kept sensitive env values blank in templates.
+
+Result and boundaries:
+- Task acceptance criteria are met and current task was archived to .trellis/tasks/archive/2026-05/05-24-prod-docker-deploy-hardening.
+- No new business API contract or DB table was introduced beyond SQL idempotency/compatibility hardening.
+- Runtime destructive Docker checks such as down -v remain manual-only and should only be used on disposable environments.
+- AI remains optional; production should keep AI_RAG_ENABLED=false unless a real DashScope key and PgVector path are verified.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8501eeb` | (see git log) |
+| `7d15346` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

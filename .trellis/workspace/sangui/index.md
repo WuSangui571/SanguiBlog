@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 13
+- **Total Sessions**: 14
 - **Last Active**: 2026-05-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~774 | Active |
+| `journal-1.md` | ~860 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 14 | 2026-05-24 | production docker deployment hardening completed | `8501eeb`, `7d15346` | `main` |
 | 13 | 2026-05-24 | CI/CD Image Release Closure | `5c75ff4` | `main` |
 | 12 | 2026-05-23 | Temp Deploy Readiness Runbook Closure | `234e7e8` | `feat/docker` |
 | 11 | 2026-05-23 | 修复 Docker 空卷冷启动健康检查 | `601050e345efafba434463adec5384294678c9d5` | `feat/docker` |
