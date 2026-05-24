@@ -697,7 +697,7 @@ export const uploadPostAssets = async (files, folder) => {
 export const uploadPostCover = async (file, postSlug) => {
   const token = localStorage.getItem("sg_token");
   const formData = new FormData();
-  const POST_COVER_UPLOAD_TIMEOUT_MS = 45000;
+  const POST_COVER_UPLOAD_TIMEOUT_MS = 180000;
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   const timeoutId = controller
     ? setTimeout(() => controller.abort(), POST_COVER_UPLOAD_TIMEOUT_MS)
@@ -714,7 +714,7 @@ export const uploadPostCover = async (file, postSlug) => {
     });
   } catch (error) {
     if (error?.name === "AbortError") {
-      throw new Error("封面上传超时，请重试");
+      throw new Error("封面上传超时，请压缩图片或检查网络后重试");
     }
     throw error;
   } finally {
