@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +42,23 @@ class AiCustomKnowledgeSyncServiceTest {
 
     @Mock
     private PlatformTransactionManager transactionManager;
+
+    @Test
+    void syncOnStartupShouldReturnBeforeResolvingVectorStoreWhenDisabled() {
+        AiBlogRagProperties properties = configuredProperties();
+        properties.setSyncOnStartup(false);
+        AiCustomKnowledgeSyncService service = new AiCustomKnowledgeSyncService(
+                knowledgeDocumentRepository,
+                knowledgeChunkRepository,
+                vectorStoreProvider,
+                properties,
+                transactionManager
+        );
+
+        service.syncOnStartup();
+
+        verifyNoInteractions(vectorStoreProvider, knowledgeDocumentRepository, knowledgeChunkRepository);
+    }
 
     @Test
     void shouldFlushDeletedChunksBeforeSavingReplacementChunks() {

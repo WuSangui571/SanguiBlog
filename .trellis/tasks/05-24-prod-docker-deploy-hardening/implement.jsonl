@@ -1,0 +1,19 @@
+{"file": ".trellis\\tasks\\05-24-prod-docker-deploy-hardening\\prd.md", "reason": "Primary PRD with scope, contracts, acceptance criteria, risks, and handoff plan"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\workflow.md", "reason": "Trellis workflow and task lifecycle conventions"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\index.md", "reason": "Backend spec index and pre-development checklist"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\directory-structure.md", "reason": "Backend placement boundaries for config/service changes"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend/infra verification and retrieve-first expectations"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\database-guidelines.md", "reason": "MySQL schema, Docker schema drift, and RAG persistence rules"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\error-handling.md", "reason": "Startup/AI fallback behavior and error boundary expectations"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\logging-guidelines.md", "reason": "Secret-safe startup and AI/RAG logging guidance"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Retrieve-first report and duplicate implementation boundaries"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Docker compose/env/DB/AI cross-layer contract"}
+{"file": "docker-compose.prod.yml", "reason": "Production compose to harden"}
+{"file": ".env.example", "reason": "Environment variable template to rewrite"}
+{"file": "sanguiblog_db.sql", "reason": "MySQL init SQL idempotency hardening target"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application-docker.yaml", "reason": "Docker profile datasource and RAG config target"}
+{"file": "SanguiBlog-server\\Dockerfile", "reason": "Backend healthcheck and JVM container baseline"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\bootstrap\\DataInitializer.java", "reason": "Core startup runner behavior and schema dependency"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\rag\\AiBlogKnowledgeSyncService.java", "reason": "AI blog RAG startup sync behavior to review"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\rag\\AiCustomKnowledgeSyncService.java", "reason": "AI custom knowledge startup sync behavior to review"}
+{"file": "docs\\docker-deploy.md", "reason": "Deployment docs to align with hardened compose/env"}

@@ -13,6 +13,12 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysql:3306/sanguiblog_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
     username: ${SPRING_DATASOURCE_USERNAME:sanguiblog_user}
     password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      connection-timeout: 30000
+      initialization-fail-timeout: -1
+      validation-timeout: 5000
+      maximum-pool-size: 10
+      minimum-idle: 2
 
 storage:
   base-path: ${STORAGE_BASE_PATH:/data/uploads}
@@ -28,6 +34,7 @@ security:
 
 ai:
   rag:
+    sync-on-startup: ${AI_RAG_SYNC_ON_STARTUP:false}
     pgvector:
       url: ${AI_RAG_PGVECTOR_URL:jdbc:postgresql://pgvector:5432/${POSTGRES_DB:sanguiblog_ai}}
       username: ${AI_RAG_PGVECTOR_USERNAME:${POSTGRES_USER:sanguiblog_pg_user}}

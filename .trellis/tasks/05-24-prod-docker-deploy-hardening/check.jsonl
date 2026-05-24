@@ -1,0 +1,12 @@
+{"file": ".trellis\\tasks\\05-24-prod-docker-deploy-hardening\\prd.md", "reason": "Check against PRD acceptance criteria and boundaries"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\quality-guidelines.md", "reason": "Check backend/infra verification matrix"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\database-guidelines.md", "reason": "Check SQL idempotency and Docker schema-drift contract"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\backend\\logging-guidelines.md", "reason": "Check startup logs do not expose secrets/content"}
+{"file": ".kilo\\worktrees\\record-feat-docker\\.trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Check env/compose/DB/AI contract coverage"}
+{"file": "docker-compose.prod.yml", "reason": "Validate production compose hardening"}
+{"file": ".env.example", "reason": "Validate operator env defaults and blank secrets"}
+{"file": "sanguiblog_db.sql", "reason": "Validate SQL idempotency changes"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application-docker.yaml", "reason": "Validate Docker profile datasource/RAG behavior"}
+{"file": "docs\\docker-deploy.md", "reason": "Validate docs match command/env defaults"}
+{"file": "README.md", "reason": "Validate English README deployment snippets"}
+{"file": "README.zh-CN.md", "reason": "Validate Chinese README deployment snippets"}

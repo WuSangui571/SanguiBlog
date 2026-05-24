@@ -26,7 +26,7 @@ cp .env.example .env
 docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml ps
-curl -i http://localhost/api/site/meta
+curl -i http://localhost:8090/api/site/meta
 ```
 
 ## 3. 项目结构

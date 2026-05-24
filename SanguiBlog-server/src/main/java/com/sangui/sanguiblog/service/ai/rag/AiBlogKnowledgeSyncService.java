@@ -50,7 +50,7 @@ public class AiBlogKnowledgeSyncService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void syncOnStartup() {
-        if (!isOperational() || !ragProperties.isSyncOnStartup()) {
+        if (!ragProperties.isSyncOnStartup() || !isOperational()) {
             return;
         }
 

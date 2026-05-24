@@ -8,34 +8,19 @@ SET FOREIGN_KEY_CHECKS = 0;
 --   COLLATE utf8mb4_general_ci;
 -- USE sanguiblog_db;
 
--- 为了方便多次执行，先删表（有顺序，先删外键依赖）
-SET FOREIGN_KEY_CHECKS = 0;
-
-DROP TABLE IF EXISTS role_permissions;
-DROP TABLE IF EXISTS permissions;
-DROP TABLE IF EXISTS analytics_page_views;
-DROP TABLE IF EXISTS analytics_traffic_sources;
-DROP TABLE IF EXISTS system_monitor_snapshots;
-DROP TABLE IF EXISTS comment_notifications;
-DROP TABLE IF EXISTS comments;
-DROP TABLE IF EXISTS post_tags;
-DROP TABLE IF EXISTS tags;
-DROP TABLE IF EXISTS posts;
-DROP TABLE IF EXISTS game_pages;
-DROP TABLE IF EXISTS home_background_images;
-DROP TABLE IF EXISTS categories;
-DROP TABLE IF EXISTS system_broadcasts;
-DROP TABLE IF EXISTS site_settings;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS roles;
-
-SET FOREIGN_KEY_CHECKS = 1;
+-- =============================================
+-- 幂等性说明：本脚本设计为可重复执行且保护已有数据。
+-- - 所有建表语句使用 CREATE TABLE IF NOT EXISTS。
+-- - 种子数据使用 INSERT IGNORE 或 WHERE NOT EXISTS，重复执行不会报错或重复插入。
+-- - 旧版 DROP TABLE IF EXISTS 块已移除。
+--   如需完全重置数据库，请在执行本脚本前手动备份后 DROP 相关表。
+-- =============================================
 
 -- =============================
 -- 1. 角色与用户
 -- =============================
 
-CREATE TABLE roles (
+CREATE TABLE IF NOT EXISTS roles (
     id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     code         VARCHAR(32) NOT NULL COMMENT '角色编码，如 SUPER_ADMIN, ADMIN, USER',
     name         VARCHAR(64) NOT NULL COMMENT '角色名称（中文显示）',
@@ -46,7 +31,7 @@ CREATE TABLE roles (
     UNIQUE KEY uk_roles_code (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     username        VARCHAR(64) NOT NULL COMMENT '登录用户名，唯一',
     display_name    VARCHAR(128) NOT NULL COMMENT '展示昵称',
@@ -72,7 +57,7 @@ CREATE TABLE users (
 -- 2. 权限 & 角色-权限
 -- =============================
 
-CREATE TABLE permissions (
+CREATE TABLE IF NOT EXISTS permissions (
     id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     code        VARCHAR(64) NOT NULL COMMENT '权限编码，如 MANAGE_USERS',
     name        VARCHAR(128) NOT NULL COMMENT '权限名称',
@@ -83,7 +68,7 @@ CREATE TABLE permissions (
     UNIQUE KEY uk_permissions_code (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE role_permissions (
+CREATE TABLE IF NOT EXISTS role_permissions (
     role_id       BIGINT UNSIGNED NOT NULL,
     permission_id BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY (role_id, permission_id),
@@ -95,7 +80,7 @@ CREATE TABLE role_permissions (
 -- 3. 分类 / 标签 / 文章
 -- =============================
 
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     name         VARCHAR(128) NOT NULL COMMENT '分类名称，如 Java Core',
     slug         VARCHAR(128) NOT NULL COMMENT 'URL 唯一标识，如 java-core',
@@ -111,7 +96,7 @@ CREATE TABLE categories (
         ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE posts (
+CREATE TABLE IF NOT EXISTS posts (
     id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     author_id        BIGINT UNSIGNED NOT NULL,
     category_id      BIGINT UNSIGNED NULL COMMENT '子分类 ID',
@@ -139,7 +124,7 @@ CREATE TABLE posts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- å°æ¸¸æˆ·/è‡ªå®šä¹‰ HTML é¡µé¢
-CREATE TABLE game_pages (
+CREATE TABLE IF NOT EXISTS game_pages (
     id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     title        VARCHAR(128) NOT NULL,
     description  VARCHAR(512) NULL,
@@ -158,7 +143,7 @@ CREATE TABLE game_pages (
     CONSTRAINT fk_game_pages_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE home_background_images (
+CREATE TABLE IF NOT EXISTS home_background_images (
     id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     original_filename VARCHAR(255) NOT NULL,
     file_path       VARCHAR(512) NOT NULL,
@@ -174,7 +159,7 @@ CREATE TABLE home_background_images (
     CONSTRAINT fk_home_background_images_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE tags (
+CREATE TABLE IF NOT EXISTS tags (
     id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     name         VARCHAR(64) NOT NULL,
     slug         VARCHAR(64) NOT NULL,
@@ -186,7 +171,7 @@ CREATE TABLE tags (
     UNIQUE KEY uk_tags_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE post_tags (
+CREATE TABLE IF NOT EXISTS post_tags (
     post_id   BIGINT UNSIGNED NOT NULL,
     tag_id    BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY (post_id, tag_id),
@@ -199,7 +184,7 @@ CREATE TABLE post_tags (
 -- 4. 评论
 -- =============================
 
-CREATE TABLE comments (
+CREATE TABLE IF NOT EXISTS comments (
     id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     post_id           BIGINT UNSIGNED NOT NULL,
     user_id           BIGINT UNSIGNED NULL,
@@ -225,7 +210,7 @@ CREATE TABLE comments (
 -- 4.1 评论通知（用于给作者/被回复者发送未读提醒）
 -- =============================
 
-CREATE TABLE comment_notifications (
+CREATE TABLE IF NOT EXISTS comment_notifications (
     id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     recipient_id         BIGINT UNSIGNED NOT NULL COMMENT '接收通知的用户',
     comment_id           BIGINT UNSIGNED NOT NULL COMMENT '触发通知的评论',
@@ -249,7 +234,7 @@ CREATE TABLE comment_notifications (
 -- 5. 统计分析
 -- =============================
 
-CREATE TABLE analytics_page_views (
+CREATE TABLE IF NOT EXISTS analytics_page_views (
     id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     post_id       BIGINT UNSIGNED NULL,
     page_title    VARCHAR(255) NULL,
@@ -266,7 +251,7 @@ CREATE TABLE analytics_page_views (
     CONSTRAINT fk_apv_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE analytics_traffic_sources (
+CREATE TABLE IF NOT EXISTS analytics_traffic_sources (
     id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     stat_date      DATE NOT NULL,
     source_label   VARCHAR(64) NOT NULL,
@@ -279,7 +264,7 @@ CREATE TABLE analytics_traffic_sources (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- 访问日志按日归档（防爆表）：用于保存历史 PV/UV 的日聚合结果
-CREATE TABLE analytics_page_view_daily_stats (
+CREATE TABLE IF NOT EXISTS analytics_page_view_daily_stats (
     stat_date   DATE NOT NULL,
     views       BIGINT UNSIGNED NOT NULL DEFAULT 0,
     visitors    BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -288,7 +273,7 @@ CREATE TABLE analytics_page_view_daily_stats (
     PRIMARY KEY (stat_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE system_monitor_snapshots (
+CREATE TABLE IF NOT EXISTS system_monitor_snapshots (
     id                     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     sampled_at             DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     os_family              VARCHAR(128) NULL,
@@ -309,7 +294,7 @@ CREATE TABLE system_monitor_snapshots (
 -- 6. 系统广播 & 设置
 -- =============================
 
-CREATE TABLE system_broadcasts (
+CREATE TABLE IF NOT EXISTS system_broadcasts (
     id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     content     VARCHAR(512) NOT NULL,
     style       VARCHAR(32) NOT NULL DEFAULT 'ALERT',
@@ -324,7 +309,7 @@ CREATE TABLE system_broadcasts (
     CONSTRAINT fk_system_broadcasts_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE site_settings (
+CREATE TABLE IF NOT EXISTS site_settings (
     id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     setting_key   VARCHAR(128) NOT NULL,
     setting_value TEXT NULL,
@@ -340,14 +325,14 @@ CREATE TABLE site_settings (
 -- =========================================================
 
 -- 角色
-INSERT INTO roles (id, code, name, description) VALUES
+INSERT IGNORE INTO roles (id, code, name, description) VALUES
   (1, 'SUPER_ADMIN', '超级管理员', '拥有系统全部权限'),
   (2, 'ADMIN',       '管理员',     '管理内容与用户'),
   (3, 'USER',        '用户',       '普通注册用户');
 
 -- 用户（包含前端 MOCK_USER）
 -- 默认初始密码：Sangui@123（请登录后立即修改）
-INSERT INTO users
+INSERT IGNORE INTO users
 (id, username, display_name, email, password_hash, title, bio, avatar_url,
  github_url, wechat_qr_url, role_id, last_login_at, status)
 VALUES
@@ -365,18 +350,18 @@ VALUES
  '2025-11-21 10:00:00',
  'ACTIVE');
 
-INSERT INTO users (username, display_name, email, password_hash, role_id, status) VALUES
+INSERT IGNORE INTO users (username, display_name, email, password_hash, role_id, status) VALUES
 ('admin_user1',  'AdminUser1',  'admin1@example.com',  '$2a$10$QdizlT8ZvrYACG8Fd1coVuGcN6O6XPRSuoYn2acfj8rS9whGFv0J.', 2, 'ACTIVE'),
 ('editor_user2', 'EditorUser2', 'editor2@example.com', '$2a$10$QdizlT8ZvrYACG8Fd1coVuGcN6O6XPRSuoYn2acfj8rS9whGFv0J.', 3, 'ACTIVE');
 
 -- 分类（顶级）
-INSERT INTO categories (id, name, slug, parent_id, description, sort_order) VALUES
+INSERT IGNORE INTO categories (id, name, slug, parent_id, description, sort_order) VALUES
 (1, '硬核编程', 'programming', NULL, '硬核编程相关内容', 1),
 (2, '架构视角', 'architecture', NULL, '系统与架构设计', 2),
 (3, '数字生活', 'life',        NULL, '数字生活与思考', 3);
 
 -- 子分类
-INSERT INTO categories (id, name, slug, parent_id, description, sort_order) VALUES
+INSERT IGNORE INTO categories (id, name, slug, parent_id, description, sort_order) VALUES
 (4, 'Java Core',       'java-core',       1, 'Java 核心技术',     1),
 (5, 'Modern Web',      'modern-web',      1, '现代 Web 前端技术', 2),
 (6, 'Algorithms',      'algorithms',      1, '算法与数据结构',   3),
@@ -386,7 +371,7 @@ INSERT INTO categories (id, name, slug, parent_id, description, sort_order) VALU
 (10,'碎碎念',           'think',           3, '生活随笔',         2);
 
 -- 标签
-INSERT INTO tags (id, name, slug, description) VALUES
+INSERT IGNORE INTO tags (id, name, slug, description) VALUES
 (1, 'Java',          'java',          '与 Java 语言相关的文章'),
 (2, 'AOT',           'aot',           'Ahead-of-Time 编译相关'),
 (3, 'Vue3',          'vue3',          'Vue 3 框架相关'),
@@ -395,7 +380,7 @@ INSERT INTO tags (id, name, slug, description) VALUES
 (6, 'System Design', 'system-design', '系统设计相关');
 
 -- 文章（与你前端 MOCK_POSTS 和 Analytics 示例对齐）
-INSERT INTO posts
+INSERT IGNORE INTO posts
 (id, author_id, category_id, title, slug, excerpt, content_md, theme_color,
  status, likes_count, comments_count, views_count, published_at)
 VALUES
@@ -449,7 +434,7 @@ VALUES
 );
 
 -- 文章-标签关联
-INSERT INTO post_tags (post_id, tag_id) VALUES
+INSERT IGNORE INTO post_tags (post_id, tag_id) VALUES
 (101, 1),
 (101, 2),
 (102, 3),
@@ -458,7 +443,7 @@ INSERT INTO post_tags (post_id, tag_id) VALUES
 (103, 6);
 
 -- 评论（对应前端 mock）
-INSERT INTO comments
+INSERT IGNORE INTO comments
 (id, post_id, user_id, parent_comment_id, author_name, author_avatar_url,
  author_ip, content, like_count, status, created_at)
 VALUES
@@ -476,7 +461,7 @@ VALUES
 );
 
 -- PV 日志（对应 MOCK_ANALYTICS.recentActivity）
-INSERT INTO analytics_page_views
+INSERT IGNORE INTO analytics_page_views
 (post_id, page_title, viewer_ip, user_id, referrer_url, geo_location, viewed_at)
 VALUES
 (104,
@@ -513,7 +498,7 @@ VALUES
 );
 
 -- 流量来源统计
-INSERT INTO analytics_traffic_sources
+INSERT IGNORE INTO analytics_traffic_sources
 (stat_date, source_label, visits, percentage)
 VALUES
 ('2025-11-21', 'Search Engine', 712, 45.00),
@@ -545,10 +530,6 @@ ON DUPLICATE KEY UPDATE
   name = VALUES(name),
   description = VALUES(description);
 
-DELETE rp FROM role_permissions rp
-JOIN roles r ON rp.role_id = r.id
-WHERE r.code IN ('SUPER_ADMIN','ADMIN','USER');
-
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
@@ -577,8 +558,13 @@ ON DUPLICATE KEY UPDATE role_id = role_id;
 -- 系统广播
 INSERT INTO system_broadcasts
 (content, style, is_active, created_by, active_from)
-VALUES
-('系统将于今晚 00:00 停机维护', 'ALERT', 1, 1, '2025-11-21 00:00:00');
+SELECT '系统将于今晚 00:00 停机维护', 'ALERT', 1, 1, '2025-11-21 00:00:00'
+WHERE NOT EXISTS (
+    SELECT 1 FROM system_broadcasts
+    WHERE content = '系统将于今晚 00:00 停机维护'
+      AND style = 'ALERT'
+      AND active_from = '2025-11-21 00:00:00'
+);
 
 -- About 页面
 CREATE TABLE IF NOT EXISTS about_page (
@@ -616,29 +602,47 @@ CREATE TABLE IF NOT EXISTS ai_chat_sessions (
     INDEX idx_ai_chat_sessions_guest_visitor (guest_visitor_id)
 );
 
+-- ai_chat_sessions 兼容性列迁移（已创建则跳过）
+-- 原语句 ALTER TABLE ... ADD COLUMN IF NOT EXISTS 仅 MariaDB 原生支持。
+-- 改用 INFORMATION_SCHEMA 检查，兼容 MySQL 8.0 与 MariaDB。
+-- 如需手动添加列，参考 docs/docker-deploy.md 第 16 节"AI 表诊断与修复"。
 ALTER TABLE ai_chat_sessions
     MODIFY COLUMN user_id BIGINT UNSIGNED NULL;
 
-ALTER TABLE ai_chat_sessions
-    ADD COLUMN IF NOT EXISTS guest_visitor_id VARCHAR(64) NULL AFTER user_id;
+DROP PROCEDURE IF EXISTS add_column_if_not_exists;
 
-ALTER TABLE ai_chat_sessions
-    ADD COLUMN IF NOT EXISTS session_start_ip VARCHAR(64) NULL AFTER last_message_preview;
+DELIMITER $$
 
-ALTER TABLE ai_chat_sessions
-    ADD COLUMN IF NOT EXISTS latest_ip VARCHAR(64) NULL AFTER session_start_ip;
+CREATE PROCEDURE add_column_if_not_exists(
+    IN tbl_name VARCHAR(128),
+    IN col_name VARCHAR(128),
+    IN col_def TEXT
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = tbl_name
+          AND COLUMN_NAME = col_name
+    ) THEN
+        SET @ddl = CONCAT('ALTER TABLE ', tbl_name, ' ADD COLUMN ', col_name, ' ', col_def);
+        PREPARE stmt FROM @ddl;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END$$
 
-ALTER TABLE ai_chat_sessions
-    ADD COLUMN IF NOT EXISTS ip_changed TINYINT(1) NOT NULL DEFAULT 0 AFTER latest_ip;
+DELIMITER ;
 
-ALTER TABLE ai_chat_sessions
-    ADD COLUMN IF NOT EXISTS ip_changed_at DATETIME(6) NULL AFTER ip_changed;
+CALL add_column_if_not_exists('ai_chat_sessions', 'guest_visitor_id', 'VARCHAR(64) NULL AFTER user_id');
+CALL add_column_if_not_exists('ai_chat_sessions', 'session_start_ip', 'VARCHAR(64) NULL AFTER last_message_preview');
+CALL add_column_if_not_exists('ai_chat_sessions', 'latest_ip', 'VARCHAR(64) NULL AFTER session_start_ip');
+CALL add_column_if_not_exists('ai_chat_sessions', 'ip_changed', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER latest_ip');
+CALL add_column_if_not_exists('ai_chat_sessions', 'ip_changed_at', 'DATETIME(6) NULL AFTER ip_changed');
+CALL add_column_if_not_exists('ai_chat_sessions', 'user_visible', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER last_message_preview');
+CALL add_column_if_not_exists('ai_chat_sessions', 'user_hidden_at', 'DATETIME(6) NULL AFTER user_visible');
 
-ALTER TABLE ai_chat_sessions
-    ADD COLUMN IF NOT EXISTS user_visible TINYINT(1) NOT NULL DEFAULT 1 AFTER last_message_preview;
-
-ALTER TABLE ai_chat_sessions
-    ADD COLUMN IF NOT EXISTS user_hidden_at DATETIME(6) NULL AFTER user_visible;
+DROP PROCEDURE IF EXISTS add_column_if_not_exists;
 
 -- AI 聊天消息
 CREATE TABLE IF NOT EXISTS ai_chat_messages (
@@ -729,3 +733,5 @@ CREATE TABLE IF NOT EXISTS registration_invites (
     CONSTRAINT fk_registration_invites_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_registration_invites_consumed_by FOREIGN KEY (consumed_by) REFERENCES users(id) ON DELETE SET NULL
 );
+
+SET FOREIGN_KEY_CHECKS = 1;

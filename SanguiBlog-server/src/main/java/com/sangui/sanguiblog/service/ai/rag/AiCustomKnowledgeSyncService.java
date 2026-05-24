@@ -47,7 +47,7 @@ public class AiCustomKnowledgeSyncService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void syncOnStartup() {
-        if (!isOperational()) {
+        if (!ragProperties.isSyncOnStartup() || !isOperational()) {
             return;
         }
         for (AiCustomKnowledgeDocument document : knowledgeDocumentRepository.findAll()) {
