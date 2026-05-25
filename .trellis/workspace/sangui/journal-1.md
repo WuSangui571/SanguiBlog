@@ -858,3 +858,45 @@ Result and boundaries:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 15: Fix Docker analytics real visitor IP
+
+**Date**: 2026-05-25
+**Task**: Fix Docker analytics real visitor IP
+**Branch**: `main`
+
+### Summary
+
+Recorded and archived the Docker analytics real visitor IP fix after Codex check and user manual validation.
+
+### Main Changes
+
+## Session Notes
+
+- Commit: `11aa5cd` (`fix:?? Docker ?? IP ??`).
+- Main modules changed: shared backend IP resolver, Docker Nginx real-IP forwarding, Docker deployment documentation, backend unit coverage.
+- Updated files: `SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java`, `SanguiBlog-server/src/test/java/com/sangui/sanguiblog/util/IpUtilsTest.java`, `docker/nginx/default.conf`, `docs/docker-deploy.md`, Trellis task archive metadata.
+- Verification run by Codex: `mvn -q "-Dtest=IpUtilsTest" test` passed with 31 tests, 0 failures, 0 errors, 0 skipped; `mvn -q -DskipTests compile` passed; `docker compose config --quiet` passed; `docker compose -f docker-compose.prod.yml config --quiet` passed; `git diff --check` passed; changed-file static scan found no `console.log`, `debugger`, `TODO`, `FIXME`, `any`, or unnecessary non-null assertion pattern.
+- Manual validation: user reported manual tests passed after commit.
+- Result: Docker analytics real visitor IP task accepted and archived. The backend continues to use the single shared `IpUtils.resolveIp` resolver for analytics, BotGuard, auth, AI guest access, sitemap analytics, and post view tracking.
+- Boundaries: no DB schema, DTO, admin analytics UI, frontend API wrapper, permissions, upload/security contract, or analytics aggregation changes. Runtime recovery of public IP still requires an upstream proxy to pass real IP headers; if the upstream only sends `X-Real-IP`, the deployment should either also send `X-Forwarded-For` or explicitly adjust Docker Nginx realip strategy for that topology.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `11aa5cd` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
