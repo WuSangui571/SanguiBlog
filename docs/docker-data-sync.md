@@ -622,7 +622,7 @@ scp -r local-backup-dir user@new-server:/tmp/sanguiblog-restore/
 | 现象 | 可能原因 | 解决方案 |
 |------|----------|----------|
 | `docker compose up` 失败：`JWT_SECRET is required` | `.env` 缺少必填项 | 编辑 `.env` 填入所有必填值 |
-| MySQL 导入后 AI 聊天报错 `Table '...ai_chat_messages' doesn't exist` | 导入的 dump 来自旧 schema，缺少 AI 表 | 参考 `docs/docker-deploy.md` 第 16 节，手动创建缺失的 AI 表 |
+| MySQL 导入后 AI 聊天报错 `Table '...ai_chat_messages' doesn't exist` | 导入的 dump 来自旧 schema，缺少 AI 表 | 参考 `docs/docker-deploy.md` 第 15 节，手动创建缺失的 AI 表 |
 | `/uploads/...` 返回 HTML 而非图片 | Nginx fallback 到 SPA（uploads_data volume 内容缺失或路径不匹配） | 检查 volume 内容和 `default.conf` alias 配置；确认 `uploads_data` 挂载到 `/data/uploads` |
 | PgVector 恢复报错 `extension "vector" is not available` | pgvector 镜像未正确加载 vector 扩展 | 手动执行 `CREATE EXTENSION IF NOT EXISTS vector;` |
 | `pg_restore` 报错 `role does not exist` | dump 中包含的 role 在目标数据库中不存在 | 使用 `--no-owner` 参数跳过 ownership |

@@ -1,0 +1,53 @@
+{
+  "id": "project-cleanup-docker-first",
+  "name": "project-cleanup-docker-first",
+  "title": "整理项目：Docker-first 仓库清理",
+  "description": "停止功能开发，清理非容器部署遗留文档、临时/过期目录、已误跟踪缓存依赖，并整理 .gitignore；不修改业务实现代码。",
+  "status": "planning",
+  "dev_type": "docs",
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "sangui",
+  "assignee": "sangui",
+  "createdAt": "2026-05-25",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

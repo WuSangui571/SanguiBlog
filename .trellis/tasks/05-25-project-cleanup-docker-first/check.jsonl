@@ -1,0 +1,9 @@
+{"file": ".trellis\\tasks\\05-25-project-cleanup-docker-first\\prd.md", "reason": "Acceptance criteria and required tests for cleanup check"}
+{"file": ".trellis\\tasks\\05-25-project-cleanup-docker-first\\research.md", "reason": "Focused research and risk boundaries for reviewer"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Docker/infra verification contract for check"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend verification and forbidden patterns for check"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend verification for check"}
+{"file": ".gitignore", "reason": "Check ignore rules after cleanup"}
+{"file": ".dockerignore", "reason": "Check Docker context still valid"}
+{"file": "docs\\docker-deploy.md", "reason": "Check active Docker docs have no stale old-deploy guidance"}
+{"file": "docker\\nginx\\default.conf", "reason": "Check no runtime Nginx directive changes beyond allowed comment cleanup"}

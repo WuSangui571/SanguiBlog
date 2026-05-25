@@ -111,6 +111,30 @@ SanguiBlog-server/.env.template
 *.rej
 *.patch
 
+# ======================
+# Python / Cache
+# ======================
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ======================
+# AI / IDE workflow dirs (legacy)
+# ======================
+.ai/
+.claude/
+.cursor/
+.kilo/
+.kilocode/
+.opencode/
+
+# ======================
+# Backup / dump artifacts
+# ======================
+*.tar.gz
+*.dump
+backups/
+
 # Backup files
 *~
 *.bak

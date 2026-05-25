@@ -1,0 +1,20 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis\\tasks\\05-25-project-cleanup-docker-first\\prd.md", "reason": "Primary requirements, boundaries, acceptance criteria, test plan"}
+{"file": ".trellis\\tasks\\05-25-project-cleanup-docker-first\\research.md", "reason": "Focused research: specs, cleanup candidates, risk boundaries, required tests"}
+{"file": ".trellis\\spec\\guides\\index.md", "reason": "Workflow authority and .ai retirement note"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Retrieve-first cleanup and duplicate implementation avoidance"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Docker/infra contract and required verification matrix"}
+{"file": ".trellis\\spec\\backend\\index.md", "reason": "Backend spec index and checklist context"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend boundary: do not alter runtime code paths"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend risk-based verification and forbidden patterns"}
+{"file": ".trellis\\spec\\frontend\\index.md", "reason": "Frontend spec index and checklist context"}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "Frontend active entrypoints and prototype/legacy boundaries"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend build/lint/static test verification"}
+{"file": ".gitignore", "reason": "Ignore rules to audit and update"}
+{"file": ".dockerignore", "reason": "Docker build context exclusions to preserve"}
+{"file": "docs\\docker-deploy.md", "reason": "Current Docker deploy guide and stale old-deploy references"}
+{"file": "docs\\docker-data-sync.md", "reason": "Current Docker data sync guide to preserve"}
+{"file": "docker\\nginx\\default.conf", "reason": "Current Docker Nginx config; comment-only stale reference cleanup if needed"}
+{"file": "scripts\\README.md", "reason": "Old script documentation; update/delete based on retained scripts"}
+{"file": "ChangeEnv.md", "reason": "Obsolete non-Docker env switching document slated for deletion"}
+{"file": "fake-nginx-config\\README.md", "reason": "Obsolete host Nginx reference slated for deletion"}
