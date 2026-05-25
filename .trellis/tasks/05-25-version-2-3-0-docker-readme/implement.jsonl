@@ -1,0 +1,10 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend version contract and release-doc rule"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend config location and site meta ownership"}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "Active frontend files and appfull ownership"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend home/navigation quality and verification"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "Component fallback and reuse rules"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Existing SiteMetaDto.version field and runtime fallback contract"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Retrieve-first and no duplicate implementation rule"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Site meta and Docker deployment contract"}

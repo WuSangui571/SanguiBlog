@@ -1,256 +1,111 @@
 [简体中文](./README.zh-CN.md)
 
-# SanguiBlog Deployment and Development Guide
+# SanguiBlog
 
-SanguiBlog is a decoupled personal blog system with a Spring Boot + MySQL backend and a React + Vite (SPA) frontend. This document is intended for deployment, operations, and local development, covering the minimum workable path from environment setup to production rollout, along with common troubleshooting notes.
+A decoupled personal blog system built with Spring Boot 3 + MySQL (backend) and React 19 + Vite (frontend SPA), deployed via Docker Compose with GHCR images.
 
-> Current site version: `V2.2.23` (provided centrally by backend `site.version`, and displayed on the homepage banner as `SANGUI BLOG // <version>`)
->
-> `V2.2.x` continues the AI assistant system introduced in `V2.2.0`. The current `V2.2.23` site version keeps multi-turn chat for logged-in users, blog-article RAG, current article page context enhancement, super-admin knowledge import, and backend AI session auditing, while also including the latest homepage mobile layout, redirect-referrer analytics, deferred article-loading refinements, the admin-side system monitoring group for host-level metrics, stronger post-cover upload guards, and a collapsible desktop admin sidebar that stays separate from the mobile drawer.
+> Current version: **V2.3.0**
 
-## 1. Directory Index
+## Quick Start (Docker Production Deployment)
 
-- Release notes directory: `release/` (the latest existing external release document in this repository is `release/V2.2.23.md`)
-- Nginx reverse proxy example: `fake-nginx-config/nginx.conf`
-- Environment switching notes: `ChangeEnv.md`
-- Database initialization script: `sanguiblog_db.sql`
+### Prerequisites
 
-## 2. Docker 容器化部署（推荐）
+- Docker and Docker Compose (v2+)
+- Git
 
-SanguiBlog 支持 Docker Compose 一键部署。`main` 分支 push 后由 GitHub Actions 自动构建并推送镜像到 GHCR，服务器直接拉取镜像运行，无需在服务器安装 Maven/Node。
-
-详见：[docs/docker-deploy.md](./docs/docker-deploy.md)
+### 1. Clone and Configure
 
 ```bash
-# 生产环境（镜像拉取部署）：
+git clone https://github.com/WuSangui571/SanguiBlog.git
+cd SanguiBlog
 cp .env.example .env
-# 编辑 .env 填入必填项和 SANGUI_IMAGE_TAG
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
-docker compose -f docker-compose.prod.yml ps
+vim .env
+```
+
+Fill in required secrets in `.env` (at minimum `JWT_SECRET`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `POSTGRES_PASSWORD`). All sensitive defaults are blank; Compose will fail fast if any required value is missing.
+
+### 2. Pull Images and Start
+
+```bash
+sudo docker compose -f docker-compose.prod.yml pull
+sudo docker compose -f docker-compose.prod.yml up -d
+```
+
+> Systems where your user is in the `docker` group can omit `sudo`.
+
+### 3. Verify
+
+```bash
+sudo docker compose -f docker-compose.prod.yml ps
+curl -i http://localhost:8090/
+curl -i http://localhost:8090/api/site/meta
+curl -i http://localhost:8090/sitemap.xml
+curl -i http://localhost:8090/robots.txt
+```
+
+### 4. Stop
+
+```bash
+sudo docker compose -f docker-compose.prod.yml down
+```
+
+> `down` stops containers without removing volumes. Your data persists in Docker volumes (`mysql_data`, `pgvector_data`, `uploads_data`).
+
+## Version Update / Redeploy
+
+```bash
+git pull origin main
+vim .env                    # review config and SANGUI_IMAGE_TAG if needed
+sudo docker compose -f docker-compose.prod.yml pull
+sudo docker compose -f docker-compose.prod.yml up -d
+sudo docker compose -f docker-compose.prod.yml ps
 curl -i http://localhost:8090/api/site/meta
 ```
 
-## 3. Project Structure
-
-```
-├─ SanguiBlog-server/      # Spring Boot backend service (REST API, auth, sitemap, etc.)
-├─ SanguiBlog-front/       # React single-page app (public site + admin UI)
-├─ uploads/                # Default upload directory (mount to persistent storage in production)
-├─ release/                # Release notes (for example V2.1.287 / V2.2.0, current latest document is V2.2.23)
-├─ sanguiblog_db.sql       # Database bootstrap script (schema + seed data)
-├─ docker-compose.yml      # Dev/local Docker Compose (builds images locally)
-├─ docker-compose.prod.yml # Production Docker Compose (pulls images from GHCR)
-└─ README.md               # This document
-```
-
-## 4. Environment Requirements
-
-| Component | Recommended Version | Notes |
-| --- | --- | --- |
-| JDK | 21 | Backend `pom.xml` sets `java.version=21` |
-| Maven | 3.9.x | Used to build/package the backend |
-| Node.js | >= 18 (20 recommended) | Used to build the frontend |
-| MySQL | >= 8.0 | Main application database, UTF8MB4 recommended |
-| PostgreSQL | 13+ (optional) | Required only when enabling blog/knowledge-base RAG, with PgVector installed |
-| Git | Any recent version | Used to clone/pull the repository |
-
-> Both Windows and Linux are supported. For production, it is recommended to build both frontend and backend in CI or on a build machine, and deploy only the build artifacts online (backend JAR + frontend `dist` + persistent `uploads`).
->
-> If you are not enabling AI RAG for now, PostgreSQL / PgVector is not required. For basic AI chat only, MySQL remains the only required database.
-
-## 5. Initialize the Database
-
-1. Create the database (example):
-   ```sql
-   CREATE DATABASE sanguiblog_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-   ```
-2. Import the root-level `sanguiblog_db.sql`:
-   ```bash
-   mysql -u root -p sanguiblog_db < sanguiblog_db.sql
-   ```
-3. It is recommended to create a dedicated application user with read/write permissions, then configure that username/password in backend config (see next section).
-4. If you plan to enable AI chat related features, make sure the root-level `sanguiblog_db.sql` is synced to the current version. It already includes:
-   - AI session and message tables
-   - Blog RAG tracking tables
-   - Super-admin text knowledge base tables
-
-## 6. Backend Configuration and Startup (`SanguiBlog-server`)
-
-Backend configuration files:
-- Shared config (committed to Git): `SanguiBlog-server/src/main/resources/application.yaml`
-- Private config (not committed): `SanguiBlog-server/src/main/resources/application-local.yaml`
-
-`application.yaml` already imports `application-local.yaml` through `spring.config.import`, so database/JWT/site private settings can be loaded there.
-
-Example `application-local.yaml` (adjust to your environment):
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://127.0.0.1:3306/sanguiblog_db?useSSL=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
-    username: your_db_user
-    password: your_db_password
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  ai:
-    dashscope:
-      api-key: your_dashscope_api_key
-
-jwt:
-  secret: your_jwt_secret
-
-storage:
-  base-path: /path/to/uploads
-
-security:
-  cors:
-    allowed-origins: >
-      https://sangui.top,
-      https://www.sangui.top,
-      http://localhost:5173
-
-site:
-  base-url: https://www.sangui.top
-  allowed-hosts: sangui.top,www.sangui.top
-  asset-base-url: https://www.sangui.top/uploads
-```
-
-### 5.1 Required Settings
-
-- Database: `spring.datasource.url/username/password` (in `application-local.yaml` or env vars)
-  - Compatible env vars: `SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD` (or `DB_URL` / `DB_USERNAME` / `DB_PASSWORD`)
-- JWT secret: `jwt.secret` (in `application-local.yaml` or env var `JWT_SECRET`)
-- Upload directory: `storage.base-path` (in `application-local.yaml` or env var `STORAGE_BASE_PATH`)
-
-### 5.2 Port and CORS
-
-- Service port: `server.port` (repository default is `8080`)
-- CORS: `security.cors.allowed-origins` (in `application-local.yaml` or env var `SECURITY_CORS_ALLOWED_ORIGINS`)
-
-### 5.3 Startup Options
-
-Development mode (local debugging):
+## Viewing Logs
 
 ```bash
-cd SanguiBlog-server
-mvn spring-boot:run
+sudo docker compose -f docker-compose.prod.yml logs -f backend
 ```
 
-Production mode (build JAR first, then run):
+## Optional: AI Assistant
 
-```bash
-cd SanguiBlog-server
-mvn -DskipTests package
-java -jar target/SanguiBlog-server-*.jar
-```
+Core blog features (posts, categories, tags, comments, admin) work without any AI configuration. The AI assistant requires:
 
-### 5.4 AI Assistant and RAG (`V2.2.0+`)
+- `AI_DASHSCOPE_API_KEY` in `.env`
+- PostgreSQL + PgVector (included in the Compose stack) for blog RAG; set `AI_RAG_ENABLED=true`
 
-Starting from `V2.2.0`, the project includes a built-in AI assistant. The current `V2.2.23` site version continues and improves this capability. It includes:
+AI can be toggled on/off centrally from the admin settings panel.
 
-- Public-site AI chat entry
-- Multi-turn chat and chat history for logged-in users
-- RAG enhancement based on published blog articles
-- Temporary summary of the current article page context
-- Super-admin text knowledge import
-- Backend AI session audit
+## Further Reading
 
-Basic AI chat requires at least:
+- [Docker Deployment Guide](./docs/docker-deploy.md) - detailed production/development Docker runbook, image tagging, GHCR, health checks, rollback, data persistence
+- [Docker Data Sync/Restore](./docs/docker-data-sync.md) - production-to-local data restore workflow
+- [Backend](./SanguiBlog-server/) - Spring Boot source tree
+- [Frontend](./SanguiBlog-front/) - React SPA source tree
+- [Scripts](./scripts/) - utility scripts including `bump-version.ps1`
 
-- `SPRING_AI_DASHSCOPE_API_KEY` or `AI_DASHSCOPE_API_KEY`
-
-To enable blog / knowledge-base RAG, you also need PostgreSQL + PgVector, with configuration like:
-
-```bash
-AI_RAG_ENABLED=true
-AI_RAG_SYNC_ON_STARTUP=true
-AI_RAG_PGVECTOR_URL=jdbc:postgresql://127.0.0.1:5432/sanguiblog_ai
-AI_RAG_PGVECTOR_USERNAME=your_pg_user
-AI_RAG_PGVECTOR_PASSWORD=your_pg_password
-AI_RAG_PGVECTOR_SCHEMA=public
-AI_RAG_PGVECTOR_TABLE=vector_store
-AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=false
-AI_DASHSCOPE_EMBEDDING_MODEL=text-embedding-v4
-```
-
-Notes:
-
-- When creating `vector_store` for the first time, you may temporarily set `AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=true`; after the table is created, it is recommended to switch it back to `false`
-- The AI entry can be enabled/disabled centrally in the `AI助理` section of backend `/admin/settings`
-- Super admins can manage AI knowledge bases and AI session audits in the backend
-
-## 7. Frontend Build and Deployment (`SanguiBlog-front`)
-
-The frontend uses same-origin `/api` by default, so production usually does not require extra frontend config. If you need cross-origin or separate-domain deployment, set the following in `SanguiBlog-front/.env` or `.env.production`:
+## Project Structure
 
 ```
-VITE_API_BASE=/api
-# or: VITE_API_BASE=https://your-domain.com/api
-VITE_API_ORIGIN=https://your-domain.com
-VITE_ASSET_ORIGIN=https://your-domain.com
+|-- SanguiBlog-server/          # Spring Boot backend (REST API, auth, sitemap, etc.)
+|-- SanguiBlog-front/           # React SPA (public site + admin UI)
+|-- docker/nginx/               # Docker Nginx reverse proxy config
+|-- docker/postgres/init/       # PgVector extension init script
+|-- docs/                       # Deployment and data sync guides
+|-- scripts/                    # Utility scripts
+|-- release/                    # Historical release notes
+|-- sanguiblog_db.sql           # Database bootstrap script (runs only on first init)
+|-- docker-compose.yml          # Dev/local Compose (builds images locally)
+|-- docker-compose.prod.yml     # Production Compose (pulls images from GHCR)
+`-- .env.example                # Environment variable template
 ```
 
-Build:
-
-```bash
-cd SanguiBlog-front
-npm install
-npm run build
-```
-
-The build output is in `SanguiBlog-front/dist/`.
-
-Local development (optional):
-
-```bash
-cd SanguiBlog-front
-npm install
-npm run dev
-```
-
-Default dev URL: `http://localhost:5173`.
-
-## 8. Nginx Reverse Proxy Recommendations (including sitemap/robots)
-
-If you use SPA fallback (`try_files $uri /index.html`), make sure `sitemap.xml/robots.txt` is routed to the backend first; otherwise they may fall back to the frontend homepage and behave incorrectly.
-
-You can refer to the example config in `fake-nginx-config/nginx.conf`. Core snippet (adjust domain/port/path as needed):
-
-```
-server {
-  root /var/www/sanguiblog/dist;
-  index index.html;
-
-  location = /sitemap.xml { proxy_pass http://127.0.0.1:8080/sitemap.xml; }
-  location = /robots.txt  { proxy_pass http://127.0.0.1:8080/robots.txt; }
-
-  location /api/ { proxy_pass http://127.0.0.1:8080/api/; }
-  location /uploads/ { alias /your/storage/uploads/; }
-
-  location / { try_files $uri /index.html; }
-}
-```
-
-## 9. sitemap/robots Notes (`V2.1.275+`)
-
-- Sitemap: `GET /sitemap.xml`
-  - Returns `<sitemapindex>` when URL count exceeds the threshold, and supports paged retrieval via `GET /sitemap.xml?page=1..N`
-  - Supports `ETag/If-None-Match`, returning `304` when matched
-- robots: `GET /robots.txt`
-  - By default disallows `/admin` and `/api/`, and points to `Sitemap: https://<domain>/sitemap.xml`
-
-Threshold config: `site.sitemap.max-urls-per-file` (default `45000`, corresponding env var `SITE_SITEMAP_MAX_URLS_PER_FILE`).
-
-## 10. Common Troubleshooting
+## Troubleshooting
 
 | Symptom | Possible Cause | Solution |
 | --- | --- | --- |
-| Frontend API returns 404 | Nginx does not proxy `/api/` | Add `location /api/` and reload Nginx |
-| `/sitemap.xml` opens the homepage | `try_files` is evaluated before sitemap location | Add `location = /sitemap.xml` and `location = /robots.txt`, and place them before `try_files` |
-| Upload fails / files cannot be found | `storage.base-path` is not writable, or Nginx `/uploads/` is not mapped | Ensure the directory is writable, configure `alias`, or serve it through backend static mapping |
-| Service fails to start due to JWT_SECRET | JWT secret is missing | Set env var `JWT_SECRET` before starting |
-| AI chat is unavailable | DashScope key is not configured, or AI assistant was disabled in backend | Check `SPRING_AI_DASHSCOPE_API_KEY` / `/admin/settings -> AI助理` |
-| AI RAG is not working | `AI_RAG_ENABLED` is off, or PgVector is not ready | Check PostgreSQL / PgVector, `vector_store`, and sync logs at startup |
-| `content_script.js` errors appear in console | Browser extension injected script noise | Verify in incognito mode or disable extensions (usually unrelated to the site itself) |
-
-For deeper implementation details, refer to the historical release notes in this repository and the source code comments.
+| Backend fails to start | Missing required `.env` secret | Check `JWT_SECRET`, `MYSQL_PASSWORD`, etc. are set |
+| `/sitemap.xml` returns SPA HTML | Missing Nginx location rule | Ensure `docker/nginx/default.conf` routes sitemap/robots to backend |
+| AI chat unavailable | DashScope key not configured | Check `AI_DASHSCOPE_API_KEY` in `.env` |
+| Images fail to load | `asset-base-url` misconfigured | Leave `SITE_ASSET_BASE_URL` empty for same-origin Docker deployment |
