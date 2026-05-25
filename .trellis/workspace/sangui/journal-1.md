@@ -900,3 +900,69 @@ Recorded and archived the Docker analytics real visitor IP fix after Codex check
 ### Next Steps
 
 - None - task complete
+
+
+## Session 16: Version 2.3.0 Docker-first README
+
+**Date**: 2026-05-25
+**Task**: Version 2.3.0 Docker-first README
+**Branch**: `main`
+
+### Summary
+
+Updated site version to V2.3.0, refreshed Docker-first README docs, verified build/lint/compose checks, and archived the Trellis task after successful manual deployment.
+
+### Main Changes
+
+## Commit
+- `6ef9736 docs:?? V2.3.0 Docker-first README`
+
+## Main modules changed
+- Backend site metadata config: updated the canonical `site.version` value used by `/api/site/meta`.
+- Public frontend version display: updated active homepage and navigation fallback version strings.
+- Root documentation: refreshed English and Chinese README files into Docker-first deployment guides.
+- Trellis workflow metadata: archived task `05-25-version-2-3-0-docker-readme` after user confirmed manual testing, deployment, and version update succeeded.
+
+## Updated files
+- `SanguiBlog-server/src/main/resources/application.yaml`
+- `SanguiBlog-front/src/appfull/public/HomeView.jsx`
+- `SanguiBlog-front/src/appfull/ui/Navigation.jsx`
+- `README.md`
+- `README.zh-CN.md`
+- `.trellis/tasks/archive/2026-05/05-25-version-2-3-0-docker-readme/**` (archived task metadata)
+
+## Verification commands and results
+- `git diff --check` - passed, no whitespace errors.
+- `docker compose -f docker-compose.prod.yml config --quiet` - passed, production Compose config is valid.
+- `mvn -q -DskipTests compile` - passed after allowing Maven dependency/cache access.
+- `cmd /c npm run lint` - passed.
+- `cmd /c npm run build` - passed.
+- `cmd /c node src/appfull/noNativeBlockingDialogs.test.js` - passed.
+- Static search for `V2.2.23|2.2.23` in modified version/docs files - no old version references found.
+- Static search for `release/V2.3.0`, `V2.3.0.md`, and `down -v` in README files - no forbidden references found.
+- Static search for `release/V2.3.0*` files - no release document was created.
+- User manual verification - passed: deployment succeeded and site version update succeeded.
+
+## Result and boundaries
+- Result: version updated to `V2.3.0`; Docker-first root README pair delivered; task archived after acceptance.
+- Boundaries kept: no release document, no Docker topology/config changes, no API/DTO/DB schema changes, no frontend layout/CSS/routing/API wrapper changes, no business logic changes, no commit/push by Codex for application code.
+- Note: `.claude/commands/trellis/check.md` and `.claude/commands/trellis/finish-work.md` referenced by `check.jsonl` were not present in this workspace, so checks used PRD plus restored Trellis backend/frontend/guides specs.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6ef9736` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
