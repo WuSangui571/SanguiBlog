@@ -147,6 +147,19 @@ curl -i http://localhost:8090/robots.txt
 curl -i http://localhost:8090/uploads/
 ```
 
+### 6.1 真实访客 IP 验证
+
+当 Docker `web` 前面还有宿主机 Nginx、Caddy、Cloudflare 等上游反代时，上游必须把真实客户端 IP 传给 Docker `web`。建议同时传递 `X-Forwarded-For` 和 `X-Real-IP`；当前 Docker Nginx 会基于受信任来源的 `X-Forwarded-For` 解析真实 IP，并继续把 `X-Real-IP`、`X-Forwarded-For`、`X-Forwarded-Proto` 转发给后端。如果上游只传 `X-Real-IP`，请在上游补传 `X-Forwarded-For`，或按实际拓扑调整 `docker/nginx/default.conf` 的 `real_ip_header` 策略。
+
+`docker/nginx/default.conf` 默认信任 Docker/内网代理来源：`172.16.0.0/12`、`10.0.0.0/8`、`192.168.0.0/16`。生产环境应按实际拓扑缩窄或补充 `set_real_ip_from`；不要把可伪造代理头的 `WEB_PORT` 直接暴露给公网客户端。
+
+如果上游没有传递任何真实 IP 头，应用只能看到 Docker bridge/gateway 地址（例如 `172.29.0.1`），无法从应用层还原公网访客 IP。部署后可用以下命令验证解析结果：
+
+```bash
+curl -i http://localhost:8090/api/analytics/client-ip
+curl -i -H "X-Forwarded-For: 203.0.113.10" http://localhost:8090/api/analytics/client-ip
+```
+
 ## 7. 镜像 Tag 策略与生产部署
 
 ### 7.1 Tag 规则

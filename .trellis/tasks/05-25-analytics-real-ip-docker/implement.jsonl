@@ -1,0 +1,22 @@
+{"file": ".trellis/tasks/05-25-analytics-real-ip-docker/prd.md", "reason": "Task PRD, scope, contracts, acceptance criteria"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/workflow.md", "reason": "Trellis workflow reference preserved from prior worktree"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/backend/index.md", "reason": "Backend spec index"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/backend/directory-structure.md", "reason": "Backend placement and layer contracts"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality and test requirements"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/backend/database-guidelines.md", "reason": "Analytics persistence and DB contracts"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/backend/error-handling.md", "reason": "API error and response contracts"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/backend/logging-guidelines.md", "reason": "Safe logging rules for analytics/proxy work"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/frontend/index.md", "reason": "Frontend spec index for admin analytics consumer"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/frontend/directory-structure.md", "reason": "Frontend placement and API facade contract"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend verification rules if UI/API changes"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate prevention"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer proxy/API/analytics contract"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java", "reason": "Shared IP resolver to reuse/modify"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AnalyticsController.java", "reason": "Analytics record and client-ip endpoints"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Analytics persistence and admin mapping"}
+{"file": "SanguiBlog-server/src/main/resources/application-docker.yaml", "reason": "Docker forwarded header profile"}
+{"file": "docker/nginx/default.conf", "reason": "Docker Nginx proxy header config"}
+{"file": "docker-compose.yml", "reason": "Local Docker compose web/backend topology"}
+{"file": "docker-compose.prod.yml", "reason": "Production Docker compose web/backend topology"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Current clientIp fallback and page-view sender"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Analytics API facade"}

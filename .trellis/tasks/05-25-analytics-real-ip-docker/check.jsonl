@@ -1,0 +1,8 @@
+{"file": ".trellis/tasks/05-25-analytics-real-ip-docker/prd.md", "reason": "Check against PRD acceptance and forbidden scope"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/backend/quality-guidelines.md", "reason": "Backend check requirements"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer verification matrix"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java", "reason": "Review shared resolver changes"}
+{"file": "docker/nginx/default.conf", "reason": "Review real-IP proxy header changes"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AnalyticsController.java", "reason": "Verify endpoint contract unchanged"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Verify stored/admin IP mapping unchanged"}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Verify admin analytics field consumption if frontend touched"}

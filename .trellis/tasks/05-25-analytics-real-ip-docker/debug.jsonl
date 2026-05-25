@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/05-25-analytics-real-ip-docker/prd.md", "reason": "Debug against root-cause notes, validation matrix, and required tests"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/backend/logging-guidelines.md", "reason": "Safe diagnostics for proxy/IP debugging"}
+{"file": ".kilo/worktrees/record-feat-docker/.trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer debugging contract"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java", "reason": "Shared IP resolver under investigation"}
+{"file": "docker/nginx/default.conf", "reason": "Proxy header forwarding under investigation"}
