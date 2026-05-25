@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 16
+- **Total Sessions**: 17
 - **Last Active**: 2026-05-25
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~968 | Active |
+| `journal-1.md` | ~1034 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 17 | 2026-05-25 | Record Docker-first repository cleanup | `b668c13` | `main` |
 | 16 | 2026-05-25 | Version 2.3.0 Docker-first README | `6ef9736` | `main` |
 | 15 | 2026-05-25 | Fix Docker analytics real visitor IP | `11aa5cd` | `main` |
 | 14 | 2026-05-24 | production docker deployment hardening completed | `8501eeb`, `7d15346` | `main` |
