@@ -1032,3 +1032,51 @@ Archived Docker-first cleanup task after commit b668c13 and recorded verificatio
 ### Next Steps
 
 - None - task complete
+
+
+## Session 18: BUG #2 guest article comment login prompt
+
+**Date**: 2026-05-31
+**Task**: BUG #2 guest article comment login prompt
+**Branch**: `codex/bug-2-guest-comment-login-prompt`
+
+### Summary
+
+Completed and verified the guest article comment login prompt fix, then archived the Trellis task.
+
+### Main Changes
+
+- Commit hash: d466e98869a005ed7875fb483ac9d1cf19708553 (`fix:guest-comment-login-prompt`).
+- Main module: frontend article comments composer (`SanguiBlog-front/src/components/comments`).
+- Updated files:
+  - `.trellis/tasks/archive/2026-05/05-31-bug-2-guest-comment-login-prompt/**` task PRD/check/research/debug/implementation records.
+  - `SanguiBlog-front/src/components/comments/CommentsSection.jsx` adds guest composer disabled state, submit guards, login-required placeholder, and reply submit guest guard.
+  - `SanguiBlog-front/src/components/comments/CommentsSectionGuestLogin.test.js` adds static regression coverage for the guest composer contract and native-dialog absence.
+- Verification passed:
+  - `node src/components/comments/CommentsSectionGuestLogin.test.js` PASS.
+  - `node src/appfull/noNativeBlockingDialogs.test.js` PASS.
+  - `cmd /c npm run lint` PASS.
+  - `cmd /c npm run build` PASS after running outside sandbox because Vite needs to write `node_modules/.vite-temp`.
+  - `git diff --check` PASS.
+  - Manual local Docker/browser verification by sangui PASS.
+- Result: task acceptance criteria satisfied. Guests cannot type or submit article comments, login action remains available, authenticated comment/reply flows remain unchanged.
+- Boundaries: no backend/API/DTO/DB/infra changes; backend compile and ArticleDetail share-toast test were not required because backend files and `ArticleDetail.jsx` were unchanged.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d466e98869a005ed7875fb483ac9d1cf19708553` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

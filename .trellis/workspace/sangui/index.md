@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 17
-- **Last Active**: 2026-05-25
+- **Total Sessions**: 18
+- **Last Active**: 2026-05-31
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1034 | Active |
+| `journal-1.md` | ~1082 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 18 | 2026-05-31 | BUG #2 guest article comment login prompt | `d466e98869a005ed7875fb483ac9d1cf19708553` | `codex/bug-2-guest-comment-login-prompt` |
 | 17 | 2026-05-25 | Record Docker-first repository cleanup | `b668c13` | `main` |
 | 16 | 2026-05-25 | Version 2.3.0 Docker-first README | `6ef9736` | `main` |
 | 15 | 2026-05-25 | Fix Docker analytics real visitor IP | `11aa5cd` | `main` |
