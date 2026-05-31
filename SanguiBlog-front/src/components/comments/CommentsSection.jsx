@@ -23,6 +23,7 @@ const CommentsSection = ({
     const [replyContent, setReplyContent] = useState('');
     const canReviewComments = currentUser ? hasPermission('COMMENT_REVIEW') : false;
     const canDeleteComments = currentUser ? hasPermission('COMMENT_DELETE') : false;
+    const isGuest = !currentUser;
 
     const inputBg = isDarkMode ? 'bg-[#0F172A]/70 text-white border-white/10' : 'bg-white/72 text-black border-black/10';
     const commentBg = isDarkMode ? 'bg-[#0F172A]/62 text-gray-300 border-white/10' : 'bg-white/68 text-black border-black/10';
@@ -48,6 +49,7 @@ const CommentsSection = ({
     const getAvatarSrc = (avatarPath) => buildAssetUrl(avatarPath);
 
     const handleSubmit = () => {
+        if (!currentUser) return;
         if (!content.trim()) return;
         onSubmit && onSubmit({
             authorName: resolvedAuthorName,
@@ -58,6 +60,7 @@ const CommentsSection = ({
     };
 
     const handleReplySubmit = () => {
+        if (!currentUser) return;
         if (!replyTarget || !replyContent.trim()) return;
         const trimmed = replyContent.trim();
         const targetComment = replyTarget.comment || {};
@@ -271,14 +274,16 @@ const CommentsSection = ({
                 <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    className={`w-full p-4 rounded-2xl border font-bold focus:outline-none min-h-[140px] ${textareaScrollbarClass} ${inputBg}`}
-                    placeholder="写点什么…"
+                    className={`w-full p-4 rounded-2xl border font-bold focus:outline-none min-h-[140px] ${textareaScrollbarClass} ${inputBg} ${isGuest ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    placeholder={isGuest ? '登录后即可参与评论…' : '写点什么…'}
+                    disabled={isGuest}
                 />
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        className={primaryActionButton}
+                        disabled={isGuest}
+                        className={`${primaryActionButton} ${isGuest ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         发布评论
                     </button>

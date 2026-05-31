@@ -1,0 +1,10 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and finish/check expectations"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide and verification commands"}
+{"file": ".trellis\\tasks\\05-31-bug-2-guest-comment-login-prompt\\research.md", "reason": "Check expected scope, files, and regression test obligations"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "Review UI component changes against reusable patterns and no native dialogs"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Check regression coverage, lint/build, and narrow scope"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Check no API payload drift and runtime guards remain safe"}
+{"file": ".trellis\\spec\\frontend\\hook-guidelines.md", "reason": "Check auth state remains sourced from useBlogData/currentUser"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Check no duplicate comment/auth/API implementation was added"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Check API/DB/security boundaries remain unchanged"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Check backend security/API contracts were not changed unexpectedly"}

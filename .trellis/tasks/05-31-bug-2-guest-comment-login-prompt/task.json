@@ -1,0 +1,53 @@
+{
+  "id": "bug-2-guest-comment-login-prompt",
+  "name": "bug-2-guest-comment-login-prompt",
+  "title": "BUG #2 guest article comment login prompt",
+  "description": "Fix issue #2: unauthenticated users on article detail can type a comment, submit clears text, and no login prompt is shown.",
+  "status": "planning",
+  "dev_type": "frontend",
+  "scope": "frontend-comments-ui",
+  "package": null,
+  "priority": "P1",
+  "creator": "sangui",
+  "assignee": "sangui",
+  "createdAt": "2026-05-31",
+  "completedAt": null,
+  "branch": "codex/bug-2-guest-comment-login-prompt",
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

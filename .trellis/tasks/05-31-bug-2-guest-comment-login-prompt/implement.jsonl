@@ -1,0 +1,10 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\05-31-bug-2-guest-comment-login-prompt\\research.md", "reason": "Focused code research and expected implementation boundaries"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "CommentsSection is a React UI component and must reuse existing UI patterns"}
+{"file": ".trellis\\spec\\frontend\\hook-guidelines.md", "reason": "Auth state comes from useBlogData and currentUser; avoid new contexts"}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "Composer state remains local and auth/user state remains global"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Regression fix requires narrow static test plus lint/build"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Preserve api.js contract and guard component behavior without new payloads"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Reuse existing CommentsSection, api.js, and auth state paths"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Document that API/DB contracts are unchanged while preserving auth boundary"}
