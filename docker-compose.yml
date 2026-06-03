@@ -9,12 +9,13 @@ services:
     container_name: sanguiblog-uploads-init
     user: "0:0"
     entrypoint: ["/bin/sh", "-c"]
-    command: >
-      mkdir -p /data/uploads/posts /data/uploads/covers /data/uploads/avatar /data/uploads/games /data/uploads/site/wechat
-      && chown -R 100:101 /data/uploads
-      && chmod -R u+rwX,g+rwX /data/uploads
-      && test -d /data/uploads/posts && test -d /data/uploads/covers && test -d /data/uploads/avatar
-      && echo "uploads directories initialized"
+    command:
+      - >
+        mkdir -p /data/uploads/posts /data/uploads/covers /data/uploads/avatar /data/uploads/games /data/uploads/site/wechat
+        && chown -R 100:101 /data/uploads
+        && chmod -R u+rwX,g+rwX /data/uploads
+        && test -d /data/uploads/posts && test -d /data/uploads/covers && test -d /data/uploads/avatar
+        && echo "uploads directories initialized"
     volumes:
       - uploads_data:/data/uploads
     restart: "no"
