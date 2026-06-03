@@ -1,0 +1,14 @@
+{"file": ".trellis/workflow.md", "reason": "Trellis workflow and finish/check conventions"}
+{"file": ".trellis\\tasks\\06-03-prod-ai-chat-no-response\\prd.md", "reason": "Acceptance criteria and forbidden scope"}
+{"file": ".trellis\\tasks\\06-03-prod-ai-chat-no-response\\research.md", "reason": "Focused research, risks, and required tests"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend AI review checklist"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "AI/SSE error contract review"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Secret-safe AI logging review"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "AI assistant frontend regression checklist"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "SSE payload/frontend guard review"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Cross-layer payload/error/test alignment review"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\AiChatService.java", "reason": "Verify backend fix stays in existing AI owner path"}
+{"file": "SanguiBlog-front\\src\\utils\\aiStream.js", "reason": "Verify terminal stream behavior"}
+{"file": "SanguiBlog-front\\src\\appfull\\ui\\AiAssistantWidget.jsx", "reason": "Verify pending UI cannot hang silently"}
+{"file": "docker-compose.prod.yml", "reason": "Verify production compose drift fix if changed"}
+{"file": "docker\\nginx\\default.conf", "reason": "Verify SSE proxy contract if changed"}

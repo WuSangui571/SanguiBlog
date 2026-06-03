@@ -150,6 +150,7 @@ AI chat has special boundary behavior:
 - Empty user message throws `IllegalArgumentException`.
 - Upstream model failures become `ResponseStatusException(HttpStatus.BAD_GATEWAY, "...")`.
 - SSE stream errors should send an `error` event if possible and complete the emitter.
+- Provider streams that stop producing `chunk`, `complete`, or `error` must be bounded by a server-side timeout; on timeout, dispose the provider subscription, send an SSE `error` event if possible, and complete the emitter.
 - If streaming fails but a sync fallback succeeds, complete with normal `complete` event.
 
 SSE completion payload contract:
@@ -205,4 +206,3 @@ For public GET APIs, the frontend may retry without a stale token after 401. Do 
 - For new exception types: test `GlobalExceptionHandler` mapping or the service/controller status.
 - For upload/security errors: test both status and response data shape.
 - For AI/SSE changes: test direct answer, stream complete, error path, and no post-complete overwrite.
-

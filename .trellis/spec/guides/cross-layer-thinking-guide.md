@@ -118,6 +118,8 @@ Events:
 
 `complete` is terminal success. Frontend must not replace a completed message with a later network error.
 
+A stream that receives no `chunk`, `complete`, or `error` must not leave the UI on pending text indefinitely. Backend provider streams need a bounded timeout that emits `error` when possible, and the frontend reliable stream reader needs its own bounded timeout/error path as a client-side fallback.
+
 ### Uploads
 
 Multipart endpoints do not use JSON request body. They still return JSON `ApiResponse`.

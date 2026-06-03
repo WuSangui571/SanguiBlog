@@ -32,11 +32,18 @@ const parseSseBlocks = (buffer, onEvent) => {
     return rest;
 };
 
-export const consumeSseStream = async ({ reader, onChunk, onComplete, onError }) => {
+export const consumeSseStream = async ({ reader, onChunk, onComplete, onError, timeoutMs = 0 }) => {
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
     let terminalState = null;
     let terminalError = null;
+    let timeoutTimerId = null;
+
+    const buildTimeoutError = () => {
+        const error = new Error('AI 服务响应超时，请稍后再试');
+        error.code = 'AI_STREAM_TIMEOUT';
+        return error;
+    };
 
     const buildTerminalError = () => {
         const error = new Error(terminalError?.message || 'AI 服务调用失败，请稍后再试。');
@@ -44,6 +51,13 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
             error.payload = terminalError;
         }
         return error;
+    };
+
+    const clearStreamTimeout = () => {
+        if (timeoutTimerId !== null) {
+            globalThis.clearTimeout(timeoutTimerId);
+            timeoutTimerId = null;
+        }
     };
 
     const handleEvent = (event, data) => {
@@ -56,6 +70,7 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
 
         if (event === 'complete') {
             terminalState = 'complete';
+            clearStreamTimeout();
             onComplete?.(data);
             void reader.cancel?.();
             return;
@@ -63,6 +78,7 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
 
         if (event === 'error') {
             terminalState = 'error';
+            clearStreamTimeout();
             terminalError = typeof data === 'object' && data !== null
                 ? data
                 : { message: data || 'AI 服务调用失败，请稍后再试。' };
@@ -73,7 +89,23 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
 
     try {
         while (true) {
-            const { value, done } = await reader.read();
+            let readResult;
+            if (timeoutMs > 0) {
+                readResult = await Promise.race([
+                    reader.read(),
+                    new Promise((_, reject) => {
+                        timeoutTimerId = globalThis.setTimeout(() => {
+                            timeoutTimerId = null;
+                            reject(buildTimeoutError());
+                        }, timeoutMs);
+                    })
+                ]);
+            } else {
+                readResult = await reader.read();
+            }
+            clearStreamTimeout();
+
+            const { value, done } = readResult;
             buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
             buffer = parseSseBlocks(buffer, handleEvent);
 
@@ -103,8 +135,13 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError })
             }
         }
     } catch (error) {
+        clearStreamTimeout();
         if (terminalState === 'complete') {
             return;
+        }
+
+        if (error?.code === 'AI_STREAM_TIMEOUT') {
+            void reader.cancel?.();
         }
 
         throw error;

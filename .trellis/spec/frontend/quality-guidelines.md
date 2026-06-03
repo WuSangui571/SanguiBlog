@@ -97,6 +97,7 @@ Must preserve:
 - Code block copy fallback and visible feedback.
 - Message text selection on first drag.
 - `complete` event terminal success.
+- Reliable AI chat streams must have bounded reader timeout handling so a stream with no `chunk`, `complete`, or `error` replaces the pending reply with a readable error instead of leaving `...` indefinitely.
 - Mobile full-screen and keyboard `visualViewport` behavior.
 - Guest access notice/captcha behavior.
 - Recent 10 visible sessions and user-side soft-delete semantics from backend.
@@ -140,4 +141,3 @@ Run targeted tests for any change in this area.
 | API field change | consuming component tests plus backend/frontend field alignment |
 | CSS/visual change | inspect affected light/dark/mobile code paths; run build |
 | Native dialog removal | `node src/appfull/noNativeBlockingDialogs.test.js` |
-

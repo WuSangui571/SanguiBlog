@@ -50,6 +50,8 @@ public class AiChatService {
     private static final String DEFAULT_SESSION_TITLE = "新对话";
     private static final String DEFAULT_MODE = "DATABASE_SESSION_HISTORY";
     private static final String SYSTEM_FACTS_MODE = "SYSTEM_FACTS";
+    private static final long STREAM_EMITTER_TIMEOUT_MILLIS = 300_000L;
+    private static final String STREAM_TIMEOUT_MESSAGE = "AI 服务响应超时，请稍后再试";
 
     private final ChatModel chatModel;
     private final AiAssistantSettingService aiAssistantSettingService;
@@ -253,7 +255,7 @@ public class AiChatService {
         aiChatSessionRepository.save(session);
         aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, userMessageAt));
 
-        SseEmitter emitter = new SseEmitter(0L);
+        SseEmitter emitter = new SseEmitter(STREAM_EMITTER_TIMEOUT_MILLIS);
         StringBuilder replyBuilder = new StringBuilder();
 
         Disposable subscription = chatModel.stream(new Prompt(promptMessages)).subscribe(
@@ -297,6 +299,7 @@ public class AiChatService {
         emitter.onCompletion(subscription::dispose);
         emitter.onTimeout(() -> {
             subscription.dispose();
+            sendSseEvent(emitter, "error", Map.of("message", STREAM_TIMEOUT_MESSAGE));
             emitter.complete();
         });
         emitter.onError(error -> subscription.dispose());

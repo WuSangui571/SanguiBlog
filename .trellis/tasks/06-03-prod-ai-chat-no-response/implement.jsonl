@@ -1,0 +1,26 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\06-03-prod-ai-chat-no-response\\prd.md", "reason": "PRD with scope, acceptance, cross-layer contract, diagnostics, and required tests"}
+{"file": ".trellis\\tasks\\06-03-prod-ai-chat-no-response\\research.md", "reason": "Focused code research and likely modification boundaries"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend AI owner paths and no parallel chat pipeline rule"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "AI assistant high-risk contracts and required backend tests"}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "AI chat tables, Docker schema drift, and secret-safe diagnostics"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "AI/SSE error event and ApiResponse failure contract"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "AI provider failure logging without secrets or prompts"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "AI assistant UI contracts and test list"}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "AI pending state and complete terminal semantics"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "SSE complete payload and frontend runtime guards"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "AI assistant frontend verification requirements"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Reuse existing AI service/API/parser paths"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "SSE/API/Docker/DB cross-layer contract template"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\AiChatController.java", "reason": "AI stream HTTP endpoint and access-control SSE conversion"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\AiChatService.java", "reason": "AI stream/provider/fallback/session persistence owner"}
+{"file": "SanguiBlog-front\\src\\api.js", "reason": "Frontend stream request and HTTP error normalization"}
+{"file": "SanguiBlog-front\\src\\utils\\aiStream.js", "reason": "SSE chunk/complete/error terminal parser"}
+{"file": "SanguiBlog-front\\src\\appfull\\ui\\AiAssistantWidget.jsx", "reason": "Pending reply UI state and stream callbacks"}
+{"file": "docker-compose.yml", "reason": "Local compose baseline that still works"}
+{"file": "docker-compose.prod.yml", "reason": "Production compose regression surface"}
+{"file": "docker\\nginx\\default.conf", "reason": "Production Nginx SSE proxy route"}
+{"file": "docs\\docker-deploy.md", "reason": "Existing production AI diagnostics and Docker runbook"}
+{"file": "sanguiblog_db.sql", "reason": "Canonical AI chat table and compatibility column SQL"}

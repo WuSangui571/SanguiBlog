@@ -344,6 +344,7 @@ export const streamAiChatReliable = async ({ message, sessionId, currentPageCont
     onChunk,
     onComplete,
     onError,
+    timeoutMs: 300000,
   });
 };
 export const fetchAiChatSessions = () => request("/ai/sessions");
