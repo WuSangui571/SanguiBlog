@@ -32,6 +32,11 @@ security:
   cors:
     allowed-origins: ${SECURITY_CORS_ALLOWED_ORIGINS:http://localhost}
 
+analytics:
+  geo:
+    ip2region:
+      xdb-path: ${ANALYTICS_GEO_IP2REGION_XDB_PATH:classpath:ip2region/ip2region.xdb}
+
 ai:
   rag:
     sync-on-startup: ${AI_RAG_SYNC_ON_STARTUP:false}

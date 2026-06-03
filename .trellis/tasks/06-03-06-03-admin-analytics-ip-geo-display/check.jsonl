@@ -1,0 +1,19 @@
+{"file": ".trellis/tasks/06-03-06-03-admin-analytics-ip-geo-display/prd.md", "reason": "Check implementation against PRD acceptance and forbidden scope"}
+{"file": ".trellis/tasks/06-03-06-03-admin-analytics-ip-geo-display/research.md", "reason": "Check against focused research and likely modification boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend verification and duplicate path review"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "DB/entity/schema alignment for analytics_page_views"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe provider failure logging review"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend verification if payload/UI changed"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Frontend/backend field and payload alignment"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "No duplicate GeoIP implementation"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer API/DB/frontend verification"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GeoIpService.java", "reason": "Review active GeoIP provider implementation"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Review geo fallback and admin mapping"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostService.java", "reason": "Review fallback analytics write alignment"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GeoLocationService.java", "reason": "Verify duplicate/unused service handling"}
+{"file": "SanguiBlog-front/src/appfull/shared.js", "reason": "Review getGeoHint/timezone fallback handling if touched"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Review analytics payload behavior if touched"}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Verify admin geo field consumption remains compatible"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/util/IpUtilsTest.java", "reason": "Existing IP resolver regression coverage must remain passing"}
+{"file": "docker/nginx/default.conf", "reason": "Confirm prior real-IP proxy behavior not regressed"}
+{"file": "sanguiblog_db.sql", "reason": "Confirm no unintended schema changes"}

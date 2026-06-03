@@ -1,0 +1,33 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/06-03-06-03-admin-analytics-ip-geo-display/prd.md", "reason": "Task PRD, scope, contracts, acceptance criteria"}
+{"file": ".trellis/tasks/06-03-06-03-admin-analytics-ip-geo-display/research.md", "reason": "Focused code research and likely modification files"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend placement and service/controller/entity boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend retrieve-first, testing, and external dependency rules"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "analytics_page_views persistence contract"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "ApiResponse and provider failure behavior"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe logging for external GeoIP failures"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend API facade and appfull ownership"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend test/build requirements if payload changes"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Admin UI component boundaries if touched"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Frontend data/effect guard rules"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Frontend state ownership for analytics payload changes"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Frontend runtime API payload safety"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing GeoIpService and avoid duplicate paths"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer analytics/API/DB/frontend contract"}
+{"file": "SanguiBlog-front/src/appfull/shared.js", "reason": "getGeoHint returns browser timezone fallback"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Sends analytics page-view geo/clientIp payloads"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "recordPageView and fetchClientIp API facade"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AnalyticsController.java", "reason": "Public analytics page-view and client-ip endpoints"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Geo persistence and admin recent visit mapping"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GeoIpService.java", "reason": "Current active GeoIP provider to modify/reuse"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GeoLocationService.java", "reason": "Duplicate/unused GeoIP-like service to review"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostService.java", "reason": "Fallback analytics write also uses GeoIpService"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/entity/AnalyticsPageView.java", "reason": "geo_location entity mapping"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/PageViewRequest.java", "reason": "Analytics request payload fields"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AdminAnalyticsSummaryDto.java", "reason": "RecentVisit.geo admin DTO field"}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Admin analytics renders visit.geo"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/util/IpUtilsTest.java", "reason": "Existing real-IP proxy regression coverage"}
+{"file": "docker/nginx/default.conf", "reason": "Existing real-IP proxy headers to preserve"}
+{"file": "sanguiblog_db.sql", "reason": "analytics_page_views.geo_location schema contract"}

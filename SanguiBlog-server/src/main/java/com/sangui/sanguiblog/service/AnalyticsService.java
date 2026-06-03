@@ -532,13 +532,27 @@ public class AnalyticsService {
         } catch (Exception ex) {
             log.debug("Geo lookup failed for ip {}", normalizedIp, ex);
         }
-        if (!StringUtils.hasText(geo) && StringUtils.hasText(requestGeo)) {
+        if (!StringUtils.hasText(geo) && StringUtils.hasText(requestGeo) && !isTimezoneString(requestGeo)) {
             geo = trimToLength(requestGeo, 128);
         }
         if (!StringUtils.hasText(geo)) {
             geo = "未知";
         }
         return trimToLength(geo, 128);
+    }
+
+    private boolean isTimezoneString(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        String trimmed = value.trim();
+        if ("UTC".equalsIgnoreCase(trimmed)) {
+            return true;
+        }
+        if (trimmed.startsWith("Etc/")) {
+            return true;
+        }
+        return trimmed.contains("/") && java.time.ZoneId.getAvailableZoneIds().contains(trimmed);
     }
 
     private String normalizePageTitle(String title) {

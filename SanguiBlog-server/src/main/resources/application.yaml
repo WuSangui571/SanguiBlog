@@ -66,6 +66,9 @@ site:
     powered-by: Powered by Spring Boot 3 & React 19
 
 analytics:
+  geo:
+    ip2region:
+      xdb-path: ${ANALYTICS_GEO_IP2REGION_XDB_PATH:classpath:ip2region/ip2region.xdb}
   page-views:
     archive:
       enabled: false
@@ -107,7 +110,6 @@ ai:
       schema: ${AI_RAG_PGVECTOR_SCHEMA:public}
       table: ${AI_RAG_PGVECTOR_TABLE:vector_store}
       initialize-schema: ${AI_RAG_PGVECTOR_INITIALIZE_SCHEMA:false}
-
 
 
 

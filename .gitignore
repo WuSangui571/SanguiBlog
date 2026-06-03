@@ -135,6 +135,10 @@ __pycache__/
 *.dump
 backups/
 
+# Runtime-mounted GeoIP database copies. The canonical bundled XDB lives under
+# SanguiBlog-server/src/main/resources/ip2region/.
+docker/ip2region/*.xdb
+
 # Backup files
 *~
 *.bak

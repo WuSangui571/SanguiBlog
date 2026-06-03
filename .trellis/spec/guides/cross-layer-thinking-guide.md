@@ -191,6 +191,39 @@ Chinese analytics labels are URL-encoded in frontend headers and decoded in `Pos
 
 Do not put raw non-ISO-8859-1 strings into `fetch` headers.
 
+### Analytics GeoIP
+
+Analytics IP geolocation is a backend-local contract:
+
+| Concern | File / Command | Contract |
+|---------|----------------|----------|
+| Shared service path | `GeoIpService.lookup(String ip)` | `AnalyticsService` and `PostService` must use this single service path. Do not add a second active GeoIP provider for analytics. |
+| Local database | `SanguiBlog-server/src/main/resources/ip2region/ip2region.xdb` | The application bundles the default IPv4 ip2region XDB for classpath lookup. It can be updated by replacing this file with `ip2region_v4.xdb` from the upstream project. |
+| Optional Docker override | `ANALYTICS_GEO_IP2REGION_XDB_PATH` | If set, the backend loads an external XDB path such as `/data/ip2region/ip2region.xdb`; if unset or blank, it uses the classpath XDB. |
+| Docker mount | `docker-compose.yml`, `docker-compose.prod.yml` | Keep `./docker/ip2region:/data/ip2region:ro` available for operator-provided XDB replacements, but do not require it for the default bundled path. |
+| Browser fallback | `PageViewRequest.geo` | Treat browser-provided `geo` as a non-authoritative fallback only. IANA timezone values such as `Asia/Shanghai`, `UTC`, and `Etc/UTC` must not be stored as IP geolocation. |
+| Historical data | `analytics_page_views.geo_location` | Do not backfill existing bad rows unless a separate task explicitly approves it. |
+
+Good/Base/Bad cases:
+
+| Case | Expected Result |
+|------|-----------------|
+| Good public IPv4 | Local ip2region lookup stores a displayable region string and does not call a remote provider by default. |
+| Base private/loopback/link-local IP | Stores internal/local wording or falls back to unknown without throwing. |
+| Bad missing XDB | Service logs a recoverable warning and analytics writes degrade to unknown rather than failing the page-view request. |
+| Bad timezone fallback | Backend GeoIP lookup misses and frontend sends `Asia/Shanghai` or `UTC`; stored geo is unknown, not the timezone. |
+
+Required verification:
+
+```bash
+cd SanguiBlog-server
+mvn -q "-Dtest=GeoIpServiceTest,AnalyticsServiceGeoLocationTest" test
+mvn -q "-Dtest=IpUtilsTest" test
+mvn -q -DskipTests compile
+docker compose config
+docker compose -f docker-compose.prod.yml config --quiet
+```
+
 ### Docker Compose Deployment
 
 Containerized deployment is an infra/cross-layer contract, not a business API change. Keep the executable contract in these files:
