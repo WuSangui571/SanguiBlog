@@ -1080,3 +1080,62 @@ Completed and verified the guest article comment login prompt fix, then archived
 ### Next Steps
 
 - None - task complete
+
+
+## Session 19: Admin analytics GeoIP display regression
+
+**Date**: 2026-06-03
+**Task**: Admin analytics GeoIP display regression
+**Branch**: `fix/admin-analytics-ip-geo-display`
+
+### Summary
+
+Replaced remote GeoIP lookup with local ip2region, filtered timezone fallbacks, updated Docker/config/spec coverage, and passed manual acceptance.
+
+### Main Changes
+
+### Completed Work
+
+- Commit: `3d8a1fd` (`fix: admin analytics IP geo display`).
+- Main modules: backend analytics GeoIP lookup, analytics geo fallback handling, Docker/env configuration, Trellis cross-layer spec.
+- Updated files: `GeoIpService`, `AnalyticsService`, backend Maven dependency, app config, Docker compose files, `.env.example`, `.gitignore`, GeoIP tests, Analytics geo tests, bundled `ip2region.xdb`, and Trellis task/spec files.
+- Archived task: `06-03-06-03-admin-analytics-ip-geo-display`.
+
+### Verification
+
+- Manual acceptance: user reported manual tests passed.
+- `mvn -q "-Dtest=GeoIpServiceTest,AnalyticsServiceGeoLocationTest" test`: passed.
+- `mvn -q "-Dtest=IpUtilsTest" test`: passed.
+- `mvn -q -DskipTests compile`: passed.
+- `docker compose config`: passed.
+- `docker compose -f docker-compose.prod.yml config --quiet`: passed.
+- `git diff --check`: passed.
+- Changed-scope hygiene search for `console.log`, `debugger`, `TODO`, and stale remote fallback config: clean.
+
+### Result And Boundaries
+
+- New analytics rows should no longer store browser timezone strings such as `Asia/Shanghai`, `UTC`, or `Etc/UTC` as IP geolocation.
+- Public IPv4 lookup now uses local ip2region XDB by default instead of outbound `ipapi.co` calls.
+- `AnalyticsService` and `PostService` still share the single `GeoIpService.lookup(String ip)` path.
+- No admin analytics UI, DTO, API shape, or DB schema change was made.
+- Historical bad rows were intentionally not backfilled.
+- Docker can optionally override the bundled XDB via `ANALYTICS_GEO_IP2REGION_XDB_PATH`, but the classpath XDB is the default.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3d8a1fd` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
