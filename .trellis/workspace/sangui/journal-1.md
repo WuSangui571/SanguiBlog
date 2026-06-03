@@ -1291,3 +1291,81 @@ Boundary:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 23: Production AI RAG provider isolation
+
+**Date**: 2026-06-03
+**Task**: Production AI RAG provider isolation
+**Branch**: `fix/prod-ai-rag-provider-isolation`
+
+### Summary
+
+Archived prod AI RAG provider isolation after local acceptance; production smoke remains pending.
+
+### Main Changes
+
+## Commit
+- d268164 fix: isolate production AI provider resources
+
+## Main modules
+- Backend AI chat orchestration: split broad chat transaction, keep RAG/provider work outside MySQL transactions, add short transactional persistence helper.
+- Backend provider isolation: add global AI provider concurrency guard with fast busy handling for JSON and SSE.
+- Backend RAG degradation: sanitized warn logging for RAG retrieval fallback with stage, exception class, and elapsed time only.
+- Frontend SSE handling: EOF without complete/error now surfaces a readable interruption error.
+- Deployment guide: add DashScope DNS/network diagnostics, API key presence check, RAG-off recovery, and guard log checks.
+- Trellis specs: document provider isolation, busy 429/SSE error contract, and short transaction guidance.
+
+## Updated files
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatPersistenceService.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiProviderConcurrencyGuard.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/rag/AiBlogRagService.java
+- SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiChatPersistenceServiceTest.java
+- SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiProviderConcurrencyGuardTest.java
+- SanguiBlog-front/src/utils/aiStream.js
+- SanguiBlog-front/src/utils/aiStream.test.js
+- docs/docker-deploy.md
+- .trellis/spec/backend/database-guidelines.md
+- .trellis/spec/backend/error-handling.md
+- .trellis/spec/backend/quality-guidelines.md
+- .trellis/spec/guides/cross-layer-thinking-guide.md
+
+## Verification
+- mvn -q "-Dtest=AiChatServiceTest,AiChatPersistenceServiceTest,AiProviderConcurrencyGuardTest,AiGuestAccessServiceTest,AiAssistantCapabilityServiceTest,AiCurrentPageContextServiceTest,AiReferencedPostContextServiceTest" test: PASS.
+- mvn -q "-Dtest=AiBlogKnowledgeSyncServiceTest,AiCustomKnowledgeSyncServiceTest" test: PASS.
+- mvn -q -DskipTests compile: PASS.
+- node src/utils/aiStream.test.js: PASS.
+- node src/appfull/ui/AiAssistantWidget.test.js: PASS.
+- node src/appfull/ui/AiAssistantMobileViewport.test.js: PASS.
+- node src/appfull/noNativeBlockingDialogs.test.js: PASS.
+- cmd /c npm run lint: PASS.
+- cmd /c npm run build: PASS after rerun outside sandbox because sandbox Vite temp write hit EPERM.
+- docker compose config --quiet: PASS.
+- docker compose -f docker-compose.prod.yml config --quiet: PASS.
+- git diff --check: PASS.
+- User manual local acceptance: PASS.
+
+## Result and boundaries
+- The task implementation and local acceptance are complete and committed in d268164.
+- The Trellis task was archived even though task.json still said planning, because real work state and commit state are complete.
+- Production smoke was not performed yet. Remaining production checks: real SSE curl, DashScope DNS from containers, Hikari health under provider failure, and AI_PROVIDER_MAX_CONCURRENCY tuning observation.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d268164` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
