@@ -131,7 +131,7 @@ export const consumeSseStream = async ({ reader, onChunk, onComplete, onError, t
                     throw buildTerminalError();
                 }
 
-                return;
+                throw new Error('AI 服务连接已中断，请稍后再试');
             }
         }
     } catch (error) {

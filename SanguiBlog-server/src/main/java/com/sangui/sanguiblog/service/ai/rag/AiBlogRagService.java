@@ -34,6 +34,7 @@ public class AiBlogRagService {
             return AiBlogRagContext.empty();
         }
 
+        long startNanos = System.nanoTime();
         try {
             SearchRequest request = SearchRequest.builder()
                     .query(question.trim())
@@ -52,7 +53,9 @@ public class AiBlogRagService {
                     "SITE_KNOWLEDGE_RAG_PGVECTOR"
             );
         } catch (Exception ex) {
-            log.error("执行博客 RAG 检索失败", ex);
+            long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
+            log.warn("博客 RAG 检索降级: stage=similaritySearch, exceptionClass={}, elapsedMs={}, message={}",
+                    ex.getClass().getName(), elapsedMs, ex.getMessage());
             return AiBlogRagContext.empty();
         }
     }

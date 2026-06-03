@@ -1,0 +1,26 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/06-03-prod-ai-rag-provider-isolation/prd.md", "reason": "Primary requirements, cross-layer contract, forbidden scope, acceptance criteria"}
+{"file": ".trellis/tasks/06-03-prod-ai-rag-provider-isolation/research.md", "reason": "Focused code research and retrieval report"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend AI owner paths and anti-duplicate-service rule"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "AI assistant owner contract and required backend verification"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Transaction, schema, AI/RAG persistence, and Docker schema drift rules"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AI/SSE error and timeout terminal-event contract"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe AI/RAG logging constraints"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend API/SSE owner paths"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "AI assistant UI and helper/test contracts"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "AI local state and terminal-success state rules"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Runtime guard and SSE field alignment rules"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "AI assistant frontend verification and no-duplicate-wrapper rule"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate implementation prevention"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "SSE/API/env/error/test cross-layer contract"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java", "reason": "Main chat orchestration, transaction risk, SSE timeout and provider fallback owner"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/rag/AiBlogRagService.java", "reason": "RAG retrieval degradation owner"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogRagProperties.java", "reason": "RAG config owner"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogVectorStoreConfig.java", "reason": "PgVector and DashScope embedding model wiring"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AiChatController.java", "reason": "AI HTTP/SSE endpoint owner"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Frontend stream request and timeout entry"}
+{"file": "SanguiBlog-front/src/utils/aiStream.js", "reason": "SSE parser and EOF-without-terminal target"}
+{"file": "SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx", "reason": "Pending message replacement and streamCompleted guard"}
+{"file": "docker-compose.prod.yml", "reason": "Production RAG/env/DNS context"}

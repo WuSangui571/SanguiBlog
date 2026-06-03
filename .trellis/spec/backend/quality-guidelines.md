@@ -102,6 +102,13 @@ Do not bypass `AiChatService`. It coordinates:
 - SSE fallback and completion payloads,
 - user-visible session limit and soft delete.
 
+External AI provider work should be isolated:
+
+- RAG retrieval, embedding calls, chat provider calls, and stream subscriptions must not run inside a broad MySQL transaction.
+- Use focused short-transaction persistence helpers such as `AiChatPersistenceService` for session/message writes when splitting provider work out of `AiChatService`.
+- Bound shared external-provider capacity with `AiProviderConcurrencyGuard` or the established replacement. Busy JSON requests should fail fast with HTTP `429`; busy SSE requests should emit `error` and complete.
+- Stream guard permits must be released exactly once across success, timeout, provider error, client disconnect, and pre-emitter exceptions.
+
 Any chat change must test relevant services such as `AiChatServiceTest`, `AiGuestAccessServiceTest`, `AiAssistantCapabilityServiceTest`, `AiCurrentPageContextServiceTest`, or `AiReferencedPostContextServiceTest`.
 
 ### RAG Knowledge Sync

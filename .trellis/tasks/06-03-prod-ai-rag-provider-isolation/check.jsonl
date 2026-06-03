@@ -1,0 +1,12 @@
+{"file": ".trellis/workflow.md", "reason": "Trellis workflow, finish-work expectations, and check process replacement for missing .claude command files"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Code quality checklist and verification expectations"}
+{"file": ".trellis/tasks/06-03-prod-ai-rag-provider-isolation/prd.md", "reason": "Check against acceptance criteria and forbidden scope"}
+{"file": ".trellis/tasks/06-03-prod-ai-rag-provider-isolation/research.md", "reason": "Check implementation against researched owner paths"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify SSE error/complete terminal semantics"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Verify no secrets/prompts/replies/knowledge content in logs"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify transaction boundaries and no hidden schema drift"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify AI assistant frontend tests/build expectations"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify API/SSE/env/error matrix coverage"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiChatServiceTest.java", "reason": "Backend AI chat regression test owner"}
+{"file": "SanguiBlog-front/src/utils/aiStream.test.js", "reason": "Frontend SSE terminal and EOF regression test owner"}
+{"file": "SanguiBlog-front/src/appfull/ui/AiAssistantWidget.test.js", "reason": "Frontend AI widget static regression test owner"}

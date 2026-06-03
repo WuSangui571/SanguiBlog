@@ -41,6 +41,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
@@ -65,6 +66,8 @@ public class AiChatService {
     private final AiChatMessageRepository aiChatMessageRepository;
     private final UserRepository userRepository;
     private final AiBlogRagService aiBlogRagService;
+    private final AiChatPersistenceService persistenceService;
+    private final AiProviderConcurrencyGuard concurrencyGuard;
 
     @Value("${spring.ai.dashscope.chat.options.model:qwen-flash}")
     private String configuredModel;
@@ -122,7 +125,6 @@ public class AiChatService {
         aiChatSessionVisibilityService.hideSessionForUser(userId, sessionId);
     }
 
-    @Transactional
     public AiChatResponse chat(
             Long userId,
             Long sessionId,
@@ -136,7 +138,7 @@ public class AiChatService {
         AiGuestAccessService.AccessContext accessContext = aiGuestAccessService.resolveContext(userId, request, response);
         aiGuestAccessService.assertCanSend(accessContext);
 
-        User currentUser = userId != null ? findUser(userId) : null;
+        User currentUser = userId != null ? persistenceService.findUser(userId) : null;
         AiChatSession session = resolveChatSession(accessContext, userId, sessionId);
         String userMessage = normalizeMessage(message);
 
@@ -148,41 +150,53 @@ public class AiChatService {
         List<String> contextMessageTexts = loadContextMessageTexts(accessContext, session != null ? session.getId() : null, localHistory);
         AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice =
                 aiReferencedPostContextService.advise(userMessage, contextMessageTexts);
-        AiBlogRagService.AiBlogRagContext ragContext = referencedPostAdvice.useContext()
-                ? AiBlogRagService.AiBlogRagContext.empty()
-                : aiBlogRagService.retrieve(userMessage);
-        AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
-                aiCurrentPageContextService.advise(userMessage, currentPageContext);
-        if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
-            pageContextAdvice = AiCurrentPageContextService.PageContextAdvice.unused();
-        }
-        if (shouldPreferCurrentArticlePageContext(currentPageContext, pageContextAdvice, referencedPostAdvice)) {
-            referencedPostAdvice = AiReferencedPostContextService.ReferencedPostAdvice.unused();
-        }
-        List<Message> promptMessages = buildPromptMessages(
-                accessContext,
-                session != null ? session.getId() : null,
-                localHistory,
-                userMessage,
-                ragContext,
-                pageContextAdvice,
-                referencedPostAdvice,
-                currentUser
-        );
 
+        if (!concurrencyGuard.tryAcquire()) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "AI 服务繁忙，请稍后再试");
+        }
+        AiBlogRagService.AiBlogRagContext ragContext;
         try {
-            ChatResponse responsePayload = chatModel.call(new Prompt(promptMessages));
-            AssistantMessage output = responsePayload.getResult() != null ? responsePayload.getResult().getOutput() : null;
-            String reply = output != null ? output.getText() : null;
-            if (!StringUtils.hasText(reply)) {
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI 服务未返回有效内容，请稍后再试");
+            ragContext = referencedPostAdvice.useContext()
+                    ? AiBlogRagService.AiBlogRagContext.empty()
+                    : aiBlogRagService.retrieve(userMessage);
+            AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
+                    aiCurrentPageContextService.advise(userMessage, currentPageContext);
+            if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
+                pageContextAdvice = AiCurrentPageContextService.PageContextAdvice.unused();
+            }
+            if (shouldPreferCurrentArticlePageContext(currentPageContext, pageContextAdvice, referencedPostAdvice)) {
+                referencedPostAdvice = AiReferencedPostContextService.ReferencedPostAdvice.unused();
+            }
+            List<Message> promptMessages = buildPromptMessages(
+                    accessContext,
+                    session != null ? session.getId() : null,
+                    localHistory,
+                    userMessage,
+                    ragContext,
+                    pageContextAdvice,
+                    referencedPostAdvice,
+                    currentUser
+            );
+
+            String normalizedReply;
+            try {
+                ChatResponse responsePayload = chatModel.call(new Prompt(promptMessages));
+                AssistantMessage output = responsePayload.getResult() != null ? responsePayload.getResult().getOutput() : null;
+                String reply = output != null ? output.getText() : null;
+                if (!StringUtils.hasText(reply)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI 服务未返回有效内容，请稍后再试");
+                }
+
+                normalizedReply = reply.trim();
+            } catch (ResponseStatusException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                log.error("调用通义千问聊天接口失败", ex);
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI 服务调用失败，请稍后再试");
             }
 
-            String normalizedReply = reply.trim();
             Instant now = Instant.now();
-            aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, now));
-            aiChatMessageRepository.save(buildMessage(session, "assistant", normalizedReply, configuredModel, now));
-            updateSessionAfterReply(session, userMessage, normalizedReply, now);
+            persistenceService.saveUserMessageAndCompleteSession(session, userMessage, normalizedReply, configuredModel, ragContext, now);
 
             return AiChatResponse.builder()
                     .sessionId(session.getId())
@@ -191,11 +205,8 @@ public class AiChatService {
                     .mode(resolveMode(ragContext))
                     .references(ragContext.getReferences())
                     .build();
-        } catch (ResponseStatusException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            log.error("调用通义千问聊天接口失败", ex);
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI 服务调用失败，请稍后再试");
+        } finally {
+            concurrencyGuard.release();
         }
     }
 
@@ -212,7 +223,7 @@ public class AiChatService {
         AiGuestAccessService.AccessContext accessContext = aiGuestAccessService.resolveContext(userId, request, response);
         aiGuestAccessService.assertCanSend(accessContext);
 
-        User currentUser = userId != null ? findUser(userId) : null;
+        User currentUser = userId != null ? persistenceService.findUser(userId) : null;
         AiChatSession session = resolveChatSession(accessContext, userId, sessionId);
         String userMessage = normalizeMessage(message);
 
@@ -224,93 +235,103 @@ public class AiChatService {
         List<String> contextMessageTexts = loadContextMessageTexts(accessContext, session != null ? session.getId() : null, localHistory);
         AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice =
                 aiReferencedPostContextService.advise(userMessage, contextMessageTexts);
-        AiBlogRagService.AiBlogRagContext ragContext = referencedPostAdvice.useContext()
-                ? AiBlogRagService.AiBlogRagContext.empty()
-                : aiBlogRagService.retrieve(userMessage);
-        AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
-                aiCurrentPageContextService.advise(userMessage, currentPageContext);
-        if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
-            pageContextAdvice = AiCurrentPageContextService.PageContextAdvice.unused();
-        }
-        if (shouldPreferCurrentArticlePageContext(currentPageContext, pageContextAdvice, referencedPostAdvice)) {
-            referencedPostAdvice = AiReferencedPostContextService.ReferencedPostAdvice.unused();
-        }
-        List<Message> promptMessages = buildPromptMessages(
-                accessContext,
-                session != null ? session.getId() : null,
-                localHistory,
-                userMessage,
-                ragContext,
-                pageContextAdvice,
-                referencedPostAdvice,
-                currentUser
-        );
 
-        Instant userMessageAt = Instant.now();
-        if (DEFAULT_SESSION_TITLE.equals(session.getTitle())) {
-            session.setTitle(buildSessionTitle(userMessage));
+        if (!concurrencyGuard.tryAcquire()) {
+            return buildBusyErrorEmitter();
         }
-        session.setLastMessagePreview(trimToPreview(userMessage));
-        session.setUpdatedAt(userMessageAt);
-        aiChatSessionRepository.save(session);
-        aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, userMessageAt));
 
-        SseEmitter emitter = new SseEmitter(STREAM_EMITTER_TIMEOUT_MILLIS);
-        StringBuilder replyBuilder = new StringBuilder();
+        AtomicBoolean providerPermitReleased = new AtomicBoolean(false);
+        try {
+            AiBlogRagService.AiBlogRagContext ragContext = referencedPostAdvice.useContext()
+                    ? AiBlogRagService.AiBlogRagContext.empty()
+                    : aiBlogRagService.retrieve(userMessage);
+            AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
+                    aiCurrentPageContextService.advise(userMessage, currentPageContext);
+            if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
+                pageContextAdvice = AiCurrentPageContextService.PageContextAdvice.unused();
+            }
+            if (shouldPreferCurrentArticlePageContext(currentPageContext, pageContextAdvice, referencedPostAdvice)) {
+                referencedPostAdvice = AiReferencedPostContextService.ReferencedPostAdvice.unused();
+            }
+            List<Message> promptMessages = buildPromptMessages(
+                    accessContext,
+                    session != null ? session.getId() : null,
+                    localHistory,
+                    userMessage,
+                    ragContext,
+                    pageContextAdvice,
+                    referencedPostAdvice,
+                    currentUser
+            );
 
-        Disposable subscription = chatModel.stream(new Prompt(promptMessages)).subscribe(
-                chatResponse -> {
-                    String chunk = extractChunk(chatResponse);
-                    if (!StringUtils.hasText(chunk)) {
-                        return;
-                    }
-                    replyBuilder.append(chunk);
-                    if (!sendSseEvent(emitter, "chunk", Map.of("text", chunk))) {
-                        emitter.complete();
-                    }
-                },
-                error -> {
-                    log.error("调用通义千问流式聊天接口失败", error);
-                    try {
-                        String reply = callSyncReply(promptMessages);
-                        if (!StringUtils.hasText(reply)) {
+            Instant userMessageAt = Instant.now();
+            persistenceService.saveUserMessageAndUpdateSession(session, userMessage, userMessageAt);
+
+            SseEmitter emitter = new SseEmitter(STREAM_EMITTER_TIMEOUT_MILLIS);
+            StringBuilder replyBuilder = new StringBuilder();
+
+            Disposable subscription = chatModel.stream(new Prompt(promptMessages)).subscribe(
+                    chatResponse -> {
+                        String chunk = extractChunk(chatResponse);
+                        if (!StringUtils.hasText(chunk)) {
+                            return;
+                        }
+                        replyBuilder.append(chunk);
+                        if (!sendSseEvent(emitter, "chunk", Map.of("text", chunk))) {
+                            emitter.complete();
+                        }
+                    },
+                    error -> {
+                        log.error("调用通义千问流式聊天接口失败", error);
+                        try {
+                            String reply = callSyncReply(promptMessages);
+                            if (!StringUtils.hasText(reply)) {
+                                sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
+                                emitter.complete();
+                                return;
+                            }
+                            completeAssistantReply(emitter, session, reply, ragContext);
+                        } catch (Exception fallbackError) {
+                            log.error("流式失败后回退同步聊天也失败", fallbackError);
                             sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
+                            emitter.complete();
+                        }
+                    },
+                    () -> {
+                        String reply = replyBuilder.toString().trim();
+                        if (!StringUtils.hasText(reply)) {
+                            sendSseEvent(emitter, "error", Map.of("message", "AI 服务未返回有效内容，请稍后再试"));
                             emitter.complete();
                             return;
                         }
                         completeAssistantReply(emitter, session, reply, ragContext);
-                    } catch (Exception fallbackError) {
-                        log.error("流式失败后回退同步聊天也失败", fallbackError);
-                        sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
-                        emitter.complete();
                     }
-                },
-                () -> {
-                    String reply = replyBuilder.toString().trim();
-                    if (!StringUtils.hasText(reply)) {
-                        sendSseEvent(emitter, "error", Map.of("message", "AI 服务未返回有效内容，请稍后再试"));
-                        emitter.complete();
-                        return;
-                    }
-                    completeAssistantReply(emitter, session, reply, ragContext);
-                }
-        );
+            );
 
-        emitter.onCompletion(subscription::dispose);
-        emitter.onTimeout(() -> {
-            subscription.dispose();
-            sendSseEvent(emitter, "error", Map.of("message", STREAM_TIMEOUT_MESSAGE));
-            emitter.complete();
-        });
-        emitter.onError(error -> subscription.dispose());
-        return emitter;
+            emitter.onCompletion(() -> {
+                releaseProviderPermit(providerPermitReleased);
+                subscription.dispose();
+            });
+            emitter.onTimeout(() -> {
+                releaseProviderPermit(providerPermitReleased);
+                subscription.dispose();
+                sendSseEvent(emitter, "error", Map.of("message", STREAM_TIMEOUT_MESSAGE));
+                emitter.complete();
+            });
+            emitter.onError(error -> {
+                releaseProviderPermit(providerPermitReleased);
+                subscription.dispose();
+            });
+            return emitter;
+        } catch (RuntimeException | Error ex) {
+            releaseProviderPermit(providerPermitReleased);
+            throw ex;
+        }
     }
 
     private AiChatResponse completeDirectAnswer(AiChatSession session, String userMessage, String reply, String mode) {
         Instant now = Instant.now();
-        aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, now));
-        aiChatMessageRepository.save(buildMessage(session, "assistant", reply, configuredModel, now));
-        updateSessionAfterReply(session, userMessage, reply, now);
+        persistenceService.saveUserMessageAndCompleteSession(session, userMessage, reply, configuredModel, null, now);
 
         return AiChatResponse.builder()
                 .sessionId(session.getId())
@@ -323,9 +344,7 @@ public class AiChatService {
 
     private SseEmitter streamDirectAnswer(AiChatSession session, String userMessage, String reply, String mode) {
         Instant now = Instant.now();
-        aiChatMessageRepository.save(buildMessage(session, "user", userMessage, null, now));
-        aiChatMessageRepository.save(buildMessage(session, "assistant", reply, configuredModel, now));
-        updateSessionAfterReply(session, userMessage, reply, now);
+        persistenceService.saveUserMessageAndCompleteSession(session, userMessage, reply, configuredModel, null, now);
 
         SseEmitter emitter = new SseEmitter(0L);
         sendSseEvent(emitter, "complete", Map.of(
@@ -460,54 +479,9 @@ public class AiChatService {
             Long sessionId
     ) {
         if (!accessContext.guest()) {
-            return findOwnedSession(userId, sessionId);
+            return persistenceService.findOwnedSession(userId, sessionId);
         }
-        return findOrCreateGuestSession(accessContext, sessionId);
-    }
-
-    private AiChatSession findOrCreateGuestSession(
-            AiGuestAccessService.AccessContext accessContext,
-            Long sessionId
-    ) {
-        if (sessionId != null) {
-            AiChatSession existing = aiChatSessionRepository.findByIdAndGuestVisitorId(sessionId, accessContext.visitorId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "访客会话不存在或无权访问"));
-            applyGuestSessionIp(existing, accessContext.ip());
-            return aiChatSessionRepository.save(existing);
-        }
-
-        Instant now = Instant.now();
-        AiChatSession session = new AiChatSession();
-        session.setUser(null);
-        session.setGuestVisitorId(accessContext.visitorId());
-        session.setTitle(DEFAULT_SESSION_TITLE);
-        session.setLastMessagePreview(null);
-        session.setSessionStartIp(accessContext.ip());
-        session.setLatestIp(accessContext.ip());
-        session.setIpChanged(Boolean.FALSE);
-        session.setIpChangedAt(null);
-        session.setUserVisible(Boolean.FALSE);
-        session.setUserHiddenAt(null);
-        session.setCreatedAt(now);
-        session.setUpdatedAt(now);
-        return aiChatSessionRepository.save(session);
-    }
-
-    private void applyGuestSessionIp(AiChatSession session, String currentIp) {
-        if (session == null || !StringUtils.hasText(currentIp)) {
-            return;
-        }
-        if (!StringUtils.hasText(session.getSessionStartIp())) {
-            session.setSessionStartIp(currentIp);
-        }
-        session.setLatestIp(currentIp);
-        session.setUserVisible(Boolean.FALSE);
-        if (!currentIp.equals(session.getSessionStartIp())) {
-            session.setIpChanged(Boolean.TRUE);
-            if (session.getIpChangedAt() == null) {
-                session.setIpChangedAt(Instant.now());
-            }
-        }
+        return persistenceService.findOrCreateGuestSession(accessContext.visitorId(), sessionId, accessContext.ip());
     }
 
     private Message toPromptMessage(AiChatMessage message) {
@@ -577,16 +551,6 @@ public class AiChatService {
         return userMessage;
     }
 
-    private AiChatMessage buildMessage(AiChatSession session, String role, String content, String modelName, Instant createdAt) {
-        AiChatMessage message = new AiChatMessage();
-        message.setSession(session);
-        message.setRole(role);
-        message.setContent(content);
-        message.setModelName(modelName);
-        message.setCreatedAt(createdAt);
-        return message;
-    }
-
     private AiChatSessionDto toSessionDto(AiChatSession session) {
         return AiChatSessionDto.builder()
                 .id(session.getId())
@@ -605,22 +569,6 @@ public class AiChatService {
                 .build();
     }
 
-    private String buildSessionTitle(String firstUserMessage) {
-        return trimToLength(firstUserMessage == null ? DEFAULT_SESSION_TITLE : firstUserMessage.trim(), 60, DEFAULT_SESSION_TITLE);
-    }
-
-    private String trimToPreview(String value) {
-        return trimToLength(value, 500, DEFAULT_SESSION_TITLE);
-    }
-
-    private String trimToLength(String value, int maxLength, String defaultValue) {
-        if (!StringUtils.hasText(value)) {
-            return defaultValue;
-        }
-        String trimmed = value.trim();
-        return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength);
-    }
-
     private boolean sendSseEvent(SseEmitter emitter, String eventName, Object data) {
         try {
             emitter.send(SseEmitter.event().name(eventName).data(data));
@@ -631,6 +579,12 @@ public class AiChatService {
         }
     }
 
+    private void releaseProviderPermit(AtomicBoolean released) {
+        if (released.compareAndSet(false, true)) {
+            concurrencyGuard.release();
+        }
+    }
+
     private void completeAssistantReply(
             SseEmitter emitter,
             AiChatSession session,
@@ -638,13 +592,7 @@ public class AiChatService {
             AiBlogRagService.AiBlogRagContext ragContext
     ) {
         Instant assistantMessageAt = Instant.now();
-        aiChatMessageRepository.save(buildMessage(session, "assistant", reply, configuredModel, assistantMessageAt));
-        session.setLastMessagePreview(trimToPreview(reply));
-        session.setUpdatedAt(assistantMessageAt);
-        aiChatSessionRepository.save(session);
-        if (session.getUser() != null) {
-            aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
-        }
+        persistenceService.saveAssistantAndCompleteSession(session, reply, configuredModel, ragContext, assistantMessageAt);
 
         sendSseEvent(emitter, "complete", buildCompleteEventPayload(
                 reply,
@@ -672,19 +620,14 @@ public class AiChatService {
         return payload;
     }
 
-    private void updateSessionAfterReply(AiChatSession session, String userMessage, String reply, Instant now) {
-        if (DEFAULT_SESSION_TITLE.equals(session.getTitle())) {
-            session.setTitle(buildSessionTitle(userMessage));
-        }
-        session.setLastMessagePreview(trimToPreview(reply));
-        session.setUpdatedAt(now);
-        aiChatSessionRepository.save(session);
-        if (session.getUser() != null) {
-            aiChatSessionVisibilityService.enforceRecentVisibleLimit(session.getUser().getId());
-        }
-    }
-
     private String resolveMode(AiBlogRagService.AiBlogRagContext ragContext) {
         return ragContext.hasContext() ? ragContext.getMode() : DEFAULT_MODE;
+    }
+
+    private SseEmitter buildBusyErrorEmitter() {
+        SseEmitter emitter = new SseEmitter(0L);
+        sendSseEvent(emitter, "error", Map.of("message", "AI 服务繁忙，请稍后再试"));
+        emitter.complete();
+        return emitter;
     }
 }

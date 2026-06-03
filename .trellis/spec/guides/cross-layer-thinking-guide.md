@@ -120,6 +120,8 @@ Events:
 
 A stream that receives no `chunk`, `complete`, or `error` must not leave the UI on pending text indefinitely. Backend provider streams need a bounded timeout that emits `error` when possible, and the frontend reliable stream reader needs its own bounded timeout/error path as a client-side fallback.
 
+AI provider saturation is part of the cross-layer contract. Backend provider work is bounded by `AI_PROVIDER_MAX_CONCURRENCY` / `ai.provider.max-concurrency` through the established guard. When the guard is full, `POST /api/ai/chat` returns a readable HTTP `429` failure and `POST /api/ai/chat/stream` emits an SSE `error` event followed by completion.
+
 ### Uploads
 
 Multipart endpoints do not use JSON request body. They still return JSON `ApiResponse`.

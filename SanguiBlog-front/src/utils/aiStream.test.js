@@ -71,4 +71,37 @@ try {
 
 assert.equal(pendingReader.isCancelled(), true);
 
+try {
+    await consumeSseStream({
+        reader: createReader([])
+    });
+    assert.fail('consumeSseStream should throw on empty stream EOF without terminal event');
+} catch (error) {
+    assert.equal(error.message, 'AI 服务连接已中断，请稍后再试');
+}
+
+try {
+    const chunks = [];
+    await consumeSseStream({
+        reader: createReader(['event: chunk\ndata: {"text":"hello"}\n\n']),
+        onChunk: (text) => chunks.push(text)
+    });
+    assert.fail('consumeSseStream should throw on chunk then EOF without terminal event');
+} catch (error) {
+    assert.equal(error.message, 'AI 服务连接已中断，请稍后再试');
+}
+
+const completeChunks = [];
+let completePayload = null;
+await consumeSseStream({
+    reader: createReader([
+        'event: chunk\ndata: {"text":"hello"}\n\n',
+        'event: complete\ndata: {"reply":"hello world","sessionId":1}\n\n'
+    ]),
+    onChunk: (text) => completeChunks.push(text),
+    onComplete: (payload) => { completePayload = payload; }
+});
+assert.deepEqual(completeChunks, ['hello']);
+assert.deepEqual(completePayload, { reply: 'hello world', sessionId: 1 });
+
 console.log('aiStream tests passed');

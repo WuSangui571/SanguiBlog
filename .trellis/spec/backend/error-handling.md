@@ -149,6 +149,7 @@ AI chat has special boundary behavior:
 - Guest access is resolved through `AiGuestAccessService`; captcha/block responses carry structured data using `AiAccessControlException`.
 - Empty user message throws `IllegalArgumentException`.
 - Upstream model failures become `ResponseStatusException(HttpStatus.BAD_GATEWAY, "...")`.
+- AI provider concurrency saturation becomes a fast user-facing busy response: JSON should use HTTP `429`; SSE should send an `error` event and complete.
 - SSE stream errors should send an `error` event if possible and complete the emitter.
 - Provider streams that stop producing `chunk`, `complete`, or `error` must be bounded by a server-side timeout; on timeout, dispose the provider subscription, send an SSE `error` event if possible, and complete the emitter.
 - If streaming fails but a sync fallback succeeds, complete with normal `complete` event.

@@ -160,6 +160,53 @@ curl -i http://localhost:8090/api/analytics/client-ip
 curl -i -H "X-Forwarded-For: 203.0.113.10" http://localhost:8090/api/analytics/client-ip
 ```
 
+### 6.2 AI DashScope DNS / 网络连通性诊断
+
+当生产环境 AI 聊天无响应时，以下命令可诊断 DashScope 域名解析与网络连通性（不暴露 API key）：
+
+**从 web 容器内测试 DNS：**
+
+```bash
+docker compose -f docker-compose.prod.yml exec web sh -c 'getent hosts dashscope.aliyuncs.com || nslookup dashscope.aliyuncs.com || true'
+```
+
+如果 web 镜像缺少网络工具，使用临时 Alpine 容器在同网络下诊断：
+
+```bash
+docker run --rm --network sanguiblog_sanguiblog-net alpine:3.20 sh -c '
+  apk add --no-cache bind-tools curl >/dev/null
+  nslookup dashscope.aliyuncs.com
+  curl -I --connect-timeout 5 https://dashscope.aliyuncs.com
+'
+```
+
+**检查 DashScope API Key 是否注入（不打印密钥值）：**
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend sh -c 'test -n "$SPRING_AI_DASHSCOPE_API_KEY" && echo "SPRING_AI_DASHSCOPE_API_KEY is set" || echo "SPRING_AI_DASHSCOPE_API_KEY is empty"'
+```
+
+**AI RAG 临时关闭恢复：**
+
+当生产 RAG / DashScope DNS 异常且已导致服务不可用时，可临时关闭 RAG 作为止血操作：
+
+```bash
+# 在 .env 中设置 AI_RAG_ENABLED=false，然后重新创建 backend 容器
+docker compose -f docker-compose.prod.yml up -d backend
+docker compose -f docker-compose.prod.yml ps
+```
+
+关闭 RAG 后，AI 聊天仍可使用基础对话功能（`DATABASE_SESSION_HISTORY` 模式），仅知识库增强检索不可用。
+
+**AI 并发保护检查：**
+
+生产环境中 AI provider 全局并发数默认为 3（通过 `AI_PROVIDER_MAX_CONCURRENCY` 环境变量可调，未设置时使用默认值 3）。当并发已满时，新请求会收到 "AI 服务繁忙，请稍后再试" 提示并快速失败，避免 Hikari 连接池被耗尽：
+
+```bash
+# 查看 backend 日志中并发 guard 相关事件
+docker compose -f docker-compose.prod.yml logs --tail 160 backend 2>&1 | grep -i "concurrency\|busy\|繁忙"
+```
+
 ## 7. 镜像 Tag 策略与生产部署
 
 ### 7.1 Tag 规则

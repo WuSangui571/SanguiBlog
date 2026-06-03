@@ -130,6 +130,7 @@ Critical contracts:
 - Guest sessions use `guest_visitor_id`, `session_start_ip`, `latest_ip`, `ip_changed`, and `ip_changed_at`.
 - User-side deletion is soft visibility: `user_visible=false`, `user_hidden_at` set. Admin audit must still see the session.
 - User history returns only the newest 10 visible sessions; older visible sessions are automatically hidden by `AiChatSessionVisibilityService`.
+- Chat session/message writes should stay in short MySQL transactions. Do not hold a MySQL transaction open while RAG embedding, vector search, chat provider sync calls, or chat provider stream subscriptions are waiting on external services.
 - Knowledge sync services must flush after deleting old chunk mappings before recreating stable vector IDs. This prevents unique-key conflicts in the same transaction.
 - Startup knowledge sync must isolate each post/document so one bad item does not poison the whole Hibernate session.
 
