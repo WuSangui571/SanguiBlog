@@ -1139,3 +1139,43 @@ Replaced remote GeoIP lookup with local ip2region, filtered timezone fallbacks, 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 20: Guest BotGuard public read relief
+
+**Date**: 2026-06-03
+**Task**: Guest BotGuard public read relief
+**Branch**: `fix/guest-botguard-public-read-limits`
+
+### Summary
+
+Archived completed guest BotGuard public-read relief task after manual acceptance.
+
+### Main Changes
+
+- Commit hash: 80a96f8 (fix: guest public-read BotGuard relief).
+- Main modules: backend security BotGuard scoring and BotGuard unit tests.
+- Updated files: SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardProperties.java; SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardEngine.java; SanguiBlog-server/src/test/java/com/sangui/sanguiblog/security/botguard/BotGuardEngineTest.java; .trellis/tasks/archive/2026-06/06-03-guest-botguard-public-read-limits/.
+- Verification passed before commit: mvn -q "-Dtest=BotGuardEngineTest,IpUtilsTest,SecurityConfigTest" test; mvn -q -DskipTests compile; docker compose config; git diff --check; debug-residue scan for console.log/debugger/TODO and test-only assertions.
+- Manual acceptance: user confirmed manual tests passed before requesting record-session.
+- Result: completed and archived the guest BotGuard public-read limits task. Normal guest public GET reads receive no-cookie and empty-referrer relief plus configured good score, while total/content rate, scanner path, user-agent, stable interval, C-segment, captcha, and block protections remain active.
+- Boundaries: no frontend API/UI changes, no DB/schema changes, no auth/admin/upload changes, no Docker or infra config changes, no auto commit or push from Codex during record-session.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `80a96f8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
