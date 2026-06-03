@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 20
+- **Total Sessions**: 21
 - **Last Active**: 2026-06-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1181 | Active |
+| `journal-1.md` | ~1215 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 21 | 2026-06-03 | Upload storage permission initialization | `8518d1a`, `7392bf8` | `fix/upload-storage-permissions` |
 | 20 | 2026-06-03 | Guest BotGuard public read relief | `80a96f8` | `fix/guest-botguard-public-read-limits` |
 | 19 | 2026-06-03 | Admin analytics GeoIP display regression | `3d8a1fd` | `fix/admin-analytics-ip-geo-display` |
 | 18 | 2026-05-31 | BUG #2 guest article comment login prompt | `d466e98869a005ed7875fb483ac9d1cf19708553` | `codex/bug-2-guest-comment-login-prompt` |

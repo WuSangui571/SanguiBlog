@@ -1179,3 +1179,37 @@ Archived completed guest BotGuard public-read relief task after manual acceptanc
 ### Next Steps
 
 - None - task complete
+
+
+## Session 21: Upload storage permission initialization
+
+**Date**: 2026-06-03
+**Task**: Upload storage permission initialization
+**Branch**: `fix/upload-storage-permissions`
+
+### Summary
+
+完成上传存储权限初始化收尾。主要变更模块：后端 StoragePathResolver fail-fast、StoragePathResolverTest 回归测试、本地和生产 Docker uploads-init、docker-deploy/docker-data-sync 文档、cross-layer spec。更新文件：StoragePathResolver.java、StoragePathResolverTest.java、docker-compose.yml、docker-compose.prod.yml、docs/docker-deploy.md、docs/docker-data-sync.md、.trellis/spec/guides/cross-layer-thinking-guide.md、归档 task 目录。验证命令和结果：mvn -q -Dtest=StoragePathResolverTest,UploadControllerStreamHandlingTest,UploadControllerAuthorizationTest test PASS；mvn -q -DskipTests compile PASS；docker compose config --quiet PASS；docker compose -f docker-compose.prod.yml config --quiet PASS；docker compose up --force-recreate uploads-init PASS，日志 uploads directories initialized；git diff --check PASS；用户手动 Docker 启动和上传验收通过。结果和边界：上传 API 路径、multipart 字段、ApiResponse 形状、权限注解、DB schema、前端 API 均未改变；docker compose restart backend 不会重跑 one-shot uploads-init，后续 root-owned 目录需完整 compose up 路径或显式 root 修复。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8518d1a` | (see git log) |
+| `7392bf8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
