@@ -66,6 +66,8 @@ public class BotGuardEngine {
         }
         boolean hasCookie = request.getHeader("Cookie") != null || (request.getCookies() != null && request.getCookies().length > 0);
 
+        boolean publicRead = isPublicRead(method, path);
+
         String cSegment = toCSegment(ip);
         int cSegmentUnique = cSegmentStates.get(cSegment, k -> new CSegmentState()).touchAndCount(ip, nowSec);
 
@@ -74,10 +76,10 @@ public class BotGuardEngine {
 
         IpRiskState state = ipStates.get(ip, k -> new IpRiskState());
         state.total.increment(nowSec);
-        if (!hasCookie) {
+        if (!hasCookie && !publicRead) {
             state.noCookie.increment(nowSec);
         }
-        if (!StringUtils.hasText(referer)) {
+        if (!StringUtils.hasText(referer) && !publicRead) {
             state.emptyReferer.increment(nowSec);
         }
         boolean assetReq = isAssetRequest(path);
@@ -137,6 +139,9 @@ public class BotGuardEngine {
         }
         if (StringUtils.hasText(referer)) {
             good += 2;
+        }
+        if (publicRead) {
+            good += props.getPublicReadGoodScore();
         }
         delta -= good;
 
@@ -295,6 +300,17 @@ public class BotGuardEngine {
                 || lower.endsWith(".woff2")
                 || lower.endsWith(".ttf")
                 || lower.endsWith(".map");
+    }
+
+    private boolean isPublicRead(String method, String path) {
+        if ("GET".equalsIgnoreCase(method)) {
+            if (StringUtils.hasText(path)) {
+                return props.getPublicReadPathPrefixes().stream()
+                        .filter(StringUtils::hasText)
+                        .anyMatch(path::startsWith);
+            }
+        }
+        return false;
     }
 
     private static boolean looksLikeScanner(String path) {

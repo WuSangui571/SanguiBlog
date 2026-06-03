@@ -1,0 +1,11 @@
+{"file": ".trellis\\tasks\\06-03-guest-botguard-public-read-limits\\prd.md", "reason": "Check acceptance criteria, boundaries, and required tests"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "Check BotGuard response status and payload stability"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Check backend security/reuse/test requirements"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Check frontend verification if frontend is touched"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Check public-read BotGuard contract"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\security\\botguard\\BotGuardProperties.java", "reason": "Check configured public-read relief and thresholds"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\security\\botguard\\BotGuardEngine.java", "reason": "Check scoring changes and non-GET/high-frequency boundaries"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\security\\botguard\\BotGuardFilter.java", "reason": "Check logged-in bypass unchanged and response shape intact"}
+{"file": "SanguiBlog-front\\src\\api.js", "reason": "Check no unintended API wrapper/captcha contract changes"}
+{"file": "SanguiBlog-front\\src\\hooks\\useBlogData.jsx", "reason": "Check public loader behavior if touched"}
+{"file": "SanguiBlog-front\\src\\appfull\\public\\ArticleList.jsx", "reason": "Check article list UX only if touched"}

@@ -38,5 +38,18 @@ public class BotGuardProperties {
             "/api/posts",
             "/api/comments"
     );
+
+    private List<String> publicReadPathPrefixes = List.of(
+            "/api/site",
+            "/api/categories",
+            "/api/tags",
+            "/api/comments/recent",
+            "/api/about",
+            "/api/analytics/client-ip",
+            "/api/games",
+            "/api/posts"
+    );
+
+    private int publicReadGoodScore = 8;
 }
 

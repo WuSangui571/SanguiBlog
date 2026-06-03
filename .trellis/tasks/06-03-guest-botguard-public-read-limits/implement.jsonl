@@ -1,0 +1,23 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\06-03-guest-botguard-public-read-limits\\prd.md", "reason": "Task PRD, chosen option 2, acceptance criteria, boundaries, tests"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend layer placement for security botguard changes"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "BotGuard 403/429 ApiResponse contract"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend retrieve-first, security and testing requirements"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Security/risk event logging boundaries"}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "Frontend public data/API ownership if frontend is touched"}
+{"file": ".trellis\\spec\\frontend\\hook-guidelines.md", "reason": "useBlogData loader behavior and public data state"}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "Public server-state and auth state contracts"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "BotGuard payload and API error parsing contract"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend tests/build if UI files change"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "Avoid new public captcha overlay unless scope changes"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Reuse existing BotGuard/API paths"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Public-read BotGuard contract and validation matrix"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\security\\botguard\\BotGuardProperties.java", "reason": "Existing BotGuard thresholds and captcha prefixes"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\security\\botguard\\BotGuardEngine.java", "reason": "Risk scoring counters and action decision owner"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\security\\botguard\\BotGuardFilter.java", "reason": "Valid-JWT bypass and BotGuard response shape"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\BotGuardController.java", "reason": "Existing captcha generate/verify endpoint"}
+{"file": "SanguiBlog-front\\src\\api.js", "reason": "Existing public read API functions and BotGuard captcha helpers"}
+{"file": "SanguiBlog-front\\src\\hooks\\useBlogData.jsx", "reason": "Public post loader error handling"}
+{"file": "SanguiBlog-front\\src\\appfull\\public\\ArticleList.jsx", "reason": "Public article-list load-failure UI"}
