@@ -1213,3 +1213,81 @@ Archived completed guest BotGuard public-read relief task after manual acceptanc
 ### Next Steps
 
 - None - task complete
+
+
+## Session 22: Production AI chat stream timeout hang
+
+**Date**: 2026-06-03
+**Task**: Production AI chat stream timeout hang
+**Branch**: `fix/prod-ai-chat-no-response`
+
+### Summary
+
+Archived the production AI chat no-response task after local acceptance and recorded the backend/frontend SSE timeout fix.
+
+### Main Changes
+
+Task: 06-03-prod-ai-chat-no-response
+Commit: 2d21993 fix: production AI chat stream timeout hang
+
+Main modules changed:
+- Backend AI stream owner: SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java
+- Frontend AI stream API: SanguiBlog-front/src/api.js
+- Frontend SSE parser/helper: SanguiBlog-front/src/utils/aiStream.js
+- Frontend regression test: SanguiBlog-front/src/utils/aiStream.test.js
+- Trellis specs: backend/error-handling.md, frontend/quality-guidelines.md, guides/cross-layer-thinking-guide.md
+
+Updated files:
+- .trellis/spec/backend/error-handling.md
+- .trellis/spec/frontend/quality-guidelines.md
+- .trellis/spec/guides/cross-layer-thinking-guide.md
+- SanguiBlog-front/src/api.js
+- SanguiBlog-front/src/utils/aiStream.js
+- SanguiBlog-front/src/utils/aiStream.test.js
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java
+- .trellis/tasks/archive/2026-06/06-03-prod-ai-chat-no-response/*
+
+Verification passed:
+- mvn -q "-Dtest=AiChatServiceTest,AiGuestAccessServiceTest,AiAssistantCapabilityServiceTest,AiCurrentPageContextServiceTest,AiReferencedPostContextServiceTest" test
+- mvn -q -DskipTests compile
+- node src/utils/aiStream.test.js
+- node src/appfull/ui/AiAssistantWidget.test.js
+- node src/appfull/ui/AiAssistantMobileViewport.test.js
+- node src/appfull/noNativeBlockingDialogs.test.js
+- cmd /c npm run lint
+- cmd /c npm run build
+- docker compose config --quiet
+- docker compose -f docker-compose.prod.yml config --quiet
+- git diff --check
+
+Manual acceptance:
+- User reported local manual tests passed.
+- Production-side acceptance was not possible in this round.
+
+Result:
+- AI chat stream can no longer leave the widget indefinitely on pending text when the provider stream produces no terminal SSE event.
+- Backend stream has a bounded emitter timeout and emits SSE error when possible.
+- Frontend reliable stream has a bounded reader timeout and cancels the reader on timeout.
+
+Boundary:
+- No DB schema, Docker, nginx, Redis, MQ, or cross-service API contract changes.
+- Production deployment smoke remains a follow-up manual acceptance item.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2d21993` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
