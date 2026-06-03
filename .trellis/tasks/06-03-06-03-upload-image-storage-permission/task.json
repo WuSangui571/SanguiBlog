@@ -1,0 +1,53 @@
+{
+  "id": "06-03-upload-image-storage-permission",
+  "name": "06-03-upload-image-storage-permission",
+  "title": "上传图片权限问题",
+  "description": "Fix Docker/local uploads volume ownership so admin post cover and article image uploads do not require manual chown.",
+  "status": "planning",
+  "dev_type": "fullstack",
+  "scope": "backend storage initialization, Docker uploads volume ownership, production/local compose/runbook validation; no business code implementation by Codex in planning round",
+  "package": null,
+  "priority": "P1",
+  "creator": "sangui",
+  "assignee": "sangui",
+  "createdAt": "2026-06-03",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

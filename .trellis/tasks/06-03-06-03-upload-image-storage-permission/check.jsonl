@@ -1,0 +1,11 @@
+{"file": ".trellis/workflow.md", "reason": "Trellis workflow, check, and finish-work phase authority"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Check upload/storage error status and response shape"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check required security/upload and Docker verification"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Check Docker uploads_data and API contracts remain aligned"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/config/StoragePathResolverTest.java", "reason": "Check writable-directory/path traversal regression tests"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/controller/UploadControllerAuthorizationTest.java", "reason": "Check upload permissions remain unchanged"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/controller/UploadControllerStreamHandlingTest.java", "reason": "Check cover upload stream/path behavior remains unchanged"}
+{"file": "docker-compose.yml", "reason": "Check local compose upload init/volume contract"}
+{"file": "docker-compose.prod.yml", "reason": "Check production compose upload init/volume contract"}
+{"file": ".trellis/tasks/06-03-06-03-upload-image-storage-permission/prd.md", "reason": "Check against acceptance criteria and forbidden scope"}
+{"file": ".trellis/tasks/06-03-06-03-upload-image-storage-permission/research.md", "reason": "Check expected files, risks, and required tests"}

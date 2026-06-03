@@ -1,0 +1,19 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Upload ownership belongs in existing StoragePathResolver/PostAssetService/AvatarStorageService paths"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Upload/storage errors must keep ApiResponse and GlobalExceptionHandler semantics"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Security/upload and Docker verification requirements"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Upload failure logging boundaries"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing upload/storage entry points; no duplicate resolver/controller"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Docker uploads_data and upload API cross-layer contracts"}
+{"file": "docs/docker-deploy.md", "reason": "Production uploads-init and write-probe runbook"}
+{"file": "docs/docker-data-sync.md", "reason": "Root-owned uploads restore root cause and repair workflow"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/StoragePathResolver.java", "reason": "Central storage directory creation and validation"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostAssetService.java", "reason": "Article asset folder normalization and file copy"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/UploadController.java", "reason": "Post cover and article image upload endpoint contracts"}
+{"file": "SanguiBlog-server/Dockerfile", "reason": "Backend runtime user and image-layer upload root setup"}
+{"file": "docker-compose.yml", "reason": "Local uploads_data volume and missing uploads-init candidate"}
+{"file": "docker-compose.prod.yml", "reason": "Production uploads-init service and backend dependency"}
+{"file": ".trellis/tasks/06-03-06-03-upload-image-storage-permission/prd.md", "reason": "Primary requirements and acceptance criteria"}
+{"file": ".trellis/tasks/06-03-06-03-upload-image-storage-permission/research.md", "reason": "Focused code and Docker research for implementation"}

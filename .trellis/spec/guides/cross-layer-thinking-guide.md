@@ -241,15 +241,17 @@ Containerized deployment is an infra/cross-layer contract, not a business API ch
 | MySQL init | `sanguiblog_db.sql` mounted at `/docker-entrypoint-initdb.d/` | Initializes only empty Docker data volumes. It is not a migration path for existing data. |
 | MySQL readiness | `docker-compose.yml` `mysql.healthcheck.test` | Must authenticate to `$MYSQL_DATABASE` over TCP (`--protocol=TCP -h 127.0.0.1`) and query a stable core table such as `roles`. Do not use socket-only probes for schema readiness because the MySQL image can expose a local init socket before `/docker-entrypoint-initdb.d/` has fully completed. |
 | PgVector init | `docker/postgres/init/01-enable-pgvector.sql` | Creates `vector` extension for the RAG vector store. |
-| Upload storage | `uploads_data` volume mounted at `/data/uploads` | URLs remain `/uploads/...`; `StoragePathResolver` still owns directory initialization. |
+| Upload storage | `uploads_data` volume mounted at `/data/uploads` | URLs remain `/uploads/...`; `StoragePathResolver` still owns directory initialization and must fail fast when the upload root or critical subdirectories are not writable by the backend process. |
+| Upload volume permissions | `docker-compose.yml`, `docker-compose.prod.yml` `uploads-init` | Local and production Compose must run a one-shot root init service before `backend`; it creates `/data/uploads/posts`, `/data/uploads/covers`, `/data/uploads/avatar`, `/data/uploads/games`, and `/data/uploads/site/wechat`, then `chown`s the upload volume to backend uid/gid `100:101` and grants owner/group write traversal. The backend Java process must still run as non-root `sangui:sangui`. |
+| Upload restart limitation | `docs/docker-deploy.md` | `docker compose restart backend` does not rerun the one-shot `uploads-init` service. If root-owned upload directories are introduced after startup, use a supported `docker compose up -d --build` / production `up -d` path or an explicit root repair command; do not imply Java can repair ownership as non-root. |
 
 Good/Base/Bad cases:
 
 | Case | Expected Result |
 |------|-----------------|
-| Good | Fresh server with Docker and a filled `.env` starts `web`, `backend`, `mysql`, and `pgvector`; `/`, `/api/site/meta`, `/sitemap.xml`, `/robots.txt`, and `/uploads/...` keep existing semantics. `/api/site/meta.assetBaseUrl` is `""` for same-origin Docker and `buildAssetUrl('/uploads/foo.png')` resolves to the browser origin path without `/uploads/uploads`. |
+| Good | Fresh server with Docker and a filled `.env` starts `uploads-init`, `web`, `backend`, `mysql`, and `pgvector`; `/data/uploads/posts`, `/data/uploads/covers`, and `/data/uploads/avatar` are writable by the backend non-root user; `/`, `/api/site/meta`, `/sitemap.xml`, `/robots.txt`, and `/uploads/...` keep existing semantics. `/api/site/meta.assetBaseUrl` is `""` for same-origin Docker and `buildAssetUrl('/uploads/foo.png')` resolves to the browser origin path without `/uploads/uploads`. |
 | Base | `AI_RAG_ENABLED=false` and no DashScope key still allow core blog pages, admin, uploads, and MySQL-backed features to run. |
-| Bad | MySQL reports healthy from a socket-only init probe before `sanguiblog_db.sql` is complete, backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, SSE is buffered by Nginx, or asset URL config causes duplicated `/uploads/uploads/...` requests. |
+| Bad | MySQL reports healthy from a socket-only init probe before `sanguiblog_db.sql` is complete, backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, SSE is buffered by Nginx, upload directories remain root-owned `755` without a fail-fast startup error, or asset URL config causes duplicated `/uploads/uploads/...` requests. |
 
 Uploaded game CSP contract:
 

@@ -633,11 +633,11 @@ scp -r local-backup-dir user@new-server:/tmp/sanguiblog-restore/
 | 从服务器 scp 下载速度慢 | 网络带宽限制或 uploads 包过大 | 考虑在服务器端分段压缩，或使用 rsync 按需同步 |
 | Docker volume 路径在 Windows 下无法直接访问 | Docker Desktop 将 volumes 存储在 WSL2 虚拟机中 | 使用 `docker compose cp` 或 `docker run --rm -v` 操作 volume 数据 |
 | 本地 `.env` 中 `SPRING_DATASOURCE_URL` 包含 `characterEncoding=utf8mb4` | MySQL Connector/J 不支持此 Java charset 名称 | 改为 `characterEncoding=utf8`，依赖 MySQL server collation 保持 utf8mb4 |
-| 恢复后上传失败："无法创建存储目录" | `docker compose cp` 或 tar 解压时创建的目录 user/group 为 root，backend 以非 root 用户 `sangui:sangui` 运行无法写入子目录 | 见下方 "uploads 权限修复" 章节 |
+| 恢复后上传失败："无法创建存储目录" | `docker compose cp` 或 tar 解压时创建的目录 user/group 为 root，backend 以非 root 用户 `sangui:sangui` 运行无法写入子目录 | 见下方 "uploads 权限修复" 章节。注意：backend 启动时 `StoragePathResolver` 会对上传根目录及 `posts`/`covers`/`avatar` 子目录执行可写性检查，若不可写会立即抛出 `IllegalStateException` 并提示 `chown` 修复命令，而非等到上传请求时才暴露问题 |
 
 ### 9.1 uploads 权限修复
 
-Backend 容器以非 root 用户 `sangui:sangui`（uid=100, gid=101）运行。恢复 uploads 时，`docker compose cp` 会将上传的 `avatar/`、`posts/`、`covers/` 等子目录写为 `root:root 755`，导致 backend 无法在子目录下创建新文件，报错 "无法创建存储目录"。
+Backend 容器以非 root 用户 `sangui:sangui`（uid=100, gid=101）运行。恢复 uploads 时，`docker compose cp` 会将上传的 `avatar/`、`posts/`、`covers/` 等子目录写为 `root:root 755`，导致 backend 无法在子目录下创建新文件，报错 "无法创建存储目录"。此外，backend 启动时 `StoragePathResolver` 会对上传根目录及关键子目录执行可写性检查，若不可写会立即抛出 `IllegalStateException` 并提示 `chown` 修复命令（fail-fast），而非等到上传请求时才暴露问题。
 
 **自动化脚本已内置修复**：`scripts/docker-data-sync-local-restore.ps1` 在 STEP 8 重新复制 uploads 后，会自动通过 backend 容器以 root 执行 `chown -R sangui:sangui /data/uploads`，然后验证 `posts`、`covers`、`avatar` 三个关键目录可写。
 

@@ -104,5 +104,14 @@ public class StoragePathResolver {
         } catch (IOException e) {
             throw new IllegalStateException("无法创建存储目录: " + path, e);
         }
+        if (!Files.isDirectory(path)) {
+            throw new IllegalStateException("存储路径已存在但不是目录: " + path);
+        }
+        if (!Files.isWritable(path)) {
+            throw new IllegalStateException(
+                    "存储目录存在但不可写: " + path
+                    + " (请检查目录权限，Docker 环境下可执行: "
+                    + "docker compose exec -u root backend sh -c \"chown -R sangui:sangui /data/uploads\")");
+        }
     }
 }
