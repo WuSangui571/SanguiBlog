@@ -1369,3 +1369,72 @@ Archived prod AI RAG provider isolation after local acceptance; production smoke
 ### Next Steps
 
 - None - task complete
+
+
+## Session 24: Version 2.3.1 README cleanup
+
+**Date**: 2026-06-05
+**Task**: Version 2.3.1 README cleanup
+**Branch**: `chore/version-2-3-1-readme-cleanup`
+
+### Summary
+
+Recorded V2.3.1 version/readme cleanup after manual acceptance and archived the Trellis task.
+
+### Main Changes
+
+## Commit
+- 898a40a docs: update V2.3.1 version docs
+
+## Main changes
+- Bumped public site version from V2.3.0 to V2.3.1.
+- Kept backend site.version and frontend fallback version displays aligned.
+- Updated English and Chinese README current-version text.
+- Removed stale release/ project-structure entries from both README files.
+- Added a shared root-anchored /Trellis/ ignore rule while keeping .trellis/ active.
+
+## Updated files
+- .gitignore
+- README.md
+- README.zh-CN.md
+- SanguiBlog-server/src/main/resources/application.yaml
+- SanguiBlog-front/src/appfull/public/HomeView.jsx
+- SanguiBlog-front/src/appfull/ui/Navigation.jsx
+- .trellis/tasks/archive/2026-06/06-05-06-05-version-2-3-1-readme-cleanup
+
+## Verification
+- Manual acceptance: user reported manual tests passed before record-session.
+- git diff --check: passed.
+- targeted V2.3.0 / 2.3.0 search in version/docs/display files: no matches.
+- rg --files release: release directory absent as expected.
+- docker compose -f docker-compose.prod.yml config --quiet: passed.
+- mvn -q -DskipTests compile: passed after rerun with network access for Maven dependency resolution.
+- node src/appfull/noNativeBlockingDialogs.test.js: passed.
+- cmd /c npm run lint: passed.
+- cmd /c npm run build: passed after rerun outside sandbox because Vite needed to write node_modules/.vite-temp.
+- debug scan on changed code files: no console.log, debugger, TODO, any, or non-null assertion issue found.
+
+## Result and boundaries
+- Task completed and archived after manual acceptance and commit.
+- No release document was created.
+- No Java business logic, API contract, DB schema, Docker/Nginx runtime behavior, permissions, AI/RAG, or dependency version was changed.
+- Spec docs did not need updates because this reused the existing site.version -> /api/site/meta data.version -> frontend display contract.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `898a40a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

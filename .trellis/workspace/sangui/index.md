@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 23
-- **Last Active**: 2026-06-03
+- **Total Sessions**: 24
+- **Last Active**: 2026-06-05
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1371 | Active |
+| `journal-1.md` | ~1440 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 24 | 2026-06-05 | Version 2.3.1 README cleanup | `898a40a` | `chore/version-2-3-1-readme-cleanup` |
 | 23 | 2026-06-03 | Production AI RAG provider isolation | `d268164` | `fix/prod-ai-rag-provider-isolation` |
 | 22 | 2026-06-03 | Production AI chat stream timeout hang | `2d21993` | `fix/prod-ai-chat-no-response` |
 | 21 | 2026-06-03 | Upload storage permission initialization | `8518d1a`, `7392bf8` | `fix/upload-storage-permissions` |
