@@ -330,25 +330,32 @@ curl -i http://localhost/robots.txt
 
 ### Docker Data Sync / Restore
 
-Production-to-local Docker data restore is also an infra/cross-layer contract. Keep the executable workflow in:
+Production-to-local Docker data backup and restore is an infra/cross-layer contract. Keep the executable workflow in:
 
 | Concern | File / Command | Contract |
 |---------|----------------|----------|
-| Main guide | `docs/docker-data-sync.md` | Documents Linux server export, Windows local restore, rollback, sensitive data rules, troubleshooting, and verification. |
-| Local entry | `scripts/docker-data-sync-local-restore.ps1` | Supports `-ServerHost`, `-ServerUser`, `-RemoteBackupDir`, `-LocalBackupDir`, `-SshPort`, `-ComposeProjectDir`, `-RestoreUploadsMode Replace|Merge`, `-SkipDownload`, `-SkipMysql`, `-SkipPgVector`, `-SkipUploads`, and `-DryRun`. |
-| MySQL export | `mysqldump --single-transaction --routines --triggers --events --default-character-set=utf8mb4` | Produces `mysql.sql`; restore copies the file into the `mysql` container and imports with `mysql --default-character-set=utf8mb4`. |
-| PgVector export | `pg_dump -Fc` | Produces binary `pgvector.dump`; restore must copy the dump into the `pgvector` container and run `pg_restore` from that file. Do not pipe this binary through PowerShell text streams. |
-| uploads export | `tar -czf uploads.tar.gz -C <uploads-parent> <uploads-dir-name>` | Restore must reject absolute paths, `..` path traversal, and then copy safe files into `/data/uploads`. After copy, restore must run root `chown -R sangui:sangui /data/uploads` through the `backend` container and verify backend non-root user can write to `avatar/`, `posts/`, and `covers/` directories. |
+| Main guide | `docs/docker-data-sync.md` | Two-part handbook: (1) Production Linux to local Windows backup, (2) Local backup to local Docker restore. Covers rollback, sensitive data rules, troubleshooting, and verification. |
+| Local entry | `scripts/docker-data-sync-local-restore.ps1` | Supports `-Mode BackupOnly|RestoreOnly|BackupAndRestore` (default `RestoreOnly`), `-ServerHost`, `-ServerUser`, `-RemoteBackupDir` (auto-generated in backup modes), `-LocalBackupDir`, `-SshPort`, `-ComposeProjectDir`, `-RestoreUploadsMode Replace|Merge`, `-SkipDownload`, `-SkipMysql`, `-SkipPgVector`, `-SkipUploads`, `-DryRun`, `-VolumeArchiveImage`, plus backup-mode parameters: `-RemoteProjectDir`, `-RemoteComposeFile`, `-RemoteBackupRoot`, `-RemoteHostLabel`, `-KeepRemoteBackup`, `-CleanupRemoteBackup`, `-BackupTimestamp`. |
+| Remote backup | `-Mode BackupOnly\|BackupAndRestore` via SSH | Script SSHes to production server, requires the project `.env`, but does not shell-source the full file. Docker Compose reads `.env` and injects database variables into mysql/pgvector/web containers to produce `mysql.sql`, `pgvector.dump`, `uploads.tar.gz`, `SHA256SUMS`, and `manifest.json`. All secret env vars expand only inside remote containers. |
+| MySQL export / restore | `mysqldump --single-transaction --routines --triggers --events --default-character-set=utf8mb4 --set-gtid-purged=OFF --no-tablespaces` | Produces `mysql.sql`; `--no-tablespaces` avoids requiring global `PROCESS` privilege when backup falls back to the normal MySQL app user. Restore copies the file into the `mysql` container and imports with `mysql --default-character-set=utf8mb4`. Before import, restore must wait for `mysqladmin ping` as root, not Compose `healthy`, because the Compose healthcheck queries the `roles` table and can stay non-healthy after the restore script has recreated an empty database but before dump import. |
+| PgVector export / restore | `pg_dump -Fc` | Produces binary `pgvector.dump`; restore must copy the dump into the `pgvector` container and run `pg_restore` from that file. Do not pipe this binary through PowerShell text streams. PgVector restore SQL (`DROP DATABASE`, `CREATE DATABASE`, `CREATE EXTENSION`, verification queries) should execute from temporary SQL files copied into the container rather than nested `psql -c` shell strings. |
+| uploads export | `tar -czf - -C /data uploads` from web/backend container | Restore must reject absolute paths, `..` path traversal, and then copy safe files into `/data/uploads`. After copy, restore must run root `chown -R sangui:sangui /data/uploads` through the `backend` container and verify backend non-root user can write to `avatar/`, `posts/`, and `covers/` directories. |
+| Local volume safety backup | `docker run --rm --pull=never ... $VolumeArchiveImage tar ...` | Before overwriting local data, restore backs up existing `mysql_data`, `pgvector_data`, and `uploads_data` volumes with a helper image that contains `tar` (default `alpine:3.21`, matching local Compose `uploads-init`). Dry-run must warn if the image is missing locally; real restore may pull it before touching volumes and must stop if backup fails. |
 | Integrity files | `SHA256SUMS`, optional `manifest.json` | Checksum mismatch stops before DB import or volume writes. Manifest records file sizes, table/row counts, upload counts, and non-secret source labels. |
+| Local health check URL | `.env WEB_PORT` or Compose published web port | Restore health checks and manual verification must target the actual local web port. Do not assume port 80 when `.env` maps web to another port such as `8090`. |
 
 Validation/error matrix:
 
 | Case | Expected Result |
 |------|-----------------|
-| Missing local `.env` key | Stop before restore and print only key names, not values. |
+| `-Mode BackupOnly` missing `-RemoteProjectDir` | Fail before any remote action, print required parameter. |
+| Remote project directory not found or missing `.env` | Stop, do not print `.env` contents. |
+| Remote `docker compose` unavailable | Stop, prompt production Compose requirement. |
+| Remote MySQL/PgVector/web container unhealthy | Backup fails at that step; retain partial files in remote backup dir. |
+| Missing local `.env` key (RestoreOnly/BackupAndRestore) | Stop before restore and print only key names, not values. |
 | Backend Docker build downloads from Maven Central and stalls | Treat as build configuration drift; verify `SanguiBlog-server/.mvn/settings.xml` is copied before Maven runs and logs show `Downloading from aliyun-public`. |
 | Missing remote backup file or checksum mismatch | Stop before touching local Docker volumes. |
-| Existing local volumes | Back up `mysql_data`, `pgvector_data`, and `uploads_data` before overwrite; never default to `docker compose down -v`. |
+| Existing local volumes | Back up `mysql_data`, `pgvector_data`, and `uploads_data` before overwrite; never default to `docker compose down -v`; stop if the helper image cannot be pulled or a volume backup command fails. |
 | PgVector extension missing | Run/check `CREATE EXTENSION IF NOT EXISTS vector`; stop if unavailable. |
 | uploads archive contains unsafe path | Stop before extraction. |
 | Restored uploads subdirectories owned by root | Restore script runs `chown -R sangui:sangui /data/uploads` from backend container as root; if chown or write probe fails, fail restore with clear message and manual fix command. |
@@ -359,16 +366,27 @@ Good/Base/Bad cases:
 
 | Case | Expected Result |
 |------|-----------------|
-| Good | MySQL, PgVector, and uploads restore; `/api/site/meta`, `/api/games`, uploaded assets, and RAG checks pass. |
-| Base | AI/RAG intentionally disabled or DashScope key absent; core blog/admin/uploads pass and RAG is marked skipped. |
-| Bad | Stale MySQL schema, missing vector rows when RAG is enabled, unsafe uploads archive, or SPA fallback for static uploads. |
+| Good: `BackupAndRestore` full run | MySQL, PgVector, and uploads restore; `/api/site/meta`, `/api/games`, uploaded assets, and RAG checks pass. |
+| Good: `BackupOnly` completes | Local backup dir contains `mysql.sql`, `pgvector.dump`, `uploads.tar.gz`, `SHA256SUMS`, and `manifest.json`; checksum passes; no local Docker volumes touched. |
+| Base: `RestoreOnly` with existing backup dir | Core site restore passes; existing parameter contract preserved. |
+| Base: AI/RAG intentionally disabled or DashScope key absent | Core blog/admin/uploads pass and RAG is marked skipped. |
+| Bad: Stale MySQL schema, missing vector rows when RAG is enabled, unsafe uploads archive, or SPA fallback for static uploads | Script stops with clear error before corrupting local volumes. |
+| Bad: `BackupOnly` remote SSH fails mid-backup | Script stops; partial files remain in remote backup dir for inspection; local Docker untouched. |
 
 Required verification for docs/script-only restore work:
 
 ```bash
 git diff --check
-docker compose config
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-data-sync-local-restore.ps1 -ServerHost localhost -ServerUser test -RemoteBackupDir /tmp/test -DryRun
+docker compose config --quiet
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-data-sync-local-restore.ps1 -Mode RestoreOnly -ServerHost localhost -ServerUser test -RemoteBackupDir /tmp/test -DryRun
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-data-sync-local-restore.ps1 -Mode BackupOnly -ServerHost localhost -ServerUser test -RemoteProjectDir /tmp/sanguiblog -DryRun
+```
+
+If production compose or spec contract changes, also run:
+
+```bash
+docker compose -f docker-compose.prod.yml config --quiet
+python .trellis\scripts\task.py validate .trellis\tasks\06-05-data-backup-plan
 ```
 
 ---

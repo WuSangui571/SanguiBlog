@@ -1,0 +1,7 @@
+{"file": ".trellis/tasks/06-05-data-backup-plan/prd.md", "reason": "Check acceptance criteria, forbidden scope, and required tests"}
+{"file": ".trellis/tasks/06-05-data-backup-plan/research.md", "reason": "Check focused research and risk notes"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Check cross-layer Docker data sync contract"}
+{"file": "docs/docker-data-sync.md", "reason": "Check final handbook structure and examples"}
+{"file": "scripts/docker-data-sync-local-restore.ps1", "reason": "Check script compatibility, dry-run, checksum, and restore behavior"}
+{"file": "scripts/README.md", "reason": "Check script entry documentation"}
+{"file": "docs/docker-deploy.md", "reason": "Check Docker volume and uploads-init constraints stay aligned"}

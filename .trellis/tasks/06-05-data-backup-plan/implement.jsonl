@@ -1,0 +1,15 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/tasks/06-05-data-backup-plan/prd.md", "reason": "Task PRD with scope, command contract, validation matrix, and acceptance criteria"}
+{"file": ".trellis/tasks/06-05-data-backup-plan/research.md", "reason": "Focused research and current implementation patterns"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec index and pre-development checklist"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend directory and upload/storage ownership boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Docs/script verification and secret hygiene rules"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "MySQL and PgVector persistence contracts"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Upload and failure reporting contract"}
+{"file": ".trellis/spec/guides/index.md", "reason": "Guides index"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing docs/script instead of duplicate implementation"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Docker Data Sync / Restore cross-layer contract"}
+{"file": "docs/docker-data-sync.md", "reason": "Existing data sync and restore guide to extend"}
+{"file": "scripts/docker-data-sync-local-restore.ps1", "reason": "Existing local restore script to extend while preserving compatibility"}
+{"file": "scripts/README.md", "reason": "Scripts documentation to update"}
+{"file": "docs/docker-deploy.md", "reason": "Docker volumes, uploads-init, verification, and deployment constraints"}

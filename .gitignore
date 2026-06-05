@@ -132,9 +132,15 @@ __pycache__/
 # ======================
 # Backup / dump artifacts
 # ======================
+/backups*/
+/sanguiblog-backup-*/
+/pre-restore-*/
+sanguiblog-remote-backup-*.sh
+/mysql.sql
+/SHA256SUMS
+/manifest.json
 *.tar.gz
 *.dump
-backups/
 
 # Runtime-mounted GeoIP database copies. The canonical bundled XDB lives under
 # SanguiBlog-server/src/main/resources/ip2region/.
