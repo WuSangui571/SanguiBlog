@@ -4,7 +4,7 @@
 
 A decoupled personal blog system built with Spring Boot 3 + MySQL (backend) and React 19 + Vite (frontend SPA), deployed via Docker Compose with GHCR images.
 
-> Current version: **V2.3.0**
+> Current version: **V2.3.1**
 
 ## Quick Start (Docker Production Deployment)
 
@@ -94,7 +94,6 @@ AI can be toggled on/off centrally from the admin settings panel.
 |-- docker/postgres/init/       # PgVector extension init script
 |-- docs/                       # Deployment and data sync guides
 |-- scripts/                    # Utility scripts
-|-- release/                    # Historical release notes
 |-- sanguiblog_db.sql           # Database bootstrap script (runs only on first init)
 |-- docker-compose.yml          # Dev/local Compose (builds images locally)
 |-- docker-compose.prod.yml     # Production Compose (pulls images from GHCR)

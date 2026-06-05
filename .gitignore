@@ -127,6 +127,7 @@ __pycache__/
 .kilo/
 .kilocode/
 .opencode/
+/Trellis/
 
 # ======================
 # Backup / dump artifacts

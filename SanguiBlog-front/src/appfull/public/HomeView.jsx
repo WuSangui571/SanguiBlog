@@ -149,7 +149,7 @@ export default function HomeView({
     const footerIcpLink = footerInfo.icpLink || 'https://beian.miit.gov.cn/';
     const footerPoweredBy = footerInfo.poweredBy || 'Powered by Spring Boot 3 & React 19';
 
-    const siteVersion = meta?.version || 'V2.3.0';
+    const siteVersion = meta?.version || 'V2.3.1';
     const heroTagline = meta?.heroTagline || DEFAULT_HERO_TAGLINE;
     const homeQuote = meta?.homeQuote || DEFAULT_HOME_QUOTE;
     const homeBackgroundUrl = meta?.homeBackgroundUrl || null;

@@ -1,0 +1,25 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\06-05-06-05-version-2-3-1-readme-cleanup\\prd.md", "reason": "Primary requirements, acceptance criteria, boundaries, and tests"}
+{"file": ".trellis\\tasks\\06-05-06-05-version-2-3-1-readme-cleanup\\research.md", "reason": "Focused code research and retrieval report"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend site meta config ownership and no parallel backend paths"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend version contract and verification requirements"}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "Frontend home/navigation ownership"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend lint/build/static-test requirements"}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "Site meta cache and meta consumer contract"}
+{"file": ".trellis\\spec\\frontend\\hook-guidelines.md", "reason": "Global site data and fetchSiteMeta context rules"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "Home/navigation component boundaries"}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "SiteMetaDto field alignment and runtime safety"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate implementation rules"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Site meta cross-layer contract template"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application.yaml", "reason": "Canonical site.version value"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\SiteService.java", "reason": "Existing site.version to SiteMetaDto mapping"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\dto\\SiteMetaDto.java", "reason": "Existing version response field"}
+{"file": "SanguiBlog-front\\src\\appfull\\public\\HomeView.jsx", "reason": "Home version fallback consumer"}
+{"file": "SanguiBlog-front\\src\\appfull\\ui\\Navigation.jsx", "reason": "Navigation version fallback consumer"}
+{"file": "README.md", "reason": "English root README update target"}
+{"file": "README.zh-CN.md", "reason": "Chinese root README update target"}
+{"file": ".gitignore", "reason": "Shared ignore coverage for cleanup candidates"}
+{"file": ".env.example", "reason": "README env/port/secrets alignment source"}
+{"file": "docker-compose.prod.yml", "reason": "README production deployment alignment source"}

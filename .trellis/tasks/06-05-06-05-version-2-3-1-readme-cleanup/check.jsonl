@@ -1,0 +1,11 @@
+{"file": ".trellis\\tasks\\06-05-06-05-version-2-3-1-readme-cleanup\\prd.md", "reason": "Check acceptance criteria and forbidden scope"}
+{"file": ".trellis\\tasks\\06-05-06-05-version-2-3-1-readme-cleanup\\research.md", "reason": "Check research findings and expected modification list"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Check version and backend verification contract"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Check frontend verification contract"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Check site meta cross-layer alignment"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application.yaml", "reason": "Verify canonical version update only"}
+{"file": "SanguiBlog-front\\src\\appfull\\public\\HomeView.jsx", "reason": "Verify fallback version update only"}
+{"file": "SanguiBlog-front\\src\\appfull\\ui\\Navigation.jsx", "reason": "Verify fallback version update only"}
+{"file": "README.md", "reason": "Verify English README version and stale structure fix"}
+{"file": "README.zh-CN.md", "reason": "Verify Chinese README remains aligned"}
+{"file": ".gitignore", "reason": "Verify shared ignore changes are minimal and do not hide .trellis"}
