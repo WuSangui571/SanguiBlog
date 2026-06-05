@@ -1438,3 +1438,62 @@ Recorded V2.3.1 version/readme cleanup after manual acceptance and archived the 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 25: Data backup and local Docker restore workflow
+
+**Date**: 2026-06-05
+**Task**: Data backup and local Docker restore workflow
+**Branch**: `docs/data-backup-plan`
+
+### Summary
+
+Production backup and local Docker restore workflow accepted, committed, archived, and documented.
+
+### Main Changes
+
+Commit: 2065ac0
+Branch: docs/data-backup-plan
+
+Main changes:
+- Extended scripts/docker-data-sync-local-restore.ps1 from local restore into BackupOnly, RestoreOnly, and BackupAndRestore modes.
+- Added remote production backup flow for MySQL, PgVector, uploads, SHA256SUMS, and manifest.json.
+- Hardened RestoreOnly path with local volume pre-restore backups, alpine:3.21 helper image checks, safer native command handling, SQL-file based MySQL/PgVector restore, uploads ownership repair, and WEB_PORT-aware health checks.
+- Reworked docs/docker-data-sync.md into a two-part production-to-local backup and local-Docker restore handbook.
+- Updated scripts/README.md and .trellis/spec/guides/cross-layer-thinking-guide.md with the new backup/restore contract.
+- Updated .gitignore to exclude local backup directories and generated dump artifacts from GitHub.
+
+Verification recorded:
+- User manually tested BackupOnly against production SSH and confirmed backup files were created remotely and downloaded locally.
+- User manually tested RestoreOnly -SkipDownload and confirmed MySQL, PgVector, uploads restore and local Docker startup.
+- User manually verified local site at http://localhost:8090 and reported all tests passed.
+- Codex ran PowerShell parser check for scripts/docker-data-sync-local-restore.ps1: pass.
+- Codex ran git diff --check: pass.
+- Codex ran python .trellis/scripts/task.py validate .trellis/tasks/06-05-data-backup-plan: pass.
+- Codex ran docker compose config --quiet: pass.
+- Codex checked http://localhost:8090/api/site/meta, /api/games, /sitemap.xml, and /robots.txt: all returned 200 with expected Content-Type.
+
+Result and boundaries:
+- Task accepted by user and committed as 2065ac0 feat:??????????.
+- No Java/React business code, DB schema, or compose contract changes were made.
+- Remote production backup execution depends on SSH access and current production Docker Compose layout.
+- Backup directories and generated dump files are ignored and should not be pushed to GitHub.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2065ac0` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 24
+- **Total Sessions**: 25
 - **Last Active**: 2026-06-05
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1440 | Active |
+| `journal-1.md` | ~1499 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 25 | 2026-06-05 | Data backup and local Docker restore workflow | `2065ac0` | `docs/data-backup-plan` |
 | 24 | 2026-06-05 | Version 2.3.1 README cleanup | `898a40a` | `chore/version-2-3-1-readme-cleanup` |
 | 23 | 2026-06-03 | Production AI RAG provider isolation | `d268164` | `fix/prod-ai-rag-provider-isolation` |
 | 22 | 2026-06-03 | Production AI chat stream timeout hang | `2d21993` | `fix/prod-ai-chat-no-response` |
