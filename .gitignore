@@ -151,3 +151,4 @@ docker/ip2region/*.xdb
 *.bak
 *.swp
 *.swo
+.env2
