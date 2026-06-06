@@ -1,0 +1,10 @@
+{"file": ".trellis\\workflow.md", "reason": "real Trellis workflow source"}
+{"file": ".trellis\\tasks\\06-06-openai-compatible-ai-provider-config\\prd.md", "reason": "debug against stated acceptance criteria"}
+{"file": ".trellis\\tasks\\06-06-openai-compatible-ai-provider-config\\research.md", "reason": "debug against provider/config research"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "AI provider error and SSE debugging contract"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "safe provider/RAG logging during debugging"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application.yaml", "reason": "provider config debugging"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\AiChatService.java", "reason": "AI chat provider call path debugging"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\AiBlogVectorStoreConfig.java", "reason": "RAG embedding/vector store debugging"}
+{"file": "docker-compose.yml", "reason": "local Compose env debugging"}
+{"file": "docker-compose.prod.yml", "reason": "production Compose env debugging"}

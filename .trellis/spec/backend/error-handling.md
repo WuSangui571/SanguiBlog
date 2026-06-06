@@ -160,7 +160,7 @@ SSE completion payload contract:
 {
   "reply": "...",
   "sessionId": 1,
-  "model": "qwen-flash",
+  "model": "gpt-4o-mini",
   "mode": "DATABASE_SESSION_HISTORY",
   "references": []
 }

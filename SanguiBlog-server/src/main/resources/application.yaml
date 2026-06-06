@@ -8,15 +8,16 @@ spring:
   application:
     name: SanguiBlog-server
   ai:
-    dashscope:
-      api-key: ${SPRING_AI_DASHSCOPE_API_KEY:${AI_DASHSCOPE_API_KEY:}}
+    openai:
+      api-key: ${AI_OPENAI_API_KEY:__unset__}
+      base-url: ${AI_OPENAI_BASE_URL:https://api.openai.com}
       chat:
         options:
-          model: ${AI_DASHSCOPE_CHAT_MODEL:qwen-flash}
-          temperature: ${AI_DASHSCOPE_CHAT_TEMPERATURE:0.4}
+          model: ${AI_OPENAI_CHAT_MODEL:}
+          temperature: ${AI_OPENAI_CHAT_TEMPERATURE:0.4}
       embedding:
         options:
-          model: ${AI_DASHSCOPE_EMBEDDING_MODEL:text-embedding-v4}
+          model: ${AI_OPENAI_EMBEDDING_MODEL:}
   servlet:
     multipart:
       max-file-size: 60MB
@@ -110,7 +111,6 @@ ai:
       schema: ${AI_RAG_PGVECTOR_SCHEMA:public}
       table: ${AI_RAG_PGVECTOR_TABLE:vector_store}
       initialize-schema: ${AI_RAG_PGVECTOR_INITIALIZE_SCHEMA:false}
-
 
 
 

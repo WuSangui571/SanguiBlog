@@ -53,6 +53,7 @@ public class AiChatService {
     private static final String SYSTEM_FACTS_MODE = "SYSTEM_FACTS";
     private static final long STREAM_EMITTER_TIMEOUT_MILLIS = 300_000L;
     private static final String STREAM_TIMEOUT_MESSAGE = "AI 服务响应超时，请稍后再试";
+    private static final String UNSET_OPENAI_API_KEY = "__unset__";
 
     private final ChatModel chatModel;
     private final AiAssistantSettingService aiAssistantSettingService;
@@ -69,8 +70,11 @@ public class AiChatService {
     private final AiChatPersistenceService persistenceService;
     private final AiProviderConcurrencyGuard concurrencyGuard;
 
-    @Value("${spring.ai.dashscope.chat.options.model:qwen-flash}")
+    @Value("${spring.ai.openai.chat.options.model:}")
     private String configuredModel;
+
+    @Value("${spring.ai.openai.api-key:}")
+    private String configuredApiKey;
 
     @Value("${ai.chat.context.max-messages:16}")
     private int maxContextMessages;
@@ -146,6 +150,7 @@ public class AiChatService {
         if (capabilityAnswer.answered()) {
             return completeDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
         }
+        assertAiProviderConfigured();
 
         List<String> contextMessageTexts = loadContextMessageTexts(accessContext, session != null ? session.getId() : null, localHistory);
         AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice =
@@ -191,7 +196,7 @@ public class AiChatService {
             } catch (ResponseStatusException ex) {
                 throw ex;
             } catch (Exception ex) {
-                log.error("调用通义千问聊天接口失败", ex);
+                log.error("调用AI聊天接口失败", ex);
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI 服务调用失败，请稍后再试");
             }
 
@@ -230,6 +235,9 @@ public class AiChatService {
         AiAssistantCapabilityService.CapabilityAnswer capabilityAnswer = aiAssistantCapabilityService.answer(userMessage);
         if (capabilityAnswer.answered()) {
             return streamDirectAnswer(session, userMessage, capabilityAnswer.reply(), SYSTEM_FACTS_MODE);
+        }
+        if (!isConfiguredOpenAiApiKey(configuredApiKey)) {
+            return buildProviderConfigErrorEmitter();
         }
 
         List<String> contextMessageTexts = loadContextMessageTexts(accessContext, session != null ? session.getId() : null, localHistory);
@@ -282,7 +290,7 @@ public class AiChatService {
                         }
                     },
                     error -> {
-                        log.error("调用通义千问流式聊天接口失败", error);
+                        log.error("调用AI流式聊天接口失败", error);
                         try {
                             String reply = callSyncReply(promptMessages);
                             if (!StringUtils.hasText(reply)) {
@@ -551,6 +559,16 @@ public class AiChatService {
         return userMessage;
     }
 
+    private void assertAiProviderConfigured() {
+        if (!isConfiguredOpenAiApiKey(configuredApiKey)) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI 服务未配置，请先设置 AI_OPENAI_API_KEY");
+        }
+    }
+
+    static boolean isConfiguredOpenAiApiKey(String apiKey) {
+        return StringUtils.hasText(apiKey) && !UNSET_OPENAI_API_KEY.equals(apiKey.trim());
+    }
+
     private AiChatSessionDto toSessionDto(AiChatSession session) {
         return AiChatSessionDto.builder()
                 .id(session.getId())
@@ -627,6 +645,13 @@ public class AiChatService {
     private SseEmitter buildBusyErrorEmitter() {
         SseEmitter emitter = new SseEmitter(0L);
         sendSseEvent(emitter, "error", Map.of("message", "AI 服务繁忙，请稍后再试"));
+        emitter.complete();
+        return emitter;
+    }
+
+    private SseEmitter buildProviderConfigErrorEmitter() {
+        SseEmitter emitter = new SseEmitter(0L);
+        sendSseEvent(emitter, "error", Map.of("message", "AI 服务未配置，请先设置 AI_OPENAI_API_KEY"));
         emitter.complete();
         return emitter;
     }

@@ -72,10 +72,15 @@ sudo docker compose -f docker-compose.prod.yml logs -f backend
 
 Core blog features (posts, categories, tags, comments, admin) work without any AI configuration. The AI assistant requires:
 
-- `AI_DASHSCOPE_API_KEY` in `.env`
+- `AI_OPENAI_API_KEY` in `.env`
+- `AI_OPENAI_BASE_URL` (defaults to `https://api.openai.com` when blank)
+- `AI_OPENAI_CHAT_MODEL` (chat model for AI conversations)
 - PostgreSQL + PgVector (included in the Compose stack) for blog RAG; set `AI_RAG_ENABLED=true`
+- `AI_OPENAI_EMBEDDING_MODEL` for RAG embeddings (keep `AI_RAG_ENABLED=false` if your provider does not support embeddings)
 
 AI can be toggled on/off centrally from the admin settings panel.
+
+> **Migration note**: `AI_DASHSCOPE_API_KEY` is deprecated. Use `AI_OPENAI_API_KEY` + `AI_OPENAI_BASE_URL` instead. If you continue using DashScope, set `AI_OPENAI_BASE_URL` to the DashScope OpenAI-compatible endpoint.
 
 ## Further Reading
 
@@ -106,5 +111,5 @@ AI can be toggled on/off centrally from the admin settings panel.
 | --- | --- | --- |
 | Backend fails to start | Missing required `.env` secret | Check `JWT_SECRET`, `MYSQL_PASSWORD`, etc. are set |
 | `/sitemap.xml` returns SPA HTML | Missing Nginx location rule | Ensure `docker/nginx/default.conf` routes sitemap/robots to backend |
-| AI chat unavailable | DashScope key not configured | Check `AI_DASHSCOPE_API_KEY` in `.env` |
+| AI chat unavailable | OpenAI API key not configured | Check `AI_OPENAI_API_KEY` and `AI_OPENAI_BASE_URL` in `.env` |
 | Images fail to load | `asset-base-url` misconfigured | Leave `SITE_ASSET_BASE_URL` empty for same-origin Docker deployment |

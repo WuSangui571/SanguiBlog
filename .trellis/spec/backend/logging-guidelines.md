@@ -88,7 +88,7 @@ AI failures should log operational failures, not sensitive prompt content.
 Correct:
 
 ```java
-log.error("failed to call DashScope chat API", ex);
+log.error("failed to call AI chat API", ex);
 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI 服务调用失败，请稍后再试");
 ```
 
@@ -127,4 +127,3 @@ Review every new log statement for:
 - Placeholder count matches arguments.
 - Log level matches severity.
 - Recoverable fallbacks are `warn`, not `error`, unless they break the request.
-

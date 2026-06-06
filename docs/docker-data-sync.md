@@ -34,7 +34,7 @@ SanguiBlog 的持久化数据包含三部分：
 |------|-------------------------------|----------|
 | 数据库密码 | `MYSQL_PASSWORD`、`MYSQL_ROOT_PASSWORD`、`POSTGRES_PASSWORD`、`SPRING_DATASOURCE_PASSWORD` | 服务器本地 `.env` 或密钥管理 |
 | JWT 密钥 | `JWT_SECRET` | 服务器本地 `.env` |
-| AI API Key | `AI_DASHSCOPE_API_KEY`、`SPRING_AI_DASHSCOPE_API_KEY` | 服务器本地 `.env` |
+| AI Provider 配置 | `AI_OPENAI_API_KEY`、`AI_OPENAI_BASE_URL` | 服务器本地 `.env` |
 | SSH 凭证 | 服务器 host/user/key | 本地 `~/.ssh/config` 或 `ssh-agent` |
 | 服务器真实路径 | 生产 uploads 根目录、备份目录 | 用户提供的服务器配置 |
 
@@ -718,8 +718,8 @@ docker compose exec pgvector psql -U "$env:POSTGRES_USER" -d "$env:POSTGRES_DB" 
 # 检查 AI 助手是否启用
 curl.exe -s "$BaseUrl/api/site/meta" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['aiAssistant'])"
 
-# 检查 DashScope key 是否已注入（不打印值）
-docker compose exec backend sh -c 'test -n "$SPRING_AI_DASHSCOPE_API_KEY" && echo "SPRING_AI_DASHSCOPE_API_KEY is set" || echo "SPRING_AI_DASHSCOPE_API_KEY is empty"'
+# 检查 OpenAI API key 是否已注入（不打印值）
+docker compose exec backend sh -c 'test -n "$AI_OPENAI_API_KEY" && test "$AI_OPENAI_API_KEY" != "__unset__" && echo "AI_OPENAI_API_KEY is set" || echo "AI_OPENAI_API_KEY is empty"'
 ```
 
 **验证结论分类：**
@@ -731,7 +731,7 @@ docker compose exec backend sh -c 'test -n "$SPRING_AI_DASHSCOPE_API_KEY" && ech
 | Bad | ✅ | ✅ | ✅ | 但向量表为空 → 需运行 RAG resync |
 | Bad | ❌ | — | — | 恢复失败，检查日志 |
 
-**AI/RAG disabled 是合法的 base case**：如果未配置 DashScope key，核心 blog/admin/upload 功能应正常工作，AI 助手不应出现在前端，`/api/site/meta.aiAssistant.enabled` 应为 `false`。
+**AI/RAG disabled 是合法的 base case**：如果未配置 OpenAI API key，核心 blog/admin/upload 功能应正常工作，AI 助手不应出现在前端，`/api/site/meta.aiAssistant.enabled` 应为 `false`。
 
 ---
 

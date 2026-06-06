@@ -72,10 +72,15 @@ sudo docker compose -f docker-compose.prod.yml logs -f backend
 
 核心博客功能（文章、分类、标签、评论、后台管理）无需任何 AI 配置即可运行。AI 助理需要：
 
-- `.env` 中配置 `AI_DASHSCOPE_API_KEY`
+- `.env` 中配置 `AI_OPENAI_API_KEY`
+- `AI_OPENAI_BASE_URL`（留空时默认使用 `https://api.openai.com`）
+- `AI_OPENAI_CHAT_MODEL`（AI 对话使用的聊天模型）
 - 博客 RAG 需要 PostgreSQL + PgVector（已在 Compose 栈中包含）— 设置 `AI_RAG_ENABLED=true`
+- `AI_OPENAI_EMBEDDING_MODEL`（RAG 嵌入模型；若 provider 不支持 embeddings，请保持 `AI_RAG_ENABLED=false`）
 
 AI 功能可在后台设置面板中统一开启/关闭。
+
+> **迁移说明**：`AI_DASHSCOPE_API_KEY` 已废弃。请改用 `AI_OPENAI_API_KEY` + `AI_OPENAI_BASE_URL`。如仍需使用 DashScope，请将 `AI_OPENAI_BASE_URL` 设置为 DashScope OpenAI-compatible endpoint。
 
 ## 延伸阅读
 
@@ -106,5 +111,5 @@ AI 功能可在后台设置面板中统一开启/关闭。
 | --- | --- | --- |
 | 后端启动失败 | `.env` 缺少必需密钥 | 检查 `JWT_SECRET`、`MYSQL_PASSWORD` 等是否已配置 |
 | `/sitemap.xml` 返回 SPA 首页 | 缺少 Nginx 路由规则 | 确认 `docker/nginx/default.conf` 已将 sitemap/robots 转发至后端 |
-| AI 聊天不可用 | DashScope Key 未配置 | 检查 `.env` 中的 `AI_DASHSCOPE_API_KEY` |
+| AI 聊天不可用 | OpenAI API Key 未配置 | 检查 `.env` 中的 `AI_OPENAI_API_KEY` 和 `AI_OPENAI_BASE_URL` |
 | 图片资源加载失败 | `asset-base-url` 配置错误 | 同源 Docker 部署请保持 `SITE_ASSET_BASE_URL` 为空 |

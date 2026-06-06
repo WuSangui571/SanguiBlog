@@ -189,7 +189,7 @@ docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$
 Do not validate AI credentials by printing secret values. Use a presence check such as:
 
 ```bash
-docker compose exec backend sh -c 'test -n "$SPRING_AI_DASHSCOPE_API_KEY" && echo "SPRING_AI_DASHSCOPE_API_KEY is set" || echo "SPRING_AI_DASHSCOPE_API_KEY is empty"'
+docker compose exec backend sh -c 'test -n "$AI_OPENAI_API_KEY" && test "$AI_OPENAI_API_KEY" != "__unset__" && echo "AI_OPENAI_API_KEY is set" || echo "AI_OPENAI_API_KEY is empty"'
 ```
 
 ---

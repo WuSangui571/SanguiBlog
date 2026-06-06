@@ -49,7 +49,7 @@ class AiChatPersistenceServiceTest {
                 session,
                 "请介绍一下这个站点",
                 "这是站点介绍回复",
-                "qwen-flash",
+                "gpt-4o-mini",
                 AiBlogRagService.AiBlogRagContext.empty(),
                 at
         );
@@ -61,7 +61,7 @@ class AiChatPersistenceServiceTest {
         assertEquals("请介绍一下这个站点", messageCaptor.getAllValues().get(0).getContent());
         assertEquals("assistant", messageCaptor.getAllValues().get(1).getRole());
         assertEquals("这是站点介绍回复", messageCaptor.getAllValues().get(1).getContent());
-        assertEquals("qwen-flash", messageCaptor.getAllValues().get(1).getModelName());
+        assertEquals("gpt-4o-mini", messageCaptor.getAllValues().get(1).getModelName());
         assertEquals("请介绍一下这个站点", session.getTitle());
         assertEquals("这是站点介绍回复", session.getLastMessagePreview());
         assertEquals(at, session.getUpdatedAt());

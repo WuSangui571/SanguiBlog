@@ -1,0 +1,27 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\06-06-openai-compatible-ai-provider-config\\prd.md", "reason": "requirements, boundary, validation matrix, test plan"}
+{"file": ".trellis\\tasks\\06-06-openai-compatible-ai-provider-config\\research.md", "reason": "focused code/spec research and likely file list"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "backend placement and AI service ownership rules"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "backend retrieve-first, AI/RAG quality and test requirements"}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "AI/RAG persistence and PgVector contracts"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "AI provider error and SSE behavior contracts"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "safe provider/RAG logging constraints"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "retrieve-first and duplicate implementation prevention"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "env/API/SSE/Docker cross-layer contract template"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "frontend AI assistant no-regression and verification rules"}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "AI assistant UI boundary if frontend is touched"}
+{"file": "SanguiBlog-server\\pom.xml", "reason": "Spring AI dependency migration surface"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application.yaml", "reason": "current DashScope provider and RAG env config"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application-docker.yaml", "reason": "Docker profile RAG and runtime defaults"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\AiChatService.java", "reason": "existing ChatModel pipeline and response model field"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\AiBlogVectorStoreConfig.java", "reason": "EmbeddingModel/PgVector initialization and missing embedding behavior"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\AiBlogRagProperties.java", "reason": "existing ai.rag property owner"}
+{"file": ".env.example", "reason": "operator env template to migrate"}
+{"file": "docker-compose.yml", "reason": "local Docker AI env injection"}
+{"file": "docker-compose.prod.yml", "reason": "production Docker AI env injection"}
+{"file": "README.md", "reason": "English AI setup docs"}
+{"file": "README.zh-CN.md", "reason": "Chinese AI setup docs"}
+{"file": "docs\\docker-deploy.md", "reason": "Docker AI provider deployment and diagnostics docs"}
+{"file": "docs\\docker-data-sync.md", "reason": "backup/restore sensitive AI env docs"}

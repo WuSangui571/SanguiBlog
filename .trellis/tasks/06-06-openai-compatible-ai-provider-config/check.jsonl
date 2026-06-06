@@ -1,0 +1,18 @@
+{"file": ".trellis\\tasks\\06-06-openai-compatible-ai-provider-config\\prd.md", "reason": "acceptance criteria and self-check source"}
+{"file": ".trellis\\tasks\\06-06-openai-compatible-ai-provider-config\\research.md", "reason": "research and required tests source"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "backend check requirements"}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "AI/SSE error check requirements"}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "secret-safe logging review"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "cross-layer payload and test review"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "frontend no-regression checks if touched"}
+{"file": "SanguiBlog-server\\pom.xml", "reason": "dependency diff review"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application.yaml", "reason": "provider config diff review"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\AiChatService.java", "reason": "AI chat behavior diff review"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\AiBlogVectorStoreConfig.java", "reason": "RAG embedding config review"}
+{"file": ".env.example", "reason": "env contract review"}
+{"file": "docker-compose.yml", "reason": "local Compose config review"}
+{"file": "docker-compose.prod.yml", "reason": "prod Compose config review"}
+{"file": "README.md", "reason": "English docs review"}
+{"file": "README.zh-CN.md", "reason": "Chinese docs review"}
+{"file": "docs\\docker-deploy.md", "reason": "Docker docs review"}
+{"file": "docs\\docker-data-sync.md", "reason": "sensitive env docs review"}

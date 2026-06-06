@@ -76,7 +76,7 @@ class AdminAiChatAuditServiceTest {
         assistantMessage.setSession(session);
         assistantMessage.setRole("assistant");
         assistantMessage.setContent("这篇文章主要介绍了...");
-        assistantMessage.setModelName("qwen-flash");
+        assistantMessage.setModelName("gpt-4o-mini");
         assistantMessage.setCreatedAt(Instant.parse("2026-03-18T07:01:03Z"));
 
         when(sessionRepository.findDetailById(15L)).thenReturn(Optional.of(session));
@@ -90,7 +90,7 @@ class AdminAiChatAuditServiceTest {
         assertEquals(2, detail.getMessages().size());
         assertEquals(15L, detail.getMessages().get(0).getSessionId());
         assertEquals("assistant", detail.getMessages().get(1).getRole());
-        assertEquals("qwen-flash", detail.getMessages().get(1).getModelName());
+        assertEquals("gpt-4o-mini", detail.getMessages().get(1).getModelName());
         assertEquals(Boolean.FALSE, detail.getSession().getGuest());
     }
 

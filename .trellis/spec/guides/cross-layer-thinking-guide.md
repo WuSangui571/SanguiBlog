@@ -254,7 +254,7 @@ Good/Base/Bad cases:
 | Case | Expected Result |
 |------|-----------------|
 | Good | Fresh server with Docker and a filled `.env` starts `uploads-init`, `web`, `backend`, `mysql`, and `pgvector`; `/data/uploads/posts`, `/data/uploads/covers`, and `/data/uploads/avatar` are writable by the backend non-root user; `/`, `/api/site/meta`, `/sitemap.xml`, `/robots.txt`, and `/uploads/...` keep existing semantics. `/api/site/meta.assetBaseUrl` is `""` for same-origin Docker and `buildAssetUrl('/uploads/foo.png')` resolves to the browser origin path without `/uploads/uploads`. |
-| Base | `AI_RAG_ENABLED=false` and no DashScope key still allow core blog pages, admin, uploads, and MySQL-backed features to run. |
+| Base | `AI_RAG_ENABLED=false` and no OpenAI-compatible API key still allow core blog pages, admin, uploads, and MySQL-backed features to run. |
 | Bad | MySQL reports healthy from a socket-only init probe before `sanguiblog_db.sql` is complete, backend connects to host/local database config, `.env.example` contains real or fake default secrets, sitemap/robots fall through to SPA HTML, SSE is buffered by Nginx, upload directories remain root-owned `755` without a fail-fast startup error, or asset URL config causes duplicated `/uploads/uploads/...` requests. |
 
 Uploaded game CSP contract:
@@ -369,7 +369,7 @@ Good/Base/Bad cases:
 | Good: `BackupAndRestore` full run | MySQL, PgVector, and uploads restore; `/api/site/meta`, `/api/games`, uploaded assets, and RAG checks pass. |
 | Good: `BackupOnly` completes | Local backup dir contains `mysql.sql`, `pgvector.dump`, `uploads.tar.gz`, `SHA256SUMS`, and `manifest.json`; checksum passes; no local Docker volumes touched. |
 | Base: `RestoreOnly` with existing backup dir | Core site restore passes; existing parameter contract preserved. |
-| Base: AI/RAG intentionally disabled or DashScope key absent | Core blog/admin/uploads pass and RAG is marked skipped. |
+| Base: AI/RAG intentionally disabled or OpenAI-compatible API key absent | Core blog/admin/uploads pass and RAG is marked skipped. |
 | Bad: Stale MySQL schema, missing vector rows when RAG is enabled, unsafe uploads archive, or SPA fallback for static uploads | Script stops with clear error before corrupting local volumes. |
 | Bad: `BackupOnly` remote SSH fails mid-backup | Script stops; partial files remain in remote backup dir for inspection; local Docker untouched. |
 
