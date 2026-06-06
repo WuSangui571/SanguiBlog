@@ -16,6 +16,8 @@ spring:
           model: ${AI_OPENAI_CHAT_MODEL:}
           temperature: ${AI_OPENAI_CHAT_TEMPERATURE:0.4}
       embedding:
+        api-key: ${AI_OPENAI_EMBEDDING_API_KEY:${AI_OPENAI_API_KEY:__unset__}}
+        base-url: ${AI_OPENAI_EMBEDDING_BASE_URL:${AI_OPENAI_BASE_URL:https://api.openai.com}}
         options:
           model: ${AI_OPENAI_EMBEDDING_MODEL:}
   servlet:
@@ -111,6 +113,5 @@ ai:
       schema: ${AI_RAG_PGVECTOR_SCHEMA:public}
       table: ${AI_RAG_PGVECTOR_TABLE:vector_store}
       initialize-schema: ${AI_RAG_PGVECTOR_INITIALIZE_SCHEMA:false}
-
 
 

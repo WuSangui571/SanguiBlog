@@ -25,23 +25,23 @@ JAVA_TOOL_OPTIONS=-Duser.timezone=Asia/Shanghai -Xms256m -Xmx512m
 # ---- MySQL main database. Passwords are required in .env. ----
 MYSQL_DATABASE=sanguiblog_db
 MYSQL_USER=sanguiblog_user
-MYSQL_PASSWORD=
-MYSQL_ROOT_PASSWORD=
+MYSQL_PASSWORD=333
+MYSQL_ROOT_PASSWORD=333
 
 # ---- PostgreSQL / PgVector for optional AI RAG vector storage. ----
 POSTGRES_DB=sanguiblog_ai
 POSTGRES_USER=sanguiblog_pg_user
-POSTGRES_PASSWORD=
+POSTGRES_PASSWORD=333
 
 # ---- Backend JWT secret. Required. Recommended length: 32+ characters. ----
 # If the value contains $, wrap it in single quotes or escape each $ as $$.
-JWT_SECRET=
+JWT_SECRET=sanguiblog-jwt-it-is-difficult-to-compute-ok-for-you-dont-copy-me
 
 # ---- Backend datasource. Keep this aligned with the MySQL values above. ----
 # Use characterEncoding=utf8 here. Do not use characterEncoding=utf8mb4 in JDBC.
 SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/sanguiblog_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
 SPRING_DATASOURCE_USERNAME=sanguiblog_user
-SPRING_DATASOURCE_PASSWORD=
+SPRING_DATASOURCE_PASSWORD=333
 
 # ---- Upload storage path inside the backend container. ----
 STORAGE_BASE_PATH=/data/uploads
@@ -64,7 +64,7 @@ SITE_ALLOWED_HOSTS=localhost
 # Do NOT set this to http://host:8090/uploads for same-origin deployments,
 # otherwise uploaded asset URLs can become duplicated, such as /uploads/uploads/...
 # Only set a complete URL when assets are served from a real CDN or separate host.
-SITE_ASSET_BASE_URL=
+SITE_ASSET_BASE_URL=http://localhost:8090/uploads
 
 # ---- CORS allowed origins. Must match the exact browser origin. ----
 # The value must include scheme + host + port when a port is used.
@@ -77,37 +77,17 @@ SECURITY_CORS_ALLOWED_ORIGINS=http://localhost:8090
 # HTTPS reverse-proxy example, with temporary 8090 kept during migration:
 # SECURITY_CORS_ALLOWED_ORIGINS=https://new.sangui.top,http://new.sangui.top:8090
 
-# ---- OpenAI-compatible AI Provider. Optional. ----
-# Leave blank to keep core blog/admin/upload features working without AI.
-# Chat model is used for AI conversations.
-# Embedding model is used for RAG knowledge retrieval.
-# If your provider does not support embeddings, keep AI_RAG_ENABLED=false.
-# If you change the embedding model, you must re-sync or rebuild existing vectors.
-AI_OPENAI_API_KEY=
-AI_OPENAI_BASE_URL=
-AI_OPENAI_CHAT_MODEL=
-# Optional embedding overrides. Leave blank to reuse AI_OPENAI_API_KEY / AI_OPENAI_BASE_URL for RAG embeddings.
-AI_OPENAI_EMBEDDING_API_KEY=
-AI_OPENAI_EMBEDDING_BASE_URL=
-AI_OPENAI_EMBEDDING_MODEL=
-
-# ---- Deprecated: AI_DASHSCOPE_API_KEY has been replaced by the OpenAI-compatible vars above. ----
-# Migrate to AI_OPENAI_API_KEY, AI_OPENAI_BASE_URL, AI_OPENAI_CHAT_MODEL, and AI_OPENAI_EMBEDDING_*.
-# AI_DASHSCOPE_API_KEY=
+# ---- DashScope AI. Optional. Leave blank unless you have a real DashScope API key. ----
+# Do NOT put your site URL here. A site URL such as http://new.sangui.top:8090 is invalid.
+# If this is blank, keep AI_RAG_ENABLED=false.
+AI_DASHSCOPE_API_KEY=sk-8bc86a2345474dbea1f98ab2442c1411
 
 # ---- Optional AI RAG and PgVector connection. ----
-# Safe production default: disabled. Enable only after AI_OPENAI_API_KEY is configured
+# Safe production default: disabled. Enable only after AI_DASHSCOPE_API_KEY is real
 # and PgVector connectivity has been verified.
-AI_RAG_ENABLED=false
+AI_RAG_ENABLED=true
 AI_RAG_SYNC_ON_STARTUP=false
 AI_RAG_PGVECTOR_URL=jdbc:postgresql://pgvector:5432/sanguiblog_ai
 AI_RAG_PGVECTOR_USERNAME=sanguiblog_pg_user
-AI_RAG_PGVECTOR_PASSWORD=
+AI_RAG_PGVECTOR_PASSWORD=333
 AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=false
-
-# ---- IP Geolocation (ip2region local XDB). ----
-# The backend bundles a default IPv4 XDB at classpath:ip2region/ip2region.xdb.
-# Optional Docker override: place the host file at ./docker/ip2region/ip2region.xdb,
-# then uncomment the path below so it is mounted read-only at /data/ip2region/.
-# Download source: https://github.com/lionsoul2014/ip2region/blob/master/data/ip2region_v4.xdb
-# ANALYTICS_GEO_IP2REGION_XDB_PATH=/data/ip2region/ip2region.xdb

@@ -24,6 +24,8 @@ Complex Task.
    - `AI_OPENAI_API_KEY=`
    - `AI_OPENAI_BASE_URL=`
    - `AI_OPENAI_CHAT_MODEL=`
+   - `AI_OPENAI_EMBEDDING_API_KEY=` (optional, defaults to `AI_OPENAI_API_KEY`)
+   - `AI_OPENAI_EMBEDDING_BASE_URL=` (optional, defaults to `AI_OPENAI_BASE_URL`)
    - `AI_OPENAI_EMBEDDING_MODEL=`
 3. Docker Compose local/prod 注入上述变量到后端容器。
 4. `AI_RAG_ENABLED=false` 时不要求 embedding provider 或 PgVector 可用。
@@ -83,6 +85,8 @@ Backend config keys:
 - `spring.ai.openai.base-url`
 - `spring.ai.openai.chat.options.model`
 - `spring.ai.openai.chat.options.temperature`
+- `spring.ai.openai.embedding.api-key`
+- `spring.ai.openai.embedding.base-url`
 - `spring.ai.openai.embedding.options.model`
 - Consider `spring.ai.model.chat=openai`.
 - Consider `spring.ai.model.embedding=openai` only when RAG/embedding is intentionally enabled and safe. If OpenAI embedding auto-config creates startup risk without a key/model, use Spring AI-supported disable semantics and keep `AI_RAG_ENABLED=false` as the safe no-embedding base case.
@@ -93,13 +97,15 @@ Env/config payload:
 AI_OPENAI_API_KEY=
 AI_OPENAI_BASE_URL=
 AI_OPENAI_CHAT_MODEL=
+AI_OPENAI_EMBEDDING_API_KEY=
+AI_OPENAI_EMBEDDING_BASE_URL=
 AI_OPENAI_EMBEDDING_MODEL=
 AI_RAG_ENABLED=false
 ```
 
 Docker Compose payload:
 
-- `docker-compose.yml` backend environment must inject `AI_OPENAI_API_KEY`, `AI_OPENAI_BASE_URL`, `AI_OPENAI_CHAT_MODEL`, `AI_OPENAI_EMBEDDING_MODEL`.
+- `docker-compose.yml` backend environment must inject `AI_OPENAI_API_KEY`, `AI_OPENAI_BASE_URL`, `AI_OPENAI_CHAT_MODEL`, `AI_OPENAI_EMBEDDING_API_KEY`, `AI_OPENAI_EMBEDDING_BASE_URL`, `AI_OPENAI_EMBEDDING_MODEL`.
 - `docker-compose.prod.yml` backend environment must inject the same variables.
 - Remove active `SPRING_AI_DASHSCOPE_API_KEY` injection unless a guarded compatibility alias is explicitly implemented.
 
@@ -250,7 +256,7 @@ curl.exe -i http://localhost/api/site/meta
 - [ ] `rg "DashScope|dashscope|DASHSCOPE|AI_DASHSCOPE|SPRING_AI_DASHSCOPE" .env.example README.md README.zh-CN.md docs docker-compose.yml docker-compose.prod.yml SanguiBlog-server/src/main/resources SanguiBlog-server/src/main/java` shows no active DashScope-only runtime contract. Any remaining mention must be an explicit migration/deprecation note.
 - [ ] `SanguiBlog-server/pom.xml` uses Spring AI OpenAI provider and no longer requires DashScope starter for the AI assistant.
 - [ ] `application.yaml` uses `spring.ai.openai.*` and exposes `AI_OPENAI_*` env vars.
-- [ ] Compose local/prod inject `AI_OPENAI_API_KEY`, `AI_OPENAI_BASE_URL`, `AI_OPENAI_CHAT_MODEL`, `AI_OPENAI_EMBEDDING_MODEL`.
+- [ ] Compose local/prod inject `AI_OPENAI_API_KEY`, `AI_OPENAI_BASE_URL`, `AI_OPENAI_CHAT_MODEL`, `AI_OPENAI_EMBEDDING_API_KEY`, `AI_OPENAI_EMBEDDING_BASE_URL`, `AI_OPENAI_EMBEDDING_MODEL`.
 - [ ] Backend starts with no AI key and `AI_RAG_ENABLED=false`.
 - [ ] Configured OpenAI-compatible chat works and response model reflects `AI_OPENAI_CHAT_MODEL`.
 - [ ] `AI_RAG_ENABLED=false` does not require embedding model/provider/PgVector readiness beyond existing stack constraints.
@@ -261,4 +267,3 @@ curl.exe -i http://localhost/api/site/meta
 
 - Spring AI OpenAI Chat reference: https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html
 - Spring AI OpenAI Embeddings reference: https://docs.spring.io/spring-ai/reference/api/embeddings/openai-embeddings.html
-

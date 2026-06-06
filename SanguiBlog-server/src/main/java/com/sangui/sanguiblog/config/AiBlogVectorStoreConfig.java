@@ -23,13 +23,16 @@ public class AiBlogVectorStoreConfig {
     private static final String UNSET_OPENAI_API_KEY = "__unset__";
 
     private final String openAiApiKey;
+    private final String embeddingApiKey;
     private final String embeddingModelName;
 
     public AiBlogVectorStoreConfig(
             @Value("${AI_OPENAI_API_KEY:}") String openAiApiKey,
+            @Value("${spring.ai.openai.embedding.api-key:${spring.ai.openai.api-key:}}") String embeddingApiKey,
             @Value("${spring.ai.openai.embedding.options.model:}") String embeddingModelName
     ) {
         this.openAiApiKey = openAiApiKey;
+        this.embeddingApiKey = embeddingApiKey;
         this.embeddingModelName = embeddingModelName;
     }
 
@@ -39,8 +42,8 @@ public class AiBlogVectorStoreConfig {
             ObjectProvider<EmbeddingModel> embeddingModelProvider,
             AiBlogRagProperties properties
     ) {
-        if (!isConfiguredOpenAiApiKey(openAiApiKey)) {
-            throw new IllegalStateException("AI RAG 已启用，但未配置 AI_OPENAI_API_KEY，无法初始化博客 RAG 向量库。");
+        if (!isConfiguredOpenAiApiKey(resolveEmbeddingApiKey())) {
+            throw new IllegalStateException("AI RAG 已启用，但未配置 AI_OPENAI_EMBEDDING_API_KEY 或 AI_OPENAI_API_KEY，无法初始化博客 RAG 向量库。");
         }
         if (!StringUtils.hasText(embeddingModelName)) {
             throw new IllegalStateException("AI RAG 已启用，但未配置 AI_OPENAI_EMBEDDING_MODEL，无法初始化博客 RAG 向量库。");
@@ -70,5 +73,9 @@ public class AiBlogVectorStoreConfig {
 
     static boolean isConfiguredOpenAiApiKey(String apiKey) {
         return StringUtils.hasText(apiKey) && !UNSET_OPENAI_API_KEY.equals(apiKey.trim());
+    }
+
+    private String resolveEmbeddingApiKey() {
+        return StringUtils.hasText(embeddingApiKey) ? embeddingApiKey : openAiApiKey;
     }
 }

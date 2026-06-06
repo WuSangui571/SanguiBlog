@@ -34,7 +34,7 @@ SanguiBlog 的持久化数据包含三部分：
 |------|-------------------------------|----------|
 | 数据库密码 | `MYSQL_PASSWORD`、`MYSQL_ROOT_PASSWORD`、`POSTGRES_PASSWORD`、`SPRING_DATASOURCE_PASSWORD` | 服务器本地 `.env` 或密钥管理 |
 | JWT 密钥 | `JWT_SECRET` | 服务器本地 `.env` |
-| AI Provider 配置 | `AI_OPENAI_API_KEY`、`AI_OPENAI_BASE_URL` | 服务器本地 `.env` |
+| AI Provider 配置 | `AI_OPENAI_API_KEY`、`AI_OPENAI_BASE_URL`、`AI_OPENAI_EMBEDDING_API_KEY`、`AI_OPENAI_EMBEDDING_BASE_URL` | 服务器本地 `.env` |
 | SSH 凭证 | 服务器 host/user/key | 本地 `~/.ssh/config` 或 `ssh-agent` |
 | 服务器真实路径 | 生产 uploads 根目录、备份目录 | 用户提供的服务器配置 |
 

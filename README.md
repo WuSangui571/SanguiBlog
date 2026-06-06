@@ -77,6 +77,7 @@ Core blog features (posts, categories, tags, comments, admin) work without any A
 - `AI_OPENAI_CHAT_MODEL` (chat model for AI conversations)
 - PostgreSQL + PgVector (included in the Compose stack) for blog RAG; set `AI_RAG_ENABLED=true`
 - `AI_OPENAI_EMBEDDING_MODEL` for RAG embeddings (keep `AI_RAG_ENABLED=false` if your provider does not support embeddings)
+- Optional `AI_OPENAI_EMBEDDING_API_KEY` / `AI_OPENAI_EMBEDDING_BASE_URL` when embeddings must use a different provider or endpoint than chat
 
 AI can be toggled on/off centrally from the admin settings panel.
 

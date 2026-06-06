@@ -11,7 +11,7 @@ class AiBlogVectorStoreConfigTest {
 
     @Test
     void shouldRejectRagVectorStoreWhenOpenAiApiKeyIsMissing() {
-        AiBlogVectorStoreConfig config = new AiBlogVectorStoreConfig("", "text-embedding-3-small");
+        AiBlogVectorStoreConfig config = new AiBlogVectorStoreConfig("", "", "text-embedding-3-small");
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 config.aiBlogVectorStore(emptyEmbeddingModelProvider(), new AiBlogRagProperties()));
@@ -21,17 +21,31 @@ class AiBlogVectorStoreConfigTest {
 
     @Test
     void shouldRejectRagVectorStoreWhenOpenAiApiKeyIsPlaceholder() {
-        AiBlogVectorStoreConfig config = new AiBlogVectorStoreConfig("__unset__", "text-embedding-3-small");
+        AiBlogVectorStoreConfig config = new AiBlogVectorStoreConfig("__unset__", "__unset__", "text-embedding-3-small");
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 config.aiBlogVectorStore(emptyEmbeddingModelProvider(), new AiBlogRagProperties()));
 
-        assertTrue(ex.getMessage().contains("AI_OPENAI_API_KEY"));
+        assertTrue(ex.getMessage().contains("AI_OPENAI_EMBEDDING_API_KEY"));
+    }
+
+    @Test
+    void shouldAllowDedicatedEmbeddingApiKeyWhenCommonOpenAiApiKeyIsPlaceholder() {
+        AiBlogVectorStoreConfig config = new AiBlogVectorStoreConfig(
+                "__unset__",
+                "embedding-key",
+                "text-embedding-3-small"
+        );
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                config.aiBlogVectorStore(emptyEmbeddingModelProvider(), new AiBlogRagProperties()));
+
+        assertTrue(ex.getMessage().contains("EmbeddingModel"));
     }
 
     @Test
     void shouldRejectRagVectorStoreWhenEmbeddingModelNameIsMissing() {
-        AiBlogVectorStoreConfig config = new AiBlogVectorStoreConfig("test-key", "");
+        AiBlogVectorStoreConfig config = new AiBlogVectorStoreConfig("test-key", "test-key", "");
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 config.aiBlogVectorStore(emptyEmbeddingModelProvider(), new AiBlogRagProperties()));

@@ -92,6 +92,8 @@ docker compose -f docker-compose.prod.yml logs -f backend
 | `AI_OPENAI_API_KEY` | OpenAI-compatible API Key |
 | `AI_OPENAI_BASE_URL` | OpenAI-compatible base URL（留空默认 `https://api.openai.com`）|
 | `AI_OPENAI_CHAT_MODEL` | 聊天模型名称 |
+| `AI_OPENAI_EMBEDDING_API_KEY` | 可选。RAG embeddings 专用 API Key；留空复用 `AI_OPENAI_API_KEY` |
+| `AI_OPENAI_EMBEDDING_BASE_URL` | 可选。RAG embeddings 专用 base URL；留空复用 `AI_OPENAI_BASE_URL` |
 | `AI_OPENAI_EMBEDDING_MODEL` | 嵌入模型名称（RAG 使用；若 provider 不支持可留空）|
 | `AI_RAG_ENABLED` | 启用博客 RAG（需先配置 AI key 和 embedding model）|
 | `AI_RAG_SYNC_ON_STARTUP` | 启动时自动同步知识向量（默认 `false`，避免生产冷启动压力）|
@@ -192,6 +194,7 @@ docker run --rm --network sanguiblog_sanguiblog-net alpine:3.20 sh -c '
 ```bash
 docker compose -f docker-compose.prod.yml exec backend sh -c 'test -n "$AI_OPENAI_API_KEY" && test "$AI_OPENAI_API_KEY" != "__unset__" && echo "AI_OPENAI_API_KEY is set" || echo "AI_OPENAI_API_KEY is empty"'
 docker compose -f docker-compose.prod.yml exec backend sh -c 'test -n "$AI_OPENAI_BASE_URL" && echo "AI_OPENAI_BASE_URL is set" || echo "AI_OPENAI_BASE_URL is empty"'
+docker compose -f docker-compose.prod.yml exec backend sh -c 'test -n "$AI_OPENAI_EMBEDDING_API_KEY" && test "$AI_OPENAI_EMBEDDING_API_KEY" != "__unset__" && echo "AI_OPENAI_EMBEDDING_API_KEY is set" || echo "AI_OPENAI_EMBEDDING_API_KEY reuses chat key or is empty"'
 ```
 
 **AI RAG 临时关闭恢复：**
@@ -359,6 +362,9 @@ docker compose down -v
    AI_OPENAI_API_KEY=
    AI_OPENAI_BASE_URL=
    AI_OPENAI_CHAT_MODEL=
+   # 可选：embedding 专用 provider，不填则复用上面的 key/base URL
+   AI_OPENAI_EMBEDDING_API_KEY=
+   AI_OPENAI_EMBEDDING_BASE_URL=
    AI_OPENAI_EMBEDDING_MODEL=
    AI_RAG_ENABLED=true
    AI_RAG_SYNC_ON_STARTUP=false
