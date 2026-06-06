@@ -1497,3 +1497,83 @@ Result and boundaries:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 26: OpenAI-compatible AI provider and RAG follow-up
+
+**Date**: 2026-06-06
+**Task**: OpenAI-compatible AI provider and RAG follow-up
+**Branch**: `feature/openai-compatible-ai-provider-config`
+
+### Summary
+
+Migrated SanguiBlog AI provider wiring to OpenAI-compatible configuration, added embedding-specific config support, improved RAG observability/follow-up retrieval, and recorded manual acceptance.
+
+### Main Changes
+
+Commits:
+- 986b7f8 fix:openai-compatible-ai-provider
+- 23cb3f2 fix:adapt-openai-embedding-provider-config
+- 4149098 chore: remove leaked env file
+- abcf96f fix: enhance OpenAI-compatible RAG retrieval observability
+- f8c3049 fix: enhance AI follow-up RAG retrieval and empty stream fallback
+
+Main modules changed:
+- Backend AI provider configuration and Spring AI OpenAI-compatible dependency wiring.
+- AI chat service model configuration, provider-neutral error/log handling, and RAG follow-up retrieval behavior.
+- Embedding/RAG configuration, including separate embedding key/base-url support and observability for retrieval failures.
+- Docker Compose local/prod AI environment variable injection.
+- README and Docker deployment/data-sync documentation for OpenAI-compatible AI settings and migration notes.
+
+Updated files include:
+- SanguiBlog-server/pom.xml
+- SanguiBlog-server/src/main/resources/application.yaml
+- SanguiBlog-server/src/main/java/.../AiChatService.java
+- SanguiBlog-server/src/main/java/.../AiBlogVectorStoreConfig.java
+- .env.example
+- docker-compose.yml
+- docker-compose.prod.yml
+- README.md
+- README.zh-CN.md
+- docs/docker-deploy.md
+- docs/docker-data-sync.md
+- Trellis task archive metadata and workspace journal files
+
+Validation and acceptance:
+- DeepSeek reported mvn -q -DskipTests compile passed.
+- DeepSeek reported targeted AI service tests passed: AiChatService and related AI tests, total 34 tests across reported suites.
+- DeepSeek reported docker compose config --quiet passed.
+- DeepSeek reported docker compose -f docker-compose.prod.yml config --quiet passed.
+- DeepSeek reported git diff --check passed.
+- DeepSeek reported python .trellis/scripts/task.py validate passed.
+- Codex follow-up debugging adapted separate embedding provider configuration and RAG retrieval/stream fallback behavior.
+- User manually tested local environment after final fixes and confirmed all tests passed before record-session.
+
+Result and boundaries:
+- The task is complete and archived based on user manual acceptance plus committed code, even though the original task metadata still showed planning before archive.
+- No frontend contract change was recorded; chat/SSE payload shape remained unchanged.
+- No database schema, API contract, Docker critical infra redesign, or cross-service contract migration was introduced beyond provider environment configuration.
+- No Codex-side git commit or push was performed during record-session.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `986b7f8` | (see git log) |
+| `23cb3f2` | (see git log) |
+| `4149098` | (see git log) |
+| `abcf96f` | (see git log) |
+| `f8c3049` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
