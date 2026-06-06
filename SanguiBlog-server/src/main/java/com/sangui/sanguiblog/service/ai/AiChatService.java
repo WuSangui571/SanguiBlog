@@ -161,9 +161,10 @@ public class AiChatService {
         }
         AiBlogRagService.AiBlogRagContext ragContext;
         try {
+            String ragQuery = buildRagQuery(userMessage, contextMessageTexts);
             ragContext = referencedPostAdvice.useContext()
                     ? AiBlogRagService.AiBlogRagContext.empty()
-                    : aiBlogRagService.retrieve(userMessage);
+                    : aiBlogRagService.retrieve(ragQuery);
             AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
                     aiCurrentPageContextService.advise(userMessage, currentPageContext);
             if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
@@ -250,9 +251,10 @@ public class AiChatService {
 
         AtomicBoolean providerPermitReleased = new AtomicBoolean(false);
         try {
+            String ragQuery = buildRagQuery(userMessage, contextMessageTexts);
             AiBlogRagService.AiBlogRagContext ragContext = referencedPostAdvice.useContext()
                     ? AiBlogRagService.AiBlogRagContext.empty()
-                    : aiBlogRagService.retrieve(userMessage);
+                    : aiBlogRagService.retrieve(ragQuery);
             AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
                     aiCurrentPageContextService.advise(userMessage, currentPageContext);
             if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
@@ -308,8 +310,20 @@ public class AiChatService {
                     () -> {
                         String reply = replyBuilder.toString().trim();
                         if (!StringUtils.hasText(reply)) {
-                            sendSseEvent(emitter, "error", Map.of("message", "AI 服务未返回有效内容，请稍后再试"));
-                            emitter.complete();
+                            log.warn("AI 流式聊天未返回有效 chunk，尝试回退同步聊天");
+                            try {
+                                String fallbackReply = callSyncReply(promptMessages);
+                                if (StringUtils.hasText(fallbackReply)) {
+                                    completeAssistantReply(emitter, session, fallbackReply, ragContext);
+                                    return;
+                                }
+                                sendSseEvent(emitter, "error", Map.of("message", "AI 服务未返回有效内容，请稍后再试"));
+                                emitter.complete();
+                            } catch (Exception fallbackError) {
+                                log.error("流式空响应后回退同步聊天失败", fallbackError);
+                                sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
+                                emitter.complete();
+                            }
                             return;
                         }
                         completeAssistantReply(emitter, session, reply, ragContext);
@@ -636,6 +650,37 @@ public class AiChatService {
         payload.put("mode", mode);
         payload.put("references", references == null ? List.of() : references);
         return payload;
+    }
+
+    static String buildRagQuery(String userMessage, List<String> contextMessageTexts) {
+        String normalized = userMessage == null ? "" : userMessage.trim();
+        if (!isContinuationQuestion(normalized) || contextMessageTexts == null || contextMessageTexts.isEmpty()) {
+            return normalized;
+        }
+
+        List<String> recentContext = contextMessageTexts.stream()
+                .filter(StringUtils::hasText)
+                .skip(Math.max(0, contextMessageTexts.size() - 4))
+                .map(String::trim)
+                .toList();
+        if (recentContext.isEmpty()) {
+            return normalized;
+        }
+        return String.join(System.lineSeparator(), recentContext) + System.lineSeparator() + normalized;
+    }
+
+    private static boolean isContinuationQuestion(String message) {
+        if (!StringUtils.hasText(message)) {
+            return false;
+        }
+        String normalized = message.trim();
+        if (normalized.length() <= 2) {
+            return true;
+        }
+        return switch (normalized) {
+            case "继续", "接着", "展开", "详细说", "再说", "说下去", "more", "continue" -> true;
+            default -> false;
+        };
     }
 
     private String resolveMode(AiBlogRagService.AiBlogRagContext ragContext) {

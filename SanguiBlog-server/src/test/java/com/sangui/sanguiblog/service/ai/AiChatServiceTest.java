@@ -37,4 +37,36 @@ class AiChatServiceTest {
         assertFalse(AiChatService.isConfiguredOpenAiApiKey("__unset__"));
         assertTrue(AiChatService.isConfiguredOpenAiApiKey("sk-test"));
     }
+
+    @Test
+    void shouldUseCurrentMessageAsRagQueryWhenQuestionIsSpecific() {
+        String query = AiChatService.buildRagQuery(
+                "介绍三桂博客",
+                List.of("上一轮用户问题", "上一轮助手回答")
+        );
+
+        assertEquals("介绍三桂博客", query);
+    }
+
+    @Test
+    void shouldIncludeRecentContextInRagQueryWhenQuestionIsContinuation() {
+        String query = AiChatService.buildRagQuery(
+                "继续",
+                List.of("请介绍三桂博客", "三桂博客是一个个人博客")
+        );
+
+        assertTrue(query.contains("请介绍三桂博客"));
+        assertTrue(query.contains("三桂博客是一个个人博客"));
+        assertTrue(query.endsWith("继续"));
+    }
+
+    @Test
+    void shouldIncludeRecentContextInRagQueryWhenQuestionIsPunctuationOnly() {
+        String query = AiChatService.buildRagQuery(
+                "？",
+                List.of("介绍三桂博客")
+        );
+
+        assertEquals("介绍三桂博客" + System.lineSeparator() + "？", query);
+    }
 }
