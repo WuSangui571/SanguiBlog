@@ -73,6 +73,13 @@ public class SiteMetaDto {
     @Builder
     public static class AiAssistantDto {
         private boolean enabled;
+        private boolean capable;
+        private boolean ragEnabled;
+        private boolean ragCapable;
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        private String disabledReason;
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        private String ragDisabledReason;
         private String assistantName;
         private String title;
         private String welcomeMessage;

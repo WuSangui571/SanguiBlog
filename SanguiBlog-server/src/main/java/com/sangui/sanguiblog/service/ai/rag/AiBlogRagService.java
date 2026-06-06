@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.service.ai.rag;
 
 import com.sangui.sanguiblog.config.AiBlogRagProperties;
 import com.sangui.sanguiblog.model.dto.AiChatResponse;
+import com.sangui.sanguiblog.service.ai.AiAssistantSettingService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -23,8 +24,12 @@ public class AiBlogRagService {
 
     private final ObjectProvider<VectorStore> vectorStoreProvider;
     private final AiBlogRagProperties ragProperties;
+    private final AiAssistantSettingService aiAssistantSettingService;
 
     public AiBlogRagContext retrieve(String question) {
+        if (!aiAssistantSettingService.isRagEffectiveEnabled()) {
+            return AiBlogRagContext.empty();
+        }
         if (!ragProperties.isConfigured() || !StringUtils.hasText(question)) {
             return AiBlogRagContext.empty();
         }

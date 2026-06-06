@@ -29,6 +29,6 @@ public class AdminAiAssistantSettingsController {
     public ApiResponse<AiAssistantAdminSettingsDto> updateSettings(
             @RequestBody AiAssistantAdminSettingsUpdateRequest request
     ) {
-        return ApiResponse.ok(aiAssistantSettingService.updateEnabled(request.isEnabled()));
+        return ApiResponse.ok(aiAssistantSettingService.updateSettings(request));
     }
 }

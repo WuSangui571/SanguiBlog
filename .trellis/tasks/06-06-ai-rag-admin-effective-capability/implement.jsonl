@@ -1,0 +1,31 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/06-06-ai-rag-admin-effective-capability/prd.md", "reason": "Primary PRD with cross-layer contract and acceptance matrix"}
+{"file": ".trellis/tasks/06-06-ai-rag-admin-effective-capability/research.md", "reason": "Focused code research and expected file/test list"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend ownership and placement rules"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "AI/RAG quality and test contracts"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "site_settings and AI/RAG persistence boundaries"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "ApiResponse and validation error mapping"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe AI/RAG logging rules"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend API/admin ownership rules"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Admin component and UI control patterns"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "site meta loader/cache patterns"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "admin local state and site meta state ownership"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "cross-layer field/runtime guards"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "retrieve-first and duplicate avoidance"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "API/payload/error/test matrix requirement"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingService.java", "reason": "Existing AI admin switch, siteConfig, and assertEnabled owner"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiAssistantAdminSettingsDto.java", "reason": "Admin settings response DTO to extend"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiAssistantAdminSettingsUpdateRequest.java", "reason": "Admin settings update request DTO to extend"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/SiteMetaDto.java", "reason": "Public aiAssistant site meta DTO to extend"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SiteService.java", "reason": "Public site meta builder"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java", "reason": "Chat effective-state enforcement and RAG call site"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/rag/AiBlogRagService.java", "reason": "RAG retrieval effective-state gate"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogRagProperties.java", "reason": "RAG config capability inputs"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogVectorStoreConfig.java", "reason": "Embedding/PgVector startup capability behavior"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Existing frontend API facade for admin settings/site meta"}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "SystemSettingsView AI switch UI owner"}
+{"file": "SanguiBlog-front/src/appfull/aiAssistantConfig.js", "reason": "Public AI config normalization"}
+{"file": "SanguiBlog-front/src/hooks/useBlogData.jsx", "reason": "site meta cache/load owner"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "AI launcher visibility reads effective enabled"}

@@ -6216,7 +6216,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [knowledgeSaving, setKnowledgeSaving] = useState(false);
     const [knowledgeDeletingId, setKnowledgeDeletingId] = useState(null);
     const [knowledgeKeyword, setKnowledgeKeyword] = useState('');
-    const [aiAssistantEnabled, setAiAssistantEnabled] = useState(true);
+    const [aiChatAdminEnabled, setAiChatAdminEnabled] = useState(true);
+    const [aiRagAdminEnabled, setAiRagAdminEnabled] = useState(false);
+    const [aiChatCapable, setAiChatCapable] = useState(true);
+    const [aiRagCapable, setAiRagCapable] = useState(false);
+    const [aiChatEffectiveEnabled, setAiChatEffectiveEnabled] = useState(true);
+    const [aiRagEffectiveEnabled, setAiRagEffectiveEnabled] = useState(false);
+    const [aiChatDisabledReason, setAiChatDisabledReason] = useState(null);
+    const [aiRagDisabledReason, setAiRagDisabledReason] = useState(null);
     const [aiAssistantLoading, setAiAssistantLoading] = useState(false);
     const [aiAssistantSaving, setAiAssistantSaving] = useState(false);
     const [aiAssistantError, setAiAssistantError] = useState('');
@@ -6276,7 +6283,14 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         try {
             const res = await adminFetchAiAssistantSettings();
             const data = res?.data || res;
-            setAiAssistantEnabled(data?.enabled !== false);
+            setAiChatAdminEnabled(data?.aiChatAdminEnabled !== false);
+            setAiRagAdminEnabled(data?.aiRagAdminEnabled === true);
+            setAiChatCapable(data?.aiChatCapable === true);
+            setAiRagCapable(data?.aiRagCapable === true);
+            setAiChatEffectiveEnabled(data?.aiChatEffectiveEnabled !== false);
+            setAiRagEffectiveEnabled(data?.aiRagEffectiveEnabled === true);
+            setAiChatDisabledReason(typeof data?.aiChatDisabledReason === 'string' ? data.aiChatDisabledReason : null);
+            setAiRagDisabledReason(typeof data?.aiRagDisabledReason === 'string' ? data.aiRagDisabledReason : null);
         } catch (err) {
             setAiAssistantError(err?.message || '加载 AI 助理设置失败');
         } finally {
@@ -6574,23 +6588,27 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         }
     }, [confirm, knowledgeEditingId, loadKnowledgeDocuments, resetKnowledgeForm, showNotice]);
 
-    const handleAiAssistantToggleSave = useCallback(async (enabled) => {
+    const handleAiAssistantToggleSave = useCallback(async ({ aiChatAdminEnabled: chatEnabled, aiRagAdminEnabled: ragEnabled }) => {
         setAiAssistantSaving(true);
         setAiAssistantError('');
         try {
-            const res = await adminUpdateAiAssistantSettings({ enabled });
+            const payload = {};
+            if (typeof chatEnabled === 'boolean') payload.aiChatAdminEnabled = chatEnabled;
+            if (typeof ragEnabled === 'boolean') payload.aiRagAdminEnabled = ragEnabled;
+            const res = await adminUpdateAiAssistantSettings(payload);
             const data = res?.data || res;
-            const nextEnabled = data?.enabled !== false;
-            setAiAssistantEnabled(nextEnabled);
+            setAiChatAdminEnabled(data?.aiChatAdminEnabled !== false);
+            setAiRagAdminEnabled(data?.aiRagAdminEnabled === true);
+            setAiChatCapable(data?.aiChatCapable === true);
+            setAiRagCapable(data?.aiRagCapable === true);
+            setAiChatEffectiveEnabled(data?.aiChatEffectiveEnabled !== false);
+            setAiRagEffectiveEnabled(data?.aiRagEffectiveEnabled === true);
+            setAiChatDisabledReason(typeof data?.aiChatDisabledReason === 'string' ? data.aiChatDisabledReason : null);
+            setAiRagDisabledReason(typeof data?.aiRagDisabledReason === 'string' ? data.aiRagDisabledReason : null);
             onAiAssistantChanged && await onAiAssistantChanged();
-            showNotice(
-                nextEnabled
-                    ? 'AI 助理已开启，前台入口与聊天接口已恢复'
-                    : 'AI 助理已关闭，前台入口已隐藏，后端聊天接口已停用',
-                'success'
-            );
+            showNotice('AI 助理设置已保存', 'success');
         } catch (err) {
-            setAiAssistantError(err?.message || '保存 AI 助理开关失败');
+            setAiAssistantError(err?.message || '保存 AI 助理设置失败');
         } finally {
             setAiAssistantSaving(false);
         }
@@ -7530,23 +7548,29 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     </div>
                 )}
 
+                {/* AI 聊天开关 */}
                 <div className={formPanelClass}>
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
                                 <Sparkles size={18} />
-                                <span className="text-lg font-bold">AI 助理总开关</span>
+                                <span className="text-lg font-bold">AI 聊天</span>
                             </div>
                             <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                关闭后，前台 AI 入口会隐藏，用户侧 AI 聊天接口也会立即停止提供服务。
+                                控制前台 AI 聊天入口和后端聊天接口的可用性。
                             </p>
+                            {!aiChatCapable && aiChatDisabledReason && (
+                                <p className="text-sm text-amber-600 font-medium">
+                                    不可用原因：{aiChatDisabledReason}
+                                </p>
+                            )}
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                            aiAssistantEnabled
+                            aiChatEffectiveEnabled
                                 ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                                 : 'border-gray-400 bg-gray-100 text-gray-600'
                         }`}>
-                            {aiAssistantLoading ? '读取中...' : (aiAssistantEnabled ? '当前已开启' : '当前已关闭')}
+                            {aiAssistantLoading ? '读取中...' : (aiChatEffectiveEnabled ? '当前可用' : (aiChatCapable ? '管理员已关闭' : '能力不可用'))}
                         </span>
                     </div>
 
@@ -7555,35 +7579,99 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             <input
                                 type="checkbox"
                                 className={checkboxClass}
-                                checked={aiAssistantEnabled}
-                                disabled={aiAssistantLoading || aiAssistantSaving}
-                                onChange={(e) => setAiAssistantEnabled(e.target.checked)}
+                                checked={aiChatAdminEnabled}
+                                disabled={aiAssistantLoading || aiAssistantSaving || !aiChatCapable}
+                                onChange={(e) => setAiChatAdminEnabled(e.target.checked)}
                             />
-                            <span>启用 AI 助理</span>
+                            <span>启用 AI 聊天</span>
                         </label>
                         <button
                             type="button"
-                            onClick={() => handleAiAssistantToggleSave(aiAssistantEnabled)}
+                            onClick={() => handleAiAssistantToggleSave({ aiChatAdminEnabled })}
                             disabled={aiAssistantLoading || aiAssistantSaving}
                             className={accentButtonClass}
                         >
-                            {aiAssistantSaving ? '保存中...' : '保存开关'}
+                            {aiAssistantSaving ? '保存中...' : '保存聊天开关'}
                         </button>
                         <button
                             type="button"
-                            onClick={() => handleAiAssistantToggleSave(false)}
-                            disabled={aiAssistantLoading || aiAssistantSaving || !aiAssistantEnabled}
+                            onClick={() => handleAiAssistantToggleSave({ aiChatAdminEnabled: false })}
+                            disabled={aiAssistantLoading || aiAssistantSaving || !aiChatAdminEnabled}
                             className={primaryButtonClass}
                         >
-                            一键关闭 AI
+                            关闭聊天
                         </button>
                         <button
                             type="button"
-                            onClick={() => handleAiAssistantToggleSave(true)}
-                            disabled={aiAssistantLoading || aiAssistantSaving || aiAssistantEnabled}
+                            onClick={() => handleAiAssistantToggleSave({ aiChatAdminEnabled: true })}
+                            disabled={aiAssistantLoading || aiAssistantSaving || aiChatAdminEnabled || !aiChatCapable}
                             className={successButtonClass}
                         >
-                            一键开启 AI
+                            开启聊天
+                        </button>
+                    </div>
+                </div>
+
+                {/* RAG 检索开关 */}
+                <div className={formPanelClass}>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <Database size={18} />
+                                <span className="text-lg font-bold">RAG 检索</span>
+                            </div>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                控制 AI 聊天时是否使用博客知识库进行向量检索增强回答。
+                            </p>
+                            {!aiRagEffectiveEnabled && aiRagDisabledReason && (
+                                <p className="text-sm text-amber-600 font-medium">
+                                    不可用原因：{aiRagDisabledReason}
+                                </p>
+                            )}
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                            aiRagEffectiveEnabled
+                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                : 'border-gray-400 bg-gray-100 text-gray-600'
+                        }`}>
+                            {aiAssistantLoading ? '读取中...' : (aiRagEffectiveEnabled ? '当前启用' : (aiRagCapable && aiChatEffectiveEnabled ? '管理员已关闭' : '能力不可用'))}
+                        </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <label className="flex items-center gap-3 text-sm font-medium">
+                            <input
+                                type="checkbox"
+                                className={checkboxClass}
+                                checked={aiRagAdminEnabled}
+                                disabled={aiAssistantLoading || aiAssistantSaving || !aiRagCapable || !aiChatEffectiveEnabled}
+                                onChange={(e) => setAiRagAdminEnabled(e.target.checked)}
+                            />
+                            <span>启用 RAG 检索</span>
+                        </label>
+                        <button
+                            type="button"
+                            onClick={() => handleAiAssistantToggleSave({ aiRagAdminEnabled })}
+                            disabled={aiAssistantLoading || aiAssistantSaving}
+                            className={accentButtonClass}
+                        >
+                            {aiAssistantSaving ? '保存中...' : '保存 RAG 开关'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleAiAssistantToggleSave({ aiRagAdminEnabled: false })}
+                            disabled={aiAssistantLoading || aiAssistantSaving || !aiRagAdminEnabled}
+                            className={primaryButtonClass}
+                        >
+                            关闭 RAG
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleAiAssistantToggleSave({ aiRagAdminEnabled: true })}
+                            disabled={aiAssistantLoading || aiAssistantSaving || aiRagAdminEnabled || !aiChatEffectiveEnabled || !aiRagCapable}
+                            className={successButtonClass}
+                        >
+                            开启 RAG
                         </button>
                     </div>
                 </div>

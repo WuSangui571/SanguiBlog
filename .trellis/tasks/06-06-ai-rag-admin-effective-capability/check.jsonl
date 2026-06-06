@@ -1,0 +1,12 @@
+{"file": ".trellis/workflow.md", "reason": "Trellis finish-work and check workflow authority"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend code quality check spec"}
+{"file": ".trellis/tasks/06-06-ai-rag-admin-effective-capability/prd.md", "reason": "Check against acceptance/error matrix and forbidden scope"}
+{"file": ".trellis/tasks/06-06-ai-rag-admin-effective-capability/research.md", "reason": "Check expected modified files and tests"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend verification and AI/RAG review checklist"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend static/build verification checklist"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer field alignment checklist"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingServiceTest.java", "reason": "Backend settings/capability regression tests"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/config/AiBlogVectorStoreConfigTest.java", "reason": "Embedding/vector-store capability tests"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiChatServiceTest.java", "reason": "Chat/RAG helper regression tests"}
+{"file": "SanguiBlog-front/src/appfull/aiAssistantConfig.test.js", "reason": "Frontend AI config field guard tests"}
+{"file": "SanguiBlog-front/src/appfull/noNativeBlockingDialogs.test.js", "reason": "Admin UI must not add native dialogs"}

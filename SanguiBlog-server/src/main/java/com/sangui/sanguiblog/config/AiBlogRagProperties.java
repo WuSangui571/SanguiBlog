@@ -18,7 +18,9 @@ public class AiBlogRagProperties {
         return enabled
                 && StringUtils.hasText(pgvector.getUrl())
                 && StringUtils.hasText(pgvector.getUsername())
-                && StringUtils.hasText(pgvector.getPassword());
+                && StringUtils.hasText(pgvector.getPassword())
+                && StringUtils.hasText(pgvector.getSchema())
+                && StringUtils.hasText(pgvector.getTable());
     }
 
     @Data

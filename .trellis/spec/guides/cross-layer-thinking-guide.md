@@ -122,6 +122,67 @@ A stream that receives no `chunk`, `complete`, or `error` must not leave the UI 
 
 AI provider saturation is part of the cross-layer contract. Backend provider work is bounded by `AI_PROVIDER_MAX_CONCURRENCY` / `ai.provider.max-concurrency` through the established guard. When the guard is full, `POST /api/ai/chat` returns a readable HTTP `429` failure and `POST /api/ai/chat/stream` emits an SSE `error` event followed by completion.
 
+### AI Assistant Admin Capability
+
+The admin AI settings contract separates persisted admin switches from runtime capability and effective availability.
+
+Data flow:
+
+```text
+Admin settings UI -> adminUpdateAiAssistantSettings(payload)
+-> PUT /api/admin/ai-assistant-settings
+-> AiAssistantSettingService -> site_settings
+-> ApiResponse<AiAssistantAdminSettingsDto>
+-> Admin settings UI state
+```
+
+Public site meta continues to control launcher visibility:
+
+```text
+GET /api/site/meta data.aiAssistant.enabled
+-> resolveAiAssistantConfig()
+-> public AI launcher visibility
+```
+
+Contracts:
+
+| Concern | Contract |
+|---------|----------|
+| Chat admin switch | Persist in `site_settings` key `ai.chat.enabled`; default is enabled for backward compatibility. |
+| RAG admin switch | Persist in `site_settings` key `ai.rag.admin_enabled`; default is disabled. Do not confuse this DB key with the Spring property `ai.rag.enabled`, which remains low-level RAG capability/config. |
+| Admin update payload | Prefer nullable `aiChatAdminEnabled` and `aiRagAdminEnabled`; legacy nullable `enabled` still maps to chat admin state. If both `enabled` and `aiChatAdminEnabled` are present, `aiChatAdminEnabled` wins. |
+| Admin response payload | Include admin booleans, capability booleans, effective booleans, safe disabled reasons, and legacy `enabled` as an alias for effective chat enabled. |
+| Public site meta payload | `aiAssistant.enabled` means effective chat enabled; `capable` means chat capability; `ragEnabled` means effective RAG enabled; `ragCapable` means RAG capability. |
+| Chat effective formula | `aiChatEffectiveEnabled = aiChatCapable && aiChatAdminEnabled`. |
+| RAG effective formula | `aiRagEffectiveEnabled = aiChatEffectiveEnabled && aiRagCapable && aiRagAdminEnabled`. |
+| Capability reasons | Reasons must be safe, stable, and must not include API keys, provider payloads, prompts, article content, or full exception text. |
+| RAG retrieval | `AiBlogRagService.retrieve(...)` must return empty unless effective RAG is true. Runtime provider/vector errors may degrade to empty RAG context with safe logging. |
+
+Validation/error matrix:
+
+| Case | Expected Result |
+|------|-----------------|
+| Missing chat API key, base URL, or chat model and admin enables chat | `PUT /api/admin/ai-assistant-settings` returns a 400-style `ApiResponse` through `GlobalExceptionHandler`; chat enabled is not persisted. |
+| Chat admin disabled | Public meta `aiAssistant.enabled=false`; chat endpoints reject through `assertEnabled`; RAG effective is false even if RAG admin is true. |
+| Missing embedding API key, embedding model, PgVector config, `EmbeddingModel`, or `VectorStore` and admin enables RAG | 400-style failure; RAG enabled is not persisted; admin/site meta expose a safe RAG disabled reason. |
+| Chat effective false and admin enables RAG | Reject enabling RAG with a clear message. |
+| Older public/admin payload only has `enabled` | Frontend must not crash; old admin update `{ "enabled": true }` remains accepted for chat admin state. |
+
+Required targeted verification for this contract:
+
+```bash
+cd SanguiBlog-server
+mvn -q "-Dtest=AiAssistantSettingServiceTest,AiBlogVectorStoreConfigTest,AiChatServiceTest" test
+mvn -q -DskipTests compile
+
+cd ../SanguiBlog-front
+node src/appfull/AdminAiAssistantSettingsContract.test.js
+node src/appfull/aiAssistantConfig.test.js
+node src/appfull/noNativeBlockingDialogs.test.js
+npm run lint
+npm run build
+```
+
 ### Uploads
 
 Multipart endpoints do not use JSON request body. They still return JSON `ApiResponse`.

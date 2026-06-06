@@ -4,5 +4,7 @@ import lombok.Data;
 
 @Data
 public class AiAssistantAdminSettingsUpdateRequest {
-    private boolean enabled;
+    private Boolean enabled;
+    private Boolean aiChatAdminEnabled;
+    private Boolean aiRagAdminEnabled;
 }
