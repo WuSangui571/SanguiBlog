@@ -192,18 +192,17 @@ public final class AiBlogKnowledgeSupport {
             Map<String, Object> metadata = document.getMetadata();
             String sourceType = stringValue(metadata.get("sourceType"), "POST");
             Long sourceId = toLong(metadata.get("sourceId"));
-            if (sourceId == null) {
-                continue;
-            }
-            String uniqueKey = sourceType + ":" + sourceId;
+            String url = resolveReferenceUrl(sourceType, sourceId, metadata.get("url"));
+            String title = stringValue(metadata.get("title"), "未命名文档");
+            String uniqueKey = sourceType + ":" + (sourceId != null ? sourceId : url + ":" + title);
             if (unique.containsKey(uniqueKey)) {
                 continue;
             }
             unique.put(uniqueKey, AiChatResponse.ReferenceDto.builder()
                     .sourceType(sourceType)
                     .sourceId(sourceId)
-                    .title(stringValue(metadata.get("title"), "未命名文档"))
-                    .url(resolveReferenceUrl(sourceType, sourceId, metadata.get("url")))
+                    .title(title)
+                    .url(url)
                     .build());
         }
         return List.copyOf(unique.values());
@@ -266,7 +265,7 @@ public final class AiBlogKnowledgeSupport {
         if (StringUtils.hasText(url)) {
             return url;
         }
-        if ("POST".equalsIgnoreCase(sourceType)) {
+        if ("POST".equalsIgnoreCase(sourceType) && sourceId != null) {
             return buildPostUrl(sourceId);
         }
         return "";

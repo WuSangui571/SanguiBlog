@@ -73,11 +73,11 @@ sudo docker compose -f docker-compose.prod.yml logs -f backend
 核心博客功能（文章、分类、标签、评论、后台管理）无需任何 AI 配置即可运行。AI 助理需要：
 
 - `.env` 中配置 `AI_OPENAI_API_KEY`
-- `AI_OPENAI_BASE_URL`（留空时默认使用 `https://api.openai.com`）
+- `AI_OPENAI_BASE_URL`（留空时默认使用 `https://api.openai.com`；末尾可带 `/v1`，后端会自动归一化）
 - `AI_OPENAI_CHAT_MODEL`（AI 对话使用的聊天模型）
 - 博客 RAG 需要 PostgreSQL + PgVector（已在 Compose 栈中包含）— 设置 `AI_RAG_ENABLED=true`
 - `AI_OPENAI_EMBEDDING_MODEL`（RAG 嵌入模型；若 provider 不支持 embeddings，请保持 `AI_RAG_ENABLED=false`）
-- 可选 `AI_OPENAI_EMBEDDING_API_KEY` / `AI_OPENAI_EMBEDDING_BASE_URL`（当 embedding 需要使用不同于聊天的 provider 或 endpoint 时配置）
+- 可选 `AI_OPENAI_EMBEDDING_API_KEY` / `AI_OPENAI_EMBEDDING_BASE_URL`（当 embedding 需要使用不同于聊天的 provider 或 endpoint 时配置；embedding base URL 末尾也可带 `/v1`）
 
 AI 功能可在后台设置面板中统一开启/关闭。
 

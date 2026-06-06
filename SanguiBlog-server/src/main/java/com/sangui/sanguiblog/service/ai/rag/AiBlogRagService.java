@@ -44,8 +44,16 @@ public class AiBlogRagService {
 
             List<Document> documents = vectorStore.similaritySearch(request);
             if (documents == null || documents.isEmpty()) {
+                long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
+                log.info("博客 RAG 检索未命中: topK={}, similarityThreshold={}, elapsedMs={}",
+                        request.getTopK(), ragProperties.getSimilarityThreshold(), elapsedMs);
                 return AiBlogRagContext.empty();
             }
+
+            long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
+            log.info("博客 RAG 检索命中: count={}, topK={}, similarityThreshold={}, elapsedMs={}, sources={}",
+                    documents.size(), request.getTopK(), ragProperties.getSimilarityThreshold(), elapsedMs,
+                    summarizeSources(documents));
 
             return new AiBlogRagContext(
                     AiBlogKnowledgeSupport.buildRagContext(documents),
@@ -58,6 +66,18 @@ public class AiBlogRagService {
                     ex.getClass().getName(), elapsedMs, ex.getMessage());
             return AiBlogRagContext.empty();
         }
+    }
+
+    private String summarizeSources(List<Document> documents) {
+        return documents.stream()
+                .limit(5)
+                .map(document -> {
+                    Object sourceType = document.getMetadata().getOrDefault("sourceType", "UNKNOWN");
+                    Object title = document.getMetadata().getOrDefault("title", "untitled");
+                    return sourceType + ":" + title;
+                })
+                .toList()
+                .toString();
     }
 
     @Getter

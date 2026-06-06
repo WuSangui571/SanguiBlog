@@ -90,10 +90,10 @@ docker compose -f docker-compose.prod.yml logs -f backend
 | 变量 | 说明 |
 |------|------|
 | `AI_OPENAI_API_KEY` | OpenAI-compatible API Key |
-| `AI_OPENAI_BASE_URL` | OpenAI-compatible base URL（留空默认 `https://api.openai.com`）|
+| `AI_OPENAI_BASE_URL` | OpenAI-compatible base URL（留空默认 `https://api.openai.com`；末尾可带 `/v1`，后端会自动归一化）|
 | `AI_OPENAI_CHAT_MODEL` | 聊天模型名称 |
 | `AI_OPENAI_EMBEDDING_API_KEY` | 可选。RAG embeddings 专用 API Key；留空复用 `AI_OPENAI_API_KEY` |
-| `AI_OPENAI_EMBEDDING_BASE_URL` | 可选。RAG embeddings 专用 base URL；留空复用 `AI_OPENAI_BASE_URL` |
+| `AI_OPENAI_EMBEDDING_BASE_URL` | 可选。RAG embeddings 专用 base URL；留空复用 `AI_OPENAI_BASE_URL`；末尾可带 `/v1` |
 | `AI_OPENAI_EMBEDDING_MODEL` | 嵌入模型名称（RAG 使用；若 provider 不支持可留空）|
 | `AI_RAG_ENABLED` | 启用博客 RAG（需先配置 AI key 和 embedding model）|
 | `AI_RAG_SYNC_ON_STARTUP` | 启动时自动同步知识向量（默认 `false`，避免生产冷启动压力）|

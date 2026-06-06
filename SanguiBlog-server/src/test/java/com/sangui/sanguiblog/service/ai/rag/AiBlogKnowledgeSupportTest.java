@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AiBlogKnowledgeSupportTest {
@@ -57,6 +58,25 @@ class AiBlogKnowledgeSupportTest {
         assertEquals(1, references.size());
         assertEquals("ADMIN_TEXT", references.get(0).getSourceType());
         assertEquals("", references.get(0).getUrl());
+    }
+
+    @Test
+    void shouldBuildOverviewReferenceWithoutSourceId() {
+        Document document = Document.builder()
+                .id("overview-1")
+                .text("三桂博客已发布文章知识总览")
+                .metadata(Map.of(
+                        "sourceType", "BLOG_OVERVIEW",
+                        "title", "三桂博客已发布文章知识总览",
+                        "url", "/archive"
+                ))
+                .build();
+
+        List<AiChatResponse.ReferenceDto> references = AiBlogKnowledgeSupport.buildReferences(List.of(document));
+        assertEquals(1, references.size());
+        assertEquals("BLOG_OVERVIEW", references.get(0).getSourceType());
+        assertNull(references.get(0).getSourceId());
+        assertEquals("/archive", references.get(0).getUrl());
     }
 
     @Test
