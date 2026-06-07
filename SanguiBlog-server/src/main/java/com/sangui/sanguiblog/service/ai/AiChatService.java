@@ -41,6 +41,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -225,6 +226,8 @@ public class AiChatService {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
+        long streamEntryNanos = System.nanoTime();
+
         aiAssistantSettingService.assertEnabled();
         AiGuestAccessService.AccessContext accessContext = aiGuestAccessService.resolveContext(userId, request, response);
         aiGuestAccessService.assertCanSend(accessContext);
@@ -232,6 +235,14 @@ public class AiChatService {
         User currentUser = userId != null ? persistenceService.findUser(userId) : null;
         AiChatSession session = resolveChatSession(accessContext, userId, sessionId);
         String userMessage = normalizeMessage(message);
+
+        boolean ragEffective = aiAssistantSettingService.isRagEffectiveEnabled();
+        log.info("AI stream request entered: sessionId={}, userId={}, guest={}, ragEffective={}, elapsedMs={}",
+                session != null ? session.getId() : null,
+                userId,
+                accessContext.guest(),
+                ragEffective,
+                (System.nanoTime() - streamEntryNanos) / 1_000_000L);
 
         AiAssistantCapabilityService.CapabilityAnswer capabilityAnswer = aiAssistantCapabilityService.answer(userMessage);
         if (capabilityAnswer.answered()) {
@@ -241,114 +252,160 @@ public class AiChatService {
             return buildProviderConfigErrorEmitter();
         }
 
-        List<String> contextMessageTexts = loadContextMessageTexts(accessContext, session != null ? session.getId() : null, localHistory);
-        AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice =
-                aiReferencedPostContextService.advise(userMessage, contextMessageTexts);
-
         if (!concurrencyGuard.tryAcquire()) {
             return buildBusyErrorEmitter();
         }
 
+        SseEmitter emitter = new SseEmitter(STREAM_EMITTER_TIMEOUT_MILLIS);
         AtomicBoolean providerPermitReleased = new AtomicBoolean(false);
-        try {
-            String ragQuery = buildRagQuery(userMessage, contextMessageTexts);
-            AiBlogRagService.AiBlogRagContext ragContext = referencedPostAdvice.useContext()
-                    ? AiBlogRagService.AiBlogRagContext.empty()
-                    : aiBlogRagService.retrieve(ragQuery);
-            AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
-                    aiCurrentPageContextService.advise(userMessage, currentPageContext);
-            if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
-                pageContextAdvice = AiCurrentPageContextService.PageContextAdvice.unused();
-            }
-            if (shouldPreferCurrentArticlePageContext(currentPageContext, pageContextAdvice, referencedPostAdvice)) {
-                referencedPostAdvice = AiReferencedPostContextService.ReferencedPostAdvice.unused();
-            }
-            List<Message> promptMessages = buildPromptMessages(
-                    accessContext,
-                    session != null ? session.getId() : null,
-                    localHistory,
-                    userMessage,
-                    ragContext,
-                    pageContextAdvice,
-                    referencedPostAdvice,
-                    currentUser
-            );
+        StreamSubscriptionState subscriptionState = new StreamSubscriptionState();
 
-            Instant userMessageAt = Instant.now();
-            persistenceService.saveUserMessageAndUpdateSession(session, userMessage, userMessageAt);
+        long emitterCreatedNanos = System.nanoTime();
+        log.info("AI stream emitter created: sessionId={}, elapsedMs={}",
+                session != null ? session.getId() : null,
+                (emitterCreatedNanos - streamEntryNanos) / 1_000_000L);
 
-            SseEmitter emitter = new SseEmitter(STREAM_EMITTER_TIMEOUT_MILLIS);
-            StringBuilder replyBuilder = new StringBuilder();
+        Runnable streamTask = () -> {
+            try {
+                long preModelStartNanos = System.nanoTime();
 
-            Disposable subscription = chatModel.stream(new Prompt(promptMessages)).subscribe(
-                    chatResponse -> {
-                        String chunk = extractChunk(chatResponse);
-                        if (!StringUtils.hasText(chunk)) {
-                            return;
-                        }
-                        replyBuilder.append(chunk);
-                        if (!sendSseEvent(emitter, "chunk", Map.of("text", chunk))) {
-                            emitter.complete();
-                        }
-                    },
-                    error -> {
-                        log.error("调用AI流式聊天接口失败", error);
-                        try {
-                            String reply = callSyncReply(promptMessages);
-                            if (!StringUtils.hasText(reply)) {
+                List<String> contextMessageTexts = loadContextMessageTexts(accessContext, session != null ? session.getId() : null, localHistory);
+                AiReferencedPostContextService.ReferencedPostAdvice referencedPostAdvice =
+                        aiReferencedPostContextService.advise(userMessage, contextMessageTexts);
+
+                long ragStartNanos = System.nanoTime();
+                String ragQuery = buildRagQuery(userMessage, contextMessageTexts);
+                AiBlogRagService.AiBlogRagContext ragContext = referencedPostAdvice.useContext()
+                        ? AiBlogRagService.AiBlogRagContext.empty()
+                        : aiBlogRagService.retrieve(ragQuery);
+                long ragElapsedMs = (System.nanoTime() - ragStartNanos) / 1_000_000L;
+                if (ragEffective && !referencedPostAdvice.useContext()) {
+                    log.info("AI stream RAG retrieval finished: sessionId={}, hit={}, elapsedMs={}",
+                            session != null ? session.getId() : null,
+                            ragContext.hasContext(),
+                            ragElapsedMs);
+                }
+
+                AiCurrentPageContextService.PageContextAdvice pageContextAdvice =
+                        aiCurrentPageContextService.advise(userMessage, currentPageContext);
+                if (shouldPreferReferencedPostContext(currentPageContext, referencedPostAdvice)) {
+                    pageContextAdvice = AiCurrentPageContextService.PageContextAdvice.unused();
+                }
+                if (shouldPreferCurrentArticlePageContext(currentPageContext, pageContextAdvice, referencedPostAdvice)) {
+                    referencedPostAdvice = AiReferencedPostContextService.ReferencedPostAdvice.unused();
+                }
+                List<Message> promptMessages = buildPromptMessages(
+                        accessContext,
+                        session != null ? session.getId() : null,
+                        localHistory,
+                        userMessage,
+                        ragContext,
+                        pageContextAdvice,
+                        referencedPostAdvice,
+                        currentUser
+                );
+
+                Instant userMessageAt = Instant.now();
+                persistenceService.saveUserMessageAndUpdateSession(session, userMessage, userMessageAt);
+
+                long preModelElapsedMs = (System.nanoTime() - preModelStartNanos) / 1_000_000L;
+                log.info("AI stream pre-model work done: sessionId={}, preModelElapsedMs={}, totalElapsedMs={}",
+                        session != null ? session.getId() : null,
+                        preModelElapsedMs,
+                        (System.nanoTime() - streamEntryNanos) / 1_000_000L);
+
+                StringBuilder replyBuilder = new StringBuilder();
+                AtomicBoolean firstChunkSent = new AtomicBoolean(false);
+
+                if (!subscriptionState.subscribeIfOpen(() -> chatModel.stream(new Prompt(promptMessages)).subscribe(
+                        chatResponse -> {
+                            String chunk = extractChunk(chatResponse);
+                            if (!StringUtils.hasText(chunk)) {
+                                return;
+                            }
+                            if (firstChunkSent.compareAndSet(false, true)) {
+                                log.info("AI stream first chunk: sessionId={}, firstChunkMs={}",
+                                        session != null ? session.getId() : null,
+                                        (System.nanoTime() - streamEntryNanos) / 1_000_000L);
+                            }
+                            replyBuilder.append(chunk);
+                            if (!sendSseEvent(emitter, "chunk", Map.of("text", chunk))) {
+                                emitter.complete();
+                            }
+                        },
+                        error -> {
+                            log.error("调用AI流式聊天接口失败", error);
+                            try {
+                                String reply = callSyncReply(promptMessages);
+                                if (!StringUtils.hasText(reply)) {
+                                    sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
+                                    emitter.complete();
+                                    return;
+                                }
+                                completeAssistantReply(emitter, session, reply, ragContext);
+                            } catch (Exception fallbackError) {
+                                log.error("流式失败后回退同步聊天也失败", fallbackError);
                                 sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
                                 emitter.complete();
+                            }
+                        },
+                        () -> {
+                            String reply = replyBuilder.toString().trim();
+                            if (!StringUtils.hasText(reply)) {
+                                log.warn("AI 流式聊天未返回有效 chunk，尝试回退同步聊天");
+                                try {
+                                    String fallbackReply = callSyncReply(promptMessages);
+                                    if (StringUtils.hasText(fallbackReply)) {
+                                        completeAssistantReply(emitter, session, fallbackReply, ragContext);
+                                        return;
+                                    }
+                                    sendSseEvent(emitter, "error", Map.of("message", "AI 服务未返回有效内容，请稍后再试"));
+                                    emitter.complete();
+                                } catch (Exception fallbackError) {
+                                    log.error("流式空响应后回退同步聊天失败", fallbackError);
+                                    sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
+                                    emitter.complete();
+                                }
                                 return;
                             }
                             completeAssistantReply(emitter, session, reply, ragContext);
-                        } catch (Exception fallbackError) {
-                            log.error("流式失败后回退同步聊天也失败", fallbackError);
-                            sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
-                            emitter.complete();
                         }
-                    },
-                    () -> {
-                        String reply = replyBuilder.toString().trim();
-                        if (!StringUtils.hasText(reply)) {
-                            log.warn("AI 流式聊天未返回有效 chunk，尝试回退同步聊天");
-                            try {
-                                String fallbackReply = callSyncReply(promptMessages);
-                                if (StringUtils.hasText(fallbackReply)) {
-                                    completeAssistantReply(emitter, session, fallbackReply, ragContext);
-                                    return;
-                                }
-                                sendSseEvent(emitter, "error", Map.of("message", "AI 服务未返回有效内容，请稍后再试"));
-                                emitter.complete();
-                            } catch (Exception fallbackError) {
-                                log.error("流式空响应后回退同步聊天失败", fallbackError);
-                                sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
-                                emitter.complete();
-                            }
-                            return;
-                        }
-                        completeAssistantReply(emitter, session, reply, ragContext);
-                    }
-            );
+                ))) {
+                    log.info("AI stream provider subscription skipped after emitter closed: sessionId={}, elapsedMs={}",
+                            session != null ? session.getId() : null,
+                            (System.nanoTime() - streamEntryNanos) / 1_000_000L);
+                    return;
+                }
 
-            emitter.onCompletion(() -> {
+                log.info("AI stream provider subscribed: sessionId={}, subscribedMs={}",
+                        session != null ? session.getId() : null,
+                        (System.nanoTime() - streamEntryNanos) / 1_000_000L);
+            } catch (Exception ex) {
+                log.error("AI stream pre-model work failed: sessionId={}, elapsedMs={}",
+                        session != null ? session.getId() : null,
+                        (System.nanoTime() - streamEntryNanos) / 1_000_000L, ex);
                 releaseProviderPermit(providerPermitReleased);
-                subscription.dispose();
-            });
-            emitter.onTimeout(() -> {
-                releaseProviderPermit(providerPermitReleased);
-                subscription.dispose();
-                sendSseEvent(emitter, "error", Map.of("message", STREAM_TIMEOUT_MESSAGE));
+                sendSseEvent(emitter, "error", Map.of("message", "AI 服务调用失败，请稍后再试"));
                 emitter.complete();
-            });
-            emitter.onError(error -> {
-                releaseProviderPermit(providerPermitReleased);
-                subscription.dispose();
-            });
-            return emitter;
-        } catch (RuntimeException | Error ex) {
+            }
+        };
+
+        emitter.onCompletion(() -> {
+            subscriptionState.close();
             releaseProviderPermit(providerPermitReleased);
-            throw ex;
-        }
+        });
+        emitter.onTimeout(() -> {
+            subscriptionState.close();
+            releaseProviderPermit(providerPermitReleased);
+            sendSseEvent(emitter, "error", Map.of("message", STREAM_TIMEOUT_MESSAGE));
+            emitter.complete();
+        });
+        emitter.onError(error -> {
+            subscriptionState.close();
+            releaseProviderPermit(providerPermitReleased);
+        });
+        Thread.ofVirtual().start(streamTask);
+        return emitter;
     }
 
     private AiChatResponse completeDirectAnswer(AiChatSession session, String userMessage, String reply, String mode) {
@@ -614,6 +671,35 @@ public class AiChatService {
     private void releaseProviderPermit(AtomicBoolean released) {
         if (released.compareAndSet(false, true)) {
             concurrencyGuard.release();
+        }
+    }
+
+    static final class StreamSubscriptionState {
+        private boolean closed;
+        private Disposable subscription;
+
+        synchronized boolean subscribeIfOpen(Supplier<Disposable> subscriptionSupplier) {
+            if (closed) {
+                return false;
+            }
+            Disposable newSubscription = subscriptionSupplier.get();
+            if (closed) {
+                if (newSubscription != null) {
+                    newSubscription.dispose();
+                }
+                return false;
+            }
+            subscription = newSubscription;
+            return true;
+        }
+
+        synchronized void close() {
+            closed = true;
+            Disposable sub = subscription;
+            subscription = null;
+            if (sub != null) {
+                sub.dispose();
+            }
         }
     }
 

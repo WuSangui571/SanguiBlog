@@ -1,0 +1,25 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/06-07-ai-reply-latency-pending-animation/prd.md", "reason": "Primary requirements, acceptance criteria, contracts, and DeepSeek implementation plan"}
+{"file": ".trellis/tasks/06-07-ai-reply-latency-pending-animation/research.md", "reason": "Focused code research and likely modification surfaces"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend AI feature placement and no duplicate service/controller rule"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "AI assistant high-risk contracts and required backend tests"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "AI chat/RAG persistence and transaction boundaries"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AI/SSE error and terminal event semantics"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe AI/RAG stage timing logging rules"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "AI assistant widget/component constraints"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "AI assistant frontend verification matrix"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "AI assistant local state ownership"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "SSE payload and runtime guard contracts"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate implementation prevention"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "SSE AI chat cross-layer contract"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AiChatController.java", "reason": "Existing AI chat JSON/SSE controller entry"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java", "reason": "Main AI chat orchestration and suspected pre-emitter latency path"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/rag/AiBlogRagService.java", "reason": "RAG retrieval and vector search timing boundary"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatPersistenceService.java", "reason": "Short transaction persistence helper for sessions/messages"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Frontend stream API entry"}
+{"file": "SanguiBlog-front/src/utils/aiStream.js", "reason": "Frontend SSE parser and timeout handling"}
+{"file": "SanguiBlog-front/src/appfull/ui/AiAssistantWidget.jsx", "reason": "Pending message UI and stream consumer"}
+{"file": "SanguiBlog-front/src/appfull/ui/aiPendingReply.js", "reason": "Pending ellipsis animation helper"}
+{"file": "docker/nginx/default.conf", "reason": "Production Docker SSE buffering route"}

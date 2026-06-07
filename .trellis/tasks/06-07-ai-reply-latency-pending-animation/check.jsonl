@@ -1,0 +1,11 @@
+{"file": ".trellis/workflow.md", "reason": "Current Trellis finish/check workflow source"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate implementation check source"}
+{"file": ".trellis/tasks/06-07-ai-reply-latency-pending-animation/prd.md", "reason": "Check acceptance criteria and forbidden scope"}
+{"file": ".trellis/tasks/06-07-ai-reply-latency-pending-animation/research.md", "reason": "Check researched boundaries and required tests"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality and AI assistant test expectations"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend AI assistant verification expectations"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "SSE event contract and cross-layer validation matrix"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiChatServiceTest.java", "reason": "Existing and expected backend AI chat assertions"}
+{"file": "SanguiBlog-front/src/utils/aiStream.test.js", "reason": "Frontend stream terminal/timeout assertions"}
+{"file": "SanguiBlog-front/src/appfull/ui/AiAssistantWidget.test.js", "reason": "Frontend widget pending animation assertions"}
+{"file": "SanguiBlog-front/src/appfull/ui/aiPendingReply.test.js", "reason": "Pending reply frame assertions"}
