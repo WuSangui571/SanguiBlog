@@ -1,0 +1,14 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/06-07-docker-data-sync-local-restore-env-contract/prd.md", "reason": "Task requirements, command/env contract, acceptance criteria"}
+{"file": ".trellis/tasks/06-07-docker-data-sync-local-restore-env-contract/research.md", "reason": "Focused code research and expected modification surface"}
+{"file": "scripts/docker-data-sync-local-restore.ps1", "reason": "Main PowerShell backup/restore script to modify"}
+{"file": "docs/docker-data-sync.md", "reason": "Main operator guide to update with local-only restore contract"}
+{"file": ".env.example", "reason": "Current env template and required/defaultable key source"}
+{"file": "docker-compose.yml", "reason": "Local Compose env defaults and fail-fast interpolation"}
+{"file": "docker-compose.prod.yml", "reason": "Production Compose env defaults for contract comparison"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Docker data sync infra/cross-layer contract"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first rule and duplicate script avoidance"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Secret-safe verification and Docker/config checks"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No secret logging/output rules"}

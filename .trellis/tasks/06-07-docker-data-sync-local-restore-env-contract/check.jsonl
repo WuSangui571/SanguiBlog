@@ -1,0 +1,8 @@
+{"file": ".trellis/workflow.md", "reason": "Trellis workflow and finish/check conventions"}
+{"file": ".trellis/tasks/06-07-docker-data-sync-local-restore-env-contract/prd.md", "reason": "Check acceptance criteria and forbidden scope"}
+{"file": ".trellis/tasks/06-07-docker-data-sync-local-restore-env-contract/research.md", "reason": "Check implementation against research findings"}
+{"file": "scripts/docker-data-sync-local-restore.ps1", "reason": "Verify parameter/env/dry-run fixes"}
+{"file": "docs/docker-data-sync.md", "reason": "Verify docs match command contract"}
+{"file": ".env.example", "reason": "Verify required/defaultable env alignment without secrets"}
+{"file": "docker-compose.yml", "reason": "Verify local Compose defaults/fail-fast keys still align"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify infra contract remains aligned"}

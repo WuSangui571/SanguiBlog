@@ -413,6 +413,28 @@ sha256sum -c "$BACKUP_DIR/SHA256SUMS"
 
 > RestoreOnly 是默认模式，不指定 `-Mode` 即等同 RestoreOnly。
 
+### 9.1.1 RestoreOnly 本地恢复（已有备份文件，无需远程访问）
+
+当备份文件已存在于本地 `LocalBackupDir` 时，无需提供 `-ServerHost`、`-ServerUser` 或 `-RemoteBackupDir`。使用 `-SkipDownload` 直接从本地恢复：
+
+```powershell
+# 先以 dry-run 检查前置条件（无需远程参数）
+.\scripts\docker-data-sync-local-restore.ps1 `
+  -Mode RestoreOnly `
+  -LocalBackupDir .\backups\sanguiblog-prod `
+  -SkipDownload `
+  -DryRun
+
+# 执行实际恢复
+.\scripts\docker-data-sync-local-restore.ps1 `
+  -Mode RestoreOnly `
+  -LocalBackupDir .\backups\sanguiblog-prod `
+  -SkipDownload
+```
+
+> `-SkipDownload` 本地恢复不要求 SSH 远程连接，脚本会跳过 SSH 和远程备份文件检查。
+> `.env` 中硬必填项（`JWT_SECRET`、`MYSQL_PASSWORD`、`MYSQL_ROOT_PASSWORD`、`POSTGRES_PASSWORD`）仍需在恢复前配置好；数据库名/用户名（`MYSQL_DATABASE`、`MYSQL_USER`、`POSTGRES_DB`、`POSTGRES_USER`）缺失时会使用 Compose 默认值。
+
 ### 9.2 BackupAndRestore 模式
 
 先执行远端备份 → 下载 → 校验 → 自动恢复到本地 Docker（详见第一段 5.2 节）。
@@ -422,14 +444,14 @@ sha256sum -c "$BACKUP_DIR/SHA256SUMS"
 ```powershell
 # 仅恢复 MySQL（使用已有本地备份）
 .\scripts\docker-data-sync-local-restore.ps1 `
-  -ServerHost localhost -ServerUser test `
-  -RemoteBackupDir /tmp/dummy `
+  -Mode RestoreOnly `
+  -LocalBackupDir .\backups\sanguiblog-prod `
   -SkipDownload -SkipPgVector -SkipUploads
 
 # 仅恢复 uploads
 .\scripts\docker-data-sync-local-restore.ps1 `
-  -ServerHost localhost -ServerUser test `
-  -RemoteBackupDir /tmp/dummy `
+  -Mode RestoreOnly `
+  -LocalBackupDir .\backups\sanguiblog-prod `
   -SkipDownload -SkipMysql -SkipPgVector
 ```
 
@@ -805,7 +827,7 @@ scp -r local-backup-dir user@new-server:/tmp/sanguiblog-restore/
 
 | 现象 | 可能原因 | 解决方案 |
 |------|----------|----------|
-| `docker compose up` 失败：`JWT_SECRET is required` | `.env` 缺少必填项 | 编辑 `.env` 填入所有必填值 |
+| `docker compose up` 失败：`JWT_SECRET is required` | `.env` 缺少硬必填项 | 编辑 `.env` 填入 `JWT_SECRET`、`MYSQL_PASSWORD`、`MYSQL_ROOT_PASSWORD`、`POSTGRES_PASSWORD`；数据库名/用户名（`MYSQL_DATABASE`、`MYSQL_USER`、`POSTGRES_DB`、`POSTGRES_USER`）缺失时会使用 Compose 默认值，不会阻塞启动 |
 | MySQL 导入后 AI 聊天报错 `Table '...ai_chat_messages' doesn't exist` | 导入的 dump 来自旧 schema，缺少 AI 表 | 参考 `docs/docker-deploy.md` 第 15 节，手动创建缺失的 AI 表 |
 | `/uploads/...` 返回 HTML 而非图片 | Nginx fallback 到 SPA（uploads_data volume 内容缺失或路径不匹配） | 检查 volume 内容和 `default.conf` alias 配置；确认 `uploads_data` 挂载到 `/data/uploads` |
 | PgVector 恢复报错 `extension "vector" is not available` | pgvector 镜像未正确加载 vector 扩展 | 手动执行 `CREATE EXTENSION IF NOT EXISTS vector;` |
@@ -829,10 +851,10 @@ scp -r local-backup-dir user@new-server:/tmp/sanguiblog-restore/
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `-ServerHost` | string | **必填** | 服务器主机名或 IP |
-| `-ServerUser` | string | **必填** | SSH 用户名 |
+| `-ServerHost` | string | 条件必填 | 服务器主机名或 IP。BackupOnly / BackupAndRestore 必填；RestoreOnly 仅在无 `-SkipDownload` 时必填 |
+| `-ServerUser` | string | 条件必填 | SSH 用户名。BackupOnly / BackupAndRestore 必填；RestoreOnly 仅在无 `-SkipDownload` 时必填 |
 | `-Mode` | BackupOnly / RestoreOnly / BackupAndRestore | `RestoreOnly` | 运行模式 |
-| `-RemoteBackupDir` | string | 自动生成（backup 模式）；RestoreOnly 必填 | 远端备份目录绝对路径 |
+| `-RemoteBackupDir` | string | 自动生成（backup 模式）；RestoreOnly 无 `-SkipDownload` 时必填 | 远端备份目录绝对路径；本地已有备份并使用 `-SkipDownload` 时不需要 |
 | `-LocalBackupDir` | string | `.\backups\docker-data-sync` | 本地备份暂存目录 |
 | `-SshPort` | int | `22` | SSH 端口 |
 | `-ComposeProjectDir` | string | `.` (repo root) | docker-compose.yml 所在目录 |

@@ -48,6 +48,7 @@ import {
     buildAiWelcomeIntroLines,
     shouldPlayAiWelcomeIntro
 } from './aiWelcomeIntro.js';
+import { AI_PENDING_REPLY_INTERVAL_MS, buildAiPendingReplyText } from './aiPendingReply.js';
 
 function createLocalMessage(role, content, idPrefix = role) {
     return {
@@ -163,6 +164,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
     const dragStateRef = useRef(null);
     const resizeStateRef = useRef(null);
     const assistantNoticeTimerRef = useRef(null);
+    const pendingReplyMessageIdRef = useRef(null);
     const isGuestMode = isAiAssistantGuest(user);
     const raiseAssistantOverlay = useCallback(() => {
         setOverlayBaseZ(claimOverlayStackBase());
@@ -225,6 +227,36 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             window.clearTimeout(assistantNoticeTimerRef.current);
         }
     }, []);
+
+    useEffect(() => {
+        if (!isSending) {
+            return undefined;
+        }
+
+        let frame = 0;
+        const updatePendingReply = () => {
+            const pendingReplyMessageId = pendingReplyMessageIdRef.current;
+            if (!pendingReplyMessageId) {
+                return;
+            }
+
+            setMessages((prev) => prev.map((message) => (
+                message.id === pendingReplyMessageId && message.pending
+                    ? { ...message, content: buildAiPendingReplyText(assistantConfig.pendingReply, frame) }
+                    : message
+            )));
+        };
+
+        updatePendingReply();
+        const intervalId = window.setInterval(() => {
+            frame += 1;
+            updatePendingReply();
+        }, AI_PENDING_REPLY_INTERVAL_MS);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [assistantConfig.pendingReply, isSending]);
 
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
@@ -309,6 +341,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
             setFloatingPosition(null);
             setFloatingSize(null);
             setPendingDeleteSession(null);
+            pendingReplyMessageIdRef.current = null;
             closeGuardPrompt();
         }
 
@@ -710,6 +743,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
         let sessionId = activeSessionId;
         let streamCompleted = false;
         const pendingId = `assistant-pending-${Date.now()}`;
+        pendingReplyMessageIdRef.current = pendingId;
         const localHistory = buildLocalHistory();
 
         try {
@@ -732,7 +766,8 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 {
                     id: pendingId,
                     role: 'assistant',
-                    content: assistantConfig.pendingReply
+                    content: buildAiPendingReplyText(assistantConfig.pendingReply, 0),
+                    pending: true
                 }
             ]);
             setDraft('');
@@ -745,15 +780,17 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 localHistory,
                 onChunk: (chunk) => {
                     if (!chunk) return;
+                    pendingReplyMessageIdRef.current = null;
                     streamedReply += chunk;
                     setMessages((prev) => prev.map((message) => (
                         message.id === pendingId
-                            ? { ...message, content: streamedReply }
+                            ? { ...message, content: streamedReply, pending: false }
                             : message
                     )));
                 },
                 onComplete: (payload) => {
                     streamCompleted = true;
+                    pendingReplyMessageIdRef.current = null;
                     const reply = payload?.reply?.trim() || streamedReply.trim() || '抱歉，我这次没有生成有效回复。';
                     streamedReply = reply;
                     if (payload?.sessionId) {
@@ -761,7 +798,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                     }
                     setMessages((prev) => prev.map((message) => (
                         message.id === pendingId
-                            ? { ...message, content: reply }
+                            ? { ...message, content: reply, pending: false }
                             : message
                     )));
                 },
@@ -781,6 +818,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 await loadSessions();
             }
         } catch (error) {
+            pendingReplyMessageIdRef.current = null;
             if (streamCompleted) {
                 if (!isGuestMode) {
                     await loadSessions();
@@ -800,7 +838,7 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
                 const notice = guestAccessNotice || fallback;
                 setMessages((prev) => prev.map((message) => (
                     message.id === pendingId
-                        ? { ...message, content: notice }
+                        ? { ...message, content: notice, pending: false }
                         : message
                 )));
                 await openGuardPrompt('检测到访客提问过快，请完成验证码后继续。登录后可获得更高的提问额度。');
@@ -809,10 +847,11 @@ export default function AiAssistantWidget({ isDarkMode, config, user, currentPag
 
             setMessages((prev) => prev.map((message) => (
                 message.id === pendingId
-                    ? { ...message, content: guestAccessNotice || fallback }
+                    ? { ...message, content: guestAccessNotice || fallback, pending: false }
                     : message
             )));
         } finally {
+            pendingReplyMessageIdRef.current = null;
             setIsSending(false);
         }
     };

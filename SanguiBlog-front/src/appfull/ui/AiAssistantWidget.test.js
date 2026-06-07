@@ -23,4 +23,13 @@ assert.match(
     'AI 聊天入口右侧文案应只在非手机端显示'
 );
 
-console.log('AiAssistantWidget tests passed');
+assert.match(
+    widgetSource,
+    /buildAiPendingReplyText/,
+    'AI assistant should use a dynamic pending reply text builder instead of a fixed placeholder'
+);
+assert.match(
+    widgetSource,
+    /AI_PENDING_REPLY_INTERVAL_MS/,
+    'AI assistant should define an explicit pending reply animation interval'
+);

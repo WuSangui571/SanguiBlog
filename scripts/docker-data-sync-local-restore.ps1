@@ -26,12 +26,14 @@
 
 .PARAMETER ServerHost
     服务器主机名或 IP 地址。
+    BackupOnly / BackupAndRestore 模式必填；RestoreOnly 模式仅在未使用 -SkipDownload 时必填。
 
 .PARAMETER ServerUser
     SSH 登录用户名。
+    BackupOnly / BackupAndRestore 模式必填；RestoreOnly 模式仅在未使用 -SkipDownload 时必填。
 
 .PARAMETER RemoteBackupDir
-    服务器上备份目录的绝对路径。RestoreOnly 模式需指定；BackupOnly / BackupAndRestore 模式自动生成
+    服务器上备份目录的绝对路径。RestoreOnly 模式仅在未使用 -SkipDownload 时需指定；BackupOnly / BackupAndRestore 模式自动生成
     （格式: <RemoteBackupRoot>/sanguiblog-backup-<timestamp>）。
 
 .PARAMETER LocalBackupDir
@@ -107,16 +109,20 @@
     .\scripts\docker-data-sync-local-restore.ps1 -Mode BackupAndRestore -ServerHost myserver -ServerUser root -RemoteProjectDir /opt/SanguiBlog -LocalBackupDir .\backups\sanguiblog-prod
 
 .EXAMPLE
-    # 仅恢复 MySQL（使用已有本地备份）
-    .\scripts\docker-data-sync-local-restore.ps1 -ServerHost myserver -ServerUser admin -RemoteBackupDir /tmp/sanguiblog-backup-20260520-120000 -SkipPgVector -SkipUploads -SkipDownload
+    # 仅恢复 MySQL（使用已有本地备份，跳过下载）
+    .\scripts\docker-data-sync-local-restore.ps1 -Mode RestoreOnly -LocalBackupDir .\backups\sanguiblog-prod -SkipPgVector -SkipUploads -SkipDownload
+
+.EXAMPLE
+    # 本地 RestoreOnly 恢复（已有备份文件，无需远程参数）
+    .\scripts\docker-data-sync-local-restore.ps1 -Mode RestoreOnly -LocalBackupDir .\backups\sanguiblog-prod -SkipDownload -DryRun
 #>
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = "Server hostname or IP")]
+    [Parameter(Mandatory = $false, HelpMessage = "Server hostname or IP (required for BackupOnly/BackupAndRestore, and RestoreOnly without -SkipDownload)")]
     [string]$ServerHost,
 
-    [Parameter(Mandatory = $true, HelpMessage = "SSH username")]
+    [Parameter(Mandatory = $false, HelpMessage = "SSH username (required for BackupOnly/BackupAndRestore, and RestoreOnly without -SkipDownload)")]
     [string]$ServerUser,
 
     [Parameter(Mandatory = $false, HelpMessage = "Remote backup directory absolute path (required for RestoreOnly without -SkipDownload; auto-generated in BackupOnly/BackupAndRestore)")]
@@ -197,6 +203,19 @@ if ($Mode -eq "BackupOnly" -or $Mode -eq "BackupAndRestore") {
 
 if ($Mode -eq "RestoreOnly" -and -not $SkipDownload -and -not $RemoteBackupDir) {
     throw "-RemoteBackupDir is required in RestoreOnly mode when not using -SkipDownload."
+}
+
+# Validate ServerHost/ServerUser: required only when SSH access is needed
+$NeedsSsh = ($Mode -eq "BackupOnly") -or ($Mode -eq "BackupAndRestore") -or ($Mode -eq "RestoreOnly" -and -not $SkipDownload)
+if ($NeedsSsh) {
+    if (-not $ServerHost) {
+        $reqSuffix = if ($Mode -eq "RestoreOnly") { " when not using -SkipDownload" } else { "" }
+        throw "-ServerHost is required in $Mode mode$reqSuffix."
+    }
+    if (-not $ServerUser) {
+        $reqSuffix = if ($Mode -eq "RestoreOnly") { " when not using -SkipDownload" } else { "" }
+        throw "-ServerUser is required in $Mode mode$reqSuffix."
+    }
 }
 
 # Resolve KeepRemoteBackup: default true, set to false only if -CleanupRemoteBackup is explicitly provided
@@ -509,11 +528,14 @@ function Invoke-PgVectorSqlFile {
 }
 
 # ---- Config ----
-$RequiredEnvKeys = @(
+$HardRequiredEnvKeys = @(
     "JWT_SECRET",
     "MYSQL_PASSWORD",
     "MYSQL_ROOT_PASSWORD",
-    "POSTGRES_PASSWORD",
+    "POSTGRES_PASSWORD"
+)
+
+$DefaultableEnvKeys = @(
     "MYSQL_DATABASE",
     "MYSQL_USER",
     "POSTGRES_DB",
@@ -529,6 +551,33 @@ if ($ExpectedBackupFiles.Count -eq 0) {
 }
 $ExpectedBackupFiles += "SHA256SUMS"
 $DryRunWarnings = @()
+$BlockingFailures = @()
+
+function Test-EnvKeyHasValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Content,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Key
+    )
+
+    $match = [regex]::Match($Content, "(?m)^\s*$([regex]::Escape($Key))\s*=(.*)$")
+    if (-not $match.Success) {
+        return $false
+    }
+
+    $value = $match.Groups[1].Value.Trim()
+    if ($value.Length -ge 2) {
+        $first = $value.Substring(0, 1)
+        $last = $value.Substring($value.Length - 1, 1)
+        if (($first -eq "'" -and $last -eq "'") -or ($first -eq '"' -and $last -eq '"')) {
+            $value = $value.Substring(1, $value.Length - 2).Trim()
+        }
+    }
+
+    return ($value.Length -gt 0)
+}
 
 # Resolve paths to absolute paths. LocalBackupDir may not exist yet, so avoid Resolve-Path for it.
 $ComposeProjectDir = (Resolve-Path $ComposeProjectDir -ErrorAction Stop).Path
@@ -947,9 +996,9 @@ Write-Ok "docker-compose.yml found"
 
 try {
     Push-Location $ComposeProjectDir
-    $composeConfig = docker compose config 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Fail "docker compose config failed: $composeConfig"
+    $composeConfigResult = Invoke-NativeCommand -FilePath "docker" -Arguments @("compose", "config", "--quiet")
+    if ($composeConfigResult.ExitCode -ne 0) {
+        Write-Fail "docker compose config --quiet failed. Output suppressed because it may include expanded .env values."
         throw "docker compose config error. Fix the compose file before proceeding."
     }
     Write-Ok "docker compose config is valid"
@@ -962,25 +1011,42 @@ Write-Step "  1d) Checking .env for required keys..."
 $EnvFile = Join-Path $ComposeProjectDir ".env"
 if (-not (Test-Path $EnvFile)) {
     Write-Fail ".env file not found at $ComposeProjectDir"
-    throw ".env file is required. Copy .env.example to .env and fill in required values."
+    $BlockingFailures += ".env file not found"
+    if (-not $DryRun) { throw ".env file is required. Copy .env.example to .env and fill in required values." }
 }
 
-$envContent = Get-Content $EnvFile -Raw
-$missingKeys = @()
-foreach ($key in $RequiredEnvKeys) {
-    # Match: KEY=value (where value is non-empty, non-commented)
-    if ($envContent -notmatch "(?m)^\s*${key}=[^\r\n]+") {
-        $missingKeys += $key
+if (Test-Path $EnvFile) {
+    $envContent = Get-Content $EnvFile -Raw -Encoding UTF8
+
+    $missingHard = @()
+    foreach ($key in $HardRequiredEnvKeys) {
+        if (-not (Test-EnvKeyHasValue -Content $envContent -Key $key)) {
+            $missingHard += $key
+        }
     }
-}
 
-if ($missingKeys.Count -gt 0) {
-    Write-Fail "Missing or empty required keys in .env: $($missingKeys -join ', ')"
-    Write-Host "  These keys must be set in .env before running restore." -ForegroundColor Yellow
-    Write-Host "  Sensitive values are NOT printed. Edit .env manually to fill them in." -ForegroundColor Yellow
-    if (-not $DryRun) { throw ".env missing required keys." }
-} else {
-    Write-Ok "All required .env keys are present (values not inspected)"
+    $missingDefaultable = @()
+    foreach ($key in $DefaultableEnvKeys) {
+        if (-not (Test-EnvKeyHasValue -Content $envContent -Key $key)) {
+            $missingDefaultable += $key
+        }
+    }
+
+    if ($missingHard.Count -gt 0) {
+        Write-Fail "Missing or empty hard-required keys in .env: $($missingHard -join ', ')"
+        Write-Host "  These keys must be set in .env before running restore." -ForegroundColor Yellow
+        Write-Host "  Sensitive values are NOT printed. Edit .env manually to fill them in." -ForegroundColor Yellow
+        $BlockingFailures += "Missing hard-required .env keys: $($missingHard -join ', ')"
+        if (-not $DryRun) { throw ".env missing required keys." }
+    } else {
+        Write-Ok "All hard-required .env keys are present (values not inspected)"
+    }
+
+    if ($missingDefaultable.Count -gt 0) {
+        Write-Warn "Defaultable .env keys not set: $($missingDefaultable -join ', ')"
+        Write-Host "  Compose and restore defaults will be used (e.g. MYSQL_DATABASE=sanguiblog_db, POSTGRES_DB=sanguiblog_ai)." -ForegroundColor Yellow
+        if ($DryRun) { $DryRunWarnings += "Defaultable .env keys not set (defaults will apply): $($missingDefaultable -join ', ')" }
+    }
 }
 } else {
     Write-Step "  1c) docker-compose.yml check skipped (BackupOnly mode)"
@@ -1115,16 +1181,26 @@ if ($DryRun) {
         "BackupAndRestore" { "DRY-RUN COMPLETE (BackupAndRestore mode)" }
         default { "DRY-RUN COMPLETE (RestoreOnly mode)" }
     }
+    if ($BlockingFailures.Count -gt 0) {
+        Write-Host "$modeLabel - PREFLIGHT BLOCKED" -ForegroundColor Red
+        foreach ($failure in $BlockingFailures) {
+            Write-Host "  BLOCKED: $failure" -ForegroundColor Red
+        }
+    }
     if ($DryRunWarnings.Count -gt 0) {
-        Write-Host "$modeLabel - WITH WARNINGS" -ForegroundColor Yellow
+        Write-Host "$(if ($BlockingFailures.Count -gt 0) { '  ' } else { "$modeLabel - " })WITH WARNINGS" -ForegroundColor Yellow
         foreach ($warning in $DryRunWarnings) {
             Write-Host "  - $warning" -ForegroundColor Yellow
         }
-    } else {
+    }
+    if ($BlockingFailures.Count -eq 0 -and $DryRunWarnings.Count -eq 0) {
         Write-Host "$modeLabel - All preflight checks passed" -ForegroundColor Green
     }
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host "No modifications were made." -ForegroundColor Yellow
+    if ($BlockingFailures.Count -gt 0) {
+        exit 1
+    }
     exit 0
 }
 
