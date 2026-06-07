@@ -1,0 +1,12 @@
+{"file": ".trellis/workflow.md", "reason": "Real Trellis workflow and finish/check process"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate implementation guardrails for check pass"}
+{"file": ".trellis\\tasks\\06-07-06-07-version-2-3-2-readme-cleanup\\prd.md", "reason": "Acceptance criteria and forbidden scope for check pass"}
+{"file": ".trellis\\tasks\\06-07-06-07-version-2-3-2-readme-cleanup\\research.md", "reason": "Expected file set, ignore findings, and test commands for verification"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application.yaml", "reason": "Verify site.version target value"}
+{"file": "SanguiBlog-front\\src\\appfull\\public\\HomeView.jsx", "reason": "Verify homepage fallback version"}
+{"file": "SanguiBlog-front\\src\\appfull\\ui\\Navigation.jsx", "reason": "Verify navigation fallback version"}
+{"file": "README.md", "reason": "Verify English README version and stale content sync"}
+{"file": ".gitignore", "reason": "Verify root ignore coverage and no over-broad ignore changes"}
+{"file": "README.zh-CN.md", "reason": "Verify Chinese README version and semantic sync"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Check version contract and backend compile expectation"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Check frontend build and home UI verification expectation"}

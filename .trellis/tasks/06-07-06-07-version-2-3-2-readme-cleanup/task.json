@@ -1,0 +1,53 @@
+{
+  "id": "06-07-version-2-3-2-readme-cleanup",
+  "name": "06-07-version-2-3-2-readme-cleanup",
+  "title": "Update project version to V2.3.2 and refresh README hygiene",
+  "description": "Planning-only handoff: bump visible site version from V2.3.1 to V2.3.2, refresh root README/README.zh-CN stale content, review .gitignore and cleanup candidates without touching unrelated AI widget work.",
+  "status": "planning",
+  "dev_type": "fullstack",
+  "scope": "Version bump, README pair refresh, ignore/cleanup review only; no release docs and no unrelated AI widget changes.",
+  "package": null,
+  "priority": "P2",
+  "creator": "sangui",
+  "assignee": "deepseek",
+  "createdAt": "2026-06-07",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "feature/openai-compatible-ai-provider-config",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

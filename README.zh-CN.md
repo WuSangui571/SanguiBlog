@@ -4,7 +4,7 @@
 
 前后端分离的个人博客系统：后端基于 Spring Boot 3 + MySQL，前端基于 React 19 + Vite（SPA），通过 Docker Compose + GHCR 镜像部署。
 
-> 当前版本：**V2.3.1**
+> 当前版本：**V2.3.2**
 
 ## 快速开始（Docker 生产部署）
 

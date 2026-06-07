@@ -1,0 +1,21 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\06-07-06-07-version-2-3-2-readme-cleanup\\prd.md", "reason": "Primary requirements, scope boundaries, cross-layer contract, acceptance criteria"}
+{"file": ".trellis\\tasks\\06-07-06-07-version-2-3-2-readme-cleanup\\research.md", "reason": "Focused code research, cleanup findings, exact expected files and tests"}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Version contract and backend verification requirements"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Site meta ownership and backend source layout"}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "Active frontend home/navigation paths and anti-duplicate rules"}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "Site meta cache and frontend data ownership"}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Home UI verification and frontend build requirements"}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Retrieve-first and duplicate implementation guardrails"}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Existing site meta cross-layer contract and test matrix"}
+{"file": "SanguiBlog-server\\src\\main\\resources\\application.yaml", "reason": "Source of truth for site.version V2.3.2"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\SiteService.java", "reason": "Read-only reference for site.version injection and meta response mapping"}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\dto\\SiteMetaDto.java", "reason": "Read-only reference proving version field already exists"}
+{"file": "SanguiBlog-front\\src\\appfull\\public\\HomeView.jsx", "reason": "Frontend homepage version fallback to update"}
+{"file": "SanguiBlog-front\\src\\appfull\\ui\\Navigation.jsx", "reason": "Frontend navigation brand version fallback to update"}
+{"file": "README.md", "reason": "English README current version and stale content review"}
+{"file": "README.zh-CN.md", "reason": "Chinese README current version and synchronized stale content review"}
+{"file": ".gitignore", "reason": "Root ignore coverage review for generated/local/runtime files"}
+{"file": "SanguiBlog-front\\.gitignore", "reason": "Frontend ignore coverage review for Vite/local files"}
