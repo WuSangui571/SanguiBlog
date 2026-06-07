@@ -1658,3 +1658,71 @@ Boundary:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 28: Docker data sync local restore env contract fix
+
+**Date**: 2026-06-07
+**Task**: Docker data sync local restore env contract fix
+**Branch**: `fix/docker-data-sync-local-restore-env-contract`
+
+### Summary
+
+Closed out the Docker data sync local restore env contract fix after manual acceptance and commit `2fcd29e`.
+
+### Main Changes
+
+- Updated scripts/docker-data-sync-local-restore.ps1 so RestoreOnly with -SkipDownload no longer requires ServerHost, ServerUser, or RemoteBackupDir.
+- Split local .env validation into hard-required keys and defaultable Compose/script keys.
+- Fixed dry-run reporting so blocking failures show PREFLIGHT BLOCKED and exit non-zero.
+- Fixed Windows PowerShell 5.1 UTF-8 .env parsing by reading .env with -Encoding UTF8.
+- Suppressed full docker compose config output by using config --quiet in preflight.
+- Updated docs/docker-data-sync.md and .trellis/spec/guides/cross-layer-thinking-guide.md to document the command/env contract.
+
+Updated files:
+- scripts/docker-data-sync-local-restore.ps1
+- docs/docker-data-sync.md
+- .trellis/spec/guides/cross-layer-thinking-guide.md
+- .trellis/tasks/06-07-docker-data-sync-local-restore-env-contract/*
+
+Verification:
+- User manually tested the restore dry-run workflow and confirmed all tests passed.
+- git diff --check passed.
+- docker compose config --quiet passed.
+- RestoreOnly -SkipDownload dry-run no longer prompts for remote parameters.
+- JWT_SECRET is recognized correctly after UTF-8 env parsing fix.
+- MYSQL_DATABASE and POSTGRES_DB are treated as defaultable warnings, not hard failures.
+- BackupOnly without ServerHost/ServerUser fails with clear conditional parameter validation.
+- python .trellis/scripts/task.py validate .trellis/tasks/06-07-docker-data-sync-local-restore-env-contract passed.
+
+Result and boundaries:
+- Task completed and accepted.
+- No real restore was run by Codex.
+- No secrets were recorded.
+- No backend Java or frontend UI implementation was part of this task.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2fcd29e` | (see git log) |
+
+### Testing
+
+- [OK] User manually tested the restore dry-run workflow and confirmed all tests passed.
+- [OK] `git diff --check` passed.
+- [OK] `docker compose config --quiet` passed.
+- [OK] RestoreOnly -SkipDownload dry-run no longer prompts for remote parameters.
+- [OK] JWT_SECRET is recognized correctly after UTF-8 env parsing fix.
+- [OK] MYSQL_DATABASE and POSTGRES_DB are treated as defaultable warnings, not hard failures.
+- [OK] BackupOnly without ServerHost/ServerUser fails with clear conditional parameter validation.
+- [OK] `python .trellis/scripts/task.py validate .trellis/tasks/06-07-docker-data-sync-local-restore-env-contract` passed.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
