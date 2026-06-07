@@ -1577,3 +1577,84 @@ Result and boundaries:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 27: AI RAG admin capability closeout
+
+**Date**: 2026-06-07
+**Task**: AI RAG admin capability closeout
+**Branch**: `feature/openai-compatible-ai-provider-config`
+
+### Summary
+
+Recorded manual acceptance and closeout for the AI chat/RAG admin capability task.
+
+### Main Changes
+
+Commit: fcdda27 feat: add AI chat and RAG admin capability switches.
+
+Main modules:
+- Backend AI settings and capability: AiAssistantSettingService, admin DTOs, site meta DTO.
+- Backend RAG gate: AiBlogRagProperties and AiBlogRagService effective-state check.
+- Frontend admin settings: AdminPanel AI chat/RAG switch UI and aiAssistantConfig normalization.
+- Trellis contract: cross-layer guide updated for admin/capable/effective AI state.
+
+Updated files in commit fcdda27:
+- .trellis/spec/guides/cross-layer-thinking-guide.md
+- .trellis/tasks/06-06-ai-rag-admin-effective-capability/*
+- SanguiBlog-front/src/appfull/AdminAiAssistantSettingsContract.test.js
+- SanguiBlog-front/src/appfull/AdminPanel.jsx
+- SanguiBlog-front/src/appfull/aiAssistantConfig.js
+- SanguiBlog-front/src/appfull/aiAssistantConfig.test.js
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/AiBlogRagProperties.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminAiAssistantSettingsController.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiAssistantAdminSettingsDto.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AiAssistantAdminSettingsUpdateRequest.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/SiteMetaDto.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingService.java
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/rag/AiBlogRagService.java
+- SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiAssistantSettingServiceTest.java
+
+Verification run before manual acceptance:
+- cd SanguiBlog-server; mvn -q "-Dtest=AiAssistantSettingServiceTest,AiBlogVectorStoreConfigTest,AiChatServiceTest" test: passed.
+- cd SanguiBlog-server; mvn -q -DskipTests compile: passed.
+- cd SanguiBlog-front; node src/appfull/AdminAiAssistantSettingsContract.test.js: passed.
+- cd SanguiBlog-front; node src/appfull/aiAssistantConfig.test.js: passed.
+- cd SanguiBlog-front; node src/appfull/noNativeBlockingDialogs.test.js: passed.
+- cd SanguiBlog-front; cmd /c npm run lint: passed.
+- cd SanguiBlog-front; cmd /c npm run build: passed after unsandboxed rerun for Vite node_modules/.vite-temp EPERM.
+- git diff --check: passed.
+- python .trellis/scripts/task.py validate .trellis/tasks/06-06-ai-rag-admin-effective-capability: passed.
+
+Result:
+- User confirmed manual tests passed and said the work was committed.
+- Active Trellis task was archived even though task.json still said planning, because the real implementation and acceptance were complete.
+- No auto git commit or push was performed by Codex.
+
+Boundary:
+- Working tree still contains separate uncommitted frontend AI pending-reply animation files from the follow-up latency/ellipsis UI discussion. They are not part of commit fcdda27 and not part of this task closeout record.
+- AiBlogVectorStoreConfig startup fail-fast behavior for AI_RAG_ENABLED=true with missing embedding/PgVector config was intentionally left as a known follow-up boundary, not softened in this task.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fcdda27` | (see git log) |
+
+### Testing
+
+- [OK] Backend targeted tests passed: `mvn -q "-Dtest=AiAssistantSettingServiceTest,AiBlogVectorStoreConfigTest,AiChatServiceTest" test`.
+- [OK] Backend compile passed: `mvn -q -DskipTests compile`.
+- [OK] Frontend static checks passed: `node src/appfull/AdminAiAssistantSettingsContract.test.js`, `node src/appfull/aiAssistantConfig.test.js`, `node src/appfull/noNativeBlockingDialogs.test.js`.
+- [OK] Frontend lint/build passed: `cmd /c npm run lint`, `cmd /c npm run build`.
+- [OK] Cross-layer/static checks passed: `git diff --check`, `python .trellis/scripts/task.py validate .trellis/tasks/06-06-ai-rag-admin-effective-capability`.
+- [OK] User confirmed manual tests passed before `$record-session`.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

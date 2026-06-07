@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 26
-- **Last Active**: 2026-06-06
+- **Total Sessions**: 27
+- **Last Active**: 2026-06-07
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1579 | Active |
+| `journal-1.md` | ~1655 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 27 | 2026-06-07 | AI RAG admin capability closeout | `fcdda27` | `feature/openai-compatible-ai-provider-config` |
 | 26 | 2026-06-06 | OpenAI-compatible AI provider and RAG follow-up | `986b7f8`, `23cb3f2`, `4149098`, `abcf96f`, `f8c3049` | `feature/openai-compatible-ai-provider-config` |
 | 25 | 2026-06-05 | Data backup and local Docker restore workflow | `2065ac0` | `docs/data-backup-plan` |
 | 24 | 2026-06-05 | Version 2.3.1 README cleanup | `898a40a` | `chore/version-2-3-1-readme-cleanup` |
