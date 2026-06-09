@@ -1726,3 +1726,77 @@ Result and boundaries:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 29: AI reply latency stream cleanup accepted
+
+**Date**: 2026-06-09
+**Task**: AI reply latency stream cleanup accepted
+**Branch**: `fix/ai-reply-latency-pending-animation`
+
+### Summary
+
+Accepted AI stream latency cleanup; model TTFT identified as residual latency source.
+
+### Main Changes
+
+Commit: dfbc2b2 fix: AI streaming response latency and concurrency cleanup.
+
+Main modules:
+- Backend AI chat streaming lifecycle in AiChatService.
+- Backend AI chat service tests in AiChatServiceTest.
+- Trellis task context for ai-reply-latency-pending-animation.
+
+Updated files:
+- SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AiChatService.java
+- SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AiChatServiceTest.java
+- .trellis/tasks/archive/2026-06/06-07-ai-reply-latency-pending-animation/*
+
+Validation already run during Codex check/finish-work:
+- mvn -q "-Dtest=AiChatServiceTest,AiProviderConcurrencyGuardTest" test: passed.
+- mvn -q "-Dtest=AiAssistantSettingServiceTest,AiGuestAccessServiceTest,AiCurrentPageContextServiceTest,AiReferencedPostContextServiceTest" test: passed.
+- mvn -q -DskipTests compile: passed.
+- node src/appfull/ui/aiPendingReply.test.js: passed.
+- node src/appfull/ui/AiAssistantWidget.test.js: passed.
+- node src/utils/aiStream.test.js: passed.
+- node src/appfull/noNativeBlockingDialogs.test.js: passed.
+- cmd /c npm run lint: passed.
+- cmd /c npm run build: passed after elevated rerun because Vite needed to write node_modules/.vite-temp.
+- docker compose config --quiet: passed.
+- docker compose -f docker-compose.prod.yml config --quiet: passed.
+- git diff --check: passed.
+- python .trellis/scripts/task.py validate .trellis/tasks/06-07-ai-reply-latency-pending-animation: passed before archive.
+
+Manual acceptance:
+- User manually tested locally and reported all tests passed.
+- User identified the remaining first-token delay as a model/provider TTFT issue; switching to a faster model resolved the perceived response latency.
+
+Result:
+- The application stream path now returns SSE earlier and protects provider concurrency cleanup around emitter timeout/disconnect/completion.
+- RAG-off testing showed the residual delay was not caused by RAG retrieval.
+- No API, DB schema, DTO, env contract, or frontend SSE payload contract change was introduced.
+
+Boundaries:
+- No production Docker runtime smoke was independently rerun in this record step.
+- No Trellis metadata commit was created by Codex; archive and journal updates are left for user-side git handling.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `dfbc2b2` | (see git log) |
+
+### Testing
+
+- [OK] Codex check/finish-work verification passed: targeted backend AI tests, backend compile, frontend AI stream/widget/static tests, lint, build, compose config checks, git diff check, and Trellis validation.
+- [OK] User manually tested locally and confirmed all acceptance tests passed.
+- [OK] User isolated the residual first-token delay to model/provider TTFT and confirmed switching to a faster model resolved perceived latency.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
