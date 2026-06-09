@@ -1,0 +1,53 @@
+{
+  "id": "ai-reply-latency-pending-animation",
+  "name": "ai-reply-latency-pending-animation",
+  "title": "AI reply latency and production pending animation",
+  "description": "Planning-only handoff to diagnose and fix slow first AI reply/first chunk latency after OpenAI-compatible provider migration and production pending ellipsis animation mismatch.",
+  "status": "completed",
+  "dev_type": "fullstack",
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "sangui",
+  "assignee": "deepseek",
+  "createdAt": "2026-06-07",
+  "completedAt": "2026-06-09",
+  "branch": "fix/ai-reply-latency-pending-animation",
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

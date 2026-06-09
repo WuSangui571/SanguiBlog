@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 28
-- **Last Active**: 2026-06-07
+- **Total Sessions**: 29
+- **Last Active**: 2026-06-09
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1725 | Active |
+| `journal-1.md` | ~1800 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 29 | 2026-06-09 | AI reply latency stream cleanup accepted | `dfbc2b2` | `fix/ai-reply-latency-pending-animation` |
 | 28 | 2026-06-07 | Docker data sync local restore env contract fix | `2fcd29e` | `fix/docker-data-sync-local-restore-env-contract` |
 | 27 | 2026-06-07 | AI RAG admin capability closeout | `fcdda27` | `feature/openai-compatible-ai-provider-config` |
 | 26 | 2026-06-06 | OpenAI-compatible AI provider and RAG follow-up | `986b7f8`, `23cb3f2`, `4149098`, `abcf96f`, `f8c3049` | `feature/openai-compatible-ai-provider-config` |

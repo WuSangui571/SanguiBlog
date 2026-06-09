@@ -1,9 +1,11 @@
 package com.sangui.sanguiblog.service.ai;
 
 import org.junit.jupiter.api.Test;
+import reactor.core.Disposable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -27,6 +29,18 @@ class AiChatServiceTest {
         assertEquals("gpt-4o-mini", payload.get("model"));
         assertEquals("SITE_KNOWLEDGE_RAG_PGVECTOR", payload.get("mode"));
         assertEquals(List.of(), payload.get("references"));
+    }
+
+    @Test
+    void shouldBuildCompleteEventPayloadWithNonNullReferences() {
+        List<String> refs = List.of("ref-a", "ref-b");
+        Map<String, Object> payload = AiChatService.buildCompleteEventPayload(
+                "reply", 1L, "gpt-4o-mini", "SITE_KNOWLEDGE_RAG_PGVECTOR", refs
+        );
+
+        assertEquals("reply", payload.get("reply"));
+        assertEquals(1L, payload.get("sessionId"));
+        assertEquals(refs, payload.get("references"));
     }
 
     @Test
@@ -68,5 +82,97 @@ class AiChatServiceTest {
         );
 
         assertEquals("介绍三桂博客" + System.lineSeparator() + "？", query);
+    }
+
+    @Test
+    void shouldNotTreatEmptyMessageAsContinuationInRagQuery() {
+        String query = AiChatService.buildRagQuery(
+                "",
+                List.of("介绍三桂博客", "回复")
+        );
+
+        assertEquals("", query);
+    }
+
+    @Test
+    void shouldHandleNullContextInRagQuery() {
+        String query = AiChatService.buildRagQuery("继续", null);
+
+        assertEquals("继续", query);
+    }
+
+    @Test
+    void shouldHandleEmptyContextInRagQuery() {
+        String query = AiChatService.buildRagQuery("继续", List.of());
+
+        assertEquals("继续", query);
+    }
+
+    @Test
+    void shouldReleaseConcurrencyPermitExactlyOnce() {
+        AtomicBoolean permitReleased = new AtomicBoolean(false);
+
+        boolean firstRelease = permitReleased.compareAndSet(false, true);
+        assertTrue(firstRelease, "first release should succeed");
+
+        boolean secondRelease = permitReleased.compareAndSet(false, true);
+        assertFalse(secondRelease, "second release should be a no-op");
+
+        assertTrue(permitReleased.get(), "permit should be marked as released");
+    }
+
+    @Test
+    void shouldSkipProviderSubscriptionWhenStreamAlreadyClosed() {
+        AiChatService.StreamSubscriptionState state = new AiChatService.StreamSubscriptionState();
+        AtomicBoolean subscribed = new AtomicBoolean(false);
+
+        state.close();
+        boolean accepted = state.subscribeIfOpen(() -> {
+            subscribed.set(true);
+            return new DummyDisposable();
+        });
+
+        assertFalse(accepted);
+        assertFalse(subscribed.get(), "provider subscription should not start after stream closes");
+    }
+
+    @Test
+    void shouldDisposeProviderSubscriptionWhenStreamCloses() {
+        AiChatService.StreamSubscriptionState state = new AiChatService.StreamSubscriptionState();
+        DummyDisposable disposable = new DummyDisposable();
+
+        boolean accepted = state.subscribeIfOpen(() -> disposable);
+        state.close();
+
+        assertTrue(accepted);
+        assertTrue(disposable.isDisposed(), "active provider subscription should be disposed on close");
+    }
+
+    @Test
+    void shouldDisposeProviderSubscriptionWhenStreamClosesDuringSubscription() {
+        AiChatService.StreamSubscriptionState state = new AiChatService.StreamSubscriptionState();
+        DummyDisposable disposable = new DummyDisposable();
+
+        boolean accepted = state.subscribeIfOpen(() -> {
+            state.close();
+            return disposable;
+        });
+
+        assertFalse(accepted);
+        assertTrue(disposable.isDisposed(), "subscription created during close should be disposed");
+    }
+
+    private static final class DummyDisposable implements Disposable {
+        private boolean disposed;
+
+        @Override
+        public void dispose() {
+            disposed = true;
+        }
+
+        @Override
+        public boolean isDisposed() {
+            return disposed;
+        }
     }
 }
