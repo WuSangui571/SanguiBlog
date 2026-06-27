@@ -14,6 +14,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPageView, Long>, JpaSpecificationExecutor<AnalyticsPageView> {
 
@@ -39,6 +40,10 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
     List<AnalyticsPageView> findTop20ByOrderByViewedAtDesc();
 
     boolean existsByPostIdAndViewerIpAndViewedAtAfter(Long postId, String viewerIp, LocalDateTime viewedAt);
+
+    Optional<AnalyticsPageView> findByVisitId(String visitId);
+
+    boolean existsByVisitId(String visitId);
 
     @Query("SELECT COUNT(apv) FROM AnalyticsPageView apv WHERE (:start IS NULL OR apv.viewedAt >= :start)")
     long countViewsSince(@Param("start") LocalDateTime start);

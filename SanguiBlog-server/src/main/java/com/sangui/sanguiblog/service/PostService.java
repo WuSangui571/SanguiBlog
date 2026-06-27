@@ -188,18 +188,28 @@ public class PostService {
 
     @Transactional
     public PostDetailDto getPublishedDetail(Long id, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
+        return getPublishedDetail(id, ip, userAgent, userId, referrer, sourceLabel, null);
+    }
+
+    @Transactional
+    public PostDetailDto getPublishedDetail(Long id, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId) {
         Post post = postRepository.findById(id)
                 .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
                 .orElseThrow(() -> new NotFoundException("文章不存在或未发布"));
-        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel);
+        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel, visitId);
         return toDetail(post);
     }
 
     @Transactional
     public PostDetailDto getPublishedDetailBySlug(String slug, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
+        return getPublishedDetailBySlug(slug, ip, userAgent, userId, referrer, sourceLabel, null);
+    }
+
+    @Transactional
+    public PostDetailDto getPublishedDetailBySlug(String slug, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId) {
         Post post = postRepository.findBySlugAndStatus(slug, "PUBLISHED")
                 .orElseThrow(() -> new NotFoundException("文章不存在或未发布"));
-        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel);
+        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel, visitId);
         return toDetail(post);
     }
 
@@ -439,6 +449,30 @@ public class PostService {
     }
 
     private void incrementViews(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
+        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel, null);
+    }
+
+    private void incrementViews(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId) {
+        // 文章详情 GET 带 visitId 时，按 visitId 去重（一次 visit = 一次 views_count），
+        // 不能因为 start 已先写入同 visitId 的 OPEN 行而错误抑制 posts.views_count。
+        String normalizedVisitId = normalizeVisitId(visitId);
+        if (StringUtils.hasText(normalizedVisitId)) {
+            String visitKey = "visit_" + normalizedVisitId;
+            if (VIEW_RATE_LIMITER.asMap().putIfAbsent(visitKey, Boolean.TRUE) != null) {
+                return;
+            }
+            try {
+                long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
+                post.setViewsCount(current + 1);
+                postRepository.save(post);
+                recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel, normalizedVisitId);
+            } catch (Exception ex) {
+                VIEW_RATE_LIMITER.invalidate(visitKey);
+                throw ex;
+            }
+            return;
+        }
+
         String key = ip + "_" + post.getId();
         if (VIEW_RATE_LIMITER.asMap().putIfAbsent(key, Boolean.TRUE) != null) {
             return;
@@ -456,7 +490,7 @@ public class PostService {
             long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
             post.setViewsCount(current + 1);
             postRepository.save(post);
-            recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel);
+            recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel, null);
         } catch (Exception ex) {
             // 如果本次请求异常失败，则回滚缓存占位，避免“失败一次=10分钟都不计数”的误伤
             VIEW_RATE_LIMITER.invalidate(key);
@@ -464,7 +498,7 @@ public class PostService {
         }
     }
 
-    private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
+    private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId) {
         if (post == null) {
             return;
         }
@@ -476,7 +510,7 @@ public class PostService {
                 request.setPageTitle(post.getTitle());
                 request.setReferrer(referrer);
                 request.setSourceLabel(sourceLabel);
-                analyticsService.recordPageView(request, ip, userAgent, userId);
+                analyticsService.recordPageView(request, ip, userAgent, userId, visitId);
                 recorded = true;
             } catch (Exception ex) {
                 log.warn("调用 AnalyticsService.recordPageView 失败，将启用直接写库兜底, postId={}, ip={}", post.getId(), ip, ex);
@@ -485,6 +519,10 @@ public class PostService {
         if (!recorded) {
             persistAnalyticsPageView(post, ip, userAgent, userId);
         }
+    }
+
+    private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel) {
+        recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel, null);
     }
 
     private void persistAnalyticsPageView(Post post, String ip, String userAgent, Long userId) {
@@ -512,6 +550,14 @@ public class PostService {
         } catch (Exception ex) {
             log.warn("直接写入 analytics_page_views 失败, postId={}, ip={}", post != null ? post.getId() : null, ip, ex);
         }
+    }
+
+    private String normalizeVisitId(String rawVisitId) {
+        if (!StringUtils.hasText(rawVisitId)) {
+            return null;
+        }
+        String value = rawVisitId.trim();
+        return value.length() > 64 ? value.substring(0, 64) : value;
     }
 
     private PostSummaryDto toSummary(Post post) {

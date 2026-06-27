@@ -289,6 +289,74 @@ docker compose config
 docker compose -f docker-compose.prod.yml config --quiet
 ```
 
+### Article Visit Duration Analytics
+
+Article detail visit duration tracking is a backend/frontend/database contract that reuses `analytics_page_views`.
+
+Data flow:
+
+```text
+AppFull article route -> createVisitId()
+-> loadArticle(id, { visitId }) -> fetchPostDetail() sends X-SG-Visit-Id
+-> PostController -> PostService.incrementViews()
+-> AnalyticsService.recordPageView(..., visitId) creates or fills one analytics_page_views row
+-> ArticleDetail tracker start/heartbeat/end
+-> POST /api/analytics/visit/{start,heartbeat,end}
+-> AnalyticsService updates the same row by visit_id
+-> AdminAnalyticsSummaryDto.RecentVisit
+-> AdminPanel duration column
+```
+
+Contracts:
+
+| Concern | Contract |
+|---------|----------|
+| DB table | Reuse `analytics_page_views`; do not add a second article visit table for this contract. |
+| Columns | `visit_id`, `enter_time`, `leave_time`, `last_active_time`, `total_duration_seconds`, `active_duration_seconds`, `heartbeat_count`, `visit_status`, `updated_at`. |
+| DB default | `updated_at` is database-managed; entity mapping must use `insertable=false, updatable=false`. |
+| Visit identity | `visit_id` is nullable and unique. Normalize public visit ids to the stored 64-character column length before lookup or save. |
+| Detail GET | `GET /api/posts/{id}` and `GET /api/posts/slug/{slug}` accept `X-SG-Visit-Id` and still increment `posts.views_count` once per visit. |
+| Tracking endpoints | `POST /api/analytics/visit/start`, `/heartbeat`, and `/end` are permit-all, return `ApiResponse.ok()`, and must not surface tracking failures to the article reader. |
+| sendBeacon | `/visit/end` must accept both `application/json` and `text/plain;charset=UTF-8` JSON strings. |
+| Durations | Incoming durations are absolute seconds, not deltas. Clamp negatives to `0`, cap at `7200`, keep active duration <= total duration on end, and do not double repeated end calls. |
+| Frontend lifecycle | The tracker starts only after real article summary data exists, syncs initial `document.visibilityState`, counts active time only while visible, sends heartbeat about every 15 seconds, and ends on route cleanup/pagehide/beforeunload. |
+| Admin display | Backend returns camelCase duration fields; frontend prefers `durationSeconds`, then `activeDurationSeconds`, then `totalDurationSeconds`, otherwise `-`. |
+
+Validation/error matrix:
+
+| Case | Expected Result |
+|------|-----------------|
+| Detail GET writes visit row before start | start fills missing fields only and does not create a duplicate row. |
+| start arrives before detail GET | detail GET fills the existing row and still increments `posts.views_count`. |
+| heartbeat has lower active duration than stored | Stored active duration does not regress; heartbeat count increments. |
+| end repeats or arrives out of order | Stored durations remain larger legal absolute values and are not accumulated. |
+| visit id exceeds DB column length | All lifecycle lookups normalize to the stored 64-character value. |
+| hidden tab during tracking | Hidden time is not counted as active duration. |
+| bad JSON, missing visit id, unknown visit id, or service exception | Endpoint returns ok/no-op and does not produce a user-visible article error. |
+| old analytics rows with null visit fields | Admin list still renders existing fields and duration displays `-`. |
+
+Required verification for article visit duration work:
+
+```bash
+cd SanguiBlog-server
+mvn -q "-Dtest=AnalyticsServiceVisitDurationTest,AnalyticsServiceGeoLocationTest,AnalyticsControllerVisitTrackingTest" test
+mvn -q "-Dtest=IpUtilsTest,BotGuardEngineTest" test
+mvn -q -DskipTests compile
+
+cd ../SanguiBlog-front
+node src/appfull/public/articleVisitTracker.test.js
+node src/appfull/AdminAnalyticsVisitDuration.test.js
+node src/utils/analyticsReferrer.test.js
+node src/utils/analyticsReferrerIntegration.test.js
+node src/appfull/noNativeBlockingDialogs.test.js
+npm run lint
+npm run build
+
+cd ..
+git diff --check
+python .trellis/scripts/task.py validate .trellis/tasks/06-27-article-visit-duration-stats
+```
+
 ### Docker Compose Deployment
 
 Containerized deployment is an infra/cross-layer contract, not a business API change. Keep the executable contract in these files:

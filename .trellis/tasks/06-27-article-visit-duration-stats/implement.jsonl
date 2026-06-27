@@ -1,0 +1,33 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/06-27-article-visit-duration-stats/prd.md", "reason": "Primary PRD and cross-layer implementation contract"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend controller/service/entity/repository placement rules"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend retrieve-first, API, security, and testing contracts"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "analytics_page_views schema/entity/repository migration requirements"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Tracking API validation and no-500 error handling contract"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Avoid noisy heartbeat logs and sensitive data logging"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend api.js, AppFull, ArticleDetail, AdminPanel placement rules"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Browser API guard and hook/effect dependency rules for tracker"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Route/article state ownership and visitId handoff"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "API payload guards and helper test requirements"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Admin table and article component UI rules"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend static tests, lint, build, and no duplicate API wrapper"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first report and duplicate implementation guard"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Required API DB DTO frontend validation matrix"}
+{"file": "sanguiblog_db.sql", "reason": "Existing analytics_page_views schema to extend"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Existing analytics write/list/DTO mapping owner"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/entity/AnalyticsPageView.java", "reason": "JPA entity for analytics_page_views"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/AnalyticsPageViewRepository.java", "reason": "Repository queries and entity graph for admin logs"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AdminAnalyticsSummaryDto.java", "reason": "Admin RecentVisit DTO to extend"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AnalyticsController.java", "reason": "Public analytics controller for new visit endpoints"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminAnalyticsController.java", "reason": "Admin page-view list response path"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/PostController.java", "reason": "Article detail visitId header boundary"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostService.java", "reason": "Existing article view count and analytics row creation"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/SecurityConfig.java", "reason": "Public permitAll paths for tracking endpoints"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardEngine.java", "reason": "Risk interaction check for heartbeat endpoints"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Single API facade for fetchPostDetail and tracking calls"}
+{"file": "SanguiBlog-front/src/hooks/useBlogData.jsx", "reason": "Article loader path for visitId handoff"}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Route-level article visitId orchestration"}
+{"file": "SanguiBlog-front/src/appfull/public/ArticleDetail.jsx", "reason": "Article detail lifecycle tracking mount point"}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Admin analytics table column rendering"}

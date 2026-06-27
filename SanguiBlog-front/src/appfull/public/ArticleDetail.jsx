@@ -4,6 +4,16 @@ import CommentsSection from "../../components/comments/CommentsSection.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import { buildAssetUrl } from "../../utils/asset.js";
 import { fetchPostNeighbors } from "../../api";
+import {
+    startArticleVisit,
+    heartbeatArticleVisit,
+    endArticleVisit,
+} from "../../api";
+import {
+    createActiveDurationTracker,
+    calculateTotalDurationSeconds,
+    HEARTBEAT_INTERVAL_MS,
+} from "./articleVisitTracker.js";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -51,6 +61,7 @@ const ArticleDetail = ({
     isDarkMode,
     articleData,
     commentsData,
+    visitId,
     onSubmitComment,
     onDeleteComment,
     onUpdateComment,
@@ -112,6 +123,13 @@ const ArticleDetail = ({
 
     const [neighbors, setNeighbors] = useState({ prev: null, next: null, related: [] });
 
+    // 文章浏览时长埋点状态：仅在真实文章数据可用时启动。
+    const visitStateRef = useRef({ tracker: null, startedAt: null, ended: false });
+    const articleSummaryForVisit = articleData?.summary;
+    const articleVisitReady = Boolean(articleSummaryForVisit);
+    const articleVisitArticleId = articleSummaryForVisit?.id ?? id;
+    const articleVisitTitle = articleSummaryForVisit?.title || '';
+
     useEffect(() => {
         if (!id) return;
         let active = true;
@@ -133,6 +151,72 @@ const ArticleDetail = ({
             active = false;
         };
     }, [id]);
+
+    // 浏览时长埋点：进入真实文章详情时 start，每 15s heartbeat，卸载/切走/关闭页时 end。
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const currentVisitId = visitId;
+        // 仅在真实文章详情数据可用且有 visitId 时启用埋点；loading/404/error 不启动。
+        if (!currentVisitId || !articleVisitReady || !id) return;
+
+        const state = { tracker: createActiveDurationTracker(), startedAt: Date.now(), ended: false };
+        visitStateRef.current = state;
+
+        const articleTitle = articleVisitTitle;
+        const path = `/article/${id}`;
+        const referrer = (typeof document !== 'undefined' && document.referrer) || '';
+
+        // start：失败静默
+        startArticleVisit({
+            visitId: currentVisitId,
+            articleId: Number(articleVisitArticleId || id),
+            path,
+            title: articleTitle,
+            referrer,
+        });
+
+        const onVisibilityChange = () => {
+            if (typeof document === 'undefined') return;
+            state.tracker.markVisibility(document.visibilityState);
+        };
+        const endVisit = (useBeacon) => {
+            if (state.ended) return;
+            state.ended = true;
+            const activeSeconds = state.tracker.stop();
+            const totalSeconds = calculateTotalDurationSeconds(state.startedAt, Date.now());
+            endArticleVisit(
+                { visitId: currentVisitId, totalDurationSeconds: totalSeconds, activeDurationSeconds: activeSeconds },
+                { beacon: useBeacon === true }
+            );
+        };
+        const onPageHide = () => endVisit(true);
+        const onBeforeUnload = () => endVisit(true);
+
+        state.tracker.start();
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', onVisibilityChange);
+            onVisibilityChange();
+        }
+        const heartbeatTimer = setInterval(() => {
+            if (state.ended) return;
+            const activeSeconds = state.tracker.snapshot();
+            heartbeatArticleVisit({ visitId: currentVisitId, activeDurationSeconds: activeSeconds });
+        }, HEARTBEAT_INTERVAL_MS);
+        window.addEventListener('pagehide', onPageHide);
+        window.addEventListener('beforeunload', onBeforeUnload);
+
+        return () => {
+            // 组件卸载 / 路由切换 / visitId 变更：结束当前 visit（普通 fetch 兜底）
+            endVisit(false);
+            clearInterval(heartbeatTimer);
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+            }
+            window.removeEventListener('pagehide', onPageHide);
+            window.removeEventListener('beforeunload', onBeforeUnload);
+        };
+    }, [id, visitId, articleVisitReady, articleVisitArticleId, articleVisitTitle]);
+
 
     const relatedPosts = useMemo(() => (
         Array.isArray(neighbors?.related) ? neighbors.related : []

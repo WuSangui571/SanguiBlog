@@ -60,7 +60,8 @@ import {
     getGeoHint,
     claimAutoPageView,
     resetAutoPageViewGuard
-} from "./appfull/shared.js";
+    } from "./appfull/shared.js";
+import { createVisitId } from "./appfull/public/articleVisitTracker.js";
 import { AnimatePresence, motion } from 'framer-motion';
 const BROADCAST_SESSION_KEY = 'sangui-broadcast-dismissed';
 const LazyAdminPanel = lazy(() =>
@@ -165,6 +166,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const [archiveError, setArchiveError] = useState('');
     const lastViewRef = useRef(initialView);
     const [articleBackTarget, setArticleBackTarget] = useState(initialView === 'article' ? 'home' : initialView || 'home');
+    const [articleVisitId, setArticleVisitId] = useState('');
     const [backgroundEnabled, setBackgroundEnabled] = useState(() => {
         if (typeof window === 'undefined') return false;
         const stored = window.localStorage.getItem('sg_background_enabled');
@@ -846,7 +848,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         if (view === 'home') {
             // 首页文章列表由 ArticleList 触发分页查询，避免一次性拉全量数据
         } else if (view === 'article' && articleId) {
-            loadArticle && loadArticle(articleId);
+            // 进入文章详情（或切换到另一篇文章）时生成新的 visitId，
+            // 贯穿 fetchPostDetail(X-SG-Visit-Id) 与 ArticleDetail 内的 start/heartbeat/end。
+            const visitId = createVisitId();
+            setArticleVisitId(visitId);
+            loadArticle && loadArticle(articleId, { visitId });
         } else if (view === 'games') {
             if (!gameListLoading && gameList.length === 0) {
                 loadGameList();
@@ -1281,7 +1287,12 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                                 <div className="mt-6 flex flex-wrap gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => articleId && loadArticle && loadArticle(articleId)}
+                                        onClick={() => {
+                                            if (!articleId || !loadArticle) return;
+                                            const visitId = createVisitId();
+                                            setArticleVisitId(visitId);
+                                            loadArticle(articleId, { visitId });
+                                        }}
                                         className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-black border transition-all hover:-translate-y-0.5 ${isDarkMode ? 'border-white/14 bg-white/12 text-white hover:bg-white/18 shadow-[0_16px_40px_rgba(0,0,0,0.26)]' : 'border-white/80 bg-white/72 text-black hover:bg-white/86 shadow-[0_14px_34px_rgba(15,23,42,0.14)]'}`}
                                     >
                                         重试加载
@@ -1306,6 +1317,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
                         isDarkMode={isDarkMode}
                         articleData={article}
                         commentsData={comments}
+                        visitId={articleVisitId}
                         onSubmitComment={(payload) => submitComment && articleId && submitComment(articleId, payload)}
                         onDeleteComment={(commentId) => removeComment && articleId && removeComment(articleId, commentId)}
                         onUpdateComment={(commentId, content) => editComment && articleId && editComment(articleId, commentId, content)}

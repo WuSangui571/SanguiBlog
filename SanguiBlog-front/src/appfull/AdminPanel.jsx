@@ -69,6 +69,7 @@ import {
     updatePost
 } from "../api";
 import { buildAssetUrl } from "../utils/asset.js";
+import { formatVisitDurationFromRecord } from "./public/articleVisitTracker.js";
 import logger from "../utils/logger.js";
 import { useBlog } from "../hooks/useBlogData";
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1745,6 +1746,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                     <th className="px-4 py-3 text-left min-w-[120px]">用户</th>
                                     <th className="px-4 py-3 text-left min-w-[120px]">来源</th>
                                     <th className="px-4 py-3 text-left min-w-[48px]">地理</th>
+                                    <th className="px-4 py-3 text-left min-w-[80px]">浏览时长</th>
                                     {isSuperAdmin && <th className="px-4 py-3 text-right">操作</th>}
                                 </tr>
                             </thead>
@@ -1787,6 +1789,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">{renderReferrer(visit.referrer)}</td>
                                         <td className="px-4 py-3">{visit.geo || '未知'}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap font-mono">{formatVisitDurationFromRecord(visit)}</td>
                                         {isSuperAdmin && (
                                             <td className="px-4 py-3 text-right">
                                                 <button
