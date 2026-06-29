@@ -4465,6 +4465,11 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
     const [sessionDetail, setSessionDetail] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState('');
+    const [page, setPage] = useState(1);
+    const size = 20;
+    const [total, setTotal] = useState(0);
+    const auditSessionRequestSeq = useRef(0);
+    const sessionDetailRequestSeq = useRef(0);
 
     const cardBg = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
     const mutedText = isDarkMode ? 'text-gray-400' : 'text-gray-500';
@@ -4508,87 +4513,102 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
         };
     };
 
-    const loadSessions = useCallback(async () => {
+    const loadSessions = useCallback(async ({ targetPage = 1, targetVisibility = 'ALL', targetIdentity = 'ALL' } = {}) => {
+        const requestId = auditSessionRequestSeq.current + 1;
+        auditSessionRequestSeq.current = requestId;
+        const p = typeof targetPage === 'number' ? targetPage : 1;
+        const v = targetVisibility || 'ALL';
+        const i = targetIdentity || 'ALL';
         setSessionsLoading(true);
         setSessionsError('');
         try {
-            const res = await adminFetchAiAuditSessions();
-            const data = res?.data || res || [];
-            setSessions(Array.isArray(data) ? data : []);
+            const res = await adminFetchAiAuditSessions({ page: p, size, visibility: v, identity: i });
+            if (requestId !== auditSessionRequestSeq.current) return;
+            const data = res?.data || res || {};
+            const records = Array.isArray(data?.records) ? data.records : [];
+            setSessions(records);
+            setTotal(typeof data?.total === 'number' ? data.total : 0);
+            setPage(typeof data?.page === 'number' ? data.page : p);
             setActiveSessionId((prev) => {
-                if (prev && data.some((item) => item.id === prev)) return prev;
-                return data[0]?.id || null;
+                if (prev && records.some((item) => item.id === prev)) return prev;
+                return records[0]?.id || null;
             });
         } catch (err) {
+            if (requestId !== auditSessionRequestSeq.current) return;
             setSessionsError(err?.message || '加载 AI 会话失败');
             setSessions([]);
+            setTotal(0);
             setActiveSessionId(null);
         } finally {
-            setSessionsLoading(false);
+            if (requestId === auditSessionRequestSeq.current) {
+                setSessionsLoading(false);
+            }
         }
-    }, []);
+    }, [size]);
 
     const loadSessionDetail = useCallback(async (sessionId) => {
+        const requestId = sessionDetailRequestSeq.current + 1;
+        sessionDetailRequestSeq.current = requestId;
         if (!sessionId) {
             setSessionDetail(null);
+            setDetailError('');
+            setDetailLoading(false);
             return;
         }
         setDetailLoading(true);
         setDetailError('');
+        setSessionDetail(null);
         try {
             const res = await adminFetchAiAuditSessionDetail(sessionId);
+            if (requestId !== sessionDetailRequestSeq.current) return;
             const data = res?.data || res || null;
             setSessionDetail(data);
         } catch (err) {
+            if (requestId !== sessionDetailRequestSeq.current) return;
             setDetailError(err?.message || '加载会话详情失败');
             setSessionDetail(null);
         } finally {
-            setDetailLoading(false);
+            if (requestId === sessionDetailRequestSeq.current) {
+                setDetailLoading(false);
+            }
         }
     }, []);
 
     useEffect(() => {
-        loadSessions();
-    }, [loadSessions]);
+        loadSessions({ targetPage: page, targetVisibility: visibilityFilter, targetIdentity: authFilter });
+    }, [page, visibilityFilter, authFilter, loadSessions]);
 
     useEffect(() => {
         loadSessionDetail(activeSessionId);
     }, [activeSessionId, loadSessionDetail]);
 
-    const filteredSessions = sessions.filter((session) => {
-        if (visibilityFilter === 'VISIBLE') {
-            if (session.guest) return false;
-            if (session.userVisible === false) return false;
-        }
-        if (visibilityFilter === 'HIDDEN') {
-            if (!session.guest && session.userVisible !== false) return false;
-        }
-        if (authFilter === 'LOGGED_IN') {
-            return session.guest !== true;
-        }
-        if (authFilter === 'GUEST') {
-            return session.guest === true;
-        }
-        return true;
-    });
-
     useEffect(() => {
-        if (filteredSessions.length === 0) {
+        if (sessions.length === 0) {
             setActiveSessionId(null);
             return;
         }
-        if (!filteredSessions.some((item) => item.id === activeSessionId)) {
-            setActiveSessionId(filteredSessions[0].id);
+        if (!sessions.some((item) => item.id === activeSessionId)) {
+            setActiveSessionId(sessions[0].id);
         }
-    }, [activeSessionId, filteredSessions]);
+    }, [activeSessionId, sessions]);
+
+    const changeVisibilityFilter = (nextVisibility) => {
+        setVisibilityFilter(nextVisibility);
+        setPage(1);
+    };
+
+    const changeAuthFilter = (nextIdentity) => {
+        setAuthFilter(nextIdentity);
+        setPage(1);
+    };
 
     if (!user || user.role !== 'SUPER_ADMIN') {
         return <PermissionNotice title="无权限" description="仅超级管理员可以查看全站 AI 聊天审计记录。" />;
     }
 
-    const activeSession = sessionDetail?.session && filteredSessions.some((item) => item.id === sessionDetail.session.id)
+    const activeSession = sessionDetail?.session && sessions.some((item) => item.id === sessionDetail.session.id)
         ? sessionDetail.session
-        : filteredSessions.find((item) => item.id === activeSessionId) || null;
+        : sessions.find((item) => item.id === activeSessionId) || null;
     const activeIdentityMeta = activeSession ? getIdentityMeta(activeSession) : null;
     const messages = sessionDetail?.messages || [];
 
@@ -4601,7 +4621,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                     <p className={`text-sm mt-1 ${mutedText}`}>查看已登录用户与未登录访客的 AI 会话、消息时间线与归属信息，仅超级管理员可见。</p>
                 </div>
                 <button
-                    onClick={loadSessions}
+                    onClick={() => loadSessions({ targetPage: page, targetVisibility: visibilityFilter, targetIdentity: authFilter })}
                     className={`px-4 py-2 border-2 border-black rounded-full text-sm font-bold shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-black hover:bg-gray-100'}`}
                 >
                     刷新会话
@@ -4612,26 +4632,26 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                 <section className={`${cardBg} ${panelHeightClass} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] flex flex-col`}>
                     <div className="flex items-center justify-between">
                         <h3 className="text-xl font-black">会话列表</h3>
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${chipBg}`}>{filteredSessions.length} / {sessions.length} 条</span>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${chipBg}`}>第 {page} 页 · 共 {total} 条</span>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                         <button
                             type="button"
-                            onClick={() => setVisibilityFilter('ALL')}
+                            onClick={() => changeVisibilityFilter('ALL')}
                             className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(visibilityFilter === 'ALL')}`}
                         >
                             全部
                         </button>
                         <button
                             type="button"
-                            onClick={() => setVisibilityFilter('VISIBLE')}
+                            onClick={() => changeVisibilityFilter('VISIBLE')}
                             className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(visibilityFilter === 'VISIBLE')}`}
                         >
                             用户侧可见
                         </button>
                         <button
                             type="button"
-                            onClick={() => setVisibilityFilter('HIDDEN')}
+                            onClick={() => changeVisibilityFilter('HIDDEN')}
                             className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(visibilityFilter === 'HIDDEN')}`}
                         >
                             用户侧已隐藏
@@ -4640,21 +4660,21 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                     <div className="mt-3 flex flex-wrap gap-2">
                         <button
                             type="button"
-                            onClick={() => setAuthFilter('ALL')}
+                            onClick={() => changeAuthFilter('ALL')}
                             className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(authFilter === 'ALL')}`}
                         >
                             全部身份
                         </button>
                         <button
                             type="button"
-                            onClick={() => setAuthFilter('LOGGED_IN')}
+                            onClick={() => changeAuthFilter('LOGGED_IN')}
                             className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(authFilter === 'LOGGED_IN')}`}
                         >
                             已登录
                         </button>
                         <button
                             type="button"
-                            onClick={() => setAuthFilter('GUEST')}
+                            onClick={() => changeAuthFilter('GUEST')}
                             className={`px-3 py-1.5 rounded-full border-2 border-black text-xs font-bold transition ${filterButtonClass(authFilter === 'GUEST')}`}
                         >
                             未登录
@@ -4662,11 +4682,11 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                     </div>
                     {sessionsLoading && <p className={`text-sm ${mutedText}`}>正在加载 AI 会话...</p>}
                     {sessionsError && <p className="text-sm text-red-500">{sessionsError}</p>}
-                    {!sessionsLoading && !sessionsError && filteredSessions.length === 0 && (
+                    {!sessionsLoading && !sessionsError && sessions.length === 0 && (
                         <p className={`text-sm ${mutedText}`}>当前还没有任何 AI 会话记录。</p>
                     )}
                     <div className={`mt-4 flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar'}`}>
-                        {filteredSessions.map((session) => {
+                        {sessions.map((session) => {
                             const active = session.id === activeSessionId;
                             const visibilityMeta = getVisibilityMeta(session);
                             const identityMeta = getIdentityMeta(session);
@@ -4720,6 +4740,27 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                             );
                         })}
                     </div>
+                    {total > size && (() => { const totalPages = Math.max(1, Math.ceil(total / size)); return (
+                        <div className="mt-3 flex items-center justify-between pt-3 border-t border-dashed border-gray-300 dark:border-gray-700">
+                            <p className={`text-xs ${mutedText}`}>第 {page} / {totalPages} 页</p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                                    disabled={page <= 1}
+                                    className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold disabled:opacity-50"
+                                >
+                                    上一页
+                                </button>
+                                <button
+                                    onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
+                                    disabled={page >= totalPages}
+                                    className="px-3 py-1 border-2 border-black rounded-full text-xs font-bold disabled:opacity-50"
+                                >
+                                    下一页
+                                </button>
+                            </div>
+                        </div>
+                    )})()}
                 </section>
 
                 <section className={`${cardBg} ${panelHeightClass} rounded-2xl p-5 shadow-[8px_8px_0px_0px_#000] flex flex-col overflow-hidden`}>

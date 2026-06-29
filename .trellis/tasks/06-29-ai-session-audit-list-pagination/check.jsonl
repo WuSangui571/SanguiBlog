@@ -1,0 +1,17 @@
+{"file": ".trellis/workflow.md", "reason": "Current Trellis workflow and finish-work expectations."}
+{"file": ".trellis/tasks/06-29-ai-session-audit-list-pagination/prd.md", "reason": "Check acceptance criteria, API contract, forbidden scope, and required tests."}
+{"file": ".trellis/tasks/06-29-ai-session-audit-list-pagination/research.md", "reason": "Check expected files, code patterns, and scope boundaries discovered before implementation."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify targeted frontend tests/build and no native dialog regression."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify frontend guards and PageResponse field normalization."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify paginated admin state does not become global or stale."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verify ApiResponse/PageResponse and AI boundaries."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify no schema drift and correct ai_chat_sessions semantics."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify invalid filters and detail 404 status behavior."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify cross-layer API contract and Good/Base/Bad cases."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Verify no duplicate API/controller/service/UI path was added."}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Check API facade params and no duplicate wrapper."}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Check bounded list rendering, filter paging, detail behavior, no unrelated UI edits."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminAiChatAuditController.java", "reason": "Check endpoint signature, ApiResponse<PageResponse>, and SUPER_ADMIN guard."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AdminAiChatAuditService.java", "reason": "Check PageResponse mapping, filtering, clamps, sorting, and detail unchanged."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/AiChatSessionRepository.java", "reason": "Check pageable query and user/role eager loading."}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AdminAiChatAuditServiceTest.java", "reason": "Check backend tests cover pagination/filter/error behavior."}

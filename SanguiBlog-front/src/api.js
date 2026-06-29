@@ -874,7 +874,15 @@ export const adminDeleteMyAnalyticsLogs = () =>
     method: "DELETE",
   });
 
-export const adminFetchAiAuditSessions = () => request("/admin/ai-chat/sessions");
+export const adminFetchAiAuditSessions = ({ page = 1, size = 20, visibility = 'ALL', identity = 'ALL' } = {}) => {
+  const search = new URLSearchParams();
+  search.append("page", page);
+  search.append("size", size);
+  if (visibility && visibility !== 'ALL') search.append("visibility", visibility);
+  if (identity && identity !== 'ALL') search.append("identity", identity);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/ai-chat/sessions${query}`);
+};
 
 export const adminFetchAiAuditSessionDetail = (sessionId) =>
   request(`/admin/ai-chat/sessions/${sessionId}`);

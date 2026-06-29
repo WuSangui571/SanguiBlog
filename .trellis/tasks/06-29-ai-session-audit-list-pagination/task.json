@@ -1,0 +1,53 @@
+{
+  "id": "ai-session-audit-list-pagination",
+  "name": "ai-session-audit-list-pagination",
+  "title": "AI session audit list pagination",
+  "description": "Planning-only handoff for /admin/ai-management AI session audit loading performance: page the left session list on first load and subsequent navigation without changing chat stream, RAG, or schema contracts.",
+  "status": "planning",
+  "dev_type": "fullstack",
+  "scope": "Cross-layer admin AI audit session list pagination only; keep chat send/stream, user-side AI history, RAG, DB schema, permissions, and unrelated admin UI unchanged.",
+  "package": null,
+  "priority": "P2",
+  "creator": "sangui",
+  "assignee": "deepseek",
+  "createdAt": "2026-06-29",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

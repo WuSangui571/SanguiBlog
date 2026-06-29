@@ -1,0 +1,27 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/06-29-ai-session-audit-list-pagination/prd.md", "reason": "Primary requirements, cross-layer contract, acceptance criteria, forbidden scope, and required tests."}
+{"file": ".trellis/tasks/06-29-ai-session-audit-list-pagination/research.md", "reason": "Focused code research, retrieval report, likely files, and risk boundaries."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend file ownership: api.js and AdminPanel.jsx are the real paths."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend retrieve-first, targeted static tests, lint/build, no native dialogs."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Admin component patterns, controls, accessibility, and no duplicate UI systems."}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Async loader/effect dependency and stale response guard patterns."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Admin state stays local; server data pagination and AI state boundaries."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Runtime guards and PageResponse normalization for JS frontend."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend ownership: existing admin AI audit controller/service/repository paths."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "ApiResponse/PageResponse, AI high-risk boundaries, targeted tests."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "AI session table contracts, pagination, no schema migration requirement."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "IllegalArgumentException/ResponseStatusException error contracts."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe AI/admin logging; no prompts/secrets/full content."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse-first report and duplicate implementation prevention."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "API/payload/error/good-base-bad/test contract for cross-layer work."}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Frontend API facade; update adminFetchAiAuditSessions params here only."}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Real /admin/ai-management AiAdminAuditView and existing admin pagination patterns."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminAiChatAuditController.java", "reason": "Existing SUPER_ADMIN AI audit list/detail controller."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/ai/AdminAiChatAuditService.java", "reason": "Existing AI audit list/detail mapping service; convert list to PageResponse."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/AiChatSessionRepository.java", "reason": "Existing AI session repository and user/role EntityGraph."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/PageResponse.java", "reason": "Standard paginated API response shape."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/entity/AiChatSession.java", "reason": "Existing session fields for visibility/guest filters; no schema change."}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/ai/AdminAiChatAuditServiceTest.java", "reason": "Existing service tests to update for pagination/filter contract."}
+{"file": "SanguiBlog-front/src/appfull/AdminAnalyticsVisitDuration.test.js", "reason": "Example of frontend static tests reading AdminPanel/api contract."}

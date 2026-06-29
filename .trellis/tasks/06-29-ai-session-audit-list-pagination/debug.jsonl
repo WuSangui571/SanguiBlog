@@ -1,0 +1,5 @@
+{"file": ".trellis/workflow.md", "reason": "Current Trellis workflow and debug/check expectations."}
+{"file": ".trellis/tasks/06-29-ai-session-audit-list-pagination/prd.md", "reason": "Debug against the planned API contract, acceptance criteria, and forbidden scope."}
+{"file": ".trellis/tasks/06-29-ai-session-audit-list-pagination/research.md", "reason": "Debug with focused code research and likely root-cause chain."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Debug invalid query params and 404/error status behavior."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Debug frontend response normalization and runtime guards."}
