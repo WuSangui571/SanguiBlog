@@ -56,6 +56,7 @@ public class AnalyticsService {
     static final int MAX_VISIT_DURATION_SECONDS = 7200;
     static final String VISIT_STATUS_OPEN = "OPEN";
     static final String VISIT_STATUS_CLOSED = "CLOSED";
+    private static final int TRANSIENT_VISIT_MERGE_WINDOW_SECONDS = 5;
 
     private final AnalyticsPageViewRepository analyticsPageViewRepository;
     private final PostRepository postRepository;
@@ -91,6 +92,8 @@ public class AnalyticsService {
             request = new PageViewRequest();
         }
         String normalizedVisitId = normalizeVisitId(visitId);
+        String normalizedIp = normalizeViewerIp(ip);
+        LocalDateTime now = LocalDateTime.now();
         request.setReferrer(decodePercentEncodedValue(request.getReferrer()));
         request.setSourceLabel(decodePercentEncodedValue(request.getSourceLabel()));
 
@@ -110,7 +113,7 @@ public class AnalyticsService {
             if (existing != null) {
                 fillMissingVisitRowFields(existing, request, viewer);
                 if (existing.getEnterTime() == null) {
-                    existing.setEnterTime(LocalDateTime.now());
+                    existing.setEnterTime(now);
                 }
                 if (!StringUtils.hasText(existing.getVisitStatus())) {
                     existing.setVisitStatus(VISIT_STATUS_OPEN);
@@ -118,12 +121,38 @@ public class AnalyticsService {
                 analyticsPageViewRepository.save(existing);
                 return;
             }
+            if (request.getPostId() != null) {
+                AnalyticsPageView transientOpenRow = analyticsPageViewRepository
+                        .findFirstByPost_IdAndViewerIpAndVisitStatusAndViewedAtAfterOrderByViewedAtDesc(
+                                request.getPostId(),
+                                normalizedIp,
+                                VISIT_STATUS_OPEN,
+                                now.minusSeconds(TRANSIENT_VISIT_MERGE_WINDOW_SECONDS)
+                        )
+                        .filter(this::isTransientOpenVisitRow)
+                        .orElse(null);
+                if (transientOpenRow != null) {
+                    transientOpenRow.setVisitId(normalizedVisitId);
+                    fillMissingVisitRowFields(transientOpenRow, request, viewer);
+                    if (transientOpenRow.getEnterTime() == null) {
+                        transientOpenRow.setEnterTime(now);
+                    }
+                    if (transientOpenRow.getViewedAt() == null) {
+                        transientOpenRow.setViewedAt(now);
+                    }
+                    if (!StringUtils.hasText(transientOpenRow.getVisitStatus())) {
+                        transientOpenRow.setVisitStatus(VISIT_STATUS_OPEN);
+                    }
+                    analyticsPageViewRepository.save(transientOpenRow);
+                    return;
+                }
+            }
         }
 
         AnalyticsPageView pv = new AnalyticsPageView();
         if (StringUtils.hasText(normalizedVisitId)) {
             pv.setVisitId(normalizedVisitId);
-            pv.setEnterTime(LocalDateTime.now());
+            pv.setEnterTime(now);
             pv.setVisitStatus(VISIT_STATUS_OPEN);
         }
         if (request.getPostId() != null) {
@@ -136,12 +165,11 @@ public class AnalyticsService {
 
         pv.setUser(viewer);
         pv.setPageTitle(normalizePageTitle(request.getPageTitle()));
-        String normalizedIp = normalizeViewerIp(ip);
         pv.setViewerIp(normalizedIp);
         pv.setReferrerUrl(resolveReferrerDisplayLabel(request));
         pv.setGeoLocation(resolveGeoLocation(normalizedIp, request.getGeo()));
         pv.setUserAgent(trimToLength(userAgent, 512));
-        pv.setViewedAt(LocalDateTime.now());
+        pv.setViewedAt(now);
         pv.setHeartbeatCount(0);
         analyticsPageViewRepository.save(pv);
 
@@ -155,6 +183,17 @@ public class AnalyticsService {
         } catch (Exception ex) {
             log.warn("流量来源统计写入失败，已忽略本次来源记录", ex);
         }
+    }
+
+    private boolean isTransientOpenVisitRow(AnalyticsPageView row) {
+        if (row == null || !VISIT_STATUS_OPEN.equals(row.getVisitStatus())) {
+            return false;
+        }
+        boolean hasHeartbeat = row.getHeartbeatCount() != null && row.getHeartbeatCount() > 0;
+        return !hasHeartbeat
+                && row.getLeaveTime() == null
+                && row.getTotalDurationSeconds() == null
+                && row.getActiveDurationSeconds() == null;
     }
 
     private void fillMissingVisitRowFields(AnalyticsPageView row, PageViewRequest request, User viewer) {

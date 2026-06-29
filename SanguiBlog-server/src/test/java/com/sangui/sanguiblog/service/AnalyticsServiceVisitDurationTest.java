@@ -423,4 +423,40 @@ class AnalyticsServiceVisitDurationTest {
         verify(pageViewRepo).findByVisitId(storedId);
         verify(pageViewRepo).save(argThat(row -> storedId.equals(row.getVisitId())));
     }
+
+    @Test
+    void recordPageViewMergesRecentTransientOpenArticleVisitForSameViewer() {
+        Post post = new Post();
+        post.setId(237L);
+        post.setTitle("Hello");
+
+        AnalyticsPageView transientRow = new AnalyticsPageView();
+        transientRow.setVisitId("old-route-visit");
+        transientRow.setPost(post);
+        transientRow.setViewerIp("1.2.3.4");
+        transientRow.setViewedAt(LocalDateTime.now());
+        transientRow.setEnterTime(LocalDateTime.now());
+        transientRow.setVisitStatus(AnalyticsService.VISIT_STATUS_OPEN);
+        transientRow.setHeartbeatCount(0);
+
+        when(pageViewRepo.findByVisitId("new-route-visit")).thenReturn(Optional.empty());
+        when(pageViewRepo.findFirstByPost_IdAndViewerIpAndVisitStatusAndViewedAtAfterOrderByViewedAtDesc(
+                eq(237L),
+                eq("1.2.3.4"),
+                eq(AnalyticsService.VISIT_STATUS_OPEN),
+                any(LocalDateTime.class)
+        )).thenReturn(Optional.of(transientRow));
+
+        com.sangui.sanguiblog.model.dto.PageViewRequest request = new com.sangui.sanguiblog.model.dto.PageViewRequest();
+        request.setPostId(237L);
+        request.setPageTitle("Hello");
+        request.setReferrer("from-home");
+
+        analyticsService.recordPageView(request, "1.2.3.4", "ua", null, "new-route-visit");
+
+        assertEquals("new-route-visit", transientRow.getVisitId());
+        assertEquals(AnalyticsService.VISIT_STATUS_OPEN, transientRow.getVisitStatus());
+        verify(pageViewRepo).save(transientRow);
+        verify(postRepo, never()).findById(237L);
+    }
 }

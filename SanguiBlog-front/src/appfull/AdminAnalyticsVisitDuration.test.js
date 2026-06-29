@@ -29,11 +29,12 @@ assert.equal(formatVisitDurationFromRecord({ activeDurationSeconds: 8 }), '8秒'
 assert.equal(formatVisitDurationFromRecord({ totalDurationSeconds: 3900 }), '1小时05分');
 assert.equal(formatVisitDurationFromRecord({ visitId: 'visit-1', durationSeconds: 0 }), '小于1秒');
 assert.equal(formatVisitDurationFromRecord({ visitId: 'visit-1' }), '小于15秒');
+assert.equal(formatVisitDurationFromRecord({ postId: null, title: 'Admin Panel' }), '非文章页');
 assert.equal(formatVisitDurationFromRecord({}), '-');
 assert.equal(formatVisitDurationFromRecord(null), '-');
 
-// 旧历史行（无 visit 字段）应显示 '-'
-assert.equal(formatVisitDurationFromRecord({ ip: '1.2.3.4', time: '2026-01-01 00:00:00' }), '-');
+// 旧文章历史行（无 visit 字段）应显示 '-'
+assert.equal(formatVisitDurationFromRecord({ postId: 123, ip: '1.2.3.4', time: '2026-01-01 00:00:00' }), '-');
 
 // 同一篇文章停留期间不能因无关 state 变化重复生成 visitId / 记录两行
 assert.ok(appFullSource.includes('const articleLoadKey = String(articleId);'),
@@ -42,6 +43,8 @@ assert.ok(appFullSource.includes('lastRecordedArticleRef.current === articleLoad
   'AppFull should skip duplicate article visit loading for the same article');
 assert.ok(appFullSource.includes('lastRecordedArticleRef.current = articleLoadKey'),
   'AppFull should remember the article load key before creating a new visitId');
+assert.ok(appFullSource.includes('routeManagedArticleKey !== articleLoadKey'),
+  'AppFull should not load article data in a route-managed instance before navigation settles');
 
 // 3) 直接格式化
 assert.equal(formatVisitDuration(0), '0秒');
@@ -69,5 +72,3 @@ assert.ok(apiSource.includes('export const endArticleVisit'), 'api.js should exp
 assert.ok(apiSource.includes('X-SG-Visit-Id'), 'api.js should send X-SG-Visit-Id header');
 assert.ok(apiSource.includes('sendBeacon'), 'api.js should support sendBeacon for end');
 assert.ok(apiSource.includes('/analytics/visit/'), 'api.js should add visit paths to silent auth');
-
-console.log('AdminAnalyticsVisitDuration tests passed');

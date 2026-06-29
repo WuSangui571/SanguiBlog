@@ -849,6 +849,10 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             // 首页文章列表由 ArticleList 触发分页查询，避免一次性拉全量数据
         } else if (view === 'article' && articleId) {
             const articleLoadKey = String(articleId);
+            const routeManagedArticleKey = initialView === 'article' && initialArticleId ? String(initialArticleId) : null;
+            if (onViewChange && routeManagedArticleKey !== articleLoadKey) {
+                return;
+            }
             if (lastRecordedArticleRef.current === articleLoadKey) {
                 return;
             }
@@ -865,7 +869,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         } else if (view === 'game' && gameId) {
             loadGameDetail(gameId);
         }
-    }, [view, articleId, loadPosts, loadArticle, gameId, loadGameDetail, loadGameList, gameList.length, gameListLoading]);
+    }, [view, articleId, initialView, initialArticleId, onViewChange, loadPosts, loadArticle, gameId, loadGameDetail, loadGameList, gameList.length, gameListLoading]);
 
     useEffect(() => {
         if (view === 'archive' && !archiveSummary && !archiveLoading) {

@@ -45,6 +45,13 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
 
     boolean existsByVisitId(String visitId);
 
+    Optional<AnalyticsPageView> findFirstByPost_IdAndViewerIpAndVisitStatusAndViewedAtAfterOrderByViewedAtDesc(
+            Long postId,
+            String viewerIp,
+            String visitStatus,
+            LocalDateTime viewedAt
+    );
+
     @Query("SELECT COUNT(apv) FROM AnalyticsPageView apv WHERE (:start IS NULL OR apv.viewedAt >= :start)")
     long countViewsSince(@Param("start") LocalDateTime start);
 
