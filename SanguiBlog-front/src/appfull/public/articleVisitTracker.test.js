@@ -73,6 +73,8 @@ assert.equal(resolveDisplayDurationSeconds({ durationSeconds: -1, activeDuration
 
 // formatVisitDurationFromRecord
 assert.equal(formatVisitDurationFromRecord({ durationSeconds: 70 }), '1分10秒');
+assert.equal(formatVisitDurationFromRecord({ visitId: 'visit-1', durationSeconds: 0 }), '小于1秒');
+assert.equal(formatVisitDurationFromRecord({ visitId: 'visit-1' }), '小于15秒');
 assert.equal(formatVisitDurationFromRecord({}), '-');
 assert.equal(formatVisitDurationFromRecord(null), '-');
 

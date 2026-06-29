@@ -114,8 +114,27 @@ export const resolveDisplayDurationSeconds = (visit) => {
   return null;
 };
 
+const isTrackedVisitRecord = (visit) => {
+  if (!visit || typeof visit !== "object") return false;
+  return Boolean(
+    visit.visitId
+    || visit.visit_id
+    || visit.visitStatus
+    || visit.visit_status
+    || visit.enterTime
+    || visit.enter_time
+    || visit.leaveTime
+    || visit.leave_time
+    || visit.lastActiveTime
+    || visit.last_active_time
+  );
+};
+
 export const formatVisitDurationFromRecord = (visit) => {
   const seconds = resolveDisplayDurationSeconds(visit);
-  if (seconds === null) return "-";
+  if (seconds === null) {
+    return isTrackedVisitRecord(visit) ? `小于${Math.floor(HEARTBEAT_INTERVAL_MS / 1000)}秒` : "-";
+  }
+  if (seconds === 0 && isTrackedVisitRecord(visit)) return "小于1秒";
   return formatVisitDuration(seconds);
 };

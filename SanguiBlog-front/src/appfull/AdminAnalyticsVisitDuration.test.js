@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 
 // 1) AdminPanel 渲染了“浏览时长”列且引入了格式化 helper
 const adminPanelSource = fs.readFileSync(path.join(__dirname, 'AdminPanel.jsx'), 'utf8');
+const appFullSource = fs.readFileSync(path.join(__dirname, '..', 'AppFull.jsx'), 'utf8');
 assert.ok(adminPanelSource.includes('浏览时长'), 'AdminPanel should render 浏览时长 column');
 assert.ok(adminPanelSource.includes('formatVisitDurationFromRecord'),
   'AdminPanel should use formatVisitDurationFromRecord for duration cell');
@@ -26,11 +27,21 @@ assert.equal(resolveDisplayDurationSeconds({}), null);
 assert.equal(formatVisitDurationFromRecord({ durationSeconds: 70 }), '1分10秒');
 assert.equal(formatVisitDurationFromRecord({ activeDurationSeconds: 8 }), '8秒');
 assert.equal(formatVisitDurationFromRecord({ totalDurationSeconds: 3900 }), '1小时05分');
+assert.equal(formatVisitDurationFromRecord({ visitId: 'visit-1', durationSeconds: 0 }), '小于1秒');
+assert.equal(formatVisitDurationFromRecord({ visitId: 'visit-1' }), '小于15秒');
 assert.equal(formatVisitDurationFromRecord({}), '-');
 assert.equal(formatVisitDurationFromRecord(null), '-');
 
 // 旧历史行（无 visit 字段）应显示 '-'
 assert.equal(formatVisitDurationFromRecord({ ip: '1.2.3.4', time: '2026-01-01 00:00:00' }), '-');
+
+// 同一篇文章停留期间不能因无关 state 变化重复生成 visitId / 记录两行
+assert.ok(appFullSource.includes('const articleLoadKey = String(articleId);'),
+  'AppFull should key article visit loading by articleId');
+assert.ok(appFullSource.includes('lastRecordedArticleRef.current === articleLoadKey'),
+  'AppFull should skip duplicate article visit loading for the same article');
+assert.ok(appFullSource.includes('lastRecordedArticleRef.current = articleLoadKey'),
+  'AppFull should remember the article load key before creating a new visitId');
 
 // 3) 直接格式化
 assert.equal(formatVisitDuration(0), '0秒');

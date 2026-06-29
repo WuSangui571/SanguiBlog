@@ -848,6 +848,11 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         if (view === 'home') {
             // 首页文章列表由 ArticleList 触发分页查询，避免一次性拉全量数据
         } else if (view === 'article' && articleId) {
+            const articleLoadKey = String(articleId);
+            if (lastRecordedArticleRef.current === articleLoadKey) {
+                return;
+            }
+            lastRecordedArticleRef.current = articleLoadKey;
             // 进入文章详情（或切换到另一篇文章）时生成新的 visitId，
             // 贯穿 fetchPostDetail(X-SG-Visit-Id) 与 ArticleDetail 内的 start/heartbeat/end。
             const visitId = createVisitId();
