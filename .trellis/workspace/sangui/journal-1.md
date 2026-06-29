@@ -1800,3 +1800,55 @@ Boundaries:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 30: Article visit duration stats accepted
+
+**Date**: 2026-06-29
+**Task**: Article visit duration stats accepted
+**Branch**: `feature/article-visit-duration-stats`
+
+### Summary
+
+Manual acceptance passed; article and normal page visit durations are tracked and V2.3.3 release docs were prepared.
+
+### Main Changes
+
+- Commits recorded: 3f99492 initial article visit duration stats, fedc15a/c12f9f2 duplicate article-row fixes, 3cfa06b non-article page duration tracking.
+- Main modules changed: analytics page-view persistence, visit lifecycle endpoints, article/detail visit tracking, normal page tracking in AppFull, admin visit-duration display, and deployment SQL docs.
+- Closeout edits in this session: bumped visible site version to V2.3.3 in application.yaml and frontend fallbacks; updated README.md and README.zh-CN.md current version plus V2.3.3 SQL migration note.
+- Verification passed: user manual acceptance; node src/appfull/AdminAnalyticsVisitDuration.test.js; node src/appfull/public/articleVisitTracker.test.js; mvn -q "-Dtest=AnalyticsServiceVisitDurationTest,AnalyticsControllerVisitTrackingTest" test; mvn -q -DskipTests compile; cmd /c npm run build; git diff --check; V2.3.2 residual scan returned no matches in version files.
+- Runtime evidence from QA: docker compose services were healthy; /api/site/meta returned success; browser-driven normal-page visits wrote visit_id plus CLOSED status and duration seconds to analytics_page_views.
+- Deployment boundary: existing production MySQL volumes need docs/sql/2026-06-27-add-analytics-visit-duration.sql applied once before the new backend image depends on the new analytics_page_views columns. Fresh volumes use sanguiblog_db.sql and do not need this extra step.
+- Product boundary: old rows without visit_id remain displayed as '-'; new tracked article and non-article page visits show seconds or less-than-threshold fallback.
+- No Codex git commit was created for this record step; Trellis metadata and V2.3.3 README/version edits remain for manual commit.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3f99492` | (see git log) |
+| `fedc15a` | (see git log) |
+| `c12f9f2` | (see git log) |
+| `3cfa06b` | (see git log) |
+
+### Testing
+
+- [OK] User manual acceptance passed.
+- [OK] `node src/appfull/AdminAnalyticsVisitDuration.test.js`
+- [OK] `node src/appfull/public/articleVisitTracker.test.js`
+- [OK] `mvn -q "-Dtest=AnalyticsServiceVisitDurationTest,AnalyticsControllerVisitTrackingTest" test`
+- [OK] `mvn -q -DskipTests compile`
+- [OK] `cmd /c npm run build`
+- [OK] `git diff --check`
+- [OK] `rg -n "V2\.3\.2" ...` returned no matches in version files.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Manually commit Trellis metadata and V2.3.3 README/version edits.
+- Merge `feature/article-visit-duration-stats` into `main`, then deploy with the V2.3.3 SQL migration check for existing production databases.

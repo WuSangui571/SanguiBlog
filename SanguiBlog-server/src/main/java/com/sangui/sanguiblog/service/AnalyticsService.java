@@ -1,6 +1,9 @@
 package com.sangui.sanguiblog.service;
 
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsSummaryDto;
+import com.sangui.sanguiblog.model.dto.ArticleVisitEndRequest;
+import com.sangui.sanguiblog.model.dto.ArticleVisitHeartbeatRequest;
+import com.sangui.sanguiblog.model.dto.ArticleVisitStartRequest;
 import com.sangui.sanguiblog.model.dto.PageResponse;
 import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
@@ -49,6 +52,12 @@ public class AnalyticsService {
     private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
     private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    // 第一阶段：单次 visit 浏览时长上限（秒）。超过按此截断，负值归零。
+    static final int MAX_VISIT_DURATION_SECONDS = 7200;
+    static final String VISIT_STATUS_OPEN = "OPEN";
+    static final String VISIT_STATUS_CLOSED = "CLOSED";
+    private static final int TRANSIENT_VISIT_MERGE_WINDOW_SECONDS = 5;
+
     private final AnalyticsPageViewRepository analyticsPageViewRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
@@ -74,9 +83,17 @@ public class AnalyticsService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId) {
+        recordPageView(request, ip, userAgent, userId, null);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId, String visitId) {
         if (request == null) {
             request = new PageViewRequest();
         }
+        String normalizedVisitId = normalizeVisitId(visitId);
+        String normalizedIp = normalizeViewerIp(ip);
+        LocalDateTime now = LocalDateTime.now();
         request.setReferrer(decodePercentEncodedValue(request.getReferrer()));
         request.setSourceLabel(decodePercentEncodedValue(request.getSourceLabel()));
 
@@ -90,7 +107,54 @@ public class AnalyticsService {
             }
         }
 
+        // 文章详情 GET 带 visitId 时，保证“一次 visit = 一行”：若 start 已先创建该 visit 行，则幂等补齐，不重复插入。
+        if (StringUtils.hasText(normalizedVisitId)) {
+            AnalyticsPageView existing = analyticsPageViewRepository.findByVisitId(normalizedVisitId).orElse(null);
+            if (existing != null) {
+                fillMissingVisitRowFields(existing, request, viewer);
+                if (existing.getEnterTime() == null) {
+                    existing.setEnterTime(now);
+                }
+                if (!StringUtils.hasText(existing.getVisitStatus())) {
+                    existing.setVisitStatus(VISIT_STATUS_OPEN);
+                }
+                analyticsPageViewRepository.save(existing);
+                return;
+            }
+            if (request.getPostId() != null) {
+                AnalyticsPageView transientOpenRow = analyticsPageViewRepository
+                        .findFirstByPost_IdAndViewerIpAndVisitStatusAndViewedAtAfterOrderByViewedAtDesc(
+                                request.getPostId(),
+                                normalizedIp,
+                                VISIT_STATUS_OPEN,
+                                now.minusSeconds(TRANSIENT_VISIT_MERGE_WINDOW_SECONDS)
+                        )
+                        .filter(this::isTransientOpenVisitRow)
+                        .orElse(null);
+                if (transientOpenRow != null) {
+                    transientOpenRow.setVisitId(normalizedVisitId);
+                    fillMissingVisitRowFields(transientOpenRow, request, viewer);
+                    if (transientOpenRow.getEnterTime() == null) {
+                        transientOpenRow.setEnterTime(now);
+                    }
+                    if (transientOpenRow.getViewedAt() == null) {
+                        transientOpenRow.setViewedAt(now);
+                    }
+                    if (!StringUtils.hasText(transientOpenRow.getVisitStatus())) {
+                        transientOpenRow.setVisitStatus(VISIT_STATUS_OPEN);
+                    }
+                    analyticsPageViewRepository.save(transientOpenRow);
+                    return;
+                }
+            }
+        }
+
         AnalyticsPageView pv = new AnalyticsPageView();
+        if (StringUtils.hasText(normalizedVisitId)) {
+            pv.setVisitId(normalizedVisitId);
+            pv.setEnterTime(now);
+            pv.setVisitStatus(VISIT_STATUS_OPEN);
+        }
         if (request.getPostId() != null) {
             Post post = postRepository.findById(request.getPostId()).orElse(null);
             pv.setPost(post);
@@ -101,12 +165,12 @@ public class AnalyticsService {
 
         pv.setUser(viewer);
         pv.setPageTitle(normalizePageTitle(request.getPageTitle()));
-        String normalizedIp = normalizeViewerIp(ip);
         pv.setViewerIp(normalizedIp);
         pv.setReferrerUrl(resolveReferrerDisplayLabel(request));
         pv.setGeoLocation(resolveGeoLocation(normalizedIp, request.getGeo()));
         pv.setUserAgent(trimToLength(userAgent, 512));
-        pv.setViewedAt(LocalDateTime.now());
+        pv.setViewedAt(now);
+        pv.setHeartbeatCount(0);
         analyticsPageViewRepository.save(pv);
 
         try {
@@ -120,6 +184,46 @@ public class AnalyticsService {
             log.warn("流量来源统计写入失败，已忽略本次来源记录", ex);
         }
     }
+
+    private boolean isTransientOpenVisitRow(AnalyticsPageView row) {
+        if (row == null || !VISIT_STATUS_OPEN.equals(row.getVisitStatus())) {
+            return false;
+        }
+        boolean hasHeartbeat = row.getHeartbeatCount() != null && row.getHeartbeatCount() > 0;
+        return !hasHeartbeat
+                && row.getLeaveTime() == null
+                && row.getTotalDurationSeconds() == null
+                && row.getActiveDurationSeconds() == null;
+    }
+
+    private void fillMissingVisitRowFields(AnalyticsPageView row, PageViewRequest request, User viewer) {
+        if (row.getPost() == null && request != null && request.getPostId() != null) {
+            Post post = postRepository.findById(request.getPostId()).orElse(null);
+            if (post != null) {
+                row.setPost(post);
+            }
+        }
+        if (!StringUtils.hasText(row.getPageTitle())) {
+            String title = request != null ? request.getPageTitle() : null;
+            if (!StringUtils.hasText(title) && row.getPost() != null) {
+                title = row.getPost().getTitle();
+            }
+            row.setPageTitle(normalizePageTitle(title));
+        }
+        if (row.getUser() == null && viewer != null) {
+            row.setUser(viewer);
+        }
+        if (!StringUtils.hasText(row.getReferrerUrl())) {
+            row.setReferrerUrl(resolveReferrerDisplayLabel(request));
+        }
+        if (!StringUtils.hasText(row.getGeoLocation())) {
+            row.setGeoLocation(resolveGeoLocation(row.getViewerIp(), request != null ? request.getGeo() : null));
+        }
+        if (!StringUtils.hasText(row.getUserAgent()) && request != null) {
+            // 文章详情 GET 通常带 User-Agent 头；request 本身不携带 UA，由 controller 透传，这里仅做兜底占位。
+        }
+    }
+
 
     @Transactional(readOnly = true)
     public AdminAnalyticsSummaryDto loadAdminSummary(int days, int topLimit, int recentLimit) {
@@ -387,10 +491,188 @@ public class AnalyticsService {
     ) {
     }
 
+    // ===== 文章浏览时长 visit lifecycle =====
+
+    @Transactional
+    public void recordArticleVisitStart(ArticleVisitStartRequest request, String ip, String userAgent, Long userId) {
+        if (request == null || !StringUtils.hasText(request.getVisitId())) {
+            return;
+        }
+        Long articleId = request.getArticleId();
+        if (articleId == null || articleId <= 0) {
+            return;
+        }
+        String visitId = normalizeVisitId(request.getVisitId());
+        if (!StringUtils.hasText(visitId)) {
+            return;
+        }
+
+        AnalyticsPageView existing = analyticsPageViewRepository.findByVisitId(visitId).orElse(null);
+        if (existing != null) {
+            // 幂等补齐：不新增第二行，也不覆盖已有有效字段。
+            if (existing.getPost() == null) {
+                Post post = postRepository.findById(articleId).orElse(null);
+                if (post != null) {
+                    existing.setPost(post);
+                }
+            }
+            if (!StringUtils.hasText(existing.getPageTitle())) {
+                existing.setPageTitle(normalizePageTitle(resolveStartTitle(request, existing.getPost())));
+            }
+            if (existing.getUser() == null && userId != null) {
+                userRepository.findById(userId).ifPresent(existing::setUser);
+            }
+            if (!StringUtils.hasText(existing.getReferrerUrl())) {
+                existing.setReferrerUrl(trimToLength(decodePercentEncodedValue(request.getReferrer()), 512));
+            }
+            if (existing.getEnterTime() == null) {
+                existing.setEnterTime(LocalDateTime.now());
+            }
+            if (!StringUtils.hasText(existing.getVisitStatus())) {
+                existing.setVisitStatus(VISIT_STATUS_OPEN);
+            }
+            analyticsPageViewRepository.save(existing);
+            return;
+        }
+
+        User viewer = null;
+        if (userId != null) {
+            viewer = userRepository.findById(userId).orElse(null);
+        }
+        Post post = postRepository.findById(articleId).orElse(null);
+
+        AnalyticsPageView pv = new AnalyticsPageView();
+        pv.setVisitId(visitId);
+        pv.setPost(post);
+        pv.setPageTitle(normalizePageTitle(resolveStartTitle(request, post)));
+        String normalizedIp = normalizeViewerIp(ip);
+        pv.setViewerIp(normalizedIp);
+        pv.setUser(viewer);
+        pv.setReferrerUrl(trimToLength(decodePercentEncodedValue(request.getReferrer()), 512));
+        pv.setGeoLocation(resolveGeoLocation(normalizedIp, null));
+        pv.setUserAgent(trimToLength(userAgent, 512));
+        LocalDateTime now = LocalDateTime.now();
+        pv.setViewedAt(now);
+        pv.setEnterTime(now);
+        pv.setVisitStatus(VISIT_STATUS_OPEN);
+        pv.setHeartbeatCount(0);
+        analyticsPageViewRepository.save(pv);
+    }
+
+    @Transactional
+    public void recordArticleVisitHeartbeat(ArticleVisitHeartbeatRequest request) {
+        if (request == null || !StringUtils.hasText(request.getVisitId())) {
+            return;
+        }
+        String visitId = normalizeVisitId(request.getVisitId());
+        if (!StringUtils.hasText(visitId)) {
+            return;
+        }
+        AnalyticsPageView row = analyticsPageViewRepository.findByVisitId(visitId).orElse(null);
+        if (row == null) {
+            return;
+        }
+        int sanitized = sanitizeDurationSeconds(request.getActiveDurationSeconds());
+        Integer currentActive = row.getActiveDurationSeconds();
+        if (currentActive == null || sanitized > currentActive) {
+            row.setActiveDurationSeconds(sanitized);
+        }
+        row.setLastActiveTime(LocalDateTime.now());
+        int nextCount = (row.getHeartbeatCount() == null ? 0 : row.getHeartbeatCount()) + 1;
+        row.setHeartbeatCount(nextCount);
+        analyticsPageViewRepository.save(row);
+    }
+
+    @Transactional
+    public void recordArticleVisitEnd(ArticleVisitEndRequest request) {
+        if (request == null || !StringUtils.hasText(request.getVisitId())) {
+            return;
+        }
+        String visitId = normalizeVisitId(request.getVisitId());
+        if (!StringUtils.hasText(visitId)) {
+            return;
+        }
+        AnalyticsPageView row = analyticsPageViewRepository.findByVisitId(visitId).orElse(null);
+        if (row == null) {
+            return;
+        }
+        int sanitizedTotal = sanitizeDurationSeconds(request.getTotalDurationSeconds());
+        int sanitizedActive = sanitizeDurationSeconds(request.getActiveDurationSeconds());
+        // active 不得超过 total
+        if (sanitizedActive > sanitizedTotal) {
+            sanitizedActive = sanitizedTotal;
+        }
+        Integer currentTotal = row.getTotalDurationSeconds();
+        if (currentTotal == null || sanitizedTotal > currentTotal) {
+            row.setTotalDurationSeconds(sanitizedTotal);
+        }
+        Integer currentActive = row.getActiveDurationSeconds();
+        // 重复 end 不叠加：取较大合法绝对值
+        int activeCandidate = Math.min(sanitizedActive, row.getTotalDurationSeconds() == null
+                ? sanitizedActive : row.getTotalDurationSeconds());
+        if (currentActive == null || activeCandidate > currentActive) {
+            row.setActiveDurationSeconds(activeCandidate);
+        }
+        if (row.getLeaveTime() == null) {
+            row.setLeaveTime(LocalDateTime.now());
+        }
+        row.setVisitStatus(VISIT_STATUS_CLOSED);
+        analyticsPageViewRepository.save(row);
+    }
+
+    int sanitizeDurationSeconds(Integer seconds) {
+        if (seconds == null) {
+            return 0;
+        }
+        int value = seconds;
+        if (value < 0) {
+            return 0;
+        }
+        return Math.min(value, MAX_VISIT_DURATION_SECONDS);
+    }
+
+    Integer resolveDisplayDurationSeconds(AnalyticsPageView view) {
+        if (view == null) {
+            return null;
+        }
+        Integer active = view.getActiveDurationSeconds();
+        if (active != null && active >= 0) {
+            return active;
+        }
+        Integer total = view.getTotalDurationSeconds();
+        if (total != null && total >= 0) {
+            return total;
+        }
+        if (view.getLastActiveTime() != null && view.getEnterTime() != null) {
+            long seconds = java.time.Duration.between(view.getEnterTime(), view.getLastActiveTime()).getSeconds();
+            if (seconds < 0) {
+                return 0;
+            }
+            if (seconds > MAX_VISIT_DURATION_SECONDS) {
+                return MAX_VISIT_DURATION_SECONDS;
+            }
+            return (int) seconds;
+        }
+        return null;
+    }
+
+    private String resolveStartTitle(ArticleVisitStartRequest request, Post post) {
+        if (request != null && StringUtils.hasText(request.getTitle())) {
+            return request.getTitle();
+        }
+        if (post != null) {
+            return post.getTitle();
+        }
+        return "页面";
+    }
+
     private AdminAnalyticsSummaryDto.RecentVisit toRecentVisit(AnalyticsPageView view) {
         if (view == null) {
             return null;
         }
+        Integer total = view.getTotalDurationSeconds();
+        Integer active = view.getActiveDurationSeconds();
+        Integer display = resolveDisplayDurationSeconds(view);
         return AdminAnalyticsSummaryDto.RecentVisit.builder()
                 .id(view.getId())
                 .title(view.getPost() != null ? view.getPost().getTitle() : view.getPageTitle())
@@ -410,6 +692,15 @@ public class AnalyticsService {
                         : null)
                 .userAgent(view.getUserAgent())
                 .avatarUrl(view.getUser() != null ? view.getUser().getAvatarUrl() : null)
+                .visitId(view.getVisitId())
+                .enterTime(view.getEnterTime() != null ? DATE_TIME_FMT.format(view.getEnterTime()) : null)
+                .leaveTime(view.getLeaveTime() != null ? DATE_TIME_FMT.format(view.getLeaveTime()) : null)
+                .lastActiveTime(view.getLastActiveTime() != null ? DATE_TIME_FMT.format(view.getLastActiveTime()) : null)
+                .totalDurationSeconds(total)
+                .activeDurationSeconds(active)
+                .durationSeconds(display)
+                .heartbeatCount(view.getHeartbeatCount())
+                .visitStatus(view.getVisitStatus())
                 .build();
     }
 
@@ -568,6 +859,14 @@ public class AnalyticsService {
         }
         String ip = rawIp.trim();
         return ip.length() > 45 ? ip.substring(0, 45) : ip;
+    }
+
+    private String normalizeVisitId(String rawVisitId) {
+        if (!StringUtils.hasText(rawVisitId)) {
+            return null;
+        }
+        String value = rawVisitId.trim();
+        return value.length() > 64 ? value.substring(0, 64) : value;
     }
 
     private String trimToLength(String value, int maxLen) {

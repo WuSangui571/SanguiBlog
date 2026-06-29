@@ -79,6 +79,7 @@ const notifyAuthExpired = (detail = {}) => {
 const SILENT_AUTH_PATHS = [
   "/analytics/page-view",
   "/analytics/client-ip",
+  "/analytics/visit/",
 ];
 
 const shouldSilentAuthNotice = (path = "") =>
@@ -107,6 +108,7 @@ const buildHeaders = () => {
 
 const ANALYTICS_REFERRER_HEADER = "X-SG-Referrer";
 const ANALYTICS_SOURCE_LABEL_HEADER = "X-SG-Source-Label";
+const ANALYTICS_VISIT_ID_HEADER = "X-SG-Visit-Id";
 const SG_PREV_URL_KEY = "sg_prev_url";
 const SG_PREV_URL_TS_KEY = "sg_prev_url_ts";
 const SG_PREV_URL_MAX_AGE_MS = 15000;
@@ -452,12 +454,55 @@ export const fetchArchiveMonth = (year, month, params = {}) => {
   return request(`/posts/archive/month?${search.toString()}`);
 };
 
-export const fetchPostDetail = (id) =>
-  request(`/posts/${id}`, {
-    headers: buildAnalyticsReferrerHeaders(),
-  });
+export const fetchPostDetail = (id, options = {}) => {
+  const headers = buildAnalyticsReferrerHeaders();
+  const visitId = options && options.visitId ? String(options.visitId) : "";
+  if (visitId) {
+    headers[ANALYTICS_VISIT_ID_HEADER] = encodeURIComponent(visitId);
+  }
+  return request(`/posts/${id}`, { headers });
+};
 
 export const fetchPostNeighbors = (id) => request(`/posts/${id}/neighbors`);
+
+export const startArticleVisit = (payload) =>
+  request("/analytics/visit/start", {
+    method: "POST",
+    body: JSON.stringify(payload || {}),
+  }).catch(() => {
+    // swallow tracking errors：埋点失败不得影响文章浏览
+  });
+
+export const heartbeatArticleVisit = (payload) =>
+  request("/analytics/visit/heartbeat", {
+    method: "POST",
+    body: JSON.stringify(payload || {}),
+  }).catch(() => {
+    // swallow tracking errors
+  });
+
+export const endArticleVisit = (payload, options = {}) => {
+  const body = JSON.stringify(payload || {});
+  const useBeacon = options && options.beacon && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function";
+  if (useBeacon) {
+    try {
+      // sendBeacon 要求 payload 为 Blob/FormData/string；此处发送 text/plain 的 JSON 字符串，
+      // 后端 /api/analytics/visit/end 同时接受 application/json 与 text/plain。
+      const blob = new Blob([body], { type: "text/plain;charset=UTF-8" });
+      const ok = navigator.sendBeacon(`${API_BASE}/analytics/visit/end`, blob);
+      if (ok) return Promise.resolve({ success: true, message: "ok", data: null });
+      // sendBeacon 失败（如队列满）则回退到普通请求
+    } catch {
+      // ignore beacon failure, fallback below
+    }
+  }
+  return request("/analytics/visit/end", {
+    method: "POST",
+    body,
+  }).catch(() => {
+    // swallow tracking errors
+  });
+};
 
 export const login = (username, password, captcha) =>
   request("/auth/login", {
@@ -619,13 +664,20 @@ export const updateBroadcast = (payload) =>
     body: JSON.stringify(payload),
   });
 
-export const recordPageView = (payload) =>
-  request("/analytics/page-view", {
+export const recordPageView = (payload, options = {}) => {
+  const headers = {};
+  const visitId = options && options.visitId ? String(options.visitId) : "";
+  if (visitId) {
+    headers[ANALYTICS_VISIT_ID_HEADER] = encodeURIComponent(visitId);
+  }
+  return request("/analytics/page-view", {
     method: "POST",
-    body: JSON.stringify(payload),
+    headers,
+    body: JSON.stringify(payload || {}),
   }).catch(() => {
     // swallow tracking errors
   });
+};
 
 export const fetchClientIp = () => request("/analytics/client-ip");
 

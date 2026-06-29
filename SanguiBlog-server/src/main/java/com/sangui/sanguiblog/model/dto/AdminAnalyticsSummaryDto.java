@@ -87,5 +87,14 @@ public class AdminAnalyticsSummaryDto {
         private String userRole;
         private String userAgent;
         private String avatarUrl;
+        private String visitId;
+        private String enterTime;
+        private String leaveTime;
+        private String lastActiveTime;
+        private Integer totalDurationSeconds;
+        private Integer activeDurationSeconds;
+        private Integer durationSeconds;
+        private Integer heartbeatCount;
+        private String visitStatus;
     }
 }

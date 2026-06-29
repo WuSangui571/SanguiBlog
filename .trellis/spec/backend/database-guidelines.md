@@ -150,6 +150,8 @@ Public post summary tags must be deduplicated and case-insensitively sorted for 
 
 Article detail view counting uses a 10-minute `ip + postId` rate limit and a DB existence fallback. If analytics persistence fails, do not make the article detail endpoint fail solely because tracking failed unless the main read itself is invalid.
 
+Article visit duration tracking reuses `analytics_page_views`; do not introduce a second visit-log table for the current article detail duration contract. `visit_id` is nullable and unique so old rows can stay null, while new article visits use one row per visit. Duration payloads are absolute seconds, not deltas: heartbeat keeps the max active duration, and end keeps the larger legal absolute total/active values without doubling repeated end calls. The `updated_at` column is owned by the database default / `ON UPDATE CURRENT_TIMESTAMP`; the entity mapping must keep it non-insertable and non-updatable so Hibernate does not insert null and bypass the DB default.
+
 ### System Monitor
 
 Network history depends on `system_monitor_snapshots`. If the table is unavailable, `SystemMonitorService` falls back to current uptime counters and returns a history-unavailable note; do not fail the admin monitor endpoint just because deployment SQL is behind.

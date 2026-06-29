@@ -18,6 +18,9 @@ public class AnalyticsPageView {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "visit_id", length = 64, unique = true)
+    private String visitId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     @ToString.Exclude
@@ -48,4 +51,28 @@ public class AnalyticsPageView {
 
     @Column(name = "viewed_at")
     private LocalDateTime viewedAt;
+
+    @Column(name = "enter_time")
+    private LocalDateTime enterTime;
+
+    @Column(name = "leave_time")
+    private LocalDateTime leaveTime;
+
+    @Column(name = "last_active_time")
+    private LocalDateTime lastActiveTime;
+
+    @Column(name = "total_duration_seconds")
+    private Integer totalDurationSeconds;
+
+    @Column(name = "active_duration_seconds")
+    private Integer activeDurationSeconds;
+
+    @Column(name = "heartbeat_count", nullable = false)
+    private Integer heartbeatCount = 0;
+
+    @Column(name = "visit_status", length = 32)
+    private String visitStatus;
+
+    @Column(name = "updated_at", insertable = false, updatable = false)
+    private LocalDateTime updatedAt;
 }

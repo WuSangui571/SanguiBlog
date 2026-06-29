@@ -72,13 +72,15 @@ public class PostController {
             jakarta.servlet.http.HttpServletRequest request,
             @RequestHeader(value = "X-SG-Referrer", required = false) String analyticsReferrer,
             @RequestHeader(value = "X-SG-Source-Label", required = false) String analyticsSourceLabel,
+            @RequestHeader(value = "X-SG-Visit-Id", required = false) String visitIdHeader,
             @AuthenticationPrincipal UserPrincipal principal) {
         String ip = IpUtils.resolveIp(request);
         String userAgent = request.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
         String decodedReferrer = decodeHeaderValue(analyticsReferrer);
         String decodedSourceLabel = decodeHeaderValue(analyticsSourceLabel);
-        return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId, decodedReferrer, decodedSourceLabel));
+        String visitId = decodeHeaderValue(visitIdHeader);
+        return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId, decodedReferrer, decodedSourceLabel, visitId));
     }
 
     @GetMapping("/{id}/neighbors")
@@ -91,13 +93,15 @@ public class PostController {
             jakarta.servlet.http.HttpServletRequest request,
             @RequestHeader(value = "X-SG-Referrer", required = false) String analyticsReferrer,
             @RequestHeader(value = "X-SG-Source-Label", required = false) String analyticsSourceLabel,
+            @RequestHeader(value = "X-SG-Visit-Id", required = false) String visitIdHeader,
             @AuthenticationPrincipal UserPrincipal principal) {
         String ip = IpUtils.resolveIp(request);
         String userAgent = request.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
         String decodedReferrer = decodeHeaderValue(analyticsReferrer);
         String decodedSourceLabel = decodeHeaderValue(analyticsSourceLabel);
-        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip, userAgent, userId, decodedReferrer, decodedSourceLabel));
+        String visitId = decodeHeaderValue(visitIdHeader);
+        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip, userAgent, userId, decodedReferrer, decodedSourceLabel, visitId));
     }
 
     @PostMapping

@@ -4,7 +4,7 @@
 
 A decoupled personal blog system built with Spring Boot 3 + MySQL (backend) and React 19 + Vite (frontend SPA), deployed via Docker Compose with GHCR images.
 
-> Current version: **V2.3.2**
+> Current version: **V2.3.3**
 
 ## Quick Start (Docker Production Deployment)
 
@@ -57,6 +57,8 @@ sudo docker compose -f docker-compose.prod.yml down
 git pull origin main
 vim .env                    # review config and SANGUI_IMAGE_TAG if needed
 sudo docker compose -f docker-compose.prod.yml pull
+# For existing production databases, apply release SQL once before restarting if needed.
+# V2.3.3: docs/sql/2026-06-27-add-analytics-visit-duration.sql
 sudo docker compose -f docker-compose.prod.yml up -d
 sudo docker compose -f docker-compose.prod.yml ps
 curl -i http://localhost:8090/api/site/meta

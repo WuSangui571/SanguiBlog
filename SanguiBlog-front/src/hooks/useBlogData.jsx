@@ -181,7 +181,7 @@ function useProvideBlog() {
     }
   }, []);
 
-  const loadArticle = useCallback(async (id) => {
+  const loadArticle = useCallback(async (id, options = {}) => {
     const numericId = Number(id);
     setArticle(null);
     setComments([]);
@@ -191,7 +191,8 @@ function useProvideBlog() {
         setArticleState({ status: "not_found", error: "文章不存在" });
         return;
       }
-      const res = await fetchPostDetail(numericId);
+      const visitId = options && options.visitId ? String(options.visitId) : undefined;
+      const res = await fetchPostDetail(numericId, visitId ? { visitId } : {});
       const data = res.data || res;
       setArticle(data);
       setArticleState({ status: "ok", error: "" });

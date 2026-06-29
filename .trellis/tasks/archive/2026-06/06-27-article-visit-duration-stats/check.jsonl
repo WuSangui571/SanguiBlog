@@ -1,0 +1,15 @@
+{"file": ".trellis/workflow.md", "reason": "Current Trellis finish/check workflow authority"}
+{"file": ".trellis/tasks/06-27-article-visit-duration-stats/prd.md", "reason": "Planning self-check, acceptance criteria, and required verification"}
+{"file": ".trellis/tasks/06-27-article-visit-duration-stats/prd.md", "reason": "Acceptance criteria, forbidden scope, and required verification"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify schema/entity/DTO alignment and SQL migration"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify malformed tracking payloads do not produce 500"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify frontend payload guards and helper tests"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify frontend lint/build/static test expectations"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify cross-layer field and test alignment"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/AnalyticsServiceGeoLocationTest.java", "reason": "Existing AnalyticsService unit-test style and constructor impact"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/security/botguard/BotGuardEngineTest.java", "reason": "BotGuard regression surface for heartbeat risk"}
+{"file": "SanguiBlog-front/src/utils/analyticsReferrer.test.js", "reason": "Existing analytics static test pattern"}
+{"file": "SanguiBlog-front/src/utils/analyticsReferrerIntegration.test.js", "reason": "Existing api.js analytics integration test pattern"}
+{"file": "SanguiBlog-front/src/appfull/noNativeBlockingDialogs.test.js", "reason": "Admin/frontend no native dialog regression guard"}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Verify admin table displays duration without breaking existing columns"}
+{"file": "SanguiBlog-front/src/appfull/public/ArticleDetail.jsx", "reason": "Verify tracker mounts only on article detail and cleans up on route change"}
