@@ -1852,3 +1852,77 @@ Manual acceptance passed; article and normal page visit durations are tracked an
 
 - Manually commit Trellis metadata and V2.3.3 README/version edits.
 - Merge `feature/article-visit-duration-stats` into `main`, then deploy with the V2.3.3 SQL migration check for existing production databases.
+
+
+## Session 31: AI audit session pagination closeout
+
+**Date**: 2026-06-29
+**Task**: AI audit session pagination closeout
+**Branch**: `feature/ai-session-audit-list-pagination`
+
+### Summary
+
+Server-side admin AI audit pagination, filter support, stale-response and scroll fixes, plus V2.3.4 docs update.
+
+### Main Changes
+
+Task: ai-session-audit-list-pagination
+Branch: feature/ai-session-audit-list-pagination
+Commits:
+- 7bd2e2a fix:ai-audit-pagination
+- f55ed03 chore:publish V2.3.4
+
+Main changes:
+- Backend admin AI chat audit session list now uses server-side pagination, visibility filter, identity filter, deterministic updatedAt/id sorting, and capped page size.
+- Backend repository/service/controller and audit service tests were updated, including a JPA test for Specification plus EntityGraph behavior.
+- Frontend admin AI audit list now calls the paged API, guards stale list/detail responses, resets pagination on filters, and scrolls the session list to top after page/filter reloads.
+- API helper, admin panel UI, and AdminAiAuditPagination.test.js were updated.
+- Site version was bumped to V2.3.4 and README / README.zh-CN were updated to note no DB migration is required.
+
+Verification:
+- mvn -q "-Dtest=AdminAiChatAuditServiceTest,AdminAiChatAuditServiceJpaTest" test: PASS
+- mvn -q -DskipTests compile: PASS
+- node src/appfull/AdminAiAuditPagination.test.js: PASS
+- node src/appfull/noNativeBlockingDialogs.test.js: PASS
+- cmd /c npm run lint: PASS with existing warnings only
+- cmd /c npm run build: PASS
+- docker compose -f docker-compose.prod.yml config --quiet: PASS
+- git diff --check: PASS
+- python .trellis\scripts\task.py validate .trellis\tasks\06-29-ai-session-audit-list-pagination: PASS
+- Manual browser testing by user: PASS
+
+Boundaries:
+- No DB schema migration.
+- No user-side AI chat stream, RAG, or message-detail contract change.
+- No infra/runtime config change beyond release documentation and version metadata.
+- Production deployment still depends on merging to main and using an available image tag.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7bd2e2a` | (see git log) |
+| `f55ed03` | (see git log) |
+
+### Testing
+
+- [OK] `mvn -q "-Dtest=AdminAiChatAuditServiceTest,AdminAiChatAuditServiceJpaTest" test`
+- [OK] `mvn -q -DskipTests compile`
+- [OK] `node src/appfull/AdminAiAuditPagination.test.js`
+- [OK] `node src/appfull/noNativeBlockingDialogs.test.js`
+- [OK] `cmd /c npm run lint`
+- [OK] `cmd /c npm run build`
+- [OK] `docker compose -f docker-compose.prod.yml config --quiet`
+- [OK] `git diff --check`
+- [OK] `python .trellis\scripts\task.py validate .trellis\tasks\06-29-ai-session-audit-list-pagination`
+- [OK] User manual browser testing passed.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Commit and push the Trellis archive/journal metadata.
+- Merge `feature/ai-session-audit-list-pagination` into `main`, then deploy V2.3.4 after confirming the production image tag is available.
