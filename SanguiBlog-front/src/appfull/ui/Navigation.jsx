@@ -642,7 +642,7 @@ const Navigation = ({
             >
                 <div className="home-nav-brand">
                     <span className="home-nav-brand__title">三桂博客</span>
-                    <span className="home-nav-brand__version">{siteVersion || 'V2.3.3'}</span>
+                    <span className="home-nav-brand__version">{siteVersion || 'V2.3.4'}</span>
                 </div>
             </div>
 

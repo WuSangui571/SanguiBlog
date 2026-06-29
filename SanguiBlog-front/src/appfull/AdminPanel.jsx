@@ -4470,6 +4470,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
     const [total, setTotal] = useState(0);
     const auditSessionRequestSeq = useRef(0);
     const sessionDetailRequestSeq = useRef(0);
+    const sessionListScrollRef = useRef(null);
 
     const cardBg = isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200';
     const mutedText = isDarkMode ? 'text-gray-400' : 'text-gray-500';
@@ -4513,6 +4514,16 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
         };
     };
 
+    const scrollSessionListToTop = useCallback(() => {
+        const list = sessionListScrollRef.current;
+        if (!list) return;
+        if (typeof list.scrollTo === 'function') {
+            list.scrollTo({ top: 0, behavior: 'auto' });
+            return;
+        }
+        list.scrollTop = 0;
+    }, []);
+
     const loadSessions = useCallback(async ({ targetPage = 1, targetVisibility = 'ALL', targetIdentity = 'ALL' } = {}) => {
         const requestId = auditSessionRequestSeq.current + 1;
         auditSessionRequestSeq.current = requestId;
@@ -4529,6 +4540,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
             setSessions(records);
             setTotal(typeof data?.total === 'number' ? data.total : 0);
             setPage(typeof data?.page === 'number' ? data.page : p);
+            scrollSessionListToTop();
             setActiveSessionId((prev) => {
                 if (prev && records.some((item) => item.id === prev)) return prev;
                 return records[0]?.id || null;
@@ -4544,7 +4556,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                 setSessionsLoading(false);
             }
         }
-    }, [size]);
+    }, [scrollSessionListToTop, size]);
 
     const loadSessionDetail = useCallback(async (sessionId) => {
         const requestId = sessionDetailRequestSeq.current + 1;
@@ -4685,7 +4697,7 @@ const AiAdminAuditView = ({ isDarkMode, user }) => {
                     {!sessionsLoading && !sessionsError && sessions.length === 0 && (
                         <p className={`text-sm ${mutedText}`}>当前还没有任何 AI 会话记录。</p>
                     )}
-                    <div className={`mt-4 flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar'}`}>
+                    <div ref={sessionListScrollRef} className={`mt-4 flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 ${isDarkMode ? 'sg-scrollbar sg-scrollbar-dark' : 'sg-scrollbar'}`}>
                         {sessions.map((session) => {
                             const active = session.id === activeSessionId;
                             const visibilityMeta = getVisibilityMeta(session);

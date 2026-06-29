@@ -4,7 +4,7 @@
 
 前后端分离的个人博客系统：后端基于 Spring Boot 3 + MySQL，前端基于 React 19 + Vite（SPA），通过 Docker Compose + GHCR 镜像部署。
 
-> 当前版本：**V2.3.3**
+> 当前版本：**V2.3.4**
 
 ## 快速开始（Docker 生产部署）
 
@@ -58,6 +58,7 @@ git pull origin main
 vim .env                    # 检查配置，必要时更新 SANGUI_IMAGE_TAG
 sudo docker compose -f docker-compose.prod.yml pull
 # 现有生产库如需补 schema，请在重启前按需执行 release SQL。
+# V2.3.4：无需数据库迁移。
 # V2.3.3: docs/sql/2026-06-27-add-analytics-visit-duration.sql
 sudo docker compose -f docker-compose.prod.yml up -d
 sudo docker compose -f docker-compose.prod.yml ps

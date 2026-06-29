@@ -64,6 +64,12 @@ assert.ok(viewSource.includes('requestId !== auditSessionRequestSeq.current'),
     'AiAdminAuditView should ignore stale AI audit list responses');
 assert.ok(viewSource.includes('[page, visibilityFilter, authFilter, loadSessions]'),
     'AiAdminAuditView should load sessions from one state-driven effect');
+assert.ok(viewSource.includes('const sessionListScrollRef = useRef(null)'),
+    'AiAdminAuditView should keep a ref to the scrollable AI audit session list');
+assert.ok(viewSource.includes('scrollSessionListToTop'),
+    'AiAdminAuditView should reset the session list scroll position after page data loads');
+assert.ok(viewSource.includes('ref={sessionListScrollRef}'),
+    'AiAdminAuditView should attach the scroll ref to the scrollable session list');
 assert.ok(!viewSource.includes('useEffect(() => {\n        loadSessions();\n    }, []);'),
     'AiAdminAuditView should not fire a separate mount-only sessions load');
 assert.ok(!viewSource.includes('loadSessions(1, visibilityFilter, authFilter)'),
