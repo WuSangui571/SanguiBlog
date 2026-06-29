@@ -664,13 +664,20 @@ export const updateBroadcast = (payload) =>
     body: JSON.stringify(payload),
   });
 
-export const recordPageView = (payload) =>
-  request("/analytics/page-view", {
+export const recordPageView = (payload, options = {}) => {
+  const headers = {};
+  const visitId = options && options.visitId ? String(options.visitId) : "";
+  if (visitId) {
+    headers[ANALYTICS_VISIT_ID_HEADER] = encodeURIComponent(visitId);
+  }
+  return request("/analytics/page-view", {
     method: "POST",
-    body: JSON.stringify(payload),
+    headers,
+    body: JSON.stringify(payload || {}),
   }).catch(() => {
     // swallow tracking errors
   });
+};
 
 export const fetchClientIp = () => request("/analytics/client-ip");
 

@@ -29,7 +29,8 @@ assert.equal(formatVisitDurationFromRecord({ activeDurationSeconds: 8 }), '8秒'
 assert.equal(formatVisitDurationFromRecord({ totalDurationSeconds: 3900 }), '1小时05分');
 assert.equal(formatVisitDurationFromRecord({ visitId: 'visit-1', durationSeconds: 0 }), '小于1秒');
 assert.equal(formatVisitDurationFromRecord({ visitId: 'visit-1' }), '小于15秒');
-assert.equal(formatVisitDurationFromRecord({ postId: null, title: 'Admin Panel' }), '非文章页');
+assert.equal(formatVisitDurationFromRecord({ postId: null, visitId: 'page-visit-1', title: 'Admin Panel' }), '小于15秒');
+assert.equal(formatVisitDurationFromRecord({ postId: null, title: 'Admin Panel' }), '-');
 assert.equal(formatVisitDurationFromRecord({}), '-');
 assert.equal(formatVisitDurationFromRecord(null), '-');
 
@@ -70,5 +71,12 @@ assert.ok(apiSource.includes('export const startArticleVisit'), 'api.js should e
 assert.ok(apiSource.includes('export const heartbeatArticleVisit'), 'api.js should export heartbeatArticleVisit');
 assert.ok(apiSource.includes('export const endArticleVisit'), 'api.js should export endArticleVisit');
 assert.ok(apiSource.includes('X-SG-Visit-Id'), 'api.js should send X-SG-Visit-Id header');
+assert.ok(apiSource.includes('export const recordPageView = (payload, options = {})'),
+  'recordPageView should accept options for non-article visit tracking');
 assert.ok(apiSource.includes('sendBeacon'), 'api.js should support sendBeacon for end');
 assert.ok(apiSource.includes('/analytics/visit/'), 'api.js should add visit paths to silent auth');
+
+assert.ok(appFullSource.includes('sendTrackedPageView'), 'AppFull should track non-article page visits with a visitId');
+assert.ok(appFullSource.includes('createActiveDurationTracker'), 'AppFull should track active time for non-article pages');
+assert.ok(appFullSource.includes('heartbeatArticleVisit'), 'AppFull should heartbeat non-article page visits');
+assert.ok(appFullSource.includes('endArticleVisit'), 'AppFull should close non-article page visits');

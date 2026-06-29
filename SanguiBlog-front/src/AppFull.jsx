@@ -4,6 +4,8 @@ import { Suspense, lazy } from 'react';
 import { useBlog } from "./hooks/useBlogData";
 import {
     recordPageView,
+    heartbeatArticleVisit,
+    endArticleVisit,
     fetchGames,
     fetchGameDetail,
     fetchArchiveSummary,
@@ -61,7 +63,12 @@ import {
     claimAutoPageView,
     resetAutoPageViewGuard
     } from "./appfull/shared.js";
-import { createVisitId } from "./appfull/public/articleVisitTracker.js";
+import {
+    createVisitId,
+    createActiveDurationTracker,
+    calculateTotalDurationSeconds,
+    HEARTBEAT_INTERVAL_MS
+} from "./appfull/public/articleVisitTracker.js";
 import { AnimatePresence, motion } from 'framer-motion';
 const BROADCAST_SESSION_KEY = 'sangui-broadcast-dismissed';
 const LazyAdminPanel = lazy(() =>
@@ -362,6 +369,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     }, [isDarkMode, triggerThemeOverdrive, themeOverdriveLock, showThemeMessage, themeOverdriveMessage, themeOverdriveNotice]);
     const [permissionState, setPermissionState] = useState({ permissions: [], loading: false, error: '' });
     const lastRecordedArticleRef = useRef(null);
+    const nonArticleVisitRef = useRef(null);
     const clientIpRef = useRef(
         typeof window !== 'undefined' && window.__SG_CLIENT_IP__ ? window.__SG_CLIENT_IP__ : ''
     );
@@ -596,15 +604,98 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         }
     }, [user, sessionExpired.open]);
 
-    const sendPageView = useCallback((payload = {}) => {
+    const sendPageView = useCallback((payload = {}, options = {}) => {
         const ip = clientIpRef.current;
         const refMeta = getReferrerMeta();
         const body = { ...refMeta, ...payload };
         if (ip) {
             body.clientIp = ip;
         }
-        recordPageView(body);
+        recordPageView(body, options);
     }, []);
+
+    const endTrackedPageVisit = useCallback((useBeacon = false) => {
+        const state = nonArticleVisitRef.current;
+        if (!state || state.ended) return;
+        state.ended = true;
+        if (state.heartbeatTimer) {
+            clearInterval(state.heartbeatTimer);
+            state.heartbeatTimer = null;
+        }
+        const activeSeconds = state.tracker.stop();
+        const totalSeconds = calculateTotalDurationSeconds(state.startedAt, Date.now());
+        endArticleVisit(
+            { visitId: state.visitId, totalDurationSeconds: totalSeconds, activeDurationSeconds: activeSeconds },
+            { beacon: useBeacon === true }
+        );
+        nonArticleVisitRef.current = null;
+    }, []);
+
+    const sendTrackedPageView = useCallback((key, payload = {}) => {
+        if (!key) {
+            sendPageView(payload);
+            return;
+        }
+        if (typeof window === 'undefined') {
+            sendPageView(payload);
+            return;
+        }
+        const current = nonArticleVisitRef.current;
+        if (current && !current.ended && current.key === key) {
+            return;
+        }
+        endTrackedPageVisit(false);
+
+        const visitId = createVisitId();
+        const tracker = createActiveDurationTracker();
+        const state = {
+            key,
+            visitId,
+            tracker,
+            startedAt: Date.now(),
+            ended: false,
+            heartbeatTimer: null
+        };
+        nonArticleVisitRef.current = state;
+        tracker.start();
+        if (typeof document !== 'undefined') {
+            tracker.markVisibility(document.visibilityState);
+        }
+        state.heartbeatTimer = window.setInterval(() => {
+            if (state.ended) return;
+            const activeSeconds = tracker.snapshot();
+            heartbeatArticleVisit({ visitId, activeDurationSeconds: activeSeconds });
+        }, HEARTBEAT_INTERVAL_MS);
+        sendPageView(payload, { visitId });
+    }, [endTrackedPageVisit, sendPageView]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const onVisibilityChange = () => {
+            if (typeof document === 'undefined') return;
+            const current = nonArticleVisitRef.current;
+            if (current && !current.ended) {
+                current.tracker.markVisibility(document.visibilityState);
+            }
+        };
+        const onPageHide = () => endTrackedPageVisit(true);
+        const onBeforeUnload = () => endTrackedPageVisit(true);
+
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', onVisibilityChange);
+        }
+        window.addEventListener('pagehide', onPageHide);
+        window.addEventListener('beforeunload', onBeforeUnload);
+
+        return () => {
+            endTrackedPageVisit(false);
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+            }
+            window.removeEventListener('pagehide', onPageHide);
+            window.removeEventListener('beforeunload', onBeforeUnload);
+        };
+    }, [endTrackedPageVisit]);
 
     const homePostsLoadingSeenRef = useRef(false);
     useEffect(() => {
@@ -630,12 +721,12 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         const key = `home-${current}-${totalPages}-size-${size}`;
 
         if (claimAutoPageView(key)) {
-            sendPageView({
+            sendTrackedPageView(key, {
                 pageTitle,
                 geo: getGeoHint()
             });
         }
-    }, [view, postsLoading, postsPage?.page, postsPage?.total, homePageSize, sendPageView]);
+    }, [view, postsLoading, postsPage?.page, postsPage?.total, homePageSize, sendTrackedPageView]);
 
     useEffect(() => {
         if (!user) {
@@ -882,21 +973,21 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             // 首页访问日志由 posts 分页加载后补齐：pageTitle = home(当前页/总页数)
         } else if (view === 'archive') {
             if (claimAutoPageView('archive')) {
-                sendPageView({
+                sendTrackedPageView('archive', {
                     pageTitle: 'Archive',
                     geo: getGeoHint()
                 });
             }
         } else if (view === 'about') {
             if (claimAutoPageView('about')) {
-                sendPageView({
+                sendTrackedPageView('about', {
                     pageTitle: 'About',
                     geo: getGeoHint()
                 });
             }
         } else if (view === 'games') {
             if (claimAutoPageView('games')) {
-                sendPageView({
+                sendTrackedPageView('games', {
                     pageTitle: 'GameHub',
                     geo: getGeoHint()
                 });
@@ -904,8 +995,9 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         } else if (view === 'game') {
             const target = gameDetail || gameList.find((g) => g.id === gameId) || {};
             const title = target.title || target.name || `Game#${gameId || ''}`;
-            if (claimAutoPageView(`game-${gameId || 'detail'}`)) {
-                sendPageView({
+            const key = `game-${gameId || 'detail'}`;
+            if (claimAutoPageView(key)) {
+                sendTrackedPageView(key, {
                     pageTitle: `Game: ${title}`,
                     sourceLabel: `游戏详情-${title}`,
                     geo: getGeoHint()
@@ -913,7 +1005,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
             }
         } else if (view === 'admin') {
             if (claimAutoPageView('admin')) {
-                sendPageView({
+                sendTrackedPageView('admin', {
                     pageTitle: 'Admin Panel',
                     geo: getGeoHint()
                 });
@@ -921,13 +1013,19 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
         } else {
             resetAutoPageViewGuard();
         }
-    }, [view, sendPageView, gameDetail, gameId, gameList]);
+    }, [view, sendTrackedPageView, gameDetail, gameId, gameList]);
 
     useEffect(() => {
         if (view !== 'article') {
             lastRecordedArticleRef.current = null;
         }
     }, [view, articleId]);
+
+    useEffect(() => {
+        if (view === 'article' || view === 'login' || view === 'register') {
+            endTrackedPageVisit(false);
+        }
+    }, [view, endTrackedPageVisit]);
 
     const handleLogout = () => {
         logout && logout();

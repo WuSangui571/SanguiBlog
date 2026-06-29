@@ -130,19 +130,9 @@ const isTrackedVisitRecord = (visit) => {
   );
 };
 
-const hasOwn = (target, key) => Object.prototype.hasOwnProperty.call(target, key);
-
-const isNonArticlePageRecord = (visit) => {
-  if (!visit || typeof visit !== "object") return false;
-  if (!hasOwn(visit, "postId") && !hasOwn(visit, "post_id")) return false;
-  const postId = hasOwn(visit, "postId") ? visit.postId : visit.post_id;
-  return postId === null || postId === undefined || postId === "";
-};
-
 export const formatVisitDurationFromRecord = (visit) => {
   const seconds = resolveDisplayDurationSeconds(visit);
   if (seconds === null) {
-    if (isNonArticlePageRecord(visit)) return "非文章页";
     return isTrackedVisitRecord(visit) ? `小于${Math.floor(HEARTBEAT_INTERVAL_MS / 1000)}秒` : "-";
   }
   if (seconds === 0 && isTrackedVisitRecord(visit)) return "小于1秒";

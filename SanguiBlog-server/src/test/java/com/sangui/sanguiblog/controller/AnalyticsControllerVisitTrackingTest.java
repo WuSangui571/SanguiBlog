@@ -5,6 +5,7 @@ import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.ArticleVisitEndRequest;
 import com.sangui.sanguiblog.model.dto.ArticleVisitHeartbeatRequest;
 import com.sangui.sanguiblog.model.dto.ArticleVisitStartRequest;
+import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.service.AnalyticsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,21 @@ class AnalyticsControllerVisitTrackingTest {
     void setUp() {
         analyticsService = mock(AnalyticsService.class);
         controller = new AnalyticsController(analyticsService, new ObjectMapper());
+    }
+
+    @Test
+    void pageViewReadsVisitIdHeaderAndPassesToService() {
+        MockHttpServletRequest httpRequest = new MockHttpServletRequest();
+        httpRequest.setRemoteAddr("1.2.3.4");
+        httpRequest.addHeader("User-Agent", "JUnit UA");
+        httpRequest.addHeader("X-SG-Visit-Id", "page-visit-1");
+        PageViewRequest request = new PageViewRequest();
+        request.setPageTitle("GameHub");
+
+        ApiResponse<Void> response = controller.record(request, httpRequest, null);
+
+        assertTrue(response.isSuccess());
+        verify(analyticsService).recordPageView(eq(request), eq("1.2.3.4"), eq("JUnit UA"), eq(null), eq("page-visit-1"));
     }
 
     @Test

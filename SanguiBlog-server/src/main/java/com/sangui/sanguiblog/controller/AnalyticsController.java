@@ -26,6 +26,7 @@ import java.util.Map;
 public class AnalyticsController {
 
     private static final Logger log = LoggerFactory.getLogger(AnalyticsController.class);
+    private static final String VISIT_ID_HEADER = "X-SG-Visit-Id";
 
     private final AnalyticsService analyticsService;
     private final ObjectMapper objectMapper;
@@ -45,7 +46,8 @@ public class AnalyticsController {
         }
         String userAgent = httpServletRequest.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
-        analyticsService.recordPageView(request, ip, userAgent, userId);
+        String visitId = httpServletRequest.getHeader(VISIT_ID_HEADER);
+        analyticsService.recordPageView(request, ip, userAgent, userId, visitId);
         return ApiResponse.ok();
     }
 
