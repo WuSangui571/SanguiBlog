@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sangui.sanguiblog.model.dto.AnalyticsRequestDetailContext;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.ArticleVisitEndRequest;
 import com.sangui.sanguiblog.model.dto.ArticleVisitHeartbeatRequest;
@@ -47,7 +48,8 @@ public class AnalyticsController {
         String userAgent = httpServletRequest.getHeader("User-Agent");
         Long userId = principal != null ? principal.getId() : null;
         String visitId = httpServletRequest.getHeader(VISIT_ID_HEADER);
-        analyticsService.recordPageView(request, ip, userAgent, userId, visitId);
+        AnalyticsRequestDetailContext detailContext = buildRequestDetailContext(httpServletRequest, null, null);
+        analyticsService.recordPageView(request, ip, userAgent, userId, visitId, detailContext);
         return ApiResponse.ok();
     }
 
@@ -69,7 +71,8 @@ public class AnalyticsController {
             String ip = IpUtils.resolveIp(httpServletRequest);
             String userAgent = httpServletRequest.getHeader("User-Agent");
             Long userId = principal != null ? principal.getId() : null;
-            analyticsService.recordArticleVisitStart(request, ip, userAgent, userId);
+            AnalyticsRequestDetailContext detailContext = buildRequestDetailContext(httpServletRequest, null, null);
+            analyticsService.recordArticleVisitStart(request, ip, userAgent, userId, detailContext);
         } catch (Exception ex) {
             // 埋点接口失败必须静默，不得 500 或影响文章浏览
             log.debug("visit/start 处理异常，已静默忽略", ex);
@@ -116,5 +119,40 @@ public class AnalyticsController {
             log.debug("visit 请求 JSON 解析失败，已忽略 type={}", type.getSimpleName(), ex);
             return null;
         }
+    }
+
+    public static AnalyticsRequestDetailContext buildRequestDetailContext(jakarta.servlet.http.HttpServletRequest request, String entryPage, String fromPage) {
+        if (request == null) {
+            return new AnalyticsRequestDetailContext(null, null, null, null, null, null, null, null, null, null);
+        }
+        return new AnalyticsRequestDetailContext(
+                request.getMethod(),
+                safeRequestUri(request.getRequestURI()),
+                request.getHeader("Referer"),
+                trimHeader(request, "X-Forwarded-For", 512),
+                trimHeader(request, "X-Real-IP", 128),
+                trimHeader(request, "Accept-Language", 255),
+                entryPage,
+                fromPage,
+                null,
+                request.getHeader(VISIT_ID_HEADER)
+        );
+    }
+
+    private static String safeRequestUri(String uri) {
+        if (!StringUtils.hasText(uri)) {
+            return null;
+        }
+        int queryIdx = uri.indexOf('?');
+        String path = queryIdx >= 0 ? uri.substring(0, queryIdx) : uri;
+        return path.length() > 512 ? path.substring(0, 512) : path;
+    }
+
+    private static String trimHeader(jakarta.servlet.http.HttpServletRequest request, String name, int maxLen) {
+        String value = request.getHeader(name);
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.length() > maxLen ? value.substring(0, maxLen) : value;
     }
 }

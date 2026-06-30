@@ -252,6 +252,7 @@ CREATE TABLE IF NOT EXISTS analytics_page_views (
     active_duration_seconds  INT UNSIGNED NULL,
     heartbeat_count          INT UNSIGNED NOT NULL DEFAULT 0,
     visit_status             VARCHAR(32) NULL,
+    detail_json              JSON NULL,
     updated_at               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_apv_visit_id (visit_id),

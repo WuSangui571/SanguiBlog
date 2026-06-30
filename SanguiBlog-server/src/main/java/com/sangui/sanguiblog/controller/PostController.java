@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.controller;
 
+import com.sangui.sanguiblog.model.dto.AnalyticsRequestDetailContext;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.ArchiveSummaryDto;
 import com.sangui.sanguiblog.model.dto.PageResponse;
@@ -80,7 +81,8 @@ public class PostController {
         String decodedReferrer = decodeHeaderValue(analyticsReferrer);
         String decodedSourceLabel = decodeHeaderValue(analyticsSourceLabel);
         String visitId = decodeHeaderValue(visitIdHeader);
-        return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId, decodedReferrer, decodedSourceLabel, visitId));
+        AnalyticsRequestDetailContext detailContext = AnalyticsController.buildRequestDetailContext(request, request.getRequestURI(), decodedReferrer);
+        return ApiResponse.ok(postService.getPublishedDetail(id, ip, userAgent, userId, decodedReferrer, decodedSourceLabel, visitId, detailContext));
     }
 
     @GetMapping("/{id}/neighbors")
@@ -101,7 +103,8 @@ public class PostController {
         String decodedReferrer = decodeHeaderValue(analyticsReferrer);
         String decodedSourceLabel = decodeHeaderValue(analyticsSourceLabel);
         String visitId = decodeHeaderValue(visitIdHeader);
-        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip, userAgent, userId, decodedReferrer, decodedSourceLabel, visitId));
+        AnalyticsRequestDetailContext detailContext = AnalyticsController.buildRequestDetailContext(request, request.getRequestURI(), decodedReferrer);
+        return ApiResponse.ok(postService.getPublishedDetailBySlug(slug, ip, userAgent, userId, decodedReferrer, decodedSourceLabel, visitId, detailContext));
     }
 
     @PostMapping

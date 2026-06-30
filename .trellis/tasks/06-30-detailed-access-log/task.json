@@ -1,0 +1,53 @@
+{
+  "id": "detailed-access-log",
+  "name": "detailed-access-log",
+  "title": "Admin analytics detailed access log",
+  "description": "Planning-only handoff for adding detailed access log detail_json, admin detail API/DTO fields, and frontend grouped detail drawer/modal without changing the compact log list.",
+  "status": "planning",
+  "dev_type": "fullstack",
+  "scope": "fullstack-db-api-frontend-analytics",
+  "package": null,
+  "priority": "P1",
+  "creator": "sangui",
+  "assignee": "deepseek",
+  "createdAt": "2026-06-30",
+  "completedAt": null,
+  "branch": "feature/detailed-access-log",
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

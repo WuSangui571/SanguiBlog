@@ -1,0 +1,26 @@
+{"file": ".trellis/workflow.md", "reason": "Current Trellis workflow and finish-work expectations."}
+{"file": ".trellis/tasks/06-30-detailed-access-log/prd.md", "reason": "Check acceptance criteria, API/DB/frontend contract, forbidden scope, and required tests."}
+{"file": ".trellis/tasks/06-30-detailed-access-log/research.md", "reason": "Check expected files, code patterns, and scope boundaries discovered before implementation."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verify ApiResponse/PageResponse, retrieve-first report, sensitive data boundary, and tests."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify schema/entity/DTO/frontend alignment and manual SQL migration."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify detail 404/403 and controller error behavior."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Verify no secrets/cookies/tokens/full bodies are logged or persisted."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify static tests, lint/build, no native dialogs, and compact list UI."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify modal/drawer accessibility and no duplicate overlay system."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify frontend guards for optional detail fields and API payload shape."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify DB/API/frontend field alignment and Good/Base/Bad coverage."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Verify no duplicate access-log controller/service/table/UI path."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/entity/AnalyticsPageView.java", "reason": "Check detailJson mapping and existing analytics fields remain compatible."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Check detail_json writes, detail read mapping, existing visit lifecycle and list behavior."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminAnalyticsController.java", "reason": "Check list/delete permissions unchanged and detail endpoint uses PERM_ANALYTICS_VIEW."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AnalyticsController.java", "reason": "Check safe request context propagation and tracking endpoints still no-op on failure."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/PostController.java", "reason": "Check article detail request context propagation without changing public API semantics."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostService.java", "reason": "Check view count/dedupe/fallback behavior preserved."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SitemapService.java", "reason": "Check robots/sitemap access log behavior preserved."}
+{"file": "sanguiblog_db.sql", "reason": "Check fresh schema includes detail_json in analytics_page_views."}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Check adminFetchPageViewLogDetail and no duplicate request wrapper."}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Check compact list, detail button, grouped modal/drawer, non-SUPER_ADMIN view/delete split."}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/AnalyticsServiceVisitDurationTest.java", "reason": "Check backend analytics tests cover detail_json and existing duration behavior."}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/controller/AnalyticsControllerVisitTrackingTest.java", "reason": "Check request context tests updated for detail fields if applicable."}
+{"file": "SanguiBlog-front/src/appfull/AdminAnalyticsVisitDuration.test.js", "reason": "Check static tests assert compact list and detail UI contracts or companion test exists."}
+{"file": "SanguiBlog-front/src/appfull/noNativeBlockingDialogs.test.js", "reason": "Check no native dialog regression."}

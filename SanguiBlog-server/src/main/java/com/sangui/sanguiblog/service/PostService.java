@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.service;
 
 import com.sangui.sanguiblog.exception.NotFoundException;
+import com.sangui.sanguiblog.model.dto.AnalyticsRequestDetailContext;
 import com.sangui.sanguiblog.model.dto.AdminPostDetailDto;
 import com.sangui.sanguiblog.model.dto.AdminPostUpdateRequest;
 import com.sangui.sanguiblog.model.dto.ArchiveMonthSummaryDto;
@@ -195,10 +196,15 @@ public class PostService {
 
     @Transactional
     public PostDetailDto getPublishedDetail(Long id, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId) {
+        return getPublishedDetail(id, ip, userAgent, userId, referrer, sourceLabel, visitId, null);
+    }
+
+    @Transactional
+    public PostDetailDto getPublishedDetail(Long id, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId, AnalyticsRequestDetailContext detailContext) {
         Post post = postRepository.findById(id)
                 .filter(p -> "PUBLISHED".equalsIgnoreCase(p.getStatus()))
                 .orElseThrow(() -> new NotFoundException("文章不存在或未发布"));
-        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel, visitId);
+        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel, visitId, detailContext);
         return toDetail(post);
     }
 
@@ -209,9 +215,14 @@ public class PostService {
 
     @Transactional
     public PostDetailDto getPublishedDetailBySlug(String slug, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId) {
+        return getPublishedDetailBySlug(slug, ip, userAgent, userId, referrer, sourceLabel, visitId, null);
+    }
+
+    @Transactional
+    public PostDetailDto getPublishedDetailBySlug(String slug, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId, AnalyticsRequestDetailContext detailContext) {
         Post post = postRepository.findBySlugAndStatus(slug, "PUBLISHED")
                 .orElseThrow(() -> new NotFoundException("文章不存在或未发布"));
-        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel, visitId);
+        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel, visitId, detailContext);
         return toDetail(post);
     }
 
@@ -456,6 +467,10 @@ public class PostService {
     }
 
     private void incrementViews(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId) {
+        incrementViews(post, ip, userAgent, userId, referrer, sourceLabel, visitId, null);
+    }
+
+    private void incrementViews(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId, AnalyticsRequestDetailContext detailContext) {
         // 文章详情 GET 带 visitId 时，按 visitId 去重（一次 visit = 一次 views_count），
         // 不能因为 start 已先写入同 visitId 的 OPEN 行而错误抑制 posts.views_count。
         String normalizedVisitId = normalizeVisitId(visitId);
@@ -468,7 +483,7 @@ public class PostService {
                 long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
                 post.setViewsCount(current + 1);
                 postRepository.save(post);
-                recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel, normalizedVisitId);
+                recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel, normalizedVisitId, detailContext);
             } catch (Exception ex) {
                 VIEW_RATE_LIMITER.invalidate(visitKey);
                 throw ex;
@@ -493,7 +508,7 @@ public class PostService {
             long current = post.getViewsCount() == null ? 0 : post.getViewsCount();
             post.setViewsCount(current + 1);
             postRepository.save(post);
-            recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel, null);
+            recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel, null, detailContext);
         } catch (Exception ex) {
             // 如果本次请求异常失败，则回滚缓存占位，避免“失败一次=10分钟都不计数”的误伤
             VIEW_RATE_LIMITER.invalidate(key);
@@ -502,6 +517,10 @@ public class PostService {
     }
 
     private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId) {
+        recordAnalyticsPageView(post, ip, userAgent, userId, referrer, sourceLabel, visitId, null);
+    }
+
+    private void recordAnalyticsPageView(Post post, String ip, String userAgent, Long userId, String referrer, String sourceLabel, String visitId, AnalyticsRequestDetailContext detailContext) {
         if (post == null) {
             return;
         }
@@ -513,7 +532,7 @@ public class PostService {
                 request.setPageTitle(post.getTitle());
                 request.setReferrer(referrer);
                 request.setSourceLabel(sourceLabel);
-                analyticsService.recordPageView(request, ip, userAgent, userId, visitId);
+                analyticsService.recordPageView(request, ip, userAgent, userId, visitId, detailContext);
                 recorded = true;
             } catch (Exception ex) {
                 log.warn("调用 AnalyticsService.recordPageView 失败，将启用直接写库兜底, postId={}, ip={}", post.getId(), ip, ex);

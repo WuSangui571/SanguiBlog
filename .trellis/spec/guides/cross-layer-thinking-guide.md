@@ -289,6 +289,55 @@ docker compose config
 docker compose -f docker-compose.prod.yml config --quiet
 ```
 
+### Admin Analytics Page-View Detail Log
+
+Admin access-log detail is a backend/frontend/database contract that extends `analytics_page_views`; do not add a second access-log table, controller, service, or frontend API wrapper for this capability.
+
+Data flow:
+
+```text
+public page/article/sitemap access -> AnalyticsController/PostController/SitemapService
+-> AnalyticsService.recordPageView / recordArticleVisitStart
+-> analytics_page_views.detail_json
+-> GET /api/admin/analytics/page-views/{id}
+-> src/api.js adminFetchPageViewLogDetail
+-> AdminPanel analytics detail modal or drawer
+```
+
+Contracts:
+
+| Concern | Contract |
+|---------|----------|
+| DB column | `analytics_page_views.detail_json JSON NULL` in `sanguiblog_db.sql`; existing deployments need a manual `docs/sql/...add-analytics-detail-json.sql` migration. Entity tests may map it as `LONGTEXT` for H2 compatibility, but production SQL remains JSON. |
+| List endpoint | `GET /api/admin/analytics/page-views` stays compact and paginated. Do not add all detail fields to the list DTO/table. |
+| Detail endpoint | `GET /api/admin/analytics/page-views/{id}` returns `ApiResponse<AdminAnalyticsPageViewDetailDto>` and requires `PERM_ANALYTICS_VIEW`; missing rows throw `NotFoundException` for a 404. Existing delete endpoints keep the `PERM_ANALYTICS_VIEW` plus `SUPER_ADMIN` boundary. |
+| Detail JSON | Build with an allow-list only. Include stable keys for request/source/device/IP/behavior/risk fields, but keep unavailable values null/default rather than failing old rows. Malformed stored JSON must degrade to empty detail instead of 500. |
+| Sensitive data | Never persist `Cookie`, `Authorization`, tokens, API keys, passwords, secrets, request bodies, captcha answers, JWTs, article bodies, comments, AI prompts, or full user content. URL-like detail fields such as request URI, referrer, entry page, and from page must drop query strings/fragments or otherwise redact sensitive parameters before storage. |
+| Frontend | Fetch through `SanguiBlog-front/src/api.js`; `AdminPanel.jsx` should show a per-row detail action for any viewer with `PERM_ANALYTICS_VIEW`, while delete remains SUPER_ADMIN-only. Detail UI must use a custom accessible modal/drawer, not native dialogs. |
+
+Good/Base/Bad cases:
+
+| Case | Expected Result |
+|------|-----------------|
+| Good | New page/article/sitemap access stores safe `detail_json`; admin opens detail and sees grouped request/source/device/IP/behavior/risk fields. |
+| Base | Old row has null or malformed `detail_json`; endpoint returns summary plus empty/default detail fields and UI renders `-` without crashing. |
+| Bad | Request/referrer carries `?token=...`, Cookie, Authorization, or body content; none of those values appear in `detail_json`, DTOs, frontend detail UI, or logs. |
+
+Required verification:
+
+```bash
+cd SanguiBlog-server
+mvn -q "-Dtest=AnalyticsServiceDetailJsonTest,AnalyticsControllerVisitTrackingTest,AnalyticsServiceVisitDurationTest,AnalyticsServiceGeoLocationTest,IpUtilsTest" test
+mvn -q -DskipTests compile
+
+cd ../SanguiBlog-front
+node src/appfull/AdminAnalyticsVisitDuration.test.js
+node src/appfull/AdminAnalyticsDetailLog.test.js
+node src/appfull/noNativeBlockingDialogs.test.js
+npm run lint
+npm run build
+```
+
 ### Article Visit Duration Analytics
 
 Article detail visit duration tracking is a backend/frontend/database contract that reuses `analytics_page_views`.

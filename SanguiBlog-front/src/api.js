@@ -856,6 +856,9 @@ export const adminDeletePageViewLog = (id) =>
     method: "DELETE",
   });
 
+export const adminFetchPageViewLogDetail = (id) =>
+  request(`/admin/analytics/page-views/${id}`);
+
 export const adminDeletePageViewLogs = (ids = []) => {
   const search = new URLSearchParams();
   (ids || []).forEach((id) => {

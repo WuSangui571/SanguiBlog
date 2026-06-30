@@ -1,5 +1,6 @@
 package com.sangui.sanguiblog.controller;
 
+import com.sangui.sanguiblog.model.dto.AdminAnalyticsPageViewDetailDto;
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsSummaryDto;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.PageResponse;
@@ -55,6 +56,12 @@ public class AdminAnalyticsController {
                 ip, keyword, loggedIn, postId, startAt, endExclusive, excludeSystemPages, pageType
         );
         return ApiResponse.ok(analyticsService.loadPageViews(page, size, query));
+    }
+
+    @GetMapping("/page-views/{id}")
+    @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW')")
+    public ApiResponse<AdminAnalyticsPageViewDetailDto> pageViewDetail(@PathVariable("id") Long id) {
+        return ApiResponse.ok(analyticsService.loadPageViewDetail(id));
     }
 
     @DeleteMapping("/page-views/me")

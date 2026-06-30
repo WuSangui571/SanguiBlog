@@ -1,6 +1,13 @@
 package com.sangui.sanguiblog.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sangui.sanguiblog.exception.NotFoundException;
+import com.sangui.sanguiblog.model.dto.AdminAnalyticsPageViewDetailDto;
+import com.sangui.sanguiblog.model.dto.AdminAnalyticsPageViewDetailFieldsDto;
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsSummaryDto;
+import com.sangui.sanguiblog.model.dto.AnalyticsRequestDetailContext;
 import com.sangui.sanguiblog.model.dto.ArticleVisitEndRequest;
 import com.sangui.sanguiblog.model.dto.ArticleVisitHeartbeatRequest;
 import com.sangui.sanguiblog.model.dto.ArticleVisitStartRequest;
@@ -15,7 +22,9 @@ import com.sangui.sanguiblog.model.repository.AnalyticsTrafficSourceRepository;
 import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
+import com.sangui.sanguiblog.util.IpUtils;
 import com.sangui.sanguiblog.util.ReferrerUtils;
+import com.sangui.sanguiblog.util.UserAgentDetailUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +48,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -51,6 +61,7 @@ public class AnalyticsService {
 
     private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
     private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // 第一阶段：单次 visit 浏览时长上限（秒）。超过按此截断，负值归零。
     static final int MAX_VISIT_DURATION_SECONDS = 7200;
@@ -88,6 +99,11 @@ public class AnalyticsService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId, String visitId) {
+        recordPageView(request, ip, userAgent, userId, visitId, null);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId, String visitId, AnalyticsRequestDetailContext detailContext) {
         if (request == null) {
             request = new PageViewRequest();
         }
@@ -107,7 +123,7 @@ public class AnalyticsService {
             }
         }
 
-        // 文章详情 GET 带 visitId 时，保证“一次 visit = 一行”：若 start 已先创建该 visit 行，则幂等补齐，不重复插入。
+        // 文章详情 GET 带 visitId 时，保证"一次 visit = 一行"：若 start 已先创建该 visit 行，则幂等补齐，不重复插入。
         if (StringUtils.hasText(normalizedVisitId)) {
             AnalyticsPageView existing = analyticsPageViewRepository.findByVisitId(normalizedVisitId).orElse(null);
             if (existing != null) {
@@ -118,6 +134,7 @@ public class AnalyticsService {
                 if (!StringUtils.hasText(existing.getVisitStatus())) {
                     existing.setVisitStatus(VISIT_STATUS_OPEN);
                 }
+                setDetailJsonIfMissing(existing, normalizedIp, userAgent, normalizedVisitId, detailContext);
                 analyticsPageViewRepository.save(existing);
                 return;
             }
@@ -143,6 +160,7 @@ public class AnalyticsService {
                     if (!StringUtils.hasText(transientOpenRow.getVisitStatus())) {
                         transientOpenRow.setVisitStatus(VISIT_STATUS_OPEN);
                     }
+                    setDetailJsonIfMissing(transientOpenRow, normalizedIp, userAgent, normalizedVisitId, detailContext);
                     analyticsPageViewRepository.save(transientOpenRow);
                     return;
                 }
@@ -171,6 +189,7 @@ public class AnalyticsService {
         pv.setUserAgent(trimToLength(userAgent, 512));
         pv.setViewedAt(now);
         pv.setHeartbeatCount(0);
+        pv.setDetailJson(buildDetailJson(normalizedIp, userAgent, normalizedVisitId, detailContext));
         analyticsPageViewRepository.save(pv);
 
         try {
@@ -194,6 +213,77 @@ public class AnalyticsService {
                 && row.getLeaveTime() == null
                 && row.getTotalDurationSeconds() == null
                 && row.getActiveDurationSeconds() == null;
+    }
+
+    void setDetailJsonIfMissing(AnalyticsPageView row, String ip, String userAgent, String visitId, AnalyticsRequestDetailContext detailContext) {
+        if (row == null || StringUtils.hasText(row.getDetailJson())) {
+            return;
+        }
+        row.setDetailJson(buildDetailJson(ip, userAgent, visitId, detailContext));
+    }
+
+    String buildDetailJson(String ip, String userAgent, String visitId, AnalyticsRequestDetailContext detailContext) {
+        Map<String, Object> detail = new LinkedHashMap<>();
+        String normalizedIp = StringUtils.hasText(ip) ? IpUtils.normalizeIp(ip) : "0.0.0.0";
+
+        detail.put("userAgent", trimToLength(userAgent, 512));
+        detail.put("refererRaw", safeUrlLikeDetailValue(detailContext != null ? detailContext.refererRaw() : null, 512));
+        detail.put("method", trimToLength(detailContext != null ? detailContext.method() : null, 16));
+        detail.put("requestUri", safeUrlLikeDetailValue(detailContext != null ? detailContext.requestUri() : null, 512));
+        detail.put("status", valueOrNull(200));
+        detail.put("durationMs", null);
+        detail.put("ip", normalizedIp);
+        detail.put("xForwardedFor", trimToLength(detailContext != null ? detailContext.xForwardedFor() : null, 512));
+        detail.put("xRealIp", trimToLength(detailContext != null ? detailContext.xRealIp() : null, 128));
+        detail.put("acceptLanguage", trimToLength(detailContext != null ? detailContext.acceptLanguage() : null, 255));
+        detail.put("visitorId", trimToLength(detailContext != null ? detailContext.visitorId() : null, 128));
+        detail.put("sessionId", trimToLength(visitId != null ? visitId : (detailContext != null ? detailContext.sessionId() : null), 128));
+        detail.put("entryPage", safeUrlLikeDetailValue(detailContext != null ? detailContext.entryPage() : null, 512));
+        detail.put("fromPage", safeUrlLikeDetailValue(detailContext != null ? detailContext.fromPage() : null, 512));
+        detail.put("isFirstVisit", null);
+
+        boolean botDetected = UserAgentDetailUtils.isLikelyBot(userAgent);
+        detail.put("botDetected", botDetected);
+        detail.put("botName", botDetected ? UserAgentDetailUtils.resolveBotName(userAgent) : null);
+        detail.put("deviceType", resolveDetailValue(UserAgentDetailUtils.resolveDeviceType(userAgent)));
+        detail.put("browser", resolveDetailValue(UserAgentDetailUtils.resolveBrowser(userAgent)));
+        detail.put("os", resolveDetailValue(UserAgentDetailUtils.resolveOs(userAgent)));
+        detail.put("asn", null);
+        detail.put("isp", null);
+        detail.put("ipType", UserAgentDetailUtils.classifyIpType(normalizedIp));
+
+        try {
+            return OBJECT_MAPPER.writeValueAsString(detail);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize detail_json, returning null", e);
+            return null;
+        }
+    }
+
+    private static Integer valueOrNull(Integer value) {
+        return value;
+    }
+
+    private static String resolveDetailValue(String value) {
+        return StringUtils.hasText(value) ? value : null;
+    }
+
+    private String safeUrlLikeDetailValue(String value, int maxLen) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String trimmed = value.trim();
+        int queryIdx = trimmed.indexOf('?');
+        int fragmentIdx = trimmed.indexOf('#');
+        int cutIdx = -1;
+        if (queryIdx >= 0) {
+            cutIdx = queryIdx;
+        }
+        if (fragmentIdx >= 0 && (cutIdx < 0 || fragmentIdx < cutIdx)) {
+            cutIdx = fragmentIdx;
+        }
+        String safe = cutIdx >= 0 ? trimmed.substring(0, cutIdx) : trimmed;
+        return trimToLength(safe, maxLen);
     }
 
     private void fillMissingVisitRowFields(AnalyticsPageView row, PageViewRequest request, User viewer) {
@@ -366,6 +456,13 @@ public class AnalyticsService {
     }
 
     @Transactional(readOnly = true)
+    public AdminAnalyticsPageViewDetailDto loadPageViewDetail(Long id) {
+        AnalyticsPageView view = analyticsPageViewRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("访问日志记录不存在"));
+        return toDetailDto(view);
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<AdminAnalyticsSummaryDto.RecentVisit> loadPageViews(int page, int size) {
         return loadPageViews(page, size, null);
     }
@@ -495,6 +592,11 @@ public class AnalyticsService {
 
     @Transactional
     public void recordArticleVisitStart(ArticleVisitStartRequest request, String ip, String userAgent, Long userId) {
+        recordArticleVisitStart(request, ip, userAgent, userId, null);
+    }
+
+    @Transactional
+    public void recordArticleVisitStart(ArticleVisitStartRequest request, String ip, String userAgent, Long userId, AnalyticsRequestDetailContext detailContext) {
         if (request == null || !StringUtils.hasText(request.getVisitId())) {
             return;
         }
@@ -506,6 +608,7 @@ public class AnalyticsService {
         if (!StringUtils.hasText(visitId)) {
             return;
         }
+        String normalizedIp = normalizeViewerIp(ip);
 
         AnalyticsPageView existing = analyticsPageViewRepository.findByVisitId(visitId).orElse(null);
         if (existing != null) {
@@ -531,6 +634,7 @@ public class AnalyticsService {
             if (!StringUtils.hasText(existing.getVisitStatus())) {
                 existing.setVisitStatus(VISIT_STATUS_OPEN);
             }
+            setDetailJsonIfMissing(existing, normalizedIp, userAgent, visitId, detailContext);
             analyticsPageViewRepository.save(existing);
             return;
         }
@@ -545,7 +649,6 @@ public class AnalyticsService {
         pv.setVisitId(visitId);
         pv.setPost(post);
         pv.setPageTitle(normalizePageTitle(resolveStartTitle(request, post)));
-        String normalizedIp = normalizeViewerIp(ip);
         pv.setViewerIp(normalizedIp);
         pv.setUser(viewer);
         pv.setReferrerUrl(trimToLength(decodePercentEncodedValue(request.getReferrer()), 512));
@@ -556,6 +659,7 @@ public class AnalyticsService {
         pv.setEnterTime(now);
         pv.setVisitStatus(VISIT_STATUS_OPEN);
         pv.setHeartbeatCount(0);
+        pv.setDetailJson(buildDetailJson(normalizedIp, userAgent, visitId, detailContext));
         analyticsPageViewRepository.save(pv);
     }
 
@@ -702,6 +806,100 @@ public class AnalyticsService {
                 .heartbeatCount(view.getHeartbeatCount())
                 .visitStatus(view.getVisitStatus())
                 .build();
+    }
+
+    private AdminAnalyticsPageViewDetailDto toDetailDto(AnalyticsPageView view) {
+        if (view == null) {
+            return null;
+        }
+        Integer display = resolveDisplayDurationSeconds(view);
+        AdminAnalyticsPageViewDetailFieldsDto detailFields = parseDetailJson(view.getDetailJson());
+
+        return AdminAnalyticsPageViewDetailDto.builder()
+                .id(view.getId())
+                .title(view.getPost() != null ? view.getPost().getTitle() : view.getPageTitle())
+                .postId(view.getPost() != null ? view.getPost().getId() : null)
+                .slug(view.getPost() != null ? view.getPost().getSlug() : null)
+                .time(view.getViewedAt() != null ? DATE_TIME_FMT.format(view.getViewedAt()) : "")
+                .referrer(view.getReferrerUrl())
+                .geo(view.getGeoLocation())
+                .loggedIn(view.getUser() != null)
+                .userId(view.getUser() != null ? view.getUser().getId() : null)
+                .username(view.getUser() != null ? view.getUser().getUsername() : null)
+                .displayName(view.getUser() != null ? view.getUser().getDisplayName() : null)
+                .userAgent(view.getUserAgent())
+                .avatarUrl(view.getUser() != null ? view.getUser().getAvatarUrl() : null)
+                .visitId(view.getVisitId())
+                .enterTime(view.getEnterTime() != null ? DATE_TIME_FMT.format(view.getEnterTime()) : null)
+                .leaveTime(view.getLeaveTime() != null ? DATE_TIME_FMT.format(view.getLeaveTime()) : null)
+                .lastActiveTime(view.getLastActiveTime() != null ? DATE_TIME_FMT.format(view.getLastActiveTime()) : null)
+                .totalDurationSeconds(view.getTotalDurationSeconds())
+                .activeDurationSeconds(view.getActiveDurationSeconds())
+                .durationSeconds(display)
+                .heartbeatCount(view.getHeartbeatCount())
+                .visitStatus(view.getVisitStatus())
+                .detail(detailFields)
+                .build();
+    }
+
+    AdminAnalyticsPageViewDetailFieldsDto parseDetailJson(String detailJson) {
+        if (!StringUtils.hasText(detailJson)) {
+            return AdminAnalyticsPageViewDetailFieldsDto.builder().build();
+        }
+        try {
+            Map<String, Object> raw = OBJECT_MAPPER.readValue(detailJson, new TypeReference<Map<String, Object>>() {});
+            return AdminAnalyticsPageViewDetailFieldsDto.builder()
+                    .userAgent(stringOrNull(raw, "userAgent"))
+                    .refererRaw(stringOrNull(raw, "refererRaw"))
+                    .method(stringOrNull(raw, "method"))
+                    .requestUri(stringOrNull(raw, "requestUri"))
+                    .status(intOrNull(raw, "status"))
+                    .durationMs(longOrNull(raw, "durationMs"))
+                    .ip(stringOrNull(raw, "ip"))
+                    .xForwardedFor(stringOrNull(raw, "xForwardedFor"))
+                    .xRealIp(stringOrNull(raw, "xRealIp"))
+                    .acceptLanguage(stringOrNull(raw, "acceptLanguage"))
+                    .visitorId(stringOrNull(raw, "visitorId"))
+                    .sessionId(stringOrNull(raw, "sessionId"))
+                    .entryPage(stringOrNull(raw, "entryPage"))
+                    .fromPage(stringOrNull(raw, "fromPage"))
+                    .isFirstVisit(boolOrNull(raw, "isFirstVisit"))
+                    .botDetected(boolOrNull(raw, "botDetected"))
+                    .botName(stringOrNull(raw, "botName"))
+                    .deviceType(stringOrNull(raw, "deviceType"))
+                    .browser(stringOrNull(raw, "browser"))
+                    .os(stringOrNull(raw, "os"))
+                    .asn(stringOrNull(raw, "asn"))
+                    .isp(stringOrNull(raw, "isp"))
+                    .ipType(stringOrNull(raw, "ipType"))
+                    .build();
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse detail_json, returning empty detail: {}", e.getOriginalMessage());
+            return AdminAnalyticsPageViewDetailFieldsDto.builder().build();
+        }
+    }
+
+    private String stringOrNull(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? value.toString() : null;
+    }
+
+    private Integer intOrNull(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Number n) return n.intValue();
+        return null;
+    }
+
+    private Long longOrNull(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Number n) return n.longValue();
+        return null;
+    }
+
+    private Boolean boolOrNull(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Boolean b) return b;
+        return null;
     }
 
     private List<AdminAnalyticsSummaryDto.TrendPoint> buildTrendPoints(LocalDate startDate, int safeDays) {

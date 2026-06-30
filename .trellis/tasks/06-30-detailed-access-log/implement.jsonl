@@ -1,0 +1,42 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/06-30-detailed-access-log/prd.md", "reason": "Primary requirements, cross-layer contract, acceptance criteria, forbidden scope, and required tests."}
+{"file": ".trellis/tasks/06-30-detailed-access-log/research.md", "reason": "Focused code research, retrieval report, likely files, and risk boundaries."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend ownership and controller/service/repository/entity/DTO boundaries."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "ApiResponse/PageResponse, retrieve-first rule, targeted tests, and high-risk boundaries."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "analytics_page_views schema/entity/repository migration requirements."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Admin detail 404/403/error behavior and ApiResponse semantics."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe request detail logging/persistence and sensitive field exclusions."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend ownership: api.js and AdminPanel.jsx are the real paths."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend retrieve-first, static tests, lint/build, no native dialogs."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Admin modal/drawer patterns, accessibility, and no duplicate overlay systems."}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Async loader/effect dependency and stale state guard patterns."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Admin local state and server-data ownership."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Runtime guards and API payload shape handling for JS frontend."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse-first report and duplicate implementation prevention."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "API/payload/error/good-base-bad/test contract for DB/API/frontend work."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/entity/AnalyticsPageView.java", "reason": "Existing analytics_page_views entity to extend with detailJson."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AdminAnalyticsSummaryDto.java", "reason": "Existing RecentVisit DTO and possible summary reuse for detail DTO."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/PageViewRequest.java", "reason": "Existing public page-view request payload; only add safe whitelisted fields if needed."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/repository/AnalyticsPageViewRepository.java", "reason": "Existing repository/entity graph/specification path for page-view rows."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Main analytics persistence, detail mapping, admin list, and visit lifecycle owner."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminAnalyticsController.java", "reason": "Existing admin analytics list/delete controller; add GET detail here."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AnalyticsController.java", "reason": "Existing page-view and visit lifecycle request context boundary."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/PostController.java", "reason": "Article detail request context boundary for analytics rows."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/PostService.java", "reason": "Existing article view count, analytics recording, and fallback direct write path."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/SitemapService.java", "reason": "Existing robots/sitemap access log path to preserve and extend."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java", "reason": "Existing IP resolver/proxy header precedence; do not duplicate."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/GeoIpService.java", "reason": "Existing geo provider; note ASN/ISP unavailable in this task."}
+{"file": "sanguiblog_db.sql", "reason": "Canonical fresh-install schema; add analytics_page_views.detail_json here."}
+{"file": "docs/sql/2026-06-27-add-analytics-visit-duration.sql", "reason": "Existing analytics manual migration style to follow for new detail_json migration."}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Frontend API facade; add adminFetchPageViewLogDetail here only."}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Existing AnalyticsView list UI; add detail button and modal/drawer without new list columns."}
+{"file": "SanguiBlog-front/src/AppFull.jsx", "reason": "Existing non-article page tracking and visitId flow."}
+{"file": "SanguiBlog-front/src/appfull/public/articleVisitTracker.js", "reason": "Existing visit id/duration helpers and admin formatting."}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/AnalyticsServiceVisitDurationTest.java", "reason": "Existing analytics service tests to extend or keep passing."}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/controller/AnalyticsControllerVisitTrackingTest.java", "reason": "Existing analytics controller tests for request context propagation."}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/service/AnalyticsServiceGeoLocationTest.java", "reason": "Existing GeoIP fallback tests to keep passing."}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/util/IpUtilsTest.java", "reason": "Existing IP header precedence tests to keep passing."}
+{"file": "SanguiBlog-front/src/appfull/AdminAnalyticsVisitDuration.test.js", "reason": "Existing static access-log UI/API test pattern."}
+{"file": "SanguiBlog-front/src/appfull/noNativeBlockingDialogs.test.js", "reason": "Existing no native dialogs regression test."}

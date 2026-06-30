@@ -2,6 +2,7 @@ package com.sangui.sanguiblog.service;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.sangui.sanguiblog.model.dto.AnalyticsRequestDetailContext;
 import com.sangui.sanguiblog.model.dto.PageViewRequest;
 import com.sangui.sanguiblog.model.repository.GamePageRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
@@ -445,7 +446,9 @@ public class SitemapService {
             pv.setPageTitle(pageTitle.trim());
             pv.setReferrer(request.getHeader("Referer"));
             String ua = request.getHeader("User-Agent");
-            analyticsService.recordPageView(pv, ip, ua, null);
+            AnalyticsRequestDetailContext detailContext = com.sangui.sanguiblog.controller.AnalyticsController.buildRequestDetailContext(request,
+                    "/" + pageTitle, null);
+            analyticsService.recordPageView(pv, ip, ua, null, null, detailContext);
         } catch (Exception ex) {
             SITEMAP_LOG_LIMITER.invalidate(key);
             log.warn("记录 {} 访问日志失败（已忽略，不影响站点地图响应），ip={}", pageTitle, ip, ex);

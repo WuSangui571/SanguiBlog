@@ -1,0 +1,8 @@
+{"file": ".trellis/workflow.md", "reason": "Current Trellis workflow and debug/check expectations."}
+{"file": ".trellis/tasks/06-30-detailed-access-log/prd.md", "reason": "Debug against planned DB/API/frontend contract and forbidden scope."}
+{"file": ".trellis/tasks/06-30-detailed-access-log/research.md", "reason": "Debug with focused code research and likely ownership chain."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Debug detail 404/403/status behavior."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Debug sensitive-data leak risk."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Debug optional detail fields and payload guards."}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Debug detail_json serialization/parsing and visit row merge issues."}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Debug detail modal/drawer and list compactness issues."}

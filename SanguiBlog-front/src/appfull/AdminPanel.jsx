@@ -27,6 +27,7 @@ import {
     adminFetchPageViewLogs,
     adminDeletePageViewLog,
     adminDeletePageViewLogs,
+    adminFetchPageViewLogDetail,
     adminDeleteMyAnalyticsLogs,
     adminFetchAiAuditSessions,
     adminFetchAiAuditSessionDetail,
@@ -1080,6 +1081,11 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const [selectedIds, setSelectedIds] = useState([]);
     const [deleting, setDeleting] = useState(false);
     const [hideRobotsAndSitemap, setHideRobotsAndSitemap] = useState(true);
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailError, setDetailError] = useState('');
+    const [detailData, setDetailData] = useState(null);
+    const [detailLoadingId, setDetailLoadingId] = useState(null);
     const [filtersDraft, setFiltersDraft] = useState({
         keyword: '',
         ip: '',
@@ -1462,6 +1468,107 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         }
     };
 
+    const handleShowDetail = async (id) => {
+        if (detailLoading) return;
+        setDetailLoadingId(id);
+        setDetailLoading(true);
+        setDetailError('');
+        setDetailData(null);
+        setDetailOpen(true);
+        try {
+            const res = await adminFetchPageViewLogDetail(id);
+            const data = res.data || res;
+            setDetailData(data || null);
+        } catch (err) {
+            setDetailError(err.message || '加载详情失败');
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
+    const handleCloseDetail = () => {
+        setDetailOpen(false);
+        setDetailData(null);
+        setDetailError('');
+        setDetailLoadingId(null);
+    };
+
+    const renderDetailValue = (value) => {
+        if (value === null || value === undefined) return <span className={textMuted}>-</span>;
+        if (typeof value === 'boolean') return value ? '是' : '否';
+        if (typeof value === 'number' && value === 0) return '0';
+        return String(value) || <span className={textMuted}>-</span>;
+    };
+
+    const detailGroups = useMemo(() => {
+        if (!detailData?.detail) return [];
+        const d = detailData.detail || {};
+        return [
+            {
+                label: '请求信息',
+                items: [
+                    { label: 'method', value: d.method },
+                    { label: 'requestUri', value: d.requestUri },
+                    { label: 'status', value: d.status },
+                    { label: 'durationMs', value: d.durationMs },
+                    { label: 'userAgent', value: d.userAgent },
+                    { label: 'acceptLanguage', value: d.acceptLanguage },
+                ]
+            },
+            {
+                label: '来源信息',
+                items: [
+                    { label: 'refererRaw', value: d.refererRaw },
+                    { label: 'referrer', value: detailData.referrer },
+                    { label: 'entryPage', value: d.entryPage },
+                    { label: 'fromPage', value: d.fromPage },
+                ]
+            },
+            {
+                label: '设备信息',
+                items: [
+                    { label: 'deviceType', value: d.deviceType },
+                    { label: 'browser', value: d.browser },
+                    { label: 'os', value: d.os },
+                ]
+            },
+            {
+                label: 'IP 信息',
+                items: [
+                    { label: 'ip', value: d.ip },
+                    { label: 'xForwardedFor', value: d.xForwardedFor },
+                    { label: 'xRealIp', value: d.xRealIp },
+                    { label: 'geo', value: detailData.geo },
+                    { label: 'asn', value: d.asn },
+                    { label: 'isp', value: d.isp },
+                    { label: 'ipType', value: d.ipType },
+                ]
+            },
+            {
+                label: '行为信息',
+                items: [
+                    { label: 'visitorId', value: d.visitorId },
+                    { label: 'sessionId', value: d.sessionId },
+                    { label: 'visitId', value: detailData.visitId },
+                    { label: 'isFirstVisit', value: d.isFirstVisit },
+                    { label: 'enterTime', value: detailData.enterTime },
+                    { label: 'leaveTime', value: detailData.leaveTime },
+                    { label: 'lastActiveTime', value: detailData.lastActiveTime },
+                    { label: 'durationSeconds', value: detailData.durationSeconds },
+                    { label: 'heartbeatCount', value: detailData.heartbeatCount },
+                    { label: 'visitStatus', value: detailData.visitStatus },
+                ]
+            },
+            {
+                label: '风控信息',
+                items: [
+                    { label: 'botDetected', value: d.botDetected },
+                    { label: 'botName', value: d.botName },
+                ]
+            },
+        ];
+    }, [detailData]);
+
     return (
         <>
             {confirmDialog}
@@ -1747,7 +1854,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                     <th className="px-4 py-3 text-left min-w-[120px]">来源</th>
                                     <th className="px-4 py-3 text-left min-w-[48px]">地理</th>
                                     <th className="px-4 py-3 text-left min-w-[80px]">浏览时长</th>
-                                    {isSuperAdmin && <th className="px-4 py-3 text-right">操作</th>}
+                                    <th className="px-4 py-3 text-right">操作</th>
                                 </tr>
                             </thead>
                             <tbody className={isDarkMode ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
@@ -1790,19 +1897,30 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                         <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">{renderReferrer(visit.referrer)}</td>
                                         <td className="px-4 py-3">{visit.geo || '未知'}</td>
                                         <td className="px-4 py-3 whitespace-nowrap font-mono">{formatVisitDurationFromRecord(visit)}</td>
-                                        {isSuperAdmin && (
-                                            <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex items-center justify-end gap-1">
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleDeleteOne(visit.id)}
-                                                    disabled={deleting}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold border border-red-500 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+                                                    onClick={() => handleShowDetail(visit.id)}
+                                                    disabled={detailLoading && detailLoadingId === visit.id}
+                                                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold border border-blue-500 text-blue-600 rounded-md hover:bg-blue-50 disabled:opacity-50"
                                                 >
-                                                    <Trash2 size={14} />
-                                                    删除
+                                                    <Eye size={14} />
+                                                    查看详情
                                                 </button>
-                                            </td>
-                                        )}
+                                                {isSuperAdmin && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteOne(visit.id)}
+                                                        disabled={deleting}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold border border-red-500 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                        删除
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -1860,6 +1978,77 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                 </div>
             </div>
         </div>
+
+        {detailOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleCloseDetail} />
+                <div className={`relative w-full max-w-2xl max-h-[85vh] mx-4 rounded-2xl shadow-2xl flex flex-col overflow-hidden ${isDarkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                    <div className={`flex items-center justify-between px-6 py-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                            访问详情
+                            {detailData?.id != null && <span className={`ml-2 text-sm font-normal ${textMuted}`}>#{detailData.id}</span>}
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={handleCloseDetail}
+                            aria-label="关闭详情"
+                            className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'}`}
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                        {detailLoading ? (
+                            <p className={`text-sm ${textMuted}`}>加载详情中...</p>
+                        ) : detailError ? (
+                            <p className="text-sm text-red-500">{detailError}</p>
+                        ) : detailData ? (
+                            <div className="space-y-6">
+                                <div className={`rounded-xl p-4 ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                        <div>
+                                            <span className={textMuted}>标题：</span>
+                                            <span className={isDarkMode ? 'text-gray-100' : 'text-gray-900'}>{detailData.title || '-'}</span>
+                                        </div>
+                                        {detailData.postId != null && (
+                                            <div>
+                                                <span className={textMuted}>文章 ID：</span>
+                                                <span className={isDarkMode ? 'text-gray-100' : 'text-gray-900'}>{detailData.postId}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                {detailGroups.map((group) => (
+                                    <div key={group.label} className={`rounded-xl p-4 ${isDarkMode ? 'bg-gray-800/30' : 'bg-gray-50/70'}`}>
+                                        <h4 className={`text-sm font-bold mb-3 ${isDarkMode ? 'text-indigo-300' : 'text-indigo-600'}`}>{group.label}</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                            {group.items.map((item) => (
+                                                <div key={item.label} className="min-w-0">
+                                                    <span className={`font-mono text-xs ${textMuted}`}>{item.label}</span>
+                                                    <div className={`break-all ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                                        {renderDetailValue(item.value)}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null}
+                    </div>
+                    <div className={`px-6 py-3 border-t text-right ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <button
+                            type="button"
+                            onClick={handleCloseDetail}
+                            className={`px-4 py-2 text-sm font-semibold rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_#000] ${isDarkMode ? 'bg-[#FFD700] text-black' : 'bg-[#FFD700] text-black'}`}
+                        >
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
         </>
     );
 };

@@ -73,6 +73,9 @@ public class AnalyticsPageView {
     @Column(name = "visit_status", length = 32)
     private String visitStatus;
 
+    @Column(name = "detail_json", columnDefinition = "LONGTEXT")
+    private String detailJson;
+
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 }

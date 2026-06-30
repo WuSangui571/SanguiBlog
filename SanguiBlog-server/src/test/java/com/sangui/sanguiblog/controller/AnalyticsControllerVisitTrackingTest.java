@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sangui.sanguiblog.model.dto.AnalyticsRequestDetailContext;
 import com.sangui.sanguiblog.model.dto.ApiResponse;
 import com.sangui.sanguiblog.model.dto.ArticleVisitEndRequest;
 import com.sangui.sanguiblog.model.dto.ArticleVisitHeartbeatRequest;
@@ -45,7 +46,7 @@ class AnalyticsControllerVisitTrackingTest {
         ApiResponse<Void> response = controller.record(request, httpRequest, null);
 
         assertTrue(response.isSuccess());
-        verify(analyticsService).recordPageView(eq(request), eq("1.2.3.4"), eq("JUnit UA"), eq(null), eq("page-visit-1"));
+        verify(analyticsService).recordPageView(eq(request), eq("1.2.3.4"), eq("JUnit UA"), eq(null), eq("page-visit-1"), any(AnalyticsRequestDetailContext.class));
     }
 
     @Test
@@ -60,7 +61,7 @@ class AnalyticsControllerVisitTrackingTest {
 
         assertTrue(response.isSuccess());
         ArgumentCaptor<ArticleVisitStartRequest> captor = ArgumentCaptor.forClass(ArticleVisitStartRequest.class);
-        verify(analyticsService).recordArticleVisitStart(captor.capture(), eq("1.2.3.4"), eq("JUnit UA"), eq(null));
+        verify(analyticsService).recordArticleVisitStart(captor.capture(), eq("1.2.3.4"), eq("JUnit UA"), eq(null), any(AnalyticsRequestDetailContext.class));
         ArticleVisitStartRequest parsed = captor.getValue();
         assertEquals("v1", parsed.getVisitId());
         assertEquals(123L, parsed.getArticleId());
