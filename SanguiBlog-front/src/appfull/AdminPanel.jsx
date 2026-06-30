@@ -1469,7 +1469,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     };
 
     const handleShowDetail = async (id) => {
-        if (detailLoading) return;
+        if (!isSuperAdmin || detailLoading || !id) return;
         setDetailLoadingId(id);
         setDetailLoading(true);
         setDetailError('');
@@ -1899,27 +1899,29 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                         <td className="px-4 py-3 whitespace-nowrap font-mono">{formatVisitDurationFromRecord(visit)}</td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex items-center justify-end gap-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleShowDetail(visit.id)}
-                                                    disabled={detailLoading && detailLoadingId === visit.id}
-                                                    aria-label="查看详情"
-                                                    title="查看详情"
-                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
-                                                >
-                                                    <FileSearch size={16} />
-                                                </button>
                                                 {isSuperAdmin && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteOne(visit.id)}
-                                                        disabled={deleting}
-                                                        aria-label="删除"
-                                                        title="删除"
-                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-500 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleShowDetail(visit.id)}
+                                                            disabled={detailLoading && detailLoadingId === visit.id}
+                                                            aria-label="查看详情"
+                                                            title="查看详情"
+                                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                                                        >
+                                                            <FileSearch size={16} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteOne(visit.id)}
+                                                            disabled={deleting}
+                                                            aria-label="删除"
+                                                            title="删除"
+                                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-500 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </>
                                                 )}
                                             </div>
                                         </td>

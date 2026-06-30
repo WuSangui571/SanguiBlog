@@ -15,11 +15,34 @@ assert.ok(apiSource.includes('export const adminFetchPageViewLogDetail'),
 assert.ok(adminPanelSource.includes('adminFetchPageViewLogDetail'),
     'AdminPanel should import adminFetchPageViewLogDetail');
 
-const detailButtonMatch = adminPanelSource.match(/<button[\s\S]*?onClick=\{\(\) => handleShowDetail\(visit\.id\)\}[\s\S]*?<\/button>/);
-assert.ok(detailButtonMatch,
+const getButtonSource = (onClickSource) => {
+    const onClickIndex = adminPanelSource.indexOf(onClickSource);
+    assert.ok(onClickIndex >= 0, `AdminPanel should render button handler: ${onClickSource}`);
+    const buttonStart = adminPanelSource.lastIndexOf('<button', onClickIndex);
+    const buttonEnd = adminPanelSource.indexOf('</button>', onClickIndex);
+    assert.ok(buttonStart >= 0 && buttonEnd > buttonStart,
+        `AdminPanel should wrap handler in a button: ${onClickSource}`);
+    return {
+        source: adminPanelSource.slice(buttonStart, buttonEnd + '</button>'.length),
+        start: buttonStart,
+    };
+};
+
+const detailButton = getButtonSource('onClick={() => handleShowDetail(visit.id)}');
+assert.ok(detailButton.source,
     'AdminPanel should render a detail action button for each page-view log');
 
-const detailButtonSource = detailButtonMatch[0];
+const detailButtonSource = detailButton.source;
+const operationCellStart = adminPanelSource.lastIndexOf('<td className="px-4 py-3 text-right">', detailButton.start);
+const operationCellEnd = adminPanelSource.indexOf('</td>', detailButton.start);
+const operationCellSource = adminPanelSource.slice(operationCellStart, operationCellEnd);
+const superAdminGuardIndex = operationCellSource.indexOf('{isSuperAdmin && (');
+const detailActionIndex = operationCellSource.indexOf('handleShowDetail(visit.id)');
+const deleteActionIndex = operationCellSource.indexOf('handleDeleteOne(visit.id)');
+assert.ok(superAdminGuardIndex >= 0 && superAdminGuardIndex < detailActionIndex,
+    'Detail action button should be hidden behind the same SUPER_ADMIN operation guard as delete');
+assert.ok(detailActionIndex >= 0 && detailActionIndex < deleteActionIndex,
+    'Detail action button should remain in the protected operation group before delete');
 assert.ok(detailButtonSource.includes('aria-label="查看详情"'),
     'Detail action button should keep an accessible label');
 assert.ok(detailButtonSource.includes('title="查看详情"'),
@@ -29,11 +52,11 @@ assert.ok(detailButtonSource.includes('<FileSearch size={16} />'),
 assert.doesNotMatch(detailButtonSource, />\s*查看详情\s*</,
     'Detail action button should not render visible text');
 
-const deleteButtonMatch = adminPanelSource.match(/<button[\s\S]*?onClick=\{\(\) => handleDeleteOne\(visit\.id\)\}[\s\S]*?<\/button>/);
-assert.ok(deleteButtonMatch,
+const deleteButton = getButtonSource('onClick={() => handleDeleteOne(visit.id)}');
+assert.ok(deleteButton.source,
     'AdminPanel should render a delete action button for SUPER_ADMIN');
 
-const deleteButtonSource = deleteButtonMatch[0];
+const deleteButtonSource = deleteButton.source;
 assert.ok(deleteButtonSource.includes('aria-label="删除"'),
     'Delete action button should keep an accessible label');
 assert.ok(deleteButtonSource.includes('title="删除"'),

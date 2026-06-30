@@ -59,7 +59,7 @@ public class AdminAnalyticsController {
     }
 
     @GetMapping("/page-views/{id}")
-    @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW')")
+    @PreAuthorize("hasAuthority('PERM_ANALYTICS_VIEW') and hasRole('SUPER_ADMIN')")
     public ApiResponse<AdminAnalyticsPageViewDetailDto> pageViewDetail(@PathVariable("id") Long id) {
         return ApiResponse.ok(analyticsService.loadPageViewDetail(id));
     }
