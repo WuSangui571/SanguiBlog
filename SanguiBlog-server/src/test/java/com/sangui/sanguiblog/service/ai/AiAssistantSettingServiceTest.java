@@ -316,6 +316,132 @@ class AiAssistantSettingServiceTest {
     }
 
     @Test
+    void shouldReportRagDisabledByEnvironmentWhenEnvDisabled() {
+        SiteSettingRepository repository = mock(SiteSettingRepository.class);
+        when(repository.findBySettingKey("ai.chat.enabled")).thenReturn(Optional.empty());
+        when(repository.findBySettingKey("ai.rag.admin_enabled")).thenReturn(Optional.empty());
+
+        AiBlogRagProperties rag = new AiBlogRagProperties();
+        rag.setEnabled(false);
+        AiBlogRagProperties.PgVector pg = new AiBlogRagProperties.PgVector();
+        pg.setUrl("jdbc:postgresql://localhost:5432/test");
+        pg.setUsername("user");
+        pg.setPassword("pass");
+        rag.setPgvector(pg);
+
+        AiAssistantSettingService service = service(
+                repository,
+                CONFIGURED_BASE_URL, CONFIGURED_CHAT_MODEL, CONFIGURED_KEY,
+                CONFIGURED_EMBEDDING_MODEL, CONFIGURED_KEY,
+                rag,
+                availableEmbeddingModelProvider(),
+                availableVectorStoreProvider()
+        );
+
+        assertFalse(service.isRagCapable());
+        String reason = service.siteConfig().getRagDisabledReason();
+        assertTrue(reason.contains("RAG disabled by environment"),
+                "Expected 'RAG disabled by environment' but got: " + reason);
+    }
+
+    @Test
+    void shouldReportPgVectorNotConfiguredWhenEnvEnabledButPgVectorMissing() {
+        SiteSettingRepository repository = mock(SiteSettingRepository.class);
+        when(repository.findBySettingKey("ai.chat.enabled")).thenReturn(Optional.empty());
+        when(repository.findBySettingKey("ai.rag.admin_enabled")).thenReturn(Optional.empty());
+
+        AiBlogRagProperties rag = new AiBlogRagProperties();
+        rag.setEnabled(true);
+
+        AiAssistantSettingService service = service(
+                repository,
+                CONFIGURED_BASE_URL, CONFIGURED_CHAT_MODEL, CONFIGURED_KEY,
+                CONFIGURED_EMBEDDING_MODEL, CONFIGURED_KEY,
+                rag,
+                availableEmbeddingModelProvider(),
+                availableVectorStoreProvider()
+        );
+
+        assertFalse(service.isRagCapable());
+        String reason = service.siteConfig().getRagDisabledReason();
+        assertTrue(reason.contains("PgVector not configured"),
+                "Expected 'PgVector not configured' but got: " + reason);
+    }
+
+    @Test
+    void shouldReportEmbeddingModelNotConfiguredWhenModelMissing() {
+        SiteSettingRepository repository = mock(SiteSettingRepository.class);
+        when(repository.findBySettingKey("ai.chat.enabled")).thenReturn(Optional.empty());
+        when(repository.findBySettingKey("ai.rag.admin_enabled")).thenReturn(Optional.empty());
+
+        AiBlogRagProperties rag = new AiBlogRagProperties();
+        rag.setEnabled(true);
+        AiBlogRagProperties.PgVector pg = new AiBlogRagProperties.PgVector();
+        pg.setUrl("jdbc:postgresql://localhost:5432/test");
+        pg.setUsername("user");
+        pg.setPassword("pass");
+        rag.setPgvector(pg);
+
+        AiAssistantSettingService service = service(
+                repository,
+                CONFIGURED_BASE_URL, CONFIGURED_CHAT_MODEL, CONFIGURED_KEY,
+                "", "",
+                rag,
+                emptyEmbeddingModelProvider(),
+                emptyVectorStoreProvider()
+        );
+
+        assertFalse(service.isRagCapable());
+        String reason = service.siteConfig().getRagDisabledReason();
+        assertTrue(reason.contains("embedding model not configured"),
+                "Expected 'embedding model not configured' but got: " + reason);
+    }
+
+    @Test
+    void shouldReportEmbeddingModelNotAvailableWhenBeanMissing() {
+        SiteSettingRepository repository = mock(SiteSettingRepository.class);
+        when(repository.findBySettingKey("ai.chat.enabled")).thenReturn(Optional.empty());
+        when(repository.findBySettingKey("ai.rag.admin_enabled")).thenReturn(Optional.empty());
+
+        AiBlogRagProperties rag = new AiBlogRagProperties();
+        rag.setEnabled(true);
+        AiBlogRagProperties.PgVector pg = new AiBlogRagProperties.PgVector();
+        pg.setUrl("jdbc:postgresql://localhost:5432/test");
+        pg.setUsername("user");
+        pg.setPassword("pass");
+        rag.setPgvector(pg);
+
+        AiAssistantSettingService service = service(
+                repository,
+                CONFIGURED_BASE_URL, CONFIGURED_CHAT_MODEL, CONFIGURED_KEY,
+                CONFIGURED_EMBEDDING_MODEL, CONFIGURED_KEY,
+                rag,
+                emptyEmbeddingModelProvider(),
+                availableVectorStoreProvider()
+        );
+
+        assertFalse(service.isRagCapable());
+        String reason = service.siteConfig().getRagDisabledReason();
+        assertTrue(reason.contains("embedding model not available"),
+                "Expected 'embedding model not available' but got: " + reason);
+    }
+
+    @Test
+    void shouldReportRagDisabledByAdministratorWhenCapableButAdminOff() {
+        SiteSettingRepository repository = mock(SiteSettingRepository.class);
+        when(repository.findBySettingKey("ai.chat.enabled")).thenReturn(Optional.empty());
+        when(repository.findBySettingKey("ai.rag.admin_enabled")).thenReturn(Optional.empty());
+
+        AiAssistantSettingService service = configuredService(repository);
+
+        assertTrue(service.isRagCapable());
+        assertFalse(service.isRagEffectiveEnabled());
+        String reason = service.siteConfig().getRagDisabledReason();
+        assertTrue(reason.contains("disabled by administrator"),
+                "Expected 'disabled by administrator' but got: " + reason);
+    }
+
+    @Test
     void shouldUseDedicatedEmbeddingApiKeyForRagCapability() {
         SiteSettingRepository repository = mock(SiteSettingRepository.class);
         when(repository.findBySettingKey("ai.chat.enabled")).thenReturn(Optional.empty());

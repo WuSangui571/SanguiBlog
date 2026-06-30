@@ -161,7 +161,8 @@ public class AiAssistantSettingService {
     public boolean isRagCapable() {
         return isConfiguredEmbeddingApiKey()
                 && StringUtils.hasText(embeddingModelName)
-                && ragProperties.isConfigured()
+                && ragProperties.isRagEnvironmentEnabled()
+                && ragProperties.isPgVectorConfigured()
                 && embeddingModelProvider.getIfAvailable() != null
                 && vectorStoreProvider.getIfAvailable() != null;
     }
@@ -302,7 +303,10 @@ public class AiAssistantSettingService {
         if (!StringUtils.hasText(embeddingModelName)) {
             return "embedding model not configured";
         }
-        if (!ragProperties.isConfigured()) {
+        if (!ragProperties.isRagEnvironmentEnabled()) {
+            return "RAG disabled by environment";
+        }
+        if (!ragProperties.isPgVectorConfigured()) {
             return "PgVector not configured";
         }
         if (embeddingModelProvider.getIfAvailable() == null) {

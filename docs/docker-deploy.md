@@ -171,6 +171,22 @@ curl -i -H "X-Forwarded-For: 203.0.113.10" http://localhost:8090/api/analytics/c
 
 当生产环境 AI 聊天无响应时，以下命令可诊断 OpenAI-compatible endpoint 的域名解析与网络连通性（不暴露 API key）：
 
+**从 backend 容器内测试 DNS（推荐，因为 embedding 调用在 backend 内发起）：**
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend sh -lc 'getent hosts dashscope.aliyuncs.com'
+docker compose -f docker-compose.prod.yml exec backend sh -lc 'getent hosts api.openai.com || true'
+```
+
+**从 backend 容器内测试 provider 端点可达性：**
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend sh -lc 'wget -S --spider -T 5 https://dashscope.aliyuncs.com/compatible-mode/v1/models || true'
+docker compose -f docker-compose.prod.yml exec backend sh -lc 'wget -S --spider -T 5 https://api.openai.com/v1/models || true'
+```
+
+> provider 返回 `401` 或 `403` 说明 DNS 和网络可达性正常（无 API key 时的预期响应）；`bad address`、DNS 解析失败、连接超时或读取超时表示 provider 网络不可达。
+
 **从 web 容器内测试 DNS：**
 
 ```bash
@@ -196,6 +212,18 @@ docker compose -f docker-compose.prod.yml exec backend sh -c 'test -n "$AI_OPENA
 docker compose -f docker-compose.prod.yml exec backend sh -c 'test -n "$AI_OPENAI_BASE_URL" && echo "AI_OPENAI_BASE_URL is set" || echo "AI_OPENAI_BASE_URL is empty"'
 docker compose -f docker-compose.prod.yml exec backend sh -c 'test -n "$AI_OPENAI_EMBEDDING_API_KEY" && test "$AI_OPENAI_EMBEDDING_API_KEY" != "__unset__" && echo "AI_OPENAI_EMBEDDING_API_KEY is set" || echo "AI_OPENAI_EMBEDDING_API_KEY reuses chat key or is empty"'
 ```
+
+**PgVector 向量库检查：**
+
+```bash
+# 验证 vector 扩展已安装
+docker compose -f docker-compose.prod.yml exec pgvector sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT extname, extversion FROM pg_extension WHERE extname = '\''vector'\'';"'
+
+# 验证 vector_store 表存在
+docker compose -f docker-compose.prod.yml exec pgvector sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT to_regclass('\''public.vector_store'\'');"'
+```
+
+> 若 `vector_store` 表不存在，需临时设置 `AI_RAG_PGVECTOR_INITIALIZE_SCHEMA=true` 后重启 backend，待表创建后改回 `false`。
 
 **AI RAG 临时关闭恢复：**
 

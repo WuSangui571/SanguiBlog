@@ -81,6 +81,10 @@ services:
       pgvector:
         condition: service_healthy
     restart: unless-stopped
+    dns:
+      - 223.5.5.5
+      - 119.29.29.29
+      - 8.8.8.8
     networks:
       - sanguiblog-net
 

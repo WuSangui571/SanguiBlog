@@ -116,6 +116,7 @@ Any chat change must test relevant services such as `AiChatServiceTest`, `AiGues
 - Published posts are the first-class blog knowledge source.
 - Custom knowledge is super-admin imported `.txt/.md/.markdown`.
 - MySQL metadata and PgVector embeddings are both part of the contract.
+- Article publish/update/delete must not wait for embedding providers or PgVector. Schedule blog knowledge sync/remove after the post transaction commits, run it on a bounded executor, and treat queue rejection/provider/vector failures as logged RAG degradation rather than post API failure.
 - Delete old chunk mappings and flush before recreating stable vector ids.
 - Startup sync must isolate individual post/document failures.
 - Structured facts such as latest article, article count, site stats, or ordering should be answered by direct MySQL-backed services, not inferred by the model.

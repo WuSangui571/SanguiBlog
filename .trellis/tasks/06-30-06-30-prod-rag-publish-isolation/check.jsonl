@@ -1,0 +1,12 @@
+{"file": ".trellis/workflow.md", "reason": "Current Trellis workflow and check/finish-work expectations."}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend risk-based verification and AI/RAG review checklist."}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Review logs for safe RAG/provider failure metadata."}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend static test/build requirements if admin UI changes."}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Check API/env/command matrices and Good/Base/Bad coverage."}
+{"file": "SanguiBlog-server\\src\\test\\java\\com\\sangui\\sanguiblog\\service\\ai\\rag\\AiBlogKnowledgeSyncServiceTest.java", "reason": "Existing sync worker tests to extend for async/failure behavior."}
+{"file": "SanguiBlog-server\\src\\test\\java\\com\\sangui\\sanguiblog\\service\\ai\\AiAssistantSettingServiceTest.java", "reason": "Existing RAG reason/capability tests to extend."}
+{"file": "SanguiBlog-front\\src\\appfull\\AdminAiAssistantSettingsContract.test.js", "reason": "Frontend admin settings contract test to update if status copy/fields change."}
+{"file": "docker-compose.prod.yml", "reason": "Verify backend DNS entry exists and compose config renders."}
+{"file": "docs\\docker-deploy.md", "reason": "Verify smoke docs include backend getent/provider/PgVector checks."}
+{"file": ".trellis\\tasks\\06-30-06-30-prod-rag-publish-isolation\\prd.md", "reason": "Check implementation against scope, acceptance criteria, and required tests."}
+{"file": ".trellis\\tasks\\06-30-06-30-prod-rag-publish-isolation\\research.md", "reason": "Check modified files and test plan against research findings."}

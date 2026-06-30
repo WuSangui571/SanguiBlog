@@ -1,0 +1,5 @@
+{"file": ".trellis/workflow.md", "reason": "Current Trellis workflow for debugging and check expectations."}
+{"file": ".trellis/tasks/06-30-06-30-prod-rag-publish-isolation/prd.md", "reason": "Incident root cause, scope, acceptance criteria, and forbidden boundaries."}
+{"file": ".trellis/tasks/06-30-06-30-prod-rag-publish-isolation/research.md", "reason": "Focused code research for RAG publish isolation and status/DNS gaps."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe diagnostics for RAG/provider failures without leaking secrets."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Debug cross-layer API/env/provider/infra behavior from request to container."}

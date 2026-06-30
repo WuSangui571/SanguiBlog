@@ -94,20 +94,20 @@ For public post list size, keep the existing max of `50`. For archive month load
 |-----------|---------------------|
 | Pure read queries | `@Transactional(readOnly = true)` |
 | Create/update/delete entity state | `@Transactional` |
-| Post publish/delete side effects | `@Transactional`, plus sitemap dirty mark and AI knowledge sync/remove |
+| Post publish/delete side effects | `@Transactional`, plus sitemap dirty mark and after-commit AI knowledge sync/remove scheduling |
 | Knowledge re-sync | Independent transaction per post/document where existing services already use that pattern |
 | Repository modifying query | `@Transactional` on method or caller, plus `@Modifying` where needed |
 
-Post save/update has coupled side effects:
+Post save/update has coupled side effects, but AI/RAG provider work must stay off the request thread:
 
 ```java
 Post saved = postRepository.save(post);
 sitemapService.markDirty();
-aiBlogKnowledgeSyncService.syncPostKnowledge(saved.getId());
+applicationEventPublisher.publishEvent(new AiBlogKnowledgeSyncEvent(saved.getId()));
 return toDetail(saved);
 ```
 
-Do not bypass these side effects with direct repository saves in new code paths.
+Do not bypass these side effects with direct repository saves in new code paths. The event must be handled after commit and submitted to a bounded executor before calling `AiBlogKnowledgeSyncService.syncPostKnowledge(...)` or `removePostKnowledge(...)`. Provider DNS failures, PgVector failures, executor rejection, and vector-store errors must not fail the already-saved post publish/update/delete request.
 
 ---
 
@@ -224,7 +224,7 @@ This skips sitemap invalidation and AI knowledge synchronization.
 ```java
 Post saved = postRepository.save(post);
 sitemapService.markDirty();
-aiBlogKnowledgeSyncService.syncPostKnowledge(saved.getId());
+applicationEventPublisher.publishEvent(new AiBlogKnowledgeSyncEvent(saved.getId()));
 return toDetail(saved);
 ```
 

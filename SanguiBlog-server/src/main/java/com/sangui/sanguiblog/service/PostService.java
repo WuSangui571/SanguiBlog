@@ -25,7 +25,8 @@ import com.sangui.sanguiblog.model.repository.CommentRepository;
 import com.sangui.sanguiblog.model.repository.PostRepository;
 import com.sangui.sanguiblog.model.repository.TagRepository;
 import com.sangui.sanguiblog.model.repository.UserRepository;
-import com.sangui.sanguiblog.service.ai.rag.AiBlogKnowledgeSyncService;
+import com.sangui.sanguiblog.service.ai.rag.AiBlogKnowledgeSyncEvent;
+import com.sangui.sanguiblog.service.ai.rag.AiBlogKnowledgeSyncRemoveEvent;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.persistence.criteria.Join;
@@ -35,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -78,7 +80,7 @@ public class PostService {
     private final AnalyticsService analyticsService;
     private final GeoIpService geoIpService;
     private final SitemapService sitemapService;
-    private final AiBlogKnowledgeSyncService aiBlogKnowledgeSyncService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * 浏览量限流（每 IP + 每文章）：用于减少短时间重复刷新/StrictMode 双调用导致的重复记数，
@@ -289,12 +291,13 @@ public class PostService {
 
         Post saved = postRepository.save(post);
         sitemapService.markDirty();
-        aiBlogKnowledgeSyncService.syncPostKnowledge(saved.getId());
+        publishRagSyncEvent(saved.getId());
         return toDetail(saved);
     }
 
+    @Transactional
     public void delete(Long id) {
-        aiBlogKnowledgeSyncService.removePostKnowledge(id);
+        publishRagRemoveEvent(id);
         postRepository.deleteById(id);
         sitemapService.markDirty();
     }
@@ -411,7 +414,7 @@ public class PostService {
         }
         Post saved = postRepository.save(post);
         sitemapService.markDirty();
-        aiBlogKnowledgeSyncService.syncPostKnowledge(saved.getId());
+        publishRagSyncEvent(saved.getId());
         return toAdminDto(saved);
     }
 
@@ -863,5 +866,27 @@ public class PostService {
                     throw new IllegalArgumentException("图像目录标识已存在，请重新上传或生成新目录");
                 });
         return normalized;
+    }
+
+    private void publishRagSyncEvent(Long postId) {
+        if (postId == null) {
+            return;
+        }
+        try {
+            applicationEventPublisher.publishEvent(new AiBlogKnowledgeSyncEvent(postId));
+        } catch (Exception ex) {
+            log.warn("Failed to publish RAG sync event, postId={}", postId, ex);
+        }
+    }
+
+    private void publishRagRemoveEvent(Long postId) {
+        if (postId == null) {
+            return;
+        }
+        try {
+            applicationEventPublisher.publishEvent(new AiBlogKnowledgeSyncRemoveEvent(postId));
+        } catch (Exception ex) {
+            log.warn("Failed to publish RAG remove event, postId={}", postId, ex);
+        }
     }
 }

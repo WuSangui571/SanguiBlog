@@ -14,13 +14,20 @@ public class AiBlogRagProperties {
     private boolean syncOnStartup = true;
     private PgVector pgvector = new PgVector();
 
-    public boolean isConfigured() {
-        return enabled
-                && StringUtils.hasText(pgvector.getUrl())
+    public boolean isRagEnvironmentEnabled() {
+        return enabled;
+    }
+
+    public boolean isPgVectorConfigured() {
+        return StringUtils.hasText(pgvector.getUrl())
                 && StringUtils.hasText(pgvector.getUsername())
                 && StringUtils.hasText(pgvector.getPassword())
                 && StringUtils.hasText(pgvector.getSchema())
                 && StringUtils.hasText(pgvector.getTable());
+    }
+
+    public boolean isConfigured() {
+        return isRagEnvironmentEnabled() && isPgVectorConfigured();
     }
 
     @Data

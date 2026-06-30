@@ -1,0 +1,26 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\spec\\backend\\directory-structure.md", "reason": "Backend ownership for PostService, AI/RAG services, controllers, and config placement."}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Backend retrieve-first, AI/RAG isolation, transaction, and risk-based verification rules."}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "Post publish side effects, RAG persistence, transaction, and schema boundaries."}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "ApiResponse and safe error behavior for admin/post/RAG status paths."}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Safe RAG/provider failure logging without secrets or full content."}
+{"file": ".trellis\\spec\\frontend\\directory-structure.md", "reason": "Frontend API/admin UI ownership if RAG status copy is adjusted."}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend targeted static tests/build expectations."}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "Admin settings UI reuse and no duplicate UI patterns."}
+{"file": ".trellis\\spec\\frontend\\hook-guidelines.md", "reason": "Auth/site data loader boundaries for avoiding unrelated token behavior changes."}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "Admin/local state ownership and API response normalization."}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "Runtime DTO guards and api.js contract rules."}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Required retrieval report and reuse-first implementation plan."}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "API/env/command/error matrix and tests for cross-layer RAG/infra work."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\PostService.java", "reason": "Current synchronous publish-to-RAG coupling; must be decoupled."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\rag\\AiBlogKnowledgeSyncService.java", "reason": "Existing blog RAG sync worker and failure status persistence."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\config\\AiBlogRagProperties.java", "reason": "Current isConfigured mixes env enabled with PgVector config."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\ai\\AiAssistantSettingService.java", "reason": "Existing AI/RAG capability and disabled-reason owner."}
+{"file": "SanguiBlog-front\\src\\appfull\\AdminPanel.jsx", "reason": "Existing admin AI/RAG status UI that displays aiRagDisabledReason."}
+{"file": "docker-compose.prod.yml", "reason": "Production backend DNS hotfix must be synced to repository."}
+{"file": "docker-compose.yml", "reason": "Local compose DNS alignment candidate."}
+{"file": "docs\\docker-deploy.md", "reason": "Deployment AI/RAG smoke checks must include backend DNS/provider checks."}
+{"file": ".trellis\\tasks\\06-30-06-30-prod-rag-publish-isolation\\prd.md", "reason": "Primary requirements, scope, contracts, acceptance criteria, and implementation plan."}
+{"file": ".trellis\\tasks\\06-30-06-30-prod-rag-publish-isolation\\research.md", "reason": "Focused code research and file/test entry points."}
