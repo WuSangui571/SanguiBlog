@@ -15,8 +15,33 @@ assert.ok(apiSource.includes('export const adminFetchPageViewLogDetail'),
 assert.ok(adminPanelSource.includes('adminFetchPageViewLogDetail'),
     'AdminPanel should import adminFetchPageViewLogDetail');
 
-assert.ok(adminPanelSource.includes('查看详情'),
-    'AdminPanel should render 查看详情 button');
+const detailButtonMatch = adminPanelSource.match(/<button[\s\S]*?onClick=\{\(\) => handleShowDetail\(visit\.id\)\}[\s\S]*?<\/button>/);
+assert.ok(detailButtonMatch,
+    'AdminPanel should render a detail action button for each page-view log');
+
+const detailButtonSource = detailButtonMatch[0];
+assert.ok(detailButtonSource.includes('aria-label="查看详情"'),
+    'Detail action button should keep an accessible label');
+assert.ok(detailButtonSource.includes('title="查看详情"'),
+    'Detail action button should keep a hover title');
+assert.ok(detailButtonSource.includes('<FileSearch size={16} />'),
+    'Detail action button should use the FileSearch icon');
+assert.doesNotMatch(detailButtonSource, />\s*查看详情\s*</,
+    'Detail action button should not render visible text');
+
+const deleteButtonMatch = adminPanelSource.match(/<button[\s\S]*?onClick=\{\(\) => handleDeleteOne\(visit\.id\)\}[\s\S]*?<\/button>/);
+assert.ok(deleteButtonMatch,
+    'AdminPanel should render a delete action button for SUPER_ADMIN');
+
+const deleteButtonSource = deleteButtonMatch[0];
+assert.ok(deleteButtonSource.includes('aria-label="删除"'),
+    'Delete action button should keep an accessible label');
+assert.ok(deleteButtonSource.includes('title="删除"'),
+    'Delete action button should keep a hover title');
+assert.ok(deleteButtonSource.includes('<Trash2 size={16} />'),
+    'Delete action button should use the Trash2 icon');
+assert.doesNotMatch(deleteButtonSource, />\s*删除\s*</,
+    'Delete action button should not render visible text');
 
 assert.ok(adminPanelSource.includes('role="dialog"'),
     'Detail UI should use role=dialog');

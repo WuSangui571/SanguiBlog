@@ -77,7 +77,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AdminProfile from '../pages/admin/Profile';
 import {
     Code, User, MessageSquare, Share2, X, Menu, ChevronRight,
-    Search, LogIn, LogOut, Settings, Eye, EyeOff, Github, Twitter,
+    Search, LogIn, LogOut, Settings, FileSearch, EyeOff, Github, Twitter,
     BarChart3, Filter, Tag, AlertTriangle, MessageCircle,
     Layers, Hash, Clock, FileText, Terminal, Zap, Sparkles,
     ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail, Megaphone,
@@ -1903,20 +1903,22 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                                     type="button"
                                                     onClick={() => handleShowDetail(visit.id)}
                                                     disabled={detailLoading && detailLoadingId === visit.id}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold border border-blue-500 text-blue-600 rounded-md hover:bg-blue-50 disabled:opacity-50"
+                                                    aria-label="查看详情"
+                                                    title="查看详情"
+                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
                                                 >
-                                                    <Eye size={14} />
-                                                    查看详情
+                                                    <FileSearch size={16} />
                                                 </button>
                                                 {isSuperAdmin && (
                                                     <button
                                                         type="button"
                                                         onClick={() => handleDeleteOne(visit.id)}
                                                         disabled={deleting}
-                                                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold border border-red-500 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+                                                        aria-label="删除"
+                                                        title="删除"
+                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-500 text-red-600 hover:bg-red-50 disabled:opacity-50"
                                                     >
-                                                        <Trash2 size={14} />
-                                                        删除
+                                                        <Trash2 size={16} />
                                                     </button>
                                                 )}
                                             </div>
