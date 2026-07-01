@@ -34,6 +34,14 @@ assert.ok(adminPanelSource.includes('referrerDomain: readQueryParam("referrerDom
   'AnalyticsView should initialize referrerDomain from URL search params');
 assert.doesNotMatch(adminPanelSource, /analytics_traffic_sources 实时占比/,
   'Dashboard should not present the legacy traffic source card as the primary insight module');
+assert.ok(adminPanelSource.includes('grid grid-cols-1 xl:grid-cols-3 gap-6 items-start'),
+  'Dashboard insight row should top-align cards so the right insight content cannot stretch the trend chart');
+assert.doesNotMatch(adminPanelSource, /trendCardHeight|style=\{trendCardHeight/,
+  'Dashboard should not synchronize the insight card height from the trend card height');
+assert.ok(adminPanelSource.includes('dashboard-insight-summary-panel'),
+  'Dashboard should keep the right insight column compact');
+assert.ok(adminPanelSource.includes('dashboard-insight-detail-panel'),
+  'Dashboard should move long insight detail lists under the left trend column');
 
 assert.ok(appFullSource.includes('collectAnalyticsClientEnvironment'),
   'AppFull page-view payloads should include safe browser environment fields');
