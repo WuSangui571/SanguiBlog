@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -34,6 +36,14 @@ public class AdminAnalyticsPageViewDetailDto {
     private Integer durationSeconds;
     private Integer heartbeatCount;
     private String visitStatus;
+
+    private String visitQuality;
+    private String riskLevel;
+    private List<String> riskReasons;
+    private Boolean proxySuspected;
+    private Boolean botSuspected;
+    private Boolean referrerSpoofingSuspected;
+    private String riskExplanation;
 
     private AdminAnalyticsPageViewDetailFieldsDto detail;
 }

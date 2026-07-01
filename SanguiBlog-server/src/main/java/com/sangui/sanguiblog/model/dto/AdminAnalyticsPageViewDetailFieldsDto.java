@@ -33,4 +33,11 @@ public class AdminAnalyticsPageViewDetailFieldsDto {
     private String asn;
     private String isp;
     private String ipType;
+    private String timezone;
+    private String screenSize;
+    private String viewportSize;
+    private Double devicePixelRatio;
+    private Boolean webdriver;
+    private String visibilityState;
+    private String referrerClient;
 }

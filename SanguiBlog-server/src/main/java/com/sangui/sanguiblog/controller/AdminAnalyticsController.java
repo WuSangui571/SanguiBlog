@@ -49,11 +49,21 @@ public class AdminAnalyticsController {
             @RequestParam(value = "pageType", required = false) String pageType,
             @RequestParam(value = "excludeSystemPages", required = false) Boolean excludeSystemPages,
             @RequestParam(value = "start", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
-            @RequestParam(value = "end", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+            @RequestParam(value = "end", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
+            @RequestParam(value = "visitQuality", required = false) String visitQuality,
+            @RequestParam(value = "riskReason", required = false) String riskReason,
+            @RequestParam(value = "sourceType", required = false) String sourceType,
+            @RequestParam(value = "referrerDomain", required = false) String referrerDomain,
+            @RequestParam(value = "entryType", required = false) String entryType,
+            @RequestParam(value = "userAgentKeyword", required = false) String userAgentKeyword,
+            @RequestParam(value = "geo", required = false) String geo,
+            @RequestParam(value = "asn", required = false) String asn,
+            @RequestParam(value = "isp", required = false) String isp) {
         LocalDateTime startAt = start != null ? start.atStartOfDay() : null;
         LocalDateTime endExclusive = end != null ? end.plusDays(1).atStartOfDay() : null;
         AnalyticsService.AdminPageViewQuery query = new AnalyticsService.AdminPageViewQuery(
-                ip, keyword, loggedIn, postId, startAt, endExclusive, excludeSystemPages, pageType
+                ip, keyword, loggedIn, postId, startAt, endExclusive, excludeSystemPages, pageType,
+                visitQuality, riskReason, sourceType, referrerDomain, entryType, userAgentKeyword, geo, asn, isp
         );
         return ApiResponse.ok(analyticsService.loadPageViews(page, size, query));
     }

@@ -1,0 +1,32 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis\\tasks\\06-30-detailed-access-log\\prd.md", "reason": "Prerequisite detailed access log contract that v2 extends."}
+{"file": ".trellis\\tasks\\07-01-access-log-v2-traffic-insights\\research.md", "reason": "Focused code research and reuse/modification decisions."}
+{"file": ".trellis\\tasks\\07-01-access-log-v2-traffic-insights\\prd.md", "reason": "Task PRD, scope, contracts, acceptance criteria, and forbidden boundaries."}
+{"file": ".trellis\\tasks\\06-30-detailed-access-log\\research.md", "reason": "Prerequisite code seams for existing detail_json/detail UI implementation."}
+{"file": ".trellis\\spec\\backend\\database-guidelines.md", "reason": "analytics_page_views detail_json and optional aggregate table DB contract."}
+{"file": ".trellis\\spec\\backend\\error-handling.md", "reason": "Admin analytics API status/error handling and permission boundary."}
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Safe logging and no secret/token/header/body leakage."}
+{"file": ".trellis\\spec\\backend\\quality-guidelines.md", "reason": "Retrieve-first, no duplicate analytics path, risk-based backend verification."}
+{"file": ".trellis\\spec\\frontend\\component-guidelines.md", "reason": "Admin dashboard/detail UI component and dialog accessibility patterns."}
+{"file": ".trellis\\spec\\frontend\\type-safety.md", "reason": "JS runtime guards and frontend/backend DTO field alignment."}
+{"file": ".trellis\\spec\\frontend\\state-management.md", "reason": "Admin local state, URL state, and dashboard range state ownership."}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Frontend static tests, lint/build, no native dialogs, and admin quality contract."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\AdminAnalyticsController.java", "reason": "Existing admin analytics summary/list/detail/delete API and permission boundaries."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\AnalyticsService.java", "reason": "Main analytics persistence, detail_json parsing/building, summary, filters, classifier integration point."}
+{"file": ".trellis\\spec\\guides\\code-reuse-thinking-guide.md", "reason": "Reuse-first rule for analytics controllers/services/helpers/UI."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\controller\\AnalyticsController.java", "reason": "Public page-view and visit lifecycle payload boundary."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\dto\\PageViewRequest.java", "reason": "Public page-view request fields to extend with safe browser environment."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\dto\\AnalyticsRequestDetailContext.java", "reason": "Existing detail context record for request/client environment propagation."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\dto\\ArticleVisitStartRequest.java", "reason": "Article visit start payload fields to extend with safe browser environment."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\dto\\AdminAnalyticsSummaryDto.java", "reason": "Admin summary DTO to extend with visitorSourceInsights."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\repository\\AnalyticsPageViewRepository.java", "reason": "Existing analytics repository; likely projection/range aggregation extension point."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\model\\dto\\AdminAnalyticsPageViewDetailFieldsDto.java", "reason": "Current detail field DTO to extend with browser environment fields."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\util\\ReferrerUtils.java", "reason": "Existing search/referrer parser; extend for source type and referrer domain logic."}
+{"file": "SanguiBlog-front\\src\\api.js", "reason": "Frontend API facade for summary/log filters/detail and public analytics payloads."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\util\\UserAgentDetailUtils.java", "reason": "Existing lightweight bot/device/browser/os/ipType helper; reuse for classifier."}
+{"file": "SanguiBlog-front\\src\\appfull\\AdminPanel.jsx", "reason": "Dashboard visitor source insight UI, access log filters, and detail system judgment group."}
+{"file": "SanguiBlog-front\\src\\AppFull.jsx", "reason": "Non-article page-view tracking owner; add safe client environment payload."}
+{"file": "SanguiBlog-front\\src\\appfull\\public\\articleVisitTracker.js", "reason": "Existing duration helper; possible shared safe environment helper only if justified."}
+{"file": "SanguiBlog-front\\src\\utils\\analyticsReferrer.js", "reason": "Existing redirect referrer helper; preserve source/referrer behavior."}

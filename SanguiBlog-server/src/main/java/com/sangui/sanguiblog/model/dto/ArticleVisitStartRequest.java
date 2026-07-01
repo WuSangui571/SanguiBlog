@@ -9,4 +9,11 @@ public class ArticleVisitStartRequest {
     private String path;
     private String title;
     private String referrer;
+    private String timezone;
+    private String screenSize;
+    private String viewportSize;
+    private Double devicePixelRatio;
+    private Boolean webdriver;
+    private String visibilityState;
+    private String referrerClient;
 }

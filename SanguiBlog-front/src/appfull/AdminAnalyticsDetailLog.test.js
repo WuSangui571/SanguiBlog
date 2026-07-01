@@ -90,6 +90,28 @@ assert.ok(adminPanelSource.includes('行为信息'),
 assert.ok(adminPanelSource.includes('风控信息'),
     'Detail modal should show 风控信息 group');
 
+assert.ok(adminPanelSource.includes('系统判断'),
+    'Detail modal should show 系统判断 group');
+
+for (const field of [
+    'visitQuality',
+    'riskLevel',
+    'riskReasons',
+    'proxySuspected',
+    'botSuspected',
+    'referrerSpoofingSuspected',
+    'riskExplanation',
+    'timezone',
+    'screenSize',
+    'viewportSize',
+    'devicePixelRatio',
+    'webdriver',
+    'visibilityState',
+    'referrerClient',
+]) {
+    assert.ok(adminPanelSource.includes(field), `Detail modal should render ${field}`);
+}
+
 assert.ok(adminPanelSource.includes('handleShowDetail'),
     'AdminPanel should have handleShowDetail function');
 

@@ -847,6 +847,15 @@ export const adminFetchPageViewLogs = (params = {}) => {
   if (params.excludeSystemPages === true) search.append("excludeSystemPages", "true");
   if (params.start) search.append("start", params.start);
   if (params.end) search.append("end", params.end);
+  if (params.visitQuality) search.append("visitQuality", params.visitQuality);
+  if (params.riskReason) search.append("riskReason", params.riskReason);
+  if (params.sourceType) search.append("sourceType", params.sourceType);
+  if (params.referrerDomain) search.append("referrerDomain", params.referrerDomain);
+  if (params.entryType) search.append("entryType", params.entryType);
+  if (params.userAgentKeyword) search.append("userAgentKeyword", params.userAgentKeyword);
+  if (params.geo) search.append("geo", params.geo);
+  if (params.asn) search.append("asn", params.asn);
+  if (params.isp) search.append("isp", params.isp);
   const query = search.toString() ? `?${search.toString()}` : "";
   return request(`/admin/analytics/page-views${query}`);
 };

@@ -7,6 +7,8 @@ import com.sangui.sanguiblog.exception.NotFoundException;
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsPageViewDetailDto;
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsPageViewDetailFieldsDto;
 import com.sangui.sanguiblog.model.dto.AdminAnalyticsSummaryDto;
+import com.sangui.sanguiblog.model.dto.AdminAnalyticsVisitorSourceInsightsDto;
+import com.sangui.sanguiblog.model.dto.AnalyticsClientEnvironment;
 import com.sangui.sanguiblog.model.dto.AnalyticsRequestDetailContext;
 import com.sangui.sanguiblog.model.dto.ArticleVisitEndRequest;
 import com.sangui.sanguiblog.model.dto.ArticleVisitHeartbeatRequest;
@@ -53,6 +55,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -94,16 +97,21 @@ public class AnalyticsService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId) {
-        recordPageView(request, ip, userAgent, userId, null);
+        recordPageView(request, ip, userAgent, userId, null, null, null);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId, String visitId) {
-        recordPageView(request, ip, userAgent, userId, visitId, null);
+        recordPageView(request, ip, userAgent, userId, visitId, null, null);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId, String visitId, AnalyticsRequestDetailContext detailContext) {
+        recordPageView(request, ip, userAgent, userId, visitId, detailContext, extractClientEnvFromPageView(request));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordPageView(PageViewRequest request, String ip, String userAgent, Long userId, String visitId, AnalyticsRequestDetailContext detailContext, AnalyticsClientEnvironment clientEnv) {
         if (request == null) {
             request = new PageViewRequest();
         }
@@ -134,7 +142,7 @@ public class AnalyticsService {
                 if (!StringUtils.hasText(existing.getVisitStatus())) {
                     existing.setVisitStatus(VISIT_STATUS_OPEN);
                 }
-                setDetailJsonIfMissing(existing, normalizedIp, userAgent, normalizedVisitId, detailContext);
+                setDetailJsonIfMissing(existing, normalizedIp, userAgent, normalizedVisitId, detailContext, clientEnv);
                 analyticsPageViewRepository.save(existing);
                 return;
             }
@@ -160,7 +168,7 @@ public class AnalyticsService {
                     if (!StringUtils.hasText(transientOpenRow.getVisitStatus())) {
                         transientOpenRow.setVisitStatus(VISIT_STATUS_OPEN);
                     }
-                    setDetailJsonIfMissing(transientOpenRow, normalizedIp, userAgent, normalizedVisitId, detailContext);
+                    setDetailJsonIfMissing(transientOpenRow, normalizedIp, userAgent, normalizedVisitId, detailContext, clientEnv);
                     analyticsPageViewRepository.save(transientOpenRow);
                     return;
                 }
@@ -189,7 +197,7 @@ public class AnalyticsService {
         pv.setUserAgent(trimToLength(userAgent, 512));
         pv.setViewedAt(now);
         pv.setHeartbeatCount(0);
-        pv.setDetailJson(buildDetailJson(normalizedIp, userAgent, normalizedVisitId, detailContext));
+        pv.setDetailJson(buildDetailJson(normalizedIp, userAgent, normalizedVisitId, detailContext, clientEnv));
         analyticsPageViewRepository.save(pv);
 
         try {
@@ -215,14 +223,18 @@ public class AnalyticsService {
                 && row.getActiveDurationSeconds() == null;
     }
 
-    void setDetailJsonIfMissing(AnalyticsPageView row, String ip, String userAgent, String visitId, AnalyticsRequestDetailContext detailContext) {
-        if (row == null || StringUtils.hasText(row.getDetailJson())) {
+    void setDetailJsonIfMissing(AnalyticsPageView row, String ip, String userAgent, String visitId, AnalyticsRequestDetailContext detailContext, AnalyticsClientEnvironment clientEnv) {
+        if (row == null) {
             return;
         }
-        row.setDetailJson(buildDetailJson(ip, userAgent, visitId, detailContext));
+        if (StringUtils.hasText(row.getDetailJson())) {
+            mergeClientEnvironmentIntoDetailJson(row, clientEnv);
+            return;
+        }
+        row.setDetailJson(buildDetailJson(ip, userAgent, visitId, detailContext, clientEnv));
     }
 
-    String buildDetailJson(String ip, String userAgent, String visitId, AnalyticsRequestDetailContext detailContext) {
+    String buildDetailJson(String ip, String userAgent, String visitId, AnalyticsRequestDetailContext detailContext, AnalyticsClientEnvironment clientEnv) {
         Map<String, Object> detail = new LinkedHashMap<>();
         String normalizedIp = StringUtils.hasText(ip) ? IpUtils.normalizeIp(ip) : "0.0.0.0";
 
@@ -242,6 +254,14 @@ public class AnalyticsService {
         detail.put("fromPage", safeUrlLikeDetailValue(detailContext != null ? detailContext.fromPage() : null, 512));
         detail.put("isFirstVisit", null);
 
+        detail.put("timezone", sanitizeTimezone(clientEnv != null ? clientEnv.timezone() : null));
+        detail.put("screenSize", trimToLength(clientEnv != null ? clientEnv.screenSize() : null, 64));
+        detail.put("viewportSize", trimToLength(clientEnv != null ? clientEnv.viewportSize() : null, 64));
+        detail.put("devicePixelRatio", sanitizeDevicePixelRatio(clientEnv != null ? clientEnv.devicePixelRatio() : null));
+        detail.put("webdriver", clientEnv != null ? clientEnv.webdriver() : null);
+        detail.put("visibilityState", sanitizeVisibilityState(clientEnv != null ? clientEnv.visibilityState() : null));
+        detail.put("referrerClient", safeUrlLikeDetailValue(clientEnv != null ? clientEnv.referrerClient() : null, 512));
+
         boolean botDetected = UserAgentDetailUtils.isLikelyBot(userAgent);
         detail.put("botDetected", botDetected);
         detail.put("botName", botDetected ? UserAgentDetailUtils.resolveBotName(userAgent) : null);
@@ -258,6 +278,78 @@ public class AnalyticsService {
             log.warn("Failed to serialize detail_json, returning null", e);
             return null;
         }
+    }
+
+    private static final Set<String> ALLOWED_VISIBILITY_STATES = Set.of("visible", "hidden", "prerender", "unloaded");
+
+    private static String sanitizeTimezone(String timezone) {
+        if (!StringUtils.hasText(timezone)) {
+            return null;
+        }
+        String trimmed = timezone.trim();
+        if ("UTC".equalsIgnoreCase(trimmed) || trimmed.startsWith("Etc/")) {
+            return null;
+        }
+        try {
+            if (java.time.ZoneId.getAvailableZoneIds().contains(trimmed)) {
+                return trimToLength(trimmed, 64);
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private static Double sanitizeDevicePixelRatio(Double dpr) {
+        if (dpr == null || dpr.isNaN() || dpr.isInfinite()) {
+            return null;
+        }
+        if (dpr <= 0 || dpr > 10) {
+            return null;
+        }
+        double rounded = Math.round(dpr * 100.0) / 100.0;
+        return rounded;
+    }
+
+    private static String sanitizeVisibilityState(String state) {
+        if (!StringUtils.hasText(state)) {
+            return null;
+        }
+        String lower = state.trim().toLowerCase(Locale.ROOT);
+        return ALLOWED_VISIBILITY_STATES.contains(lower) ? lower : null;
+    }
+
+    private void mergeClientEnvironmentIntoDetailJson(AnalyticsPageView row, AnalyticsClientEnvironment clientEnv) {
+        if (row == null || clientEnv == null || !StringUtils.hasText(row.getDetailJson())) {
+            return;
+        }
+        try {
+            Map<String, Object> detail = OBJECT_MAPPER.readValue(row.getDetailJson(), new TypeReference<LinkedHashMap<String, Object>>() {});
+            boolean changed = false;
+            changed |= putIfMissing(detail, "timezone", sanitizeTimezone(clientEnv.timezone()));
+            changed |= putIfMissing(detail, "screenSize", trimToLength(clientEnv.screenSize(), 64));
+            changed |= putIfMissing(detail, "viewportSize", trimToLength(clientEnv.viewportSize(), 64));
+            changed |= putIfMissing(detail, "devicePixelRatio", sanitizeDevicePixelRatio(clientEnv.devicePixelRatio()));
+            changed |= putIfMissing(detail, "webdriver", clientEnv.webdriver());
+            changed |= putIfMissing(detail, "visibilityState", sanitizeVisibilityState(clientEnv.visibilityState()));
+            changed |= putIfMissing(detail, "referrerClient", safeUrlLikeDetailValue(clientEnv.referrerClient(), 512));
+            if (changed) {
+                row.setDetailJson(OBJECT_MAPPER.writeValueAsString(detail));
+            }
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to merge client environment into detail_json: {}", e.getOriginalMessage());
+        }
+    }
+
+    private static boolean putIfMissing(Map<String, Object> detail, String key, Object value) {
+        if (detail == null || value == null) {
+            return false;
+        }
+        Object existing = detail.get(key);
+        if (existing != null) {
+            return false;
+        }
+        detail.put(key, value);
+        return true;
     }
 
     private static Integer valueOrNull(Integer value) {
@@ -378,6 +470,9 @@ public class AnalyticsService {
         int rangeDaysValue = safeRangeDays != null ? safeRangeDays : 0;
         double normalizedAvgViews = Math.round(avgViewsPerDay * 10d) / 10d;
 
+        AdminAnalyticsVisitorSourceInsightsDto visitorSourceInsights =
+                buildVisitorSourceInsights(safeRangeDays, overviewStart, rangeDaysValue, rangeLabel, periodViews);
+
         return AdminAnalyticsSummaryDto.builder()
                 .overview(AdminAnalyticsSummaryDto.Overview.builder()
                         .totalViews(totalViews)
@@ -395,9 +490,35 @@ public class AnalyticsService {
                 .dailyTrends(dailyTrends)
                 .topPosts(topPosts)
                 .recentVisits(recentVisits)
+                .visitorSourceInsights(visitorSourceInsights)
                 .build();
     }
 
+    private AdminAnalyticsVisitorSourceInsightsDto buildVisitorSourceInsights(Integer safeRangeDays,
+                                                                               LocalDateTime overviewStart,
+                                                                               int rangeDaysValue, String rangeLabel, long periodViews) {
+        return AnalyticsInsightsHelper.buildInsights(safeRangeDays, overviewStart, rangeDaysValue, rangeLabel,
+                analyticsPageViewRepository, this::parseDetailJson, this::insightRowToView);
+    }
+
+    private AnalyticsPageView insightRowToView(AnalyticsPageViewRepository.InsightRow row) {
+        AnalyticsPageView view = new AnalyticsPageView();
+        if (row != null) {
+            view.setId(row.getId());
+            view.setVisitId(row.getVisitId());
+            view.setPostId(row.getPostId());
+            view.setViewerIp(row.getViewerIp());
+            view.setUserAgent(row.getUserAgent());
+            view.setGeoLocation(row.getGeoLocation());
+            view.setPageTitle(row.getPageTitle());
+            view.setHeartbeatCount(row.getHeartbeatCount());
+            view.setTotalDurationSeconds(row.getTotalDurationSeconds());
+            view.setActiveDurationSeconds(row.getActiveDurationSeconds());
+            view.setVisitStatus(row.getVisitStatus());
+            view.setDetailJson(row.getDetailJson());
+        }
+        return view;
+    }
 
     @Transactional
     public long deletePageViewsByUser(Long userId) {
@@ -472,13 +593,126 @@ public class AnalyticsService {
         int p = Math.max(page, 1) - 1;
         int s = Math.min(Math.max(size, 1), 200);
         Specification<AnalyticsPageView> spec = buildAdminPageViewSpec(query);
+        Sort sort = Sort.by(Sort.Direction.DESC, "viewedAt");
+        if (hasComputedFilters(query)) {
+            List<AnalyticsPageView> filtered = analyticsPageViewRepository.findAll(spec, sort)
+                    .stream()
+                    .filter(view -> matchesComputedFilters(query, view))
+                    .toList();
+            int from = Math.min(p * s, filtered.size());
+            int to = Math.min(from + s, filtered.size());
+            List<AdminAnalyticsSummaryDto.RecentVisit> records = filtered.subList(from, to).stream()
+                    .map(this::toRecentVisit)
+                    .filter(Objects::nonNull)
+                    .toList();
+            return new PageResponse<>(records, filtered.size(), p + 1, s);
+        }
         Page<AnalyticsPageView> result = analyticsPageViewRepository.findAll(spec,
-                PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "viewedAt")));
+                PageRequest.of(p, s, sort));
         List<AdminAnalyticsSummaryDto.RecentVisit> records = result.getContent().stream()
                 .map(this::toRecentVisit)
                 .filter(Objects::nonNull)
                 .toList();
         return new PageResponse<>(records, result.getTotalElements(), result.getNumber() + 1, result.getSize());
+    }
+
+    private boolean hasComputedFilters(AdminPageViewQuery query) {
+        if (query == null) return false;
+        return StringUtils.hasText(query.visitQuality())
+                || StringUtils.hasText(query.riskReason())
+                || StringUtils.hasText(query.sourceType())
+                || StringUtils.hasText(query.referrerDomain())
+                || StringUtils.hasText(query.entryType())
+                || StringUtils.hasText(query.asn())
+                || StringUtils.hasText(query.isp());
+    }
+
+    private boolean matchesComputedFilters(AdminPageViewQuery query, AnalyticsPageView view) {
+        if (query == null || view == null) return true;
+        AdminAnalyticsPageViewDetailFieldsDto detail = parseDetailJson(view.getDetailJson());
+        AnalyticsVisitQualityClassifier.ClassificationResult classification =
+                AnalyticsVisitQualityClassifier.classify(view, detail);
+
+        if (StringUtils.hasText(query.visitQuality())
+                && !query.visitQuality().trim().equalsIgnoreCase(classification.visitQuality().name())) {
+            return false;
+        }
+        if (StringUtils.hasText(query.riskReason())
+                && classification.riskReasonStrings().stream()
+                .noneMatch(reason -> query.riskReason().trim().equalsIgnoreCase(reason))) {
+            return false;
+        }
+        if (StringUtils.hasText(query.sourceType())) {
+            ReferrerUtils.SourceType sourceType = resolvePageViewSourceType(view, detail);
+            if (!query.sourceType().trim().equalsIgnoreCase(sourceType.name())) {
+                return false;
+            }
+        }
+        if (StringUtils.hasText(query.referrerDomain())) {
+            String domain = resolvePageViewReferrerDomain(view, detail);
+            if (!StringUtils.hasText(domain)
+                    || !domain.toLowerCase(Locale.ROOT).contains(query.referrerDomain().trim().toLowerCase(Locale.ROOT))) {
+                return false;
+            }
+        }
+        if (StringUtils.hasText(query.entryType())) {
+            String entryType = resolvePageViewEntryType(view, detail);
+            if (!StringUtils.hasText(entryType) || !query.entryType().trim().equalsIgnoreCase(entryType)) {
+                return false;
+            }
+        }
+        if (StringUtils.hasText(query.asn())
+                && !containsIgnoreCase(detail.getAsn(), query.asn())) {
+            return false;
+        }
+        if (StringUtils.hasText(query.isp())
+                && !containsIgnoreCase(detail.getIsp(), query.isp())) {
+            return false;
+        }
+        return true;
+    }
+
+    private ReferrerUtils.SourceType resolvePageViewSourceType(AnalyticsPageView view, AdminAnalyticsPageViewDetailFieldsDto detail) {
+        ReferrerUtils.SourceType labelType = AnalyticsInsightsHelper.classifyDisplayReferrer(view.getReferrerUrl());
+        if (labelType == ReferrerUtils.SourceType.INTERNAL
+                || labelType == ReferrerUtils.SourceType.REDIRECT
+                || labelType == ReferrerUtils.SourceType.DIRECT) {
+            return labelType;
+        }
+        return ReferrerUtils.classifySourceType(AnalyticsInsightsHelper.firstText(
+                detail.getRefererRaw(),
+                detail.getReferrerClient(),
+                view.getReferrerUrl()
+        ), null);
+    }
+
+    private String resolvePageViewReferrerDomain(AnalyticsPageView view, AdminAnalyticsPageViewDetailFieldsDto detail) {
+        return ReferrerUtils.extractReferrerDomain(AnalyticsInsightsHelper.firstText(
+                detail.getRefererRaw(),
+                detail.getReferrerClient(),
+                view.getReferrerUrl()
+        ));
+    }
+
+    private String resolvePageViewEntryType(AnalyticsPageView view, AdminAnalyticsPageViewDetailFieldsDto detail) {
+        if (view.getPost() != null || view.getPostId() != null) {
+            return "ARTICLE";
+        }
+        return AnalyticsInsightsHelper.classifyEntryType(AnalyticsInsightsHelper.firstText(
+                detail.getEntryPage(),
+                detail.getRequestUri(),
+                view.getPageTitle()
+        ));
+    }
+
+    private static boolean containsIgnoreCase(String value, String expected) {
+        if (!StringUtils.hasText(expected)) {
+            return true;
+        }
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        return value.toLowerCase(Locale.ROOT).contains(expected.trim().toLowerCase(Locale.ROOT));
     }
 
     private Specification<AnalyticsPageView> buildAdminPageViewSpec(AdminPageViewQuery query) {
@@ -547,6 +781,8 @@ public class AnalyticsService {
                 predicates.add(cb.not(isRobotTitle));
             }
 
+            addScalarLikePredicate(predicates, cb, root, "userAgent", query.userAgentKeyword());
+            addScalarLikePredicate(predicates, cb, root, "geoLocation", query.geo());
             String keyword = StringUtils.hasText(query.keyword()) ? query.keyword().trim().toLowerCase(Locale.ROOT) : null;
             if (StringUtils.hasText(keyword)) {
                 String like = "%" + keyword + "%";
@@ -582,21 +818,43 @@ public class AnalyticsService {
             Long postId,
             LocalDateTime startAt,
             LocalDateTime endAtExclusive,
-            Boolean excludeSystemPages
-            ,
-            String pageType
+            Boolean excludeSystemPages,
+            String pageType,
+            String visitQuality,
+            String riskReason,
+            String sourceType,
+            String referrerDomain,
+            String entryType,
+            String userAgentKeyword,
+            String geo,
+            String asn,
+            String isp
     ) {
+    }
+
+    private static void addScalarLikePredicate(List<jakarta.persistence.criteria.Predicate> predicates,
+                                                jakarta.persistence.criteria.CriteriaBuilder cb,
+                                                jakarta.persistence.criteria.Root<AnalyticsPageView> root,
+                                                String column, String value) {
+        if (StringUtils.hasText(value)) {
+            predicates.add(cb.like(cb.lower(root.get(column)), "%" + value.trim().toLowerCase(Locale.ROOT) + "%"));
+        }
     }
 
     // ===== 文章浏览时长 visit lifecycle =====
 
     @Transactional
     public void recordArticleVisitStart(ArticleVisitStartRequest request, String ip, String userAgent, Long userId) {
-        recordArticleVisitStart(request, ip, userAgent, userId, null);
+        recordArticleVisitStart(request, ip, userAgent, userId, null, null);
     }
 
     @Transactional
     public void recordArticleVisitStart(ArticleVisitStartRequest request, String ip, String userAgent, Long userId, AnalyticsRequestDetailContext detailContext) {
+        recordArticleVisitStart(request, ip, userAgent, userId, detailContext, extractClientEnvFromVisitStart(request));
+    }
+
+    @Transactional
+    public void recordArticleVisitStart(ArticleVisitStartRequest request, String ip, String userAgent, Long userId, AnalyticsRequestDetailContext detailContext, AnalyticsClientEnvironment clientEnv) {
         if (request == null || !StringUtils.hasText(request.getVisitId())) {
             return;
         }
@@ -634,7 +892,7 @@ public class AnalyticsService {
             if (!StringUtils.hasText(existing.getVisitStatus())) {
                 existing.setVisitStatus(VISIT_STATUS_OPEN);
             }
-            setDetailJsonIfMissing(existing, normalizedIp, userAgent, visitId, detailContext);
+            setDetailJsonIfMissing(existing, normalizedIp, userAgent, visitId, detailContext, clientEnv);
             analyticsPageViewRepository.save(existing);
             return;
         }
@@ -659,7 +917,7 @@ public class AnalyticsService {
         pv.setEnterTime(now);
         pv.setVisitStatus(VISIT_STATUS_OPEN);
         pv.setHeartbeatCount(0);
-        pv.setDetailJson(buildDetailJson(normalizedIp, userAgent, visitId, detailContext));
+        pv.setDetailJson(buildDetailJson(normalizedIp, userAgent, visitId, detailContext, clientEnv));
         analyticsPageViewRepository.save(pv);
     }
 
@@ -722,6 +980,24 @@ public class AnalyticsService {
         }
         row.setVisitStatus(VISIT_STATUS_CLOSED);
         analyticsPageViewRepository.save(row);
+    }
+
+    private AnalyticsClientEnvironment extractClientEnvFromPageView(PageViewRequest request) {
+        if (request == null) return null;
+        return new AnalyticsClientEnvironment(
+                request.getTimezone(), request.getScreenSize(), request.getViewportSize(),
+                request.getDevicePixelRatio(), request.getWebdriver(), request.getVisibilityState(),
+                request.getReferrerClient()
+        );
+    }
+
+    private AnalyticsClientEnvironment extractClientEnvFromVisitStart(ArticleVisitStartRequest request) {
+        if (request == null) return null;
+        return new AnalyticsClientEnvironment(
+                request.getTimezone(), request.getScreenSize(), request.getViewportSize(),
+                request.getDevicePixelRatio(), request.getWebdriver(), request.getVisibilityState(),
+                request.getReferrerClient()
+        );
     }
 
     int sanitizeDurationSeconds(Integer seconds) {
@@ -815,6 +1091,9 @@ public class AnalyticsService {
         Integer display = resolveDisplayDurationSeconds(view);
         AdminAnalyticsPageViewDetailFieldsDto detailFields = parseDetailJson(view.getDetailJson());
 
+        AnalyticsVisitQualityClassifier.ClassificationResult classification =
+                AnalyticsVisitQualityClassifier.classify(view, detailFields);
+
         return AdminAnalyticsPageViewDetailDto.builder()
                 .id(view.getId())
                 .title(view.getPost() != null ? view.getPost().getTitle() : view.getPageTitle())
@@ -838,6 +1117,13 @@ public class AnalyticsService {
                 .durationSeconds(display)
                 .heartbeatCount(view.getHeartbeatCount())
                 .visitStatus(view.getVisitStatus())
+                .visitQuality(classification.visitQuality().name())
+                .riskLevel(classification.riskLevel().name())
+                .riskReasons(classification.riskReasonStrings())
+                .proxySuspected(classification.proxySuspected())
+                .botSuspected(classification.botSuspected())
+                .referrerSpoofingSuspected(classification.referrerSpoofingSuspected())
+                .riskExplanation(classification.riskExplanation())
                 .detail(detailFields)
                 .build();
     }
@@ -872,6 +1158,13 @@ public class AnalyticsService {
                     .asn(stringOrNull(raw, "asn"))
                     .isp(stringOrNull(raw, "isp"))
                     .ipType(stringOrNull(raw, "ipType"))
+                    .timezone(stringOrNull(raw, "timezone"))
+                    .screenSize(stringOrNull(raw, "screenSize"))
+                    .viewportSize(stringOrNull(raw, "viewportSize"))
+                    .devicePixelRatio(doubleOrNull(raw, "devicePixelRatio"))
+                    .webdriver(boolOrNull(raw, "webdriver"))
+                    .visibilityState(stringOrNull(raw, "visibilityState"))
+                    .referrerClient(stringOrNull(raw, "referrerClient"))
                     .build();
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse detail_json, returning empty detail: {}", e.getOriginalMessage());
@@ -899,6 +1192,12 @@ public class AnalyticsService {
     private Boolean boolOrNull(Map<String, Object> map, String key) {
         Object value = map.get(key);
         if (value instanceof Boolean b) return b;
+        return null;
+    }
+
+    private Double doubleOrNull(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Number n) return n.doubleValue();
         return null;
     }
 
@@ -1067,7 +1366,7 @@ public class AnalyticsService {
         return value.length() > 64 ? value.substring(0, 64) : value;
     }
 
-    private String trimToLength(String value, int maxLen) {
+    private static String trimToLength(String value, int maxLen) {
         if (value == null) return null;
         if (value.length() <= maxLen) return value;
         return value.substring(0, maxLen);

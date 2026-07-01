@@ -1,6 +1,7 @@
 package com.sangui.sanguiblog.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sangui.sanguiblog.model.dto.AnalyticsClientEnvironment;
 import com.sangui.sanguiblog.model.dto.AnalyticsRequestDetailContext;
 import com.sangui.sanguiblog.model.entity.AnalyticsPageView;
 import com.sangui.sanguiblog.model.repository.AnalyticsPageViewRepository;
@@ -53,7 +54,7 @@ class AnalyticsServiceDetailJsonTest {
                 "/article/123", "/", null, "session-1"
         );
 
-        String json = analyticsService.buildDetailJson("1.2.3.4", "Mozilla/5.0 Chrome", "session-1", ctx);
+        String json = analyticsService.buildDetailJson("1.2.3.4", "Mozilla/5.0 Chrome", "session-1", ctx, null);
         assertNotNull(json);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -64,7 +65,9 @@ class AnalyticsServiceDetailJsonTest {
                 "durationMs", "ip", "xForwardedFor", "xRealIp", "acceptLanguage",
                 "visitorId", "sessionId", "entryPage", "fromPage", "isFirstVisit",
                 "botDetected", "botName", "deviceType", "browser", "os",
-                "asn", "isp", "ipType"
+                "asn", "isp", "ipType",
+                "timezone", "screenSize", "viewportSize", "devicePixelRatio",
+                "webdriver", "visibilityState", "referrerClient"
         );
         for (String key : requiredKeys) {
             assertTrue(map.containsKey(key), "detail_json must contain key: " + key);
@@ -81,7 +84,7 @@ class AnalyticsServiceDetailJsonTest {
                 null, null, null, null
         );
 
-        String json = analyticsService.buildDetailJson("1.2.3.4", longUa, null, ctx);
+        String json = analyticsService.buildDetailJson("1.2.3.4", longUa, null, ctx, null);
         assertNotNull(json);
 
         String trimmedUa = "A".repeat(512);
@@ -100,22 +103,22 @@ class AnalyticsServiceDetailJsonTest {
         );
 
         String botJson = analyticsService.buildDetailJson("1.2.3.4",
-                "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)", null, ctx);
+                "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)", null, ctx, null);
         assertNotNull(botJson);
         assertTrue(botJson.contains("\"botDetected\":true"), "Bot UA should be detected as bot");
         assertTrue(botJson.contains("\"botName\":\"Googlebot\""), "Bot name should be Googlebot");
 
-        String blexJson = analyticsService.buildDetailJson("1.2.3.4", "BLEXBot/1.0", null, ctx);
+        String blexJson = analyticsService.buildDetailJson("1.2.3.4", "BLEXBot/1.0", null, ctx, null);
         assertTrue(blexJson.contains("\"botDetected\":true"), "Bot matching should be case-insensitive");
 
         String humanJson = analyticsService.buildDetailJson("1.2.3.4",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120", null, ctx);
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120", null, ctx, null);
         assertTrue(humanJson.contains("\"botDetected\":false"), "Normal browser should not be detected as bot");
     }
 
     @Test
     void buildDetailJsonDefaultsWhenContextNull() {
-        String json = analyticsService.buildDetailJson("1.2.3.4", "Test UA", null, null);
+        String json = analyticsService.buildDetailJson("1.2.3.4", "Test UA", null, null, null);
         assertNotNull(json);
         assertTrue(json.contains("\"ip\":\"1.2.3.4\""), "IP should be present");
         assertTrue(json.contains("\"userAgent\":\"Test UA\""), "UA should be present");
@@ -126,8 +129,30 @@ class AnalyticsServiceDetailJsonTest {
         AnalyticsPageView row = new AnalyticsPageView();
         row.setDetailJson("{\"existing\":true}");
 
-        analyticsService.setDetailJsonIfMissing(row, "1.2.3.4", "UA", "visit-1", null);
+        analyticsService.setDetailJsonIfMissing(row, "1.2.3.4", "UA", "visit-1", null, null);
         assertEquals("{\"existing\":true}", row.getDetailJson(), "Existing detailJson should not be overwritten");
+    }
+
+    @Test
+    void setDetailJsonIfMissingMergesClientEnvironmentIntoExistingVisitRow() throws Exception {
+        AnalyticsPageView row = new AnalyticsPageView();
+        row.setDetailJson(analyticsService.buildDetailJson("1.2.3.4", "UA", "visit-1", null, null));
+
+        AnalyticsClientEnvironment clientEnv = new AnalyticsClientEnvironment(
+                "Asia/Shanghai", "1920x1080", "1440x900", 2.345,
+                false, "visible", "https://example.com/path?token=secret#frag"
+        );
+        analyticsService.setDetailJsonIfMissing(row, "1.2.3.4", "UA", "visit-1", null, clientEnv);
+
+        Map<String, Object> detail = new ObjectMapper().readValue(row.getDetailJson(), Map.class);
+        assertEquals("Asia/Shanghai", detail.get("timezone"));
+        assertEquals("1920x1080", detail.get("screenSize"));
+        assertEquals("1440x900", detail.get("viewportSize"));
+        assertEquals(2.35, ((Number) detail.get("devicePixelRatio")).doubleValue());
+        assertEquals(false, detail.get("webdriver"));
+        assertEquals("visible", detail.get("visibilityState"));
+        assertEquals("https://example.com/path", detail.get("referrerClient"));
+        assertFalse(row.getDetailJson().contains("token=secret"), "client referrer query must still be stripped");
     }
 
     @Test
@@ -135,7 +160,7 @@ class AnalyticsServiceDetailJsonTest {
         AnalyticsPageView row = new AnalyticsPageView();
         row.setDetailJson(null);
 
-        analyticsService.setDetailJsonIfMissing(row, "1.2.3.4", "UA", "visit-1", null);
+        analyticsService.setDetailJsonIfMissing(row, "1.2.3.4", "UA", "visit-1", null, null);
         assertNotNull(row.getDetailJson(), "Null detailJson should be set");
     }
 
@@ -154,7 +179,7 @@ class AnalyticsServiceDetailJsonTest {
         AnalyticsRequestDetailContext ctx = new AnalyticsRequestDetailContext(
                 "GET", "/test", "https://safe.com", null, null, null, null, null, null, null
         );
-        String json = analyticsService.buildDetailJson("1.2.3.4", "Safe UA", null, ctx);
+        String json = analyticsService.buildDetailJson("1.2.3.4", "Safe UA", null, ctx, null);
 
         assertNotNull(json);
         assertFalse(json.contains("Cookie"), "Cookie must not be in detail_json");
@@ -178,7 +203,7 @@ class AnalyticsServiceDetailJsonTest {
                 null
         );
 
-        String json = analyticsService.buildDetailJson("1.2.3.4", "Safe UA", null, ctx);
+        String json = analyticsService.buildDetailJson("1.2.3.4", "Safe UA", null, ctx, null);
         assertNotNull(json);
         assertFalse(json.contains("secret-value"), "Sensitive query values must not be persisted");
         assertFalse(json.contains("token="), "Query parameter names must not be persisted");

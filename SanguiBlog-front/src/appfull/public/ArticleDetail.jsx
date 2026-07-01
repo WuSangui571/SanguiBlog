@@ -3,6 +3,7 @@ import { useBlog } from "../../hooks/useBlogData";
 import CommentsSection from "../../components/comments/CommentsSection.jsx";
 import ImageWithFallback from "../../components/common/ImageWithFallback.jsx";
 import { buildAssetUrl } from "../../utils/asset.js";
+import { collectAnalyticsClientEnvironment } from "../../utils/analyticsClientEnvironment.js";
 import { fetchPostNeighbors } from "../../api";
 import {
     startArticleVisit,
@@ -168,6 +169,7 @@ const ArticleDetail = ({
 
         // start：失败静默
         startArticleVisit({
+            ...collectAnalyticsClientEnvironment(),
             visitId: currentVisitId,
             articleId: Number(articleVisitArticleId || id),
             path,

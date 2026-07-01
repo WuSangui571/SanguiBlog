@@ -338,6 +338,62 @@ npm run lint
 npm run build
 ```
 
+### Admin Analytics Visitor Source Insights
+
+Access-log v2 visitor insights extend the existing admin analytics contract. Reuse `analytics_page_views`, `AnalyticsService`, `AdminAnalyticsController`, `SanguiBlog-front/src/api.js`, and `AdminPanel.jsx`; do not add a second analytics subsystem.
+
+Data flow:
+
+```text
+browser page/article view -> safe client environment payload
+-> AnalyticsService detail_json allow-list
+-> classifier/source insight helpers
+-> GET /api/admin/analytics/summary visitorSourceInsights
+-> AdminPanel DashboardView insight module
+-> /admin/analytics?... deep-link filters
+-> GET /api/admin/analytics/page-views computed/scalar filters
+```
+
+Contracts:
+
+| Concern | Contract |
+|---------|----------|
+| Client environment | Optional fields are `timezone`, `screenSize`, `viewportSize`, `devicePixelRatio`, `webdriver`, `visibilityState`, and `referrerClient`. Keep them coarse and bounded; do not collect canvas, font, audio, WebGL, plugin, hardware-concurrency, cookie, token, or body data. |
+| Existing article rows | Article detail GET can create a visit row before `visit/start` sends browser fields. If `detail_json` already exists, merge only missing client environment keys and keep existing non-null keys. URL-like fields still drop query strings and fragments before persistence. |
+| Detail judgment | `AdminAnalyticsPageViewDetailDto` may expose top-level `visitQuality`, `riskLevel`, `riskReasons`, `proxySuspected`, `botSuspected`, `referrerSpoofingSuspected`, and `riskExplanation`; raw browser fields stay under `detail`. Legacy or malformed JSON must not 500. |
+| Summary insight | `AdminAnalyticsSummaryDto.visitorSourceInsights` follows the same dashboard range (`7`, `14`, `30`, or all history) and contains source shares, quality shares, anomaly tops, popular entries, and suspicious summary. Keep `trafficSources` only for compatibility; the dashboard should render `visitorSourceInsights` as the primary module. |
+| Source type | Classify from `detail.refererRaw` first, then `detail.referrerClient`, then existing `referrerUrl`/display label. Recognize direct, internal, search, external, redirect, and unknown without remote lookups. |
+| Classifier | Reuse one backend classifier for detail, summary, and computed filters. Do not infer datacenter/proxy risk when ASN/ISP data is absent. Legacy rows without visit/duration/heartbeat signals should be `UNKNOWN`, not normal. |
+| Log filters | `GET /api/admin/analytics/page-views` supports `visitQuality`, `riskReason`, `sourceType`, `referrerDomain`, `entryType`, `userAgentKeyword`, `geo`, `asn`, and `isp` in addition to existing filters. Dashboard `logsQuery` values must use these same parameter names. |
+| Frontend | Dashboard insight rows should deep-link to `/admin/analytics?...`; `AnalyticsView` must initialize filters from URL search params before its first load. Use `src/api.js` for all calls and custom admin UI controls, not native dialogs. |
+
+Good/Base/Bad cases:
+
+| Case | Expected Result |
+|------|-----------------|
+| Good | A normal visit with heartbeats and duration shows `NORMAL`, dashboard normal share increases, and clicking the share loads matching access logs. |
+| Base | A legacy row without `detail_json` or visit signals is shown as `UNKNOWN`; dashboard and detail render without crashing. |
+| Bad | A bot UA or `webdriver=true` produces `BOT_LIKE`; request/referrer query secrets, cookies, auth headers, and bodies never appear in JSON, DTOs, UI, logs, or tests. |
+
+Required verification for this contract:
+
+```bash
+cd SanguiBlog-server
+mvn -q "-Dtest=AnalyticsServiceDetailJsonTest,AnalyticsVisitQualityClassifierTest,AnalyticsServiceVisitorSourceInsightsTest,AnalyticsServicePageViewFilterTest,AnalyticsControllerVisitTrackingTest,AdminAnalyticsControllerAuthorizationTest,AnalyticsServiceVisitDurationTest,IpUtilsTest" test
+mvn -q -DskipTests compile
+
+cd ../SanguiBlog-front
+node src/utils/analyticsClientEnvironment.test.js
+node src/appfull/AdminAnalyticsTrafficInsights.test.js
+node src/appfull/AdminAnalyticsDetailLog.test.js
+node src/appfull/AdminAnalyticsVisitDuration.test.js
+node src/utils/analyticsReferrer.test.js
+node src/utils/analyticsReferrerIntegration.test.js
+node src/appfull/noNativeBlockingDialogs.test.js
+npm run lint
+npm run build
+```
+
 ### Article Visit Duration Analytics
 
 Article detail visit duration tracking is a backend/frontend/database contract that reuses `analytics_page_views`.

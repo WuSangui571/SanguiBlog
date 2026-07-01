@@ -1,0 +1,15 @@
+{"file": ".trellis\\spec\\backend\\logging-guidelines.md", "reason": "Check no secrets/cookies/tokens/body values are persisted or logged."}
+{"file": ".trellis\\tasks\\07-01-access-log-v2-traffic-insights\\prd.md", "reason": "Check implementation against acceptance, forbidden scope, API/DB/frontend contract, and test matrix."}
+{"file": ".trellis\\tasks\\07-01-access-log-v2-traffic-insights\\research.md", "reason": "Check changed files against focused code research and reuse decision."}
+{"file": ".trellis\\spec\\guides\\cross-layer-thinking-guide.md", "reason": "Check payload/DTO/filter/dashboard-to-log alignment."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\AnalyticsService.java", "reason": "Review classifier, summary insight aggregation, detail JSON read/write, and filters."}
+{"file": ".trellis\\spec\\frontend\\quality-guidelines.md", "reason": "Check frontend static tests, no native dialogs, and admin UI quality."}
+{"file": "SanguiBlog-front\\src\\appfull\\AdminPanel.jsx", "reason": "Review dashboard insight UI, URL filter deep links, and detail system judgment group."}
+{"file": "SanguiBlog-server\\src\\test\\java\\com\\sangui\\sanguiblog\\service\\AnalyticsServiceDetailJsonTest.java", "reason": "Check detail_json new keys, safety, malformed JSON, and classifier fallback coverage."}
+{"file": "SanguiBlog-server\\src\\test\\java\\com\\sangui\\sanguiblog\\controller\\AnalyticsControllerVisitTrackingTest.java", "reason": "Check tracking payload propagation and no-op failure behavior."}
+{"file": "SanguiBlog-server\\src\\test\\java\\com\\sangui\\sanguiblog\\controller\\AdminAnalyticsControllerAuthorizationTest.java", "reason": "Check detail/delete permission boundary remains intentional."}
+{"file": "SanguiBlog-server\\src\\test\\java\\com\\sangui\\sanguiblog\\service\\AnalyticsServiceVisitDurationTest.java", "reason": "Check existing visit duration lifecycle remains compatible."}
+{"file": "SanguiBlog-front\\src\\appfull\\AdminAnalyticsDetailLog.test.js", "reason": "Check detail button/modal/groups/system judgment static contract."}
+{"file": "SanguiBlog-front\\src\\utils\\analyticsReferrer.test.js", "reason": "Check redirect/referrer helper behavior after source-type extension."}
+{"file": "SanguiBlog-front\\src\\appfull\\AdminAnalyticsVisitDuration.test.js", "reason": "Check existing duration and analytics tracking static contract remains compatible."}
+{"file": "SanguiBlog-front\\src\\appfull\\noNativeBlockingDialogs.test.js", "reason": "Check no native alert/confirm regression in AdminPanel."}

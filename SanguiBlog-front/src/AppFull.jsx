@@ -32,6 +32,7 @@ import GlassPopupToast, { getGlassPopupToastTop } from "./appfull/ui/GlassPopupT
 import { shouldShowAiAssistant } from "./appfull/aiAssistantVisibility.js";
 import { buildAiCurrentPageContext } from "./appfull/aiCurrentPageContext.js";
 import { buildAssetUrl } from "./utils/asset.js";
+import { collectAnalyticsClientEnvironment } from "./utils/analyticsClientEnvironment.js";
 import logger from "./utils/logger.js";
 import HomeView from "./appfull/public/HomeView.jsx";
 import ArticleDetail from "./appfull/public/ArticleDetail.jsx";
@@ -607,7 +608,7 @@ export default function SanGuiBlog({ initialView = 'home', initialArticleId = nu
     const sendPageView = useCallback((payload = {}, options = {}) => {
         const ip = clientIpRef.current;
         const refMeta = getReferrerMeta();
-        const body = { ...refMeta, ...payload };
+        const body = { ...refMeta, ...collectAnalyticsClientEnvironment(), ...payload };
         if (ip) {
             body.clientIp = ip;
         }

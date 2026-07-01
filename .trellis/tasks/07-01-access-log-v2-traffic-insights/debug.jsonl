@@ -1,0 +1,8 @@
+{"file": ".trellis\\tasks\\07-01-access-log-v2-traffic-insights\\prd.md", "reason": "Debug against scope, classifier rules, filters, and acceptance criteria."}
+{"file": ".trellis\\tasks\\07-01-access-log-v2-traffic-insights\\research.md", "reason": "Debug using known seams, risks, and required tests."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\util\\ReferrerUtils.java", "reason": "Debug source type/referrer domain/search/redirect classification."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\service\\AnalyticsService.java", "reason": "Debug classifier, detail JSON parse/build, dashboard aggregation, and filters."}
+{"file": "SanguiBlog-server\\src\\main\\java\\com\\sangui\\sanguiblog\\util\\UserAgentDetailUtils.java", "reason": "Debug bot/user-agent/device helper behavior."}
+{"file": "SanguiBlog-front\\src\\appfull\\AdminPanel.jsx", "reason": "Debug dashboard rendering, URL filter initialization, and detail dialog grouping."}
+{"file": "SanguiBlog-front\\src\\api.js", "reason": "Debug API query serialization for summary/log filters and tracking payloads."}
+{"file": "SanguiBlog-server\\src\\test\\java\\com\\sangui\\sanguiblog\\service\\AnalyticsServiceDetailJsonTest.java", "reason": "Debug detail JSON safety/classifier test failures."}

@@ -229,5 +229,113 @@ public final class ReferrerUtils {
             return value;
         }
     }
-}
 
+    public enum SourceType {
+        DIRECT, INTERNAL, SEARCH, EXTERNAL, REDIRECT, UNKNOWN
+    }
+
+    public static SourceType classifySourceType(String referrerRaw, String siteDomain) {
+        if (!StringUtils.hasText(referrerRaw)) {
+            return SourceType.DIRECT;
+        }
+        String trimmed = referrerRaw.trim();
+        SourceType displayType = classifyDisplayLabel(trimmed);
+        if (displayType != SourceType.UNKNOWN) {
+            return displayType;
+        }
+        ParsedReferrer parsed = parse(referrerRaw);
+        if (!parsed.present() || !StringUtils.hasText(parsed.host())) {
+            return SourceType.DIRECT;
+        }
+        String hostLower = parsed.hostLower();
+        String effectiveDomain = StringUtils.hasText(siteDomain) ? siteDomain.toLowerCase(Locale.ROOT) : "";
+        if (StringUtils.hasText(effectiveDomain)
+                && (hostLower.equals(effectiveDomain) || hostLower.endsWith("." + effectiveDomain))) {
+            return SourceType.INTERNAL;
+        }
+        if ("sanguicode.com".equals(hostLower) || "www.sanguicode.com".equals(hostLower)) {
+            return SourceType.REDIRECT;
+        }
+        if (parsed.engine() != null) {
+            return SourceType.SEARCH;
+        }
+        return SourceType.EXTERNAL;
+    }
+
+    public static String extractReferrerDomain(String referrerRaw) {
+        if (!StringUtils.hasText(referrerRaw)) {
+            return null;
+        }
+        String trimmed = referrerRaw.trim();
+        if (trimmed.startsWith("外部链接：")) {
+            return normalizeDomain(trimmed.substring("外部链接：".length()));
+        }
+        if (trimmed.startsWith("来自社交平台：")) {
+            return normalizeDomain(trimmed.substring("来自社交平台：".length()));
+        }
+        if (trimmed.startsWith("来自重定向：")) {
+            return normalizeDomain(trimmed.substring("来自重定向：".length()));
+        }
+        ParsedReferrer parsed = parse(referrerRaw);
+        if (!parsed.present() || !StringUtils.hasText(parsed.host())) {
+            return null;
+        }
+        return normalizeDomain(parsed.host());
+    }
+
+    private static SourceType classifyDisplayLabel(String value) {
+        if (!StringUtils.hasText(value)) {
+            return SourceType.UNKNOWN;
+        }
+        if ("直接访问".equals(value)) {
+            return SourceType.DIRECT;
+        }
+        if (value.startsWith("来自站内")
+                || value.startsWith("来自首页")
+                || value.startsWith("来自后台")
+                || value.startsWith("来自归档")
+                || value.startsWith("来自工具")
+                || value.startsWith("来自关于")
+                || value.startsWith("来自登录")) {
+            return SourceType.INTERNAL;
+        }
+        if (value.startsWith("来自重定向")) {
+            return SourceType.REDIRECT;
+        }
+        if (isSearchDisplayLabel(value)) {
+            return SourceType.SEARCH;
+        }
+        return SourceType.UNKNOWN;
+    }
+
+    private static boolean isSearchDisplayLabel(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        return value.startsWith("来自搜索引擎")
+                || value.equals("谷歌") || value.startsWith("谷歌：")
+                || value.equals("必应") || value.startsWith("必应：")
+                || value.equals("百度") || value.startsWith("百度：")
+                || value.equals("搜狗") || value.startsWith("搜狗：")
+                || value.equals("360 搜索") || value.startsWith("360 搜索：")
+                || value.equals("DuckDuckGo") || value.startsWith("DuckDuckGo：")
+                || value.equals("Yandex") || value.startsWith("Yandex：");
+    }
+
+    private static String normalizeDomain(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String trimmed = value.trim();
+        int slash = trimmed.indexOf('/');
+        if (slash >= 0) {
+            trimmed = trimmed.substring(0, slash);
+        }
+        int colon = trimmed.indexOf(':');
+        if (colon >= 0) {
+            trimmed = trimmed.substring(0, colon);
+        }
+        trimmed = trimmed.toLowerCase(Locale.ROOT);
+        return StringUtils.hasText(trimmed) ? trimmed : null;
+    }
+}

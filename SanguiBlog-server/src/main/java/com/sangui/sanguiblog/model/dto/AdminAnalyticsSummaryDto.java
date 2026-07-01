@@ -17,6 +17,7 @@ public class AdminAnalyticsSummaryDto {
     private List<TrendPoint> dailyTrends;
     private List<TopPost> topPosts;
     private List<RecentVisit> recentVisits;
+    private AdminAnalyticsVisitorSourceInsightsDto visitorSourceInsights;
 
     @Data
     @Builder

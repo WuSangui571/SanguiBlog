@@ -36,6 +36,38 @@ public interface AnalyticsPageViewRepository extends JpaRepository<AnalyticsPage
         Long getViews();
     }
 
+    interface InsightRow {
+        Long getId();
+        java.time.LocalDateTime getViewedAt();
+        String getViewerIp();
+        String getReferrerUrl();
+        String getGeoLocation();
+        String getUserAgent();
+        String getPageTitle();
+        Long getPostId();
+        Integer getHeartbeatCount();
+        Integer getTotalDurationSeconds();
+        Integer getActiveDurationSeconds();
+        String getVisitStatus();
+        String getDetailJson();
+        Long getUserId();
+        String getVisitId();
+    }
+
+    @Query(value = """
+            SELECT apv.id AS id, apv.viewed_at AS viewedAt, apv.viewer_ip AS viewerIp,
+                   apv.referrer_url AS referrerUrl, apv.geo_location AS geoLocation,
+                   apv.user_agent AS userAgent, apv.page_title AS pageTitle, apv.post_id AS postId,
+                   apv.heartbeat_count AS heartbeatCount, apv.total_duration_seconds AS totalDurationSeconds,
+                   apv.active_duration_seconds AS activeDurationSeconds, apv.visit_status AS visitStatus,
+                   apv.detail_json AS detailJson, apv.user_id AS userId, apv.visit_id AS visitId
+            FROM analytics_page_views apv
+            WHERE (:start IS NULL OR apv.viewed_at >= :start)
+              AND (:endExclusive IS NULL OR apv.viewed_at < :endExclusive)
+            """, nativeQuery = true)
+    List<InsightRow> findInsightRows(@Param("start") java.time.LocalDateTime start,
+                                      @Param("endExclusive") java.time.LocalDateTime endExclusive);
+
     @EntityGraph(attributePaths = {"post"})
     List<AnalyticsPageView> findTop20ByOrderByViewedAtDesc();
 

@@ -373,9 +373,21 @@ const PermissionNotice = ({ title = '权限不足', description = '请联系超�
 // 4.1 Sub-Component: Dashboard View
 const DashboardView = ({ isDarkMode }) => {
     const { summary, loading, error, reload, rangeDays } = useAdminAnalytics();
+    const navigate = useNavigate();
     const overview = summary?.overview;
     const rawDailyTrends = summary?.dailyTrends || [];
-    const trafficSources = summary?.trafficSources || [];
+    const visitorSourceInsights = summary?.visitorSourceInsights || {};
+    const sourceTypeShares = Array.isArray(visitorSourceInsights.sourceTypeShares)
+        ? visitorSourceInsights.sourceTypeShares
+        : [];
+    const visitQualityShares = Array.isArray(visitorSourceInsights.visitQualityShares)
+        ? visitorSourceInsights.visitQualityShares
+        : [];
+    const anomalyTops = visitorSourceInsights.anomalyTops || {};
+    const popularEntries = Array.isArray(visitorSourceInsights.popularEntries)
+        ? visitorSourceInsights.popularEntries
+        : [];
+    const suspiciousSummary = visitorSourceInsights.suspiciousSummary || {};
     const normalizedRange = rangeDays === 0 ? -1 : (rangeDays || 7);
     const trendRangeDays = normalizedRange === -1 ? 30 : Math.max(7, Math.min(normalizedRange, 60));
     const rangeLabel = overview?.rangeLabel || (normalizedRange === -1 ? "全部历史" : `最近${normalizedRange}天`);
@@ -542,6 +554,86 @@ const DashboardView = ({ isDarkMode }) => {
         return fallback;
     };
 
+    const formatPercent = (value) => {
+        const number = Number(value);
+        return Number.isFinite(number) ? `${Math.round(number * 10) / 10}%` : '0%';
+    };
+
+    const formatCount = (value) => {
+        const number = Number(value);
+        return Number.isFinite(number) ? number.toLocaleString() : '0';
+    };
+
+    const navigateToLogsQuery = (logsQuery) => {
+        const query = typeof logsQuery === 'string' ? logsQuery.replace(/^\?+/, '').trim() : '';
+        if (!query) return;
+        navigate(`/admin/analytics?${query}`);
+    };
+
+    const renderShareRows = (items, keyName) => (
+        <div className="space-y-2">
+            {items.map((item) => {
+                const label = item.label || item[keyName] || '-';
+                const count = Number(item.count || 0);
+                const percentage = Number(item.percentage || 0);
+                const width = `${Math.max(3, Math.min(100, percentage))}%`;
+                return (
+                    <button
+                        key={`${keyName}-${item[keyName] || label}`}
+                        type="button"
+                        onClick={() => navigateToLogsQuery(item.logsQuery)}
+                        className={`w-full text-left rounded-xl px-2 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                            isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+                        }`}
+                        aria-label={`查看${label}访问日志`}
+                    >
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                            <span className="min-w-0 truncate font-semibold">{label}</span>
+                            <span className="shrink-0 font-mono">{formatCount(count)} · {formatPercent(percentage)}</span>
+                        </div>
+                        <div className="mt-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                            <div
+                                className="h-full rounded-full bg-gradient-to-r from-[#FF0080] to-[#6366F1]"
+                                style={{ width }}
+                            />
+                        </div>
+                    </button>
+                );
+            })}
+        </div>
+    );
+
+    const renderTopItems = (items = [], emptyText) => {
+        const safeItems = Array.isArray(items) ? items.filter((item) => item && item.value) : [];
+        if (safeItems.length === 0) {
+            return <p className={`text-xs ${textMuted}`}>{emptyText}</p>;
+        }
+        return (
+            <div className="space-y-1">
+                {safeItems.slice(0, 5).map((item) => (
+                    <button
+                        key={`${item.value}-${item.count}`}
+                        type="button"
+                        onClick={() => navigateToLogsQuery(item.logsQuery)}
+                        className={`w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                            isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+                        }`}
+                        aria-label={`查看${item.value}访问日志`}
+                    >
+                        <span className="min-w-0 truncate text-left">{decodeMaybeUrlEncoded(item.value)}</span>
+                        <span className="shrink-0 font-mono">{formatCount(item.count)}</span>
+                    </button>
+                ))}
+            </div>
+        );
+    };
+
+    const insightTotal = Number(visitorSourceInsights.totalVisits || 0);
+    const hasInsightData = insightTotal > 0
+        || sourceTypeShares.some((item) => Number(item.count || 0) > 0)
+        || visitQualityShares.some((item) => Number(item.count || 0) > 0)
+        || popularEntries.some((item) => Number(item.count || 0) > 0);
+
     const handleRangeClick = (value) => {
         if (value === normalizedRange) return;
         reload?.(value);
@@ -688,27 +780,79 @@ const DashboardView = ({ isDarkMode }) => {
                     className={`${surface} ${border} rounded-2xl p-6 shadow-xl flex flex-col`}
                     style={trendCardHeight ? { height: `${trendCardHeight}px` } : undefined}
                 >
-                    <h3 className={`text-xl font-bold ${textPrimary}`}>流量来源</h3>
-                    <p className={`text-xs ${textMuted} mb-4`}>analytics_traffic_sources 实时占比</p>
-                    {trafficSources.length === 0 ? (
-                        <p className={`text-sm ${textMuted}`}>暂无流量来源统计</p>
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 className={`text-xl font-bold ${textPrimary}`}>访客来源洞察</h3>
+                            <p className={`text-xs ${textMuted}`}>{rangeLabel} · {formatCount(insightTotal)} 次访问</p>
+                        </div>
+                        <Shield size={18} className="shrink-0 text-indigo-500" />
+                    </div>
+                    {!hasInsightData ? (
+                        <p className={`text-sm mt-4 ${textMuted}`}>暂无访客来源洞察</p>
                     ) : (
-                        <div className={`flex-1 min-h-0 overflow-y-auto pr-1 ${scrollBarClass}`}>
-                            <div className="space-y-3">
-                                {trafficSources.map((source, index) => (
-                                    <div key={`${source.label}-${index}`}>
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span>{decodeMaybeUrlEncoded(source.label)}</span>
-                                            <span className="font-semibold">{Math.round(source.value * 10) / 10}%</span>
-                                        </div>
-                                        <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                            <div
-                                                className="h-full rounded-full bg-gradient-to-r from-[#FF0080] to-[#6366F1]"
-                                                style={{ width: `${Math.min(source.value, 100)}%` }}
-                                            />
-                                        </div>
+                        <div className={`flex-1 min-h-0 overflow-y-auto pr-1 mt-4 ${scrollBarClass}`}>
+                            <div className="space-y-5">
+                                <section>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>来源类型占比</h4>
+                                    {renderShareRows(sourceTypeShares, 'type')}
+                                </section>
+                                <section>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>访客质量占比</h4>
+                                    {renderShareRows(visitQualityShares, 'quality')}
+                                </section>
+                                <section>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>可疑访问摘要</h4>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <button
+                                            type="button"
+                                            onClick={() => navigateToLogsQuery('visitQuality=BOT_LIKE')}
+                                            className={`rounded-lg px-2 py-2 text-left ${isDarkMode ? 'bg-gray-900 hover:bg-gray-800' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                        >
+                                            <span className="block font-semibold">疑似机器人</span>
+                                            <span className="font-mono">{formatCount(suspiciousSummary.botLikeCount)} · {formatPercent(suspiciousSummary.botLikePercentage)}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigateToLogsQuery('visitQuality=SUSPICIOUS')}
+                                            className={`rounded-lg px-2 py-2 text-left ${isDarkMode ? 'bg-gray-900 hover:bg-gray-800' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                        >
+                                            <span className="block font-semibold">疑似代理/VPS</span>
+                                            <span className="font-mono">{formatCount(suspiciousSummary.proxyLikeCount)} · {formatPercent(suspiciousSummary.proxyLikePercentage)}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigateToLogsQuery('riskReason=NO_HEARTBEAT')}
+                                            className={`rounded-lg px-2 py-2 text-left ${isDarkMode ? 'bg-gray-900 hover:bg-gray-800' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                        >
+                                            <span className="block font-semibold">无心跳</span>
+                                            <span className="font-mono">{formatCount(suspiciousSummary.noHeartbeatCount)} · {formatPercent(suspiciousSummary.noHeartbeatPercentage)}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigateToLogsQuery('sourceType=EXTERNAL')}
+                                            className={`rounded-lg px-2 py-2 text-left ${isDarkMode ? 'bg-gray-900 hover:bg-gray-800' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                        >
+                                            <span className="block font-semibold">外部域名</span>
+                                            <span className="font-mono">{formatCount(suspiciousSummary.externalReferrerDomainCount)}</span>
+                                        </button>
                                     </div>
-                                ))}
+                                </section>
+                                <section>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>异常来源 Top</h4>
+                                    <div className="space-y-3">
+                                        {renderTopItems(anomalyTops.ips, '暂无高频 IP')}
+                                        {renderTopItems(anomalyTops.referrerDomains, '暂无外部来源域名')}
+                                        {renderTopItems(anomalyTops.userAgents, '暂无高频 UA')}
+                                    </div>
+                                </section>
+                                <section>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>热门入口页</h4>
+                                    {renderTopItems(popularEntries.map((entry) => ({
+                                        value: entry.label || entry.path || entry.type,
+                                        count: entry.count,
+                                        logsQuery: entry.logsQuery,
+                                    })), '暂无入口页统计')}
+                                </section>
                             </div>
                         </div>
                     )}
@@ -1067,6 +1211,34 @@ const TrendChart = ({ data, isDarkMode }) => {
 
 // 4.2 Sub-Component: Analytics View (实时访问日志)
 const AnalyticsView = ({ isDarkMode, user }) => {
+    const location = useLocation();
+    const readQueryParam = useCallback((name) => {
+        try {
+            const params = new URLSearchParams(location.search || '');
+            const value = params.get(name);
+            return typeof value === 'string' ? value.trim() : '';
+        } catch {
+            return '';
+        }
+    }, [location.search]);
+    const buildInitialFiltersDraft = useCallback(() => ({
+        keyword: readQueryParam("keyword"),
+        ip: readQueryParam("ip"),
+        postId: readQueryParam("postId"),
+        pageType: readQueryParam("pageType") || 'all',
+        loggedIn: readQueryParam("loggedIn") || 'all',
+        start: readQueryParam("start"),
+        end: readQueryParam("end"),
+        visitQuality: readQueryParam("visitQuality"),
+        riskReason: readQueryParam("riskReason"),
+        sourceType: readQueryParam("sourceType"),
+        referrerDomain: readQueryParam("referrerDomain"),
+        entryType: readQueryParam("entryType"),
+        userAgentKeyword: readQueryParam("userAgentKeyword"),
+        geo: readQueryParam("geo"),
+        asn: readQueryParam("asn"),
+        isp: readQueryParam("isp"),
+    }), [readQueryParam]);
     const { reload } = useAdminAnalytics();
     const [logs, setLogs] = useState([]);
     const [page, setPage] = useState(1);
@@ -1086,15 +1258,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const [detailError, setDetailError] = useState('');
     const [detailData, setDetailData] = useState(null);
     const [detailLoadingId, setDetailLoadingId] = useState(null);
-    const [filtersDraft, setFiltersDraft] = useState({
-        keyword: '',
-        ip: '',
-        postId: '',
-        pageType: 'all',
-        loggedIn: 'all',
-        start: '',
-        end: ''
-    });
+    const [filtersDraft, setFiltersDraft] = useState(() => buildInitialFiltersDraft());
     const [filtersApplied, setFiltersApplied] = useState({});
     const startDateInputRef = useRef(null);
     const endDateInputRef = useRef(null);
@@ -1241,13 +1405,6 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         }
     }, [hideRobotsAndSitemap]);
 
-    const initLoadedRef = useRef(false);
-    useEffect(() => {
-        if (initLoadedRef.current) return;
-        initLoadedRef.current = true;
-        loadLogs(1, size, filtersApplied);
-    }, [loadLogs, size, filtersApplied]);
-
     const totalPages = Math.max(1, Math.ceil((total || 0) / size) || 1);
     const allSelected = logs.length > 0 && selectedIds.length === logs.length;
     const hasSelection = selectedIds.length > 0;
@@ -1330,6 +1487,15 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         const pageTypeRaw = typeof draft.pageType === 'string' ? draft.pageType.trim() : '';
         const loggedInRaw = draft.loggedIn;
         const loggedIn = loggedInRaw === 'true' ? true : (loggedInRaw === 'false' ? false : undefined);
+        const visitQuality = typeof draft.visitQuality === 'string' ? draft.visitQuality.trim().toUpperCase() : '';
+        const riskReason = typeof draft.riskReason === 'string' ? draft.riskReason.trim().toUpperCase() : '';
+        const sourceType = typeof draft.sourceType === 'string' ? draft.sourceType.trim().toUpperCase() : '';
+        const referrerDomain = typeof draft.referrerDomain === 'string' ? draft.referrerDomain.trim() : '';
+        const entryType = typeof draft.entryType === 'string' ? draft.entryType.trim().toUpperCase() : '';
+        const userAgentKeyword = typeof draft.userAgentKeyword === 'string' ? draft.userAgentKeyword.trim() : '';
+        const geo = typeof draft.geo === 'string' ? draft.geo.trim() : '';
+        const asn = typeof draft.asn === 'string' ? draft.asn.trim() : '';
+        const isp = typeof draft.isp === 'string' ? draft.isp.trim() : '';
 
         const next = {};
         if (keyword) next.keyword = keyword;
@@ -1339,8 +1505,28 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         if (loggedIn !== undefined) next.loggedIn = loggedIn;
         if (start) next.start = start;
         if (end) next.end = end;
+        if (visitQuality) next.visitQuality = visitQuality;
+        if (riskReason) next.riskReason = riskReason;
+        if (sourceType) next.sourceType = sourceType;
+        if (referrerDomain) next.referrerDomain = referrerDomain;
+        if (entryType) next.entryType = entryType;
+        if (userAgentKeyword) next.userAgentKeyword = userAgentKeyword;
+        if (geo) next.geo = geo;
+        if (asn) next.asn = asn;
+        if (isp) next.isp = isp;
         return next;
     }, [normalizeDateFilterValue]);
+
+    const initLoadedRef = useRef(false);
+    useEffect(() => {
+        if (initLoadedRef.current) return;
+        initLoadedRef.current = true;
+        const initialDraft = buildInitialFiltersDraft();
+        const initialFilters = normalizeFilters(initialDraft);
+        setFiltersDraft(initialDraft);
+        setFiltersApplied(initialFilters);
+        loadLogs(1, size, initialFilters);
+    }, [buildInitialFiltersDraft, loadLogs, normalizeFilters, size]);
 
     const applyFiltersFromDraft = useCallback((nextDraft) => {
         setFiltersDraft(nextDraft);
@@ -1356,7 +1542,24 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     }, [filtersDraft, loadLogs, normalizeFilters, size]);
 
     const resetFilters = useCallback(() => {
-        const clearedDraft = { keyword: '', ip: '', postId: '', pageType: 'all', loggedIn: 'all', start: '', end: '' };
+        const clearedDraft = {
+            keyword: '',
+            ip: '',
+            postId: '',
+            pageType: 'all',
+            loggedIn: 'all',
+            start: '',
+            end: '',
+            visitQuality: '',
+            riskReason: '',
+            sourceType: '',
+            referrerDomain: '',
+            entryType: '',
+            userAgentKeyword: '',
+            geo: '',
+            asn: '',
+            isp: '',
+        };
         setFiltersDraft(clearedDraft);
         setFiltersApplied({});
         setHideRobotsAndSitemap(false);
@@ -1522,6 +1725,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     { label: 'referrer', value: detailData.referrer },
                     { label: 'entryPage', value: d.entryPage },
                     { label: 'fromPage', value: d.fromPage },
+                    { label: 'referrerClient', value: d.referrerClient },
                 ]
             },
             {
@@ -1530,6 +1734,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                     { label: 'deviceType', value: d.deviceType },
                     { label: 'browser', value: d.browser },
                     { label: 'os', value: d.os },
+                    { label: 'timezone', value: d.timezone },
+                    { label: 'screenSize', value: d.screenSize },
+                    { label: 'viewportSize', value: d.viewportSize },
+                    { label: 'devicePixelRatio', value: d.devicePixelRatio },
+                    { label: 'webdriver', value: d.webdriver },
+                    { label: 'visibilityState', value: d.visibilityState },
                 ]
             },
             {
@@ -1564,6 +1774,18 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                 items: [
                     { label: 'botDetected', value: d.botDetected },
                     { label: 'botName', value: d.botName },
+                ]
+            },
+            {
+                label: '系统判断',
+                items: [
+                    { label: '访问质量', value: detailData.visitQuality },
+                    { label: '风险等级', value: detailData.riskLevel },
+                    { label: '风险原因', value: Array.isArray(detailData.riskReasons) ? detailData.riskReasons.join(', ') : detailData.riskReasons },
+                    { label: '疑似代理', value: detailData.proxySuspected },
+                    { label: '疑似机器人', value: detailData.botSuspected },
+                    { label: '疑似Referer伪造', value: detailData.referrerSpoofingSuspected },
+                    { label: '解释', value: detailData.riskExplanation },
                 ]
             },
         ];
