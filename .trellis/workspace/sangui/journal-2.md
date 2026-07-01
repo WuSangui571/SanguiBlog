@@ -93,3 +93,72 @@ Result and boundaries:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 33: Access Log V2 Traffic Insights Closeout
+
+**Date**: 2026-07-01
+**Task**: Access Log V2 Traffic Insights Closeout
+**Branch**: `feature/access-log-v2-traffic-insights`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+Summary:
+- Completed Access Log V2 traffic insights for the admin analytics dashboard.
+- Backend added client environment capture, visit-quality classification, visitor-source insight DTO/helper/repository query support, detail DTO fields, and admin log filters.
+- Frontend consumed visitorSourceInsights in the admin dashboard, added detail modal system-judgement fields, collected safe client environment fields, and adjusted the dashboard layout so the visitor source insight panel no longer stretches the trend chart area.
+- Codex follow-up fixes moved long insight details into the left dashboard column, moved visit-quality share out of the right summary panel, and added static layout regression coverage.
+- Release closeout bumped visible site version metadata from V2.3.5 to V2.3.6 in application.yaml, frontend fallback displays, and root README current-version lines. These release-version edits are not committed yet and require manual commit before merge/deploy.
+
+Updated files:
+- SanguiBlog-server/src/main/resources/application.yaml
+- SanguiBlog-front/src/appfull/public/HomeView.jsx
+- SanguiBlog-front/src/appfull/ui/Navigation.jsx
+- SanguiBlog-front/src/appfull/AdminPanel.jsx
+- SanguiBlog-front/src/appfull/AdminAnalyticsTrafficInsights.test.js
+- README.md
+- README.zh-CN.md
+- Backend analytics DTO/service/repository/controller files from commit be286a1
+- Frontend analytics API/admin files from commits be286a1, cdd2480, 7b8298f
+
+Verification:
+- User manual /admin test: PASS
+- node src/appfull/AdminAnalyticsTrafficInsights.test.js: PASS
+- node src/appfull/noNativeBlockingDialogs.test.js: PASS
+- cmd /c npm run lint: PASS
+- cmd /c npm run build: PASS after sandbox EPERM rerun outside sandbox
+- mvn -q -DskipTests compile: PASS
+- git diff --check: PASS
+- docker compose -f docker-compose.prod.yml config --quiet: PASS
+- Version grep: V2.3.6 present in application.yaml, HomeView fallback, Navigation fallback, README.md, README.zh-CN.md; V2.3.5 remains only as historical SQL migration note in README files.
+
+Result and boundaries:
+- Current Trellis task is complete by code commits plus user manual acceptance, even though task.json was still planning before archive.
+- No DB schema, Docker Compose, MQ, Redis, or infra contract changes were made for this closeout.
+- Production deployment should happen after merging to main and confirming SANGUI_IMAGE_TAG points at an available GHCR image for the merged code.
+- Codex did not run git commit or git push.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `be286a1` | (see git log) |
+| `cdd2480` | (see git log) |
+| `7b8298f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

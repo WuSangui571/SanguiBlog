@@ -56,7 +56,7 @@ site:
     cache-ttl-ms: ${SITE_SITEMAP_CACHE_TTL_MS:600000}
     refresh-delay-ms: ${SITE_SITEMAP_REFRESH_DELAY_MS:600000}
     max-urls-per-file: ${SITE_SITEMAP_MAX_URLS_PER_FILE:45000}
-  version: "V2.3.5"
+  version: "V2.3.6"
   hero:
     tagline: 我是三桂，在这里把问题想清楚，把代码写简单。
   home:

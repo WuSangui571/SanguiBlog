@@ -4,7 +4,7 @@
 
 A decoupled personal blog system built with Spring Boot 3 + MySQL (backend) and React 19 + Vite (frontend SPA), deployed via Docker Compose with GHCR images.
 
-> Current version: **V2.3.5**
+> Current version: **V2.3.6**
 
 ## Quick Start (Docker Production Deployment)
 
