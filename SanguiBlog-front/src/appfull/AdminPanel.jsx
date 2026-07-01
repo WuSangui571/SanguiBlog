@@ -723,29 +723,76 @@ const DashboardView = ({ isDarkMode }) => {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-                <div className={`xl:col-span-2 ${surface} ${border} rounded-2xl p-6 shadow-xl`}>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <h3 className={`text-xl font-bold ${textPrimary}`}>访客走势图</h3>
-                            <p className={`text-xs ${textMuted}`}>最近{trendRangeDays}天 PV & UV</p>
-                            {isUsingAggregated && (
-                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
-                                    访问日志聚合
-                                </span>
-                            )}
+                <div className="dashboard-insight-left-column xl:col-span-2 space-y-6">
+                    <div className={`${surface} ${border} rounded-2xl p-6 shadow-xl`}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <h3 className={`text-xl font-bold ${textPrimary}`}>访客走势图</h3>
+                                <p className={`text-xs ${textMuted}`}>最近{trendRangeDays}天 PV & UV</p>
+                                {isUsingAggregated && (
+                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
+                                        访问日志聚合
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-xs font-mono">{dailyTrends.length} 天</span>
                         </div>
-                        <span className="text-xs font-mono">{dailyTrends.length} 天</span>
-                    </div>
-                    <TrendChart data={dailyTrends} isDarkMode={isDarkMode} />
-                    {aggregatedLoading && <p className={`text-xs mt-2 ${textMuted}`}>正在从访问日志聚合趋势...</p>}
-                    {aggregatedError && <p className="text-xs mt-2 text-red-500">{aggregatedError}</p>}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs mt-4">
-                        <div className={`p-3 rounded-xl ${surface}`}>最高日 PV：{formatNumber(peakViews, "0")}</div>
-                        <div className={`p-3 rounded-xl ${surface}`}>最高日 UV：{formatNumber(peakVisitors, "0")}</div>
-                        <div className={`p-3 rounded-xl ${surface}`}>
-                            最近一日 PV/UV：{formatNumber(lastPoint.views, "0")}/{formatNumber(lastPoint.visitors, "0")}
+                        <TrendChart data={dailyTrends} isDarkMode={isDarkMode} />
+                        {aggregatedLoading && <p className={`text-xs mt-2 ${textMuted}`}>正在从访问日志聚合趋势...</p>}
+                        {aggregatedError && <p className="text-xs mt-2 text-red-500">{aggregatedError}</p>}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs mt-4">
+                            <div className={`p-3 rounded-xl ${surface}`}>最高日 PV：{formatNumber(peakViews, "0")}</div>
+                            <div className={`p-3 rounded-xl ${surface}`}>最高日 UV：{formatNumber(peakVisitors, "0")}</div>
+                            <div className={`p-3 rounded-xl ${surface}`}>
+                                最近一日 PV/UV：{formatNumber(lastPoint.views, "0")}/{formatNumber(lastPoint.visitors, "0")}
+                            </div>
                         </div>
                     </div>
+                    {hasInsightData && (
+                        <div className={`${surface} ${border} dashboard-insight-detail-panel rounded-2xl p-6 shadow-xl`}>
+                            <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+                                <h3 className={`text-xl font-bold ${textPrimary}`}>异常来源 Top</h3>
+                                <p className={`text-xs ${textMuted}`}>{rangeLabel} · 热门入口页与来源明细</p>
+                            </div>
+                            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>访客质量占比</h4>
+                                    {renderShareRows(visitQualityShares, 'quality')}
+                                </section>
+                                <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>高频 IP</h4>
+                                    {renderTopItems(anomalyTops.ips, '暂无高频 IP')}
+                                </section>
+                                <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>外部来源域名</h4>
+                                    {renderTopItems(anomalyTops.referrerDomains, '暂无外部来源域名')}
+                                </section>
+                                <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>高频 UA</h4>
+                                    {renderTopItems(anomalyTops.userAgents, '暂无高频 UA')}
+                                </section>
+                                <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>地理位置</h4>
+                                    {renderTopItems(anomalyTops.geos, '暂无地理位置统计')}
+                                </section>
+                                <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>ASN / ISP</h4>
+                                    <div className="space-y-3">
+                                        {renderTopItems(anomalyTops.asns, '暂无 ASN 统计')}
+                                        {renderTopItems(anomalyTops.isps, '暂无 ISP 统计')}
+                                    </div>
+                                </section>
+                                <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
+                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>热门入口页</h4>
+                                    {renderTopItems(popularEntries.map((entry) => ({
+                                        value: entry.label || entry.path || entry.type,
+                                        count: entry.count,
+                                        logsQuery: entry.logsQuery,
+                                    })), '暂无入口页统计')}
+                                </section>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className={`${surface} ${border} dashboard-insight-summary-panel rounded-2xl p-6 shadow-xl flex flex-col self-start`}>
                     <div className="flex items-start justify-between gap-3">
@@ -763,10 +810,6 @@ const DashboardView = ({ isDarkMode }) => {
                                 <section>
                                     <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>来源类型占比</h4>
                                     {renderShareRows(sourceTypeShares, 'type')}
-                                </section>
-                                <section>
-                                    <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>访客质量占比</h4>
-                                    {renderShareRows(visitQualityShares, 'quality')}
                                 </section>
                                 <section>
                                     <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>可疑访问摘要</h4>
@@ -809,47 +852,6 @@ const DashboardView = ({ isDarkMode }) => {
                         </div>
                     )}
                 </div>
-                {hasInsightData && (
-                    <div className={`${surface} ${border} dashboard-insight-detail-panel xl:col-span-2 rounded-2xl p-6 shadow-xl`}>
-                        <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
-                            <h3 className={`text-xl font-bold ${textPrimary}`}>异常来源 Top</h3>
-                            <p className={`text-xs ${textMuted}`}>{rangeLabel} · 热门入口页与来源明细</p>
-                        </div>
-                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
-                                <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>高频 IP</h4>
-                                {renderTopItems(anomalyTops.ips, '暂无高频 IP')}
-                            </section>
-                            <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
-                                <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>外部来源域名</h4>
-                                {renderTopItems(anomalyTops.referrerDomains, '暂无外部来源域名')}
-                            </section>
-                            <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
-                                <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>高频 UA</h4>
-                                {renderTopItems(anomalyTops.userAgents, '暂无高频 UA')}
-                            </section>
-                            <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
-                                <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>地理位置</h4>
-                                {renderTopItems(anomalyTops.geos, '暂无地理位置统计')}
-                            </section>
-                            <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
-                                <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>ASN / ISP</h4>
-                                <div className="space-y-3">
-                                    {renderTopItems(anomalyTops.asns, '暂无 ASN 统计')}
-                                    {renderTopItems(anomalyTops.isps, '暂无 ISP 统计')}
-                                </div>
-                            </section>
-                            <section className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-900/70' : 'bg-gray-50'}`}>
-                                <h4 className={`text-xs font-black uppercase tracking-[0.18em] mb-2 ${textMuted}`}>热门入口页</h4>
-                                {renderTopItems(popularEntries.map((entry) => ({
-                                    value: entry.label || entry.path || entry.type,
-                                    count: entry.count,
-                                    logsQuery: entry.logsQuery,
-                                })), '暂无入口页统计')}
-                            </section>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

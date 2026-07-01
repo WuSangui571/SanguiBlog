@@ -42,6 +42,23 @@ assert.ok(adminPanelSource.includes('dashboard-insight-summary-panel'),
   'Dashboard should keep the right insight column compact');
 assert.ok(adminPanelSource.includes('dashboard-insight-detail-panel'),
   'Dashboard should move long insight detail lists under the left trend column');
+assert.ok(adminPanelSource.includes('dashboard-insight-left-column xl:col-span-2 space-y-6'),
+  'Dashboard should keep trend chart and long insight details in the same left column');
+{
+  const summaryPanelIndex = adminPanelSource.indexOf('dashboard-insight-summary-panel');
+  const detailPanelIndex = adminPanelSource.indexOf('dashboard-insight-detail-panel');
+  assert.ok(detailPanelIndex > -1 && summaryPanelIndex > -1,
+    'Dashboard should render both detail and summary panels');
+  assert.ok(detailPanelIndex < summaryPanelIndex,
+    'Dashboard should render detail panel in the left column before the right summary panel');
+  const detailPanelSource = adminPanelSource.slice(detailPanelIndex, summaryPanelIndex);
+  const summaryPanelSource = adminPanelSource.slice(summaryPanelIndex);
+
+  assert.doesNotMatch(summaryPanelSource, /visitQualityShares/,
+    'Dashboard right insight summary should not include visit quality share rows');
+  assert.match(detailPanelSource, /visitQualityShares/,
+    'Dashboard should move visit quality share rows into the left detail area');
+}
 
 assert.ok(appFullSource.includes('collectAnalyticsClientEnvironment'),
   'AppFull page-view payloads should include safe browser environment fields');
