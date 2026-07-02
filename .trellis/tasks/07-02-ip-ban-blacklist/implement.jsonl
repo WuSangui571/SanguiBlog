@@ -1,0 +1,29 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/07-02-ip-ban-blacklist/prd.md", "reason": "Feature PRD with API DB Nginx UI cache audit contract"}
+{"file": ".trellis/tasks/07-02-ip-ban-blacklist/research.md", "reason": "Focused code research and expected modification seams"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend layer placement rules"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend retrieve-first security and testing rules"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Schema entity repository transaction contract"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Admin API validation and error semantics"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Safe audit and security logging constraints"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend API and appfull placement rules"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Admin component dialog and icon button rules"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Frontend loader and effect ordering rules"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Admin local state ownership"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Runtime API payload guards"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend lint build static test requirements"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Retrieve-first no duplicate implementation rules"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer API DB frontend Nginx contract requirements"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java", "reason": "Existing IP parsing utility to extend"}
+{"file": "SanguiBlog-server/src/test/java/com/sangui/sanguiblog/util/IpUtilsTest.java", "reason": "Existing IP resolver tests to update"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/SecurityConfig.java", "reason": "Security filter-chain and internal endpoint permit rules"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardFilter.java", "reason": "Internal endpoint BotGuard bypass risk"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/controller/AdminAnalyticsController.java", "reason": "Existing admin analytics owner"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/service/AnalyticsService.java", "reason": "Analytics row DTO mapping and batch ban status seam"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/model/dto/AdminAnalyticsSummaryDto.java", "reason": "RecentVisit DTO extension seam"}
+{"file": "SanguiBlog-front/src/api.js", "reason": "Frontend API facade to extend"}
+{"file": "SanguiBlog-front/src/appfull/AdminPanel.jsx", "reason": "Analytics and settings UI seam"}
+{"file": "docker/nginx/default.conf", "reason": "Nginx auth_request integration seam"}
+{"file": "sanguiblog_db.sql", "reason": "Canonical schema source"}

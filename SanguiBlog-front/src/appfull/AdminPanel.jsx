@@ -29,6 +29,9 @@ import {
     adminDeletePageViewLogs,
     adminFetchPageViewLogDetail,
     adminDeleteMyAnalyticsLogs,
+    adminFetchIpBans,
+    adminCreateIpBan,
+    adminUnbanIpBan,
     adminFetchAiAuditSessions,
     adminFetchAiAuditSessionDetail,
     adminFetchPermissionMatrix,
@@ -83,7 +86,7 @@ import {
     ArrowUpRight, ArrowRight, Grid, List, Activity, ChevronLeft, Shield, Lock, Users, Mail, Megaphone,
     Home, TrendingUp, Edit, Send, Moon, Sun, Upload, ArrowUp, BookOpen, CheckCircle, PenTool, FolderPlus,
     RefreshCw, Plus, Trash2, Save, ImagePlus, ChevronsLeft, ChevronsRight, Copy, Calendar, Database, Ticket,
-    Cpu, Gauge, HardDrive, MemoryStick, Server, Wifi
+    Cpu, Gauge, HardDrive, MemoryStick, Server, Wifi, Ban
 } from 'lucide-react';
 import {
     THEME,
@@ -234,6 +237,79 @@ const AdminNoticeBar = ({ notice, onClose }) => {
                 >
                     <X size={16} />
                 </button>
+            </div>
+        </div>
+    );
+};
+
+const BanReasonDialog = ({ isDarkMode, open, title, ip, reason, onReasonChange, reasonLabel = '封禁原因（可选）', warning, confirmText, cancelText, onCancel, onConfirm, confirmDisabled }) => {
+    if (!open) return null;
+    const surfaceClass = isDarkMode
+        ? 'bg-gray-950 text-gray-100 border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.55)]'
+        : 'bg-white text-gray-900 border border-black/10 shadow-[0_24px_80px_rgba(15,23,42,0.18)]';
+    const subtleTextClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    const inputClass = isDarkMode
+        ? 'border-white/12 bg-white/[0.05] text-gray-100 placeholder-gray-500'
+        : 'border-black/10 bg-white text-slate-800 placeholder-slate-400';
+    const cancelButtonClass = isDarkMode
+        ? 'border-white/12 bg-white/[0.05] text-gray-100 hover:bg-white/[0.09]'
+        : 'border-black/10 bg-white text-slate-700 hover:bg-slate-100';
+    const confirmButtonClass = isDarkMode
+        ? 'border-white/12 bg-[linear-gradient(180deg,rgba(239,68,68,0.95),rgba(220,38,38,0.84))] text-white hover:bg-[#dc2626]'
+        : 'border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(254,226,226,0.92))] text-[#b91c1c] hover:bg-white';
+    return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 px-4 backdrop-blur-[2px]">
+            <div className={`w-full max-w-md rounded-[28px] p-6 ${surfaceClass}`} role="dialog" aria-modal="true">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-rose-500">确认操作</p>
+                        <h3 className="text-xl font-black">{title}</h3>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className={`h-9 w-9 rounded-full border text-sm transition-colors ${cancelButtonClass}`}
+                        aria-label="关闭确认弹层"
+                    >
+                        <X size={16} className="mx-auto" />
+                    </button>
+                </div>
+                <div className="mt-4 space-y-3 text-sm leading-6">
+                    {ip && (
+                        <p>目标 IP：<span className="font-mono font-semibold">{ip}</span></p>
+                    )}
+                    <label className="block">
+                        <span className={`text-xs ${subtleTextClass}`}>{reasonLabel}</span>
+                        <textarea
+                            value={reason}
+                            onChange={(e) => onReasonChange(e.target.value)}
+                            maxLength={512}
+                            rows={3}
+                            placeholder="例如：恶意访问、爬虫等"
+                            className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm resize-none ${inputClass}`}
+                        />
+                    </label>
+                    {warning && (
+                        <p className={`text-xs ${subtleTextClass}`}>{warning}</p>
+                    )}
+                </div>
+                <div className="mt-5 flex items-center justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className={`rounded-full border px-4 py-2 text-sm font-bold transition-colors ${cancelButtonClass}`}
+                    >
+                        {cancelText}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onConfirm}
+                        disabled={confirmDisabled}
+                        className={`rounded-full border px-4 py-2 text-sm font-bold transition-colors ${confirmButtonClass} disabled:opacity-50`}
+                    >
+                        {confirmText}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -1253,6 +1329,9 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const [detailError, setDetailError] = useState('');
     const [detailData, setDetailData] = useState(null);
     const [detailLoadingId, setDetailLoadingId] = useState(null);
+    const [banTarget, setBanTarget] = useState(null);
+    const [banReason, setBanReason] = useState('');
+    const [banSubmitting, setBanSubmitting] = useState(false);
     const [filtersDraft, setFiltersDraft] = useState(() => buildInitialFiltersDraft());
     const [filtersApplied, setFiltersApplied] = useState({});
     const startDateInputRef = useRef(null);
@@ -1691,6 +1770,34 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         setDetailLoadingId(null);
     };
 
+    const handleBanOne = (visit) => {
+        if (!isSuperAdmin || !visit || !visit.ip || visit.ipBanned || banSubmitting) return;
+        setBanTarget(visit);
+        setBanReason('');
+    };
+
+    const closeBanDialog = () => {
+        setBanTarget(null);
+        setBanReason('');
+    };
+
+    const confirmBanIp = async () => {
+        if (!banTarget || !banTarget.ip) return;
+        setBanSubmitting(true);
+        setActionMessage('');
+        try {
+            await adminCreateIpBan({ ip: banTarget.ip, reason: banReason || undefined, sourcePageViewId: banTarget.id });
+            setActionMessage(`已封禁 IP：${banTarget.ip}`);
+            closeBanDialog();
+            await loadLogs(page, size, filtersApplied);
+            if (reload) reload();
+        } catch (err) {
+            setError(err.message || '封禁失败，请稍后再试。');
+        } finally {
+            setBanSubmitting(false);
+        }
+    };
+
     const renderDetailValue = (value) => {
         if (value === null || value === undefined) return <span className={textMuted}>-</span>;
         if (typeof value === 'boolean') return value ? '是' : '否';
@@ -1789,6 +1896,20 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     return (
         <>
             {confirmDialog}
+            <BanReasonDialog
+                isDarkMode={isDarkMode}
+                open={!!banTarget}
+                title="封禁 IP"
+                ip={banTarget?.ip}
+                reason={banReason}
+                onReasonChange={setBanReason}
+                warning="IP 可能属于代理、VPN、公司或学校出口，封禁可能误伤共享该出口的用户"
+                confirmText={banSubmitting ? '封禁中...' : '确认封禁'}
+                cancelText="取消"
+                confirmDisabled={banSubmitting}
+                onCancel={closeBanDialog}
+                onConfirm={confirmBanIp}
+            />
             <div className="space-y-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -2118,6 +2239,26 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                                             <div className="flex items-center justify-end gap-1">
                                                 {isSuperAdmin && (
                                                     <>
+                                                        {visit.ip && !visit.ipBanned && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleBanOne(visit)}
+                                                                disabled={banSubmitting}
+                                                                aria-label="封禁 IP"
+                                                                title="封禁 IP"
+                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-500 text-amber-600 hover:bg-amber-50 disabled:opacity-50"
+                                                            >
+                                                                <Ban size={16} />
+                                                            </button>
+                                                        )}
+                                                        {visit.ip && visit.ipBanned && (
+                                                            <span
+                                                                className="inline-flex h-8 items-center justify-center px-2 rounded-md border border-gray-300 text-gray-400 text-xs font-semibold"
+                                                                title="已封禁"
+                                                            >
+                                                                已封禁
+                                                            </span>
+                                                        )}
                                                         <button
                                                             type="button"
                                                             onClick={() => handleShowDetail(visit.id)}
@@ -6644,6 +6785,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         { key: 'knowledge', label: 'AI助理' },
         { key: 'registration', label: '注册邀请码' },
         { key: 'games', label: '游戏管理' },
+        { key: 'ip-bans', label: 'IP 封禁列表' },
         { key: 'cleanup', label: '存储清理' }
     ];
     const [activeSettingsTab, setActiveSettingsTab] = useState('system-monitor');
@@ -6698,6 +6840,19 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [inviteGenerating, setInviteGenerating] = useState(false);
     const [inviteError, setInviteError] = useState('');
     const [latestInvite, setLatestInvite] = useState(null);
+    const [ipBans, setIpBans] = useState([]);
+    const [ipBanPage, setIpBanPage] = useState(1);
+    const [ipBanSize] = useState(20);
+    const [ipBanTotal, setIpBanTotal] = useState(0);
+    const [ipBanLoading, setIpBanLoading] = useState(false);
+    const [ipBanError, setIpBanError] = useState('');
+    const [ipBanSearchIp, setIpBanSearchIp] = useState('');
+    const [ipBanEnabledOnly, setIpBanEnabledOnly] = useState(false);
+    const [ipBanAddForm, setIpBanAddForm] = useState({ ip: '', reason: '' });
+    const [ipBanAdding, setIpBanAdding] = useState(false);
+    const [ipBanUnbanTarget, setIpBanUnbanTarget] = useState(null);
+    const [ipBanUnbanReason, setIpBanUnbanReason] = useState('');
+    const [ipBanUnbanning, setIpBanUnbanning] = useState(false);
     const { hasPermission } = usePermissionContext();
     const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '--');
     const { notice, showNotice, hideNotice } = useTimedNotice(4200);
@@ -6742,6 +6897,79 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
         }, 15000);
         return () => clearInterval(timer);
     }, [activeSettingsTab, loadSystemMonitor]);
+
+    const loadIpBans = useCallback(async (targetPage = ipBanPage) => {
+        setIpBanLoading(true);
+        setIpBanError('');
+        try {
+            const res = await adminFetchIpBans({
+                page: targetPage,
+                size: ipBanSize,
+                ip: ipBanSearchIp || undefined,
+                enabledOnly: ipBanEnabledOnly || undefined,
+            });
+            const data = res?.data || res;
+            setIpBans(Array.isArray(data?.records) ? data.records : []);
+            setIpBanTotal(typeof data?.total === 'number' ? data.total : 0);
+            setIpBanPage(typeof data?.page === 'number' ? data.page : targetPage);
+        } catch (err) {
+            setIpBanError(err?.message || '加载 IP 封禁列表失败');
+        } finally {
+            setIpBanLoading(false);
+        }
+    }, [ipBanPage, ipBanSize, ipBanSearchIp, ipBanEnabledOnly]);
+
+    useEffect(() => {
+        if (activeSettingsTab !== 'ip-bans') return undefined;
+        loadIpBans(1);
+        return () => {};
+    }, [activeSettingsTab, loadIpBans]);
+
+    const handleAddIpBan = async () => {
+        if (!ipBanAddForm.ip || !ipBanAddForm.ip.trim()) {
+            setIpBanError('请输入要封禁的 IP');
+            return;
+        }
+        setIpBanAdding(true);
+        setIpBanError('');
+        try {
+            await adminCreateIpBan({ ip: ipBanAddForm.ip.trim(), reason: ipBanAddForm.reason || undefined });
+            setIpBanAddForm({ ip: '', reason: '' });
+            showNotice('已添加 IP 封禁');
+            await loadIpBans(1);
+        } catch (err) {
+            setIpBanError(err?.message || '添加 IP 封禁失败');
+        } finally {
+            setIpBanAdding(false);
+        }
+    };
+
+    const openUnbanDialog = (ban) => {
+        if (!ban) return;
+        setIpBanUnbanTarget(ban);
+        setIpBanUnbanReason('');
+    };
+
+    const closeUnbanDialog = () => {
+        setIpBanUnbanTarget(null);
+        setIpBanUnbanReason('');
+    };
+
+    const confirmUnbanIp = async () => {
+        if (!ipBanUnbanTarget) return;
+        setIpBanUnbanning(true);
+        setIpBanError('');
+        try {
+            await adminUnbanIpBan(ipBanUnbanTarget.id, { unbanReason: ipBanUnbanReason || undefined });
+            closeUnbanDialog();
+            showNotice('已解封 IP');
+            await loadIpBans(ipBanPage);
+        } catch (err) {
+            setIpBanError(err?.message || '解封失败');
+        } finally {
+            setIpBanUnbanning(false);
+        }
+    };
 
     const loadAiAssistantSettings = useCallback(async () => {
         setAiAssistantLoading(true);
@@ -8862,6 +9090,156 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                     />
                 </div>
             )}
+            {/* IP 封禁列表 */}
+            <div className={`${surface} rounded-2xl shadow-lg p-6 space-y-4 ${activeSettingsTab === 'ip-bans' ? '' : 'hidden'}`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">IP 封禁列表</h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                            查看、搜索、手动添加与解封 IP，仅超级管理员可操作。封禁在 Nginx 入口层生效。
+                        </p>
+                    </div>
+                </div>
+
+                {ipBanError && (
+                    <div className="px-4 py-3 border-2 border-red-400 bg-red-50 text-red-700 font-semibold rounded-xl">
+                        {ipBanError}
+                    </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <input
+                        type="text"
+                        value={ipBanSearchIp}
+                        onChange={(e) => setIpBanSearchIp(e.target.value)}
+                        placeholder="按 IP 搜索"
+                        className={`px-3 py-2 rounded-md border text-sm ${isDarkMode ? 'border-gray-700 bg-gray-900 text-gray-100' : 'border-gray-300 bg-white text-slate-800'}`}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => loadIpBans(1)}
+                        disabled={ipBanLoading}
+                        className={`px-3 py-2 text-sm font-semibold rounded-md border ${isDarkMode ? 'border-gray-700 bg-gray-900 text-gray-100 hover:bg-gray-800' : 'bg-black text-white hover:bg-gray-800'}`}
+                    >
+                        搜索
+                    </button>
+                    <label className={`flex items-center gap-2 ${isDarkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                        <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={ipBanEnabledOnly}
+                            onChange={(e) => setIpBanEnabledOnly(e.target.checked)}
+                        />
+                        仅启用
+                    </label>
+                    <button
+                        type="button"
+                        onClick={() => loadIpBans(ipBanPage)}
+                        disabled={ipBanLoading}
+                        className={`px-3 py-2 text-sm font-semibold rounded-md border ${isDarkMode ? 'border-gray-700 bg-gray-900 text-gray-100 hover:bg-gray-800' : 'border-gray-300 bg-white text-slate-700 hover:bg-slate-100'}`}
+                    >
+                        刷新
+                    </button>
+                </div>
+
+                <div className="flex flex-wrap items-end gap-3 text-sm">
+                    <div className="flex flex-col gap-1">
+                        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>手动添加封禁</span>
+                        <input
+                            type="text"
+                            value={ipBanAddForm.ip}
+                            onChange={(e) => setIpBanAddForm((prev) => ({ ...prev, ip: e.target.value }))}
+                            placeholder="IP 地址（单个 IPv4/IPv6）"
+                            className={`px-3 py-2 rounded-md border text-sm ${isDarkMode ? 'border-gray-700 bg-gray-900 text-gray-100' : 'border-gray-300 bg-white text-slate-800'}`}
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>封禁原因（可选）</span>
+                        <input
+                            type="text"
+                            value={ipBanAddForm.reason}
+                            maxLength={512}
+                            onChange={(e) => setIpBanAddForm((prev) => ({ ...prev, reason: e.target.value }))}
+                            placeholder="例如：恶意访问"
+                            className={`px-3 py-2 rounded-md border text-sm ${isDarkMode ? 'border-gray-700 bg-gray-900 text-gray-100' : 'border-gray-300 bg-white text-slate-800'}`}
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleAddIpBan}
+                        disabled={ipBanAdding}
+                        className={`px-3 py-2 text-sm font-semibold rounded-md border ${isDarkMode ? 'border-gray-700 bg-gray-900 text-gray-100 hover:bg-gray-800' : 'bg-black text-white hover:bg-gray-800'} disabled:opacity-50`}
+                    >
+                        {ipBanAdding ? '添加中...' : '添加封禁'}
+                    </button>
+                </div>
+
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>共 {ipBanTotal} 条</div>
+
+                {ipBanLoading ? (
+                    <div className={`p-6 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>加载中，请稍候...</div>
+                ) : ipBans.length === 0 ? (
+                    <div className={`p-6 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>暂无封禁记录。</div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                            <thead>
+                                <tr className={`text-left ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    <th className="px-3 py-2">IP</th>
+                                    <th className="px-3 py-2">原因</th>
+                                    <th className="px-3 py-2">启用</th>
+                                    <th className="px-3 py-2">封禁时间</th>
+                                    <th className="px-3 py-2">操作人</th>
+                                    <th className="px-3 py-2">命中次数</th>
+                                    <th className="px-3 py-2">最近命中</th>
+                                    <th className="px-3 py-2 text-right">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                {ipBans.map((ban) => (
+                                    <tr key={ban.id}>
+                                        <td className="px-3 py-2 font-mono whitespace-nowrap">{ban.ip || '-'}</td>
+                                        <td className="px-3 py-2 max-w-[220px] truncate" title={ban.reason || ''}>{ban.reason || '-'}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap">{ban.enabled ? '是' : '否'}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(ban.createdAt)}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap">{ban.createdByUsername || '-'}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap">{typeof ban.hitCount === 'number' ? ban.hitCount : 0}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(ban.lastHitTime)}</td>
+                                        <td className="px-3 py-2 text-right whitespace-nowrap">
+                                            {ban.enabled ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openUnbanDialog(ban)}
+                                                    className={`px-3 py-1 text-xs font-semibold rounded-md border ${isDarkMode ? 'border-gray-700 bg-gray-900 text-gray-100 hover:bg-gray-800' : 'border-emerald-500 text-emerald-600 hover:bg-emerald-50'}`}
+                                                >
+                                                    解封
+                                                </button>
+                                            ) : (
+                                                <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>已解封</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+            <BanReasonDialog
+                isDarkMode={isDarkMode}
+                open={!!ipBanUnbanTarget}
+                title="解封 IP"
+                ip={ipBanUnbanTarget?.ip}
+                reason={ipBanUnbanReason}
+                onReasonChange={setIpBanUnbanReason}
+                reasonLabel="解封原因（可选）"
+                warning={null}
+                confirmText={ipBanUnbanning ? '解封中...' : '确认解封'}
+                cancelText="取消"
+                confirmDisabled={ipBanUnbanning}
+                onCancel={closeUnbanDialog}
+                onConfirm={confirmUnbanIp}
+            />
             </div>
         </>
     );

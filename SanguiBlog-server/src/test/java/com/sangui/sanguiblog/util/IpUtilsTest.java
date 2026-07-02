@@ -290,4 +290,60 @@ class IpUtilsTest {
         String ip = IpUtils.resolveIp(req);
         assertEquals("203.0.113.41", ip);
     }
+
+    @Test
+    void shouldRejectCidrAsSingleIp() {
+        assertFalse(IpUtils.isValidSingleIp("203.0.113.0/24"));
+        assertFalse(IpUtils.isValidSingleIp("::1/128"));
+    }
+
+    @Test
+    void shouldRejectLocalhostAsSingleIp() {
+        assertFalse(IpUtils.isValidSingleIp("localhost"));
+    }
+
+    @Test
+    void shouldAcceptValidIpv4AndIpv6() {
+        assertTrue(IpUtils.isValidSingleIp("203.0.113.10"));
+        assertTrue(IpUtils.isValidSingleIp("2001:db8::1"));
+    }
+
+    @Test
+    void shouldRejectInvalidIp() {
+        assertFalse(IpUtils.isValidSingleIp("999.999.999.999"));
+        assertFalse(IpUtils.isValidSingleIp("not-an-ip"));
+        assertFalse(IpUtils.isValidSingleIp(""));
+        assertFalse(IpUtils.isValidSingleIp(null));
+    }
+
+    @Test
+    void shouldDetectProtectedAddresses() {
+        assertTrue(IpUtils.isPrivateOrProtected("127.0.0.1"));
+        assertTrue(IpUtils.isPrivateOrProtected("::1"));
+        assertTrue(IpUtils.isPrivateOrProtected("0.0.0.0"));
+        assertTrue(IpUtils.isPrivateOrProtected("::"));
+        assertTrue(IpUtils.isPrivateOrProtected("10.0.0.1"));
+        assertTrue(IpUtils.isPrivateOrProtected("172.16.0.1"));
+        assertTrue(IpUtils.isPrivateOrProtected("192.168.1.1"));
+        assertTrue(IpUtils.isPrivateOrProtected("169.254.1.1"));
+        assertTrue(IpUtils.isPrivateOrProtected("fc00::1"));
+        assertTrue(IpUtils.isPrivateOrProtected("fe80::1"));
+        assertTrue(IpUtils.isPrivateOrProtected(null));
+        assertTrue(IpUtils.isPrivateOrProtected(""));
+    }
+
+    @Test
+    void shouldNotFlagPublicIpAsProtected() {
+        assertFalse(IpUtils.isPrivateOrProtected("203.0.113.10"));
+        assertFalse(IpUtils.isPrivateOrProtected("2001:db8::1"));
+        assertFalse(IpUtils.isPrivateOrProtected("8.8.8.8"));
+    }
+
+    @Test
+    void shouldParseFirstForwardedIp() {
+        assertEquals("203.0.113.10", IpUtils.firstForwardedIp("203.0.113.10, 172.18.0.1"));
+        assertEquals("203.0.113.10", IpUtils.firstForwardedIp(" 203.0.113.10 , unknown "));
+        assertNull(IpUtils.firstForwardedIp("unknown, unknown"));
+        assertNull(IpUtils.firstForwardedIp(null));
+    }
 }

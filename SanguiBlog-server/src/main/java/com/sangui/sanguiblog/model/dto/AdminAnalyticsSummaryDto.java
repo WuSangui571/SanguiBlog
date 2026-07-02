@@ -97,5 +97,7 @@ public class AdminAnalyticsSummaryDto {
         private Integer durationSeconds;
         private Integer heartbeatCount;
         private String visitStatus;
+        private boolean ipBanned;
+        private Long ipBanId;
     }
 }

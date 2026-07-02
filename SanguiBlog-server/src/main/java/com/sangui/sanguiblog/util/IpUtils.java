@@ -3,6 +3,8 @@ package com.sangui.sanguiblog.util;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -121,5 +123,87 @@ public final class IpUtils {
         }
         String normalized = normalizeIp(ip);
         return "127.0.0.1".equals(normalized) || "::1".equals(normalized) || "0:0:0:0:0:0:0:1".equals(normalized);
+    }
+
+    /**
+     * 判断 IP 是否为受保护/不可封禁地址：回环、未指定、私有、链路本地、ULA、组播等。
+     * 用于管理员封禁请求的服务端强校验，避免误封本地/内网/代理出口导致自锁。
+     */
+    public static boolean isPrivateOrProtected(String ip) {
+        if (!StringUtils.hasText(ip)) {
+            return true;
+        }
+        String normalized = normalizeIp(ip);
+        if (isLoopback(normalized)) {
+            return true;
+        }
+        if ("0.0.0.0".equals(normalized) || "::".equals(normalized)) {
+            return true;
+        }
+        InetAddress addr = parseInetAddress(normalized);
+        if (addr == null) {
+            // 无法解析的地址视为不安全，拒绝封禁
+            return true;
+        }
+        if (addr.isSiteLocalAddress()
+                || addr.isLinkLocalAddress()
+                || addr.isAnyLocalAddress()
+                || addr.isLoopbackAddress()
+                || addr.isMulticastAddress()) {
+            return true;
+        }
+        // Java InetAddress 不把 IPv6 ULA fc00::/7 视为 site-local，按 PRD 显式拒绝。
+        byte[] bytes = addr.getAddress();
+        if (bytes.length == 16 && (bytes[0] & 0xFE) == 0xFC) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 判断是否为合法的单个 IPv4/IPv6 地址（不含 CIDR 前缀/掩码）。
+     */
+    public static boolean isValidSingleIp(String ip) {
+        if (!StringUtils.hasText(ip)) {
+            return false;
+        }
+        String trimmed = ip.trim();
+        if (trimmed.contains("/")) {
+            return false;
+        }
+        if ("localhost".equalsIgnoreCase(trimmed)) {
+            return false;
+        }
+        return parseInetAddress(normalizeIp(trimmed)) != null;
+    }
+
+    /**
+     * 从 X-Forwarded-For 头中取第一个有效、非 unknown 的 IP（不做受信代理判断，仅做解析）。
+     */
+    public static String firstForwardedIp(String headerValue) {
+        if (!StringUtils.hasText(headerValue)) {
+            return null;
+        }
+        return Arrays.stream(headerValue.split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .filter(token -> !"unknown".equalsIgnoreCase(token))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * 从 Forwarded 头中取第一个有效 for= 值。
+     */
+    public static String firstForwardedHeaderIp(String forwarded) {
+        return parseForwardedHeader(forwarded);
+    }
+
+    private static InetAddress parseInetAddress(String ip) {
+        try {
+            return InetAddress.getByName(ip);
+        } catch (UnknownHostException | RuntimeException ex) {
+            return null;
+        }
     }
 }

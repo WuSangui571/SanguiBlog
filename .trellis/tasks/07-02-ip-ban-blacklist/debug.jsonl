@@ -1,0 +1,7 @@
+{"file": ".trellis/tasks/07-02-ip-ban-blacklist/research.md", "reason": "Debug map for expected seams and risks"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/util/IpUtils.java", "reason": "IP resolver mismatch investigation"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/security/botguard/BotGuardFilter.java", "reason": "Internal check blocked by BotGuard investigation"}
+{"file": "SanguiBlog-server/src/main/java/com/sangui/sanguiblog/config/SecurityConfig.java", "reason": "Internal endpoint auth chain investigation"}
+{"file": "docker/nginx/default.conf", "reason": "Nginx auth_request routing investigation"}
+{"file": "docker-compose.yml", "reason": "Local Docker exposed services and web/backend path"}
+{"file": "docker-compose.prod.yml", "reason": "Production Docker exposed services and web/backend path"}

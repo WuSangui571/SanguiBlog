@@ -35,7 +35,8 @@ class AnalyticsServiceVisitorSourceInsightsTest {
         trafficRepo = mock(AnalyticsTrafficSourceRepository.class);
         UserRepository userRepo = mock(UserRepository.class);
         GeoIpService geoIpService = mock(GeoIpService.class);
-        analyticsService = new AnalyticsService(pageViewRepo, postRepo, userRepo, commentRepo, trafficRepo, geoIpService);
+        IpBanService ipBanService = mock(IpBanService.class);
+        analyticsService = new AnalyticsService(pageViewRepo, postRepo, userRepo, commentRepo, trafficRepo, geoIpService, ipBanService);
 
         when(postRepo.sumViewsByStatus(anyString())).thenReturn(0L);
         when(postRepo.sumCommentsByStatus(anyString())).thenReturn(0L);

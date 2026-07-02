@@ -37,6 +37,12 @@ jwt:
   expiration-minutes: 180
   issuer: sangui-blog
 
+security:
+  client-ip:
+    # 受信代理地址（精确 IP 或 CIDR）。仅当 immediate remoteAddr 命中受信代理时才信任转发头。
+    # 默认为空：不信任任何转发头，直接使用 remoteAddr，避免被可伪造头欺骗。
+    trusted-proxies: ${SECURITY_CLIENT_IP_TRUSTED_PROXIES:}
+
 springdoc:
   swagger-ui:
     enabled: false

@@ -394,6 +394,71 @@ npm run lint
 npm run build
 ```
 
+### Admin IP Ban Blacklist
+
+The admin IP ban blacklist is a backend/frontend/database/Nginx contract. It adds a security gate at the Docker web entry while reusing the existing admin analytics and settings surfaces; do not create a second analytics page, a second frontend API wrapper, or a second generic admin audit system for this feature.
+
+Data flow:
+
+```text
+Admin analytics row or settings form
+-> SanguiBlog-front/src/api.js admin*IpBan functions
+-> AdminIpBanController / IpBanService
+-> banned_ips + ip_ban_audit_logs
+-> AdminAnalyticsSummaryDto.RecentVisit ipBanned/ipBanId
+-> AdminPanel analytics and settings UI
+
+Nginx protected location
+-> auth_request /internal/ip-access-check
+-> InternalSecurityController / ClientIpResolver / IpBanService
+-> 204 allow or 403 Access Denied
+```
+
+Contracts:
+
+| Concern | Contract |
+|---------|----------|
+| DB tables | `banned_ips` stores one row per normalized IP with a global unique key. Re-ban reuses the same row. `ip_ban_audit_logs` is feature-scoped and stores safe admin action metadata only. Update both `sanguiblog_db.sql` and a manual SQL file under `docs/sql/`. Existing Docker MySQL volumes require manual SQL application. |
+| Admin API | `GET /api/admin/security/ip-bans`, `POST /api/admin/security/ip-bans`, and `POST /api/admin/security/ip-bans/{id}/unban` return `ApiResponse` / `PageResponse` and require `hasRole('SUPER_ADMIN')`. Controllers stay thin; validation errors flow through `GlobalExceptionHandler`. |
+| Request validation | Only single public IPv4/IPv6 addresses may be banned. Reject CIDR, localhost, loopback, unspecified, private, link-local, multicast/reserved, IPv6 ULA, and the current admin client IP. Reasons and unban reasons are bounded to 512 characters. |
+| Analytics list | `AdminAnalyticsSummaryDto.RecentVisit` includes `ipBanned` and `ipBanId`. `AnalyticsService` must batch-resolve visible rows; do not add one DB query per analytics row. |
+| Frontend | Add IP ban actions through `SanguiBlog-front/src/api.js` and `AdminPanel.jsx` only. Analytics uses an icon-only custom confirmation dialog with a reason input and shared-egress warning. Settings uses an `IP 封禁列表` group with search, enabled-only filtering, manual add, and unban reason flow. Do not use `window.confirm` or `window.alert`. |
+| Internal check | `GET /internal/security/ip-access-check` is permit-all for Nginx, bypasses BotGuard, does not use `ApiResponse`, and returns only `204` or `403` without ban details. Hit count / last-hit updates must run in a transaction. |
+| Real client IP | IP-ban security decisions use `ClientIpResolver`, which trusts `CF-Connecting-IP`, `X-Real-IP`, then `X-Forwarded-For` only when immediate `remoteAddr` matches configured trusted proxies. With no trusted proxies configured, forwarding headers are ignored. Existing Docker BotGuard/public-read paths still use the documented `IpUtils.resolveIp` contract unless a separate migration task updates that contract. |
+| Cache and failure policy | `IpBanService` may use a short-TTL Caffeine cache and must invalidate the relevant IP after ban/unban. Lookup failure during Nginx auth checks is an availability/security tradeoff; if it fails open, log safe metadata only and keep TTL short so recovery is automatic. Cache invalidation failures must not abort an already valid admin mutation. |
+| Nginx | `docker/nginx/default.conf` must protect `/sitemap.xml`, `/robots.txt`, `/api/ai/chat/stream`, `/api/`, `/uploads/games/`, `/uploads/`, `/avatar/`, and `/` with `auth_request /internal/ip-access-check`. Preserve SSE buffering-off settings, uploaded-game CSP, sitemap/robots backend routing, and SPA fallback. Return only plain `Access Denied` for denied visitors. |
+
+Good/Base/Bad cases:
+
+| Case | Expected Result |
+|------|-----------------|
+| Good | SUPER_ADMIN bans a public IP from analytics, the row becomes `ipBanned=true`, the settings list shows the enabled ban, and the banned IP receives simple HTTP `403` through Nginx-protected routes. |
+| Base | Empty settings list renders, rows without an IP show no ban action, and a previously unbanned IP can be re-enabled without duplicate rows. |
+| Bad | ADMIN/USER receives 403 from admin ban APIs; protected/self/CIDR IP inputs fail with 400-style JSON; BotGuard/JWT do not block `/internal/security/ip-access-check` before the ban service; Nginx does not omit auth_request from API, SSE, uploads, sitemap, robots, or SPA fallback routes. |
+
+Required verification for this contract:
+
+```bash
+cd SanguiBlog-server
+mvn -q "-Dtest=IpUtilsTest,IpBanServiceTest,InternalSecurityControllerTest,AdminIpBanControllerAuthorizationTest,AdminAnalyticsControllerAuthorizationTest,ClientIpResolverTest,AnalyticsServiceIpBanStatusTest" test
+mvn -q "-Dtest=AnalyticsServiceDetailJsonTest,AnalyticsServiceGeoLocationTest,AnalyticsServicePageViewFilterTest,AnalyticsServiceVisitDurationTest,AnalyticsServiceVisitorSourceInsightsTest" test
+mvn -q -DskipTests compile
+
+cd ../SanguiBlog-front
+node src/appfull/AdminAnalyticsIpBan.test.js
+node src/appfull/SystemSettingsIpBanList.test.js
+node src/appfull/noNativeBlockingDialogs.test.js
+npm run lint
+npm run build
+
+cd ..
+docker compose config --quiet
+docker compose -f docker-compose.prod.yml config --quiet
+python .trellis/scripts/task.py validate .trellis/tasks/07-02-ip-ban-blacklist
+```
+
+Manual Docker acceptance must include applying `docs/sql/2026-07-02-add-banned-ips.sql`, creating a test ban, and verifying 204/403 behavior through Nginx for `/`, article pages, `/api/site/meta`, `/api/posts`, `/api/ai/chat/stream`, `/admin`, `/uploads/...`, `/sitemap.xml`, and `/robots.txt`.
+
 ### Article Visit Duration Analytics
 
 Article detail visit duration tracking is a backend/frontend/database contract that reuses `analytics_page_views`.

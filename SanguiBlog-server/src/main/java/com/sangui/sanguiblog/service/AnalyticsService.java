@@ -78,6 +78,7 @@ public class AnalyticsService {
     private final CommentRepository commentRepository;
     private final AnalyticsTrafficSourceRepository analyticsTrafficSourceRepository;
     private final GeoIpService geoIpService;
+    private final com.sangui.sanguiblog.service.IpBanService ipBanService;
 
     private String decodePercentEncodedValue(String value) {
         if (!StringUtils.hasText(value)) {
@@ -463,6 +464,7 @@ public class AnalyticsService {
                 .map(this::toRecentVisit)
                 .filter(Objects::nonNull)
                 .toList();
+        recentVisits = applyBanState(recentVisits);
 
         String rangeLabel = safeRangeDays != null
                 ? (safeRangeDays == 1 ? "\u6700\u8fd11\u5929" : "\u6700\u8fd1" + safeRangeDays + "\u5929")
@@ -605,6 +607,7 @@ public class AnalyticsService {
                     .map(this::toRecentVisit)
                     .filter(Objects::nonNull)
                     .toList();
+            records = applyBanState(records);
             return new PageResponse<>(records, filtered.size(), p + 1, s);
         }
         Page<AnalyticsPageView> result = analyticsPageViewRepository.findAll(spec,
@@ -613,6 +616,7 @@ public class AnalyticsService {
                 .map(this::toRecentVisit)
                 .filter(Objects::nonNull)
                 .toList();
+        records = applyBanState(records);
         return new PageResponse<>(records, result.getTotalElements(), result.getNumber() + 1, result.getSize());
     }
 
@@ -1044,6 +1048,37 @@ public class AnalyticsService {
             return post.getTitle();
         }
         return "页面";
+    }
+
+    private List<AdminAnalyticsSummaryDto.RecentVisit> applyBanState(List<AdminAnalyticsSummaryDto.RecentVisit> visits) {
+        if (visits == null || visits.isEmpty()) {
+            return visits;
+        }
+        List<String> ips = visits.stream()
+                .map(AdminAnalyticsSummaryDto.RecentVisit::getIp)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (ips.isEmpty()) {
+            return visits;
+        }
+        Map<String, Long> banIds;
+        try {
+            banIds = ipBanService.resolveEnabledBanIds(ips);
+        } catch (RuntimeException ex) {
+            log.warn("analytics ban state batch resolve failed, fallback to not-banned: count={}", ips.size(), ex);
+            return visits;
+        }
+        if (banIds == null || banIds.isEmpty()) {
+            return visits;
+        }
+        for (AdminAnalyticsSummaryDto.RecentVisit visit : visits) {
+            String ip = visit.getIp();
+            Long banId = StringUtils.hasText(ip) ? banIds.get(IpUtils.normalizeIp(ip)) : null;
+            visit.setIpBanned(banId != null);
+            visit.setIpBanId(banId);
+        }
+        return visits;
     }
 
     private AdminAnalyticsSummaryDto.RecentVisit toRecentVisit(AnalyticsPageView view) {

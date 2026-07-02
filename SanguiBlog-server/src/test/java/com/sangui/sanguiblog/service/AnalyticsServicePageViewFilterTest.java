@@ -33,7 +33,8 @@ class AnalyticsServicePageViewFilterTest {
         CommentRepository commentRepo = mock(CommentRepository.class);
         AnalyticsTrafficSourceRepository trafficRepo = mock(AnalyticsTrafficSourceRepository.class);
         GeoIpService geoIpService = mock(GeoIpService.class);
-        analyticsService = new AnalyticsService(pageViewRepo, postRepo, userRepo, commentRepo, trafficRepo, geoIpService);
+        IpBanService ipBanService = mock(IpBanService.class);
+        analyticsService = new AnalyticsService(pageViewRepo, postRepo, userRepo, commentRepo, trafficRepo, geoIpService, ipBanService);
     }
 
     @Test

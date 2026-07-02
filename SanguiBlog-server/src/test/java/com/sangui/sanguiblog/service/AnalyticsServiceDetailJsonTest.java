@@ -36,7 +36,8 @@ class AnalyticsServiceDetailJsonTest {
         var commentRepo = mock(CommentRepository.class);
         var trafficRepo = mock(AnalyticsTrafficSourceRepository.class);
         geoIpService = mock(GeoIpService.class);
-        analyticsService = new AnalyticsService(pageViewRepo, postRepo, userRepo, commentRepo, trafficRepo, geoIpService);
+        var ipBanService = mock(IpBanService.class);
+        analyticsService = new AnalyticsService(pageViewRepo, postRepo, userRepo, commentRepo, trafficRepo, geoIpService, ipBanService);
     }
 
     @Test

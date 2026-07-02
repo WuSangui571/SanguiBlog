@@ -36,6 +36,13 @@ public class BotGuardFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        // Nginx auth_request 内部检查端点不带 JWT，必须跳过 BotGuard，避免在封禁检查前被风控 403/429 拦截。
+        String uri = request.getRequestURI();
+        if (uri != null && uri.startsWith("/internal/security/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 若携带有效 JWT，则视为已认证请求（管理端/通知等），避免 BotGuard 在鉴权前置阶段误伤真实用户。
         // 注意：这里只做“有效 token”判断，不改变权限控制，权限仍由 Spring Security 负责。
         if (hasValidJwt(request)) {

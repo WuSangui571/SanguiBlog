@@ -28,8 +28,9 @@ class AnalyticsServiceGeoLocationTest {
         CommentRepository commentRepo = mock(CommentRepository.class);
         AnalyticsTrafficSourceRepository trafficRepo = mock(AnalyticsTrafficSourceRepository.class);
         geoIpService = mock(GeoIpService.class);
+        IpBanService ipBanService = mock(IpBanService.class);
 
-        analyticsService = new AnalyticsService(pageViewRepo, postRepo, userRepo, commentRepo, trafficRepo, geoIpService);
+        analyticsService = new AnalyticsService(pageViewRepo, postRepo, userRepo, commentRepo, trafficRepo, geoIpService, ipBanService);
 
         resolveGeoLocationMethod = AnalyticsService.class.getDeclaredMethod("resolveGeoLocation", String.class, String.class);
         resolveGeoLocationMethod.setAccessible(true);

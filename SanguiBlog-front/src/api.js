@@ -886,6 +886,32 @@ export const adminDeleteMyAnalyticsLogs = () =>
     method: "DELETE",
   });
 
+export const adminFetchIpBans = (params = {}) => {
+  const search = new URLSearchParams();
+  if (params.page) search.append("page", params.page);
+  if (params.size) search.append("size", params.size);
+  if (params.ip) search.append("ip", params.ip);
+  if (params.enabledOnly === true) search.append("enabledOnly", "true");
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return request(`/admin/security/ip-bans${query}`);
+};
+
+export const adminCreateIpBan = (payload = {}) =>
+  request("/admin/security/ip-bans", {
+    method: "POST",
+    body: JSON.stringify({
+      ip: payload.ip,
+      reason: payload.reason,
+      sourcePageViewId: payload.sourcePageViewId,
+    }),
+  });
+
+export const adminUnbanIpBan = (id, payload = {}) =>
+  request(`/admin/security/ip-bans/${id}/unban`, {
+    method: "POST",
+    body: JSON.stringify({ unbanReason: payload.unbanReason }),
+  });
+
 export const adminFetchAiAuditSessions = ({ page = 1, size = 20, visibility = 'ALL', identity = 'ALL' } = {}) => {
   const search = new URLSearchParams();
   search.append("page", page);

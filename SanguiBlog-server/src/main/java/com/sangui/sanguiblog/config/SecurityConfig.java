@@ -134,6 +134,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(
+                                "/internal/security/ip-access-check",
                                 "/sitemap.xml",
                                 "/robots.txt",
                                 "/api/auth/login",
