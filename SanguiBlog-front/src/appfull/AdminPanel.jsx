@@ -242,7 +242,7 @@ const AdminNoticeBar = ({ notice, onClose }) => {
     );
 };
 
-const BanReasonDialog = ({ isDarkMode, open, title, ip, reason, onReasonChange, reasonLabel = '封禁原因（可选）', warning, confirmText, cancelText, onCancel, onConfirm, confirmDisabled }) => {
+const BanReasonDialog = ({ isDarkMode, open, title, ip, reason, onReasonChange, reasonLabel = '封禁原因', reasonError = '', warning, confirmText, cancelText, onCancel, onConfirm, confirmDisabled }) => {
     if (!open) return null;
     const surfaceClass = isDarkMode
         ? 'bg-gray-950 text-gray-100 border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.55)]'
@@ -286,8 +286,12 @@ const BanReasonDialog = ({ isDarkMode, open, title, ip, reason, onReasonChange, 
                             maxLength={512}
                             rows={3}
                             placeholder="例如：恶意访问、爬虫等"
+                            aria-invalid={Boolean(reasonError)}
                             className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm resize-none ${inputClass}`}
                         />
+                        {reasonError && (
+                            <p className="mt-1 text-xs font-semibold text-red-500">{reasonError}</p>
+                        )}
                     </label>
                     {warning && (
                         <p className={`text-xs ${subtleTextClass}`}>{warning}</p>
@@ -1331,6 +1335,7 @@ const AnalyticsView = ({ isDarkMode, user }) => {
     const [detailLoadingId, setDetailLoadingId] = useState(null);
     const [banTarget, setBanTarget] = useState(null);
     const [banReason, setBanReason] = useState('');
+    const [banReasonError, setBanReasonError] = useState('');
     const [banSubmitting, setBanSubmitting] = useState(false);
     const [filtersDraft, setFiltersDraft] = useState(() => buildInitialFiltersDraft());
     const [filtersApplied, setFiltersApplied] = useState({});
@@ -1774,19 +1779,27 @@ const AnalyticsView = ({ isDarkMode, user }) => {
         if (!isSuperAdmin || !visit || !visit.ip || visit.ipBanned || banSubmitting) return;
         setBanTarget(visit);
         setBanReason('');
+        setBanReasonError('');
     };
 
     const closeBanDialog = () => {
         setBanTarget(null);
         setBanReason('');
+        setBanReasonError('');
     };
 
     const confirmBanIp = async () => {
         if (!banTarget || !banTarget.ip) return;
+        const trimmedReason = banReason.trim();
+        if (!trimmedReason) {
+            setBanReasonError('请填写封禁原因');
+            return;
+        }
         setBanSubmitting(true);
         setActionMessage('');
+        setBanReasonError('');
         try {
-            await adminCreateIpBan({ ip: banTarget.ip, reason: banReason || undefined, sourcePageViewId: banTarget.id });
+            await adminCreateIpBan({ ip: banTarget.ip, reason: trimmedReason, sourcePageViewId: banTarget.id });
             setActionMessage(`已封禁 IP：${banTarget.ip}`);
             closeBanDialog();
             await loadLogs(page, size, filtersApplied);
@@ -1902,7 +1915,12 @@ const AnalyticsView = ({ isDarkMode, user }) => {
                 title="封禁 IP"
                 ip={banTarget?.ip}
                 reason={banReason}
-                onReasonChange={setBanReason}
+                onReasonChange={(value) => {
+                    setBanReason(value);
+                    if (banReasonError) setBanReasonError('');
+                }}
+                reasonLabel="封禁原因"
+                reasonError={banReasonError}
                 warning="IP 可能属于代理、VPN、公司或学校出口，封禁可能误伤共享该出口的用户"
                 confirmText={banSubmitting ? '封禁中...' : '确认封禁'}
                 cancelText="取消"
@@ -6847,7 +6865,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     const [ipBanLoading, setIpBanLoading] = useState(false);
     const [ipBanError, setIpBanError] = useState('');
     const [ipBanSearchIp, setIpBanSearchIp] = useState('');
-    const [ipBanEnabledOnly, setIpBanEnabledOnly] = useState(false);
+    const [ipBanEnabledOnly, setIpBanEnabledOnly] = useState(true);
     const [ipBanAddForm, setIpBanAddForm] = useState({ ip: '', reason: '' });
     const [ipBanAdding, setIpBanAdding] = useState(false);
     const [ipBanUnbanTarget, setIpBanUnbanTarget] = useState(null);
@@ -6926,14 +6944,20 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
     }, [activeSettingsTab, loadIpBans]);
 
     const handleAddIpBan = async () => {
-        if (!ipBanAddForm.ip || !ipBanAddForm.ip.trim()) {
+        const ip = ipBanAddForm.ip.trim();
+        const reason = ipBanAddForm.reason.trim();
+        if (!ip) {
             setIpBanError('请输入要封禁的 IP');
+            return;
+        }
+        if (!reason) {
+            setIpBanError('请填写封禁原因');
             return;
         }
         setIpBanAdding(true);
         setIpBanError('');
         try {
-            await adminCreateIpBan({ ip: ipBanAddForm.ip.trim(), reason: ipBanAddForm.reason || undefined });
+            await adminCreateIpBan({ ip, reason });
             setIpBanAddForm({ ip: '', reason: '' });
             showNotice('已添加 IP 封禁');
             await loadIpBans(1);
@@ -9130,7 +9154,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                             checked={ipBanEnabledOnly}
                             onChange={(e) => setIpBanEnabledOnly(e.target.checked)}
                         />
-                        仅启用
+                        封禁中
                     </label>
                     <button
                         type="button"
@@ -9154,7 +9178,7 @@ const SystemSettingsView = ({ isDarkMode, user, notification, setNotification, o
                         />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>封禁原因（可选）</span>
+                        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>封禁原因</span>
                         <input
                             type="text"
                             value={ipBanAddForm.reason}

@@ -44,6 +44,20 @@ assert.ok(adminPanelSource.includes('ipBanSearchIp'),
     'SystemSettingsView should support IP search state');
 assert.ok(adminPanelSource.includes('ipBanEnabledOnly'),
     'SystemSettingsView should support enabled-only filter state');
+assert.ok(adminPanelSource.includes('const [ipBanEnabledOnly, setIpBanEnabledOnly] = useState(true);'),
+    'SystemSettingsView should default the IP ban list to active bans');
+assert.ok(adminPanelSource.includes('封禁中'),
+    'SystemSettingsView should label the enabled-only filter as “封禁中”');
+assert.doesNotMatch(adminPanelSource, />\s*仅启用\s*</,
+    'SystemSettingsView should not show the confusing “仅启用” filter label');
+assert.ok(adminPanelSource.includes('const reason = ipBanAddForm.reason.trim();'),
+    'SystemSettingsView should trim the manual ban reason before validation/submission');
+assert.ok(adminPanelSource.includes('await adminCreateIpBan({ ip, reason });'),
+    'SystemSettingsView should submit a required trimmed reason for manual bans');
+assert.ok(adminPanelSource.includes('请填写封禁原因'),
+    'SystemSettingsView should require a reason before adding an IP ban');
+assert.ok(adminPanelSource.includes('>封禁原因</span>'),
+    'SystemSettingsView should present the manual ban reason as required');
 
 // 解封应通过自定义对话框采集原因，不得使用原生弹窗
 assert.ok(adminPanelSource.includes('openUnbanDialog'),

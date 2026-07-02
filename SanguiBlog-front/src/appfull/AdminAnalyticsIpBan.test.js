@@ -46,6 +46,18 @@ assert.ok(adminPanelSource.includes('BanReasonDialog'),
     'AdminPanel should use a custom BanReasonDialog for ban confirmation');
 assert.ok(adminPanelSource.includes('IP 可能属于代理、VPN、公司或学校出口，封禁可能误伤共享该出口的用户'),
     'ban confirmation should show the shared-egress warning text');
+assert.ok(adminPanelSource.includes("const [banReasonError, setBanReasonError] = useState('');"),
+    'ban confirmation should keep validation state for the required reason');
+assert.ok(adminPanelSource.includes('请填写封禁原因'),
+    'ban confirmation should show a required-reason validation message');
+assert.ok(adminPanelSource.includes('const trimmedReason = banReason.trim();'),
+    'ban confirmation should trim the required reason before validation/submission');
+assert.ok(adminPanelSource.includes('reason: trimmedReason, sourcePageViewId: banTarget.id'),
+    'ban confirmation should submit the trimmed reason instead of omitting empty reasons');
+assert.ok(adminPanelSource.includes('reasonLabel="封禁原因"'),
+    'ban confirmation should present the reason field as required');
+assert.ok(adminPanelSource.includes('reasonError={banReasonError}'),
+    'ban confirmation should pass the validation error into the dialog');
 assert.doesNotMatch(adminPanelSource, /window\.confirm\s*\(/);
 assert.doesNotMatch(adminPanelSource, /window\.alert\s*\(/);
 
