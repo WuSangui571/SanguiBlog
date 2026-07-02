@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 33
-- **Last Active**: 2026-07-01
+- **Total Sessions**: 34
+- **Last Active**: 2026-07-02
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~163 | Active |
+| `journal-2.md` | ~224 | Active |
 | `journal-1.md` | ~1928 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 34 | 2026-07-02 | IP ban blacklist closeout and V2.3.7 release prep | `c20d84e`, `300f91a` | `feature/ip-ban-blacklist` |
 | 33 | 2026-07-01 | Access Log V2 Traffic Insights Closeout | `be286a1`, `cdd2480`, `7b8298f` | `feature/access-log-v2-traffic-insights` |
 | 32 | 2026-06-30 | Production RAG publish isolation closeout | `7fb690c` | `fix/prod-rag-publish-isolation` |
 | 31 | 2026-06-29 | AI audit session pagination closeout | `7bd2e2a`, `f55ed03` | `feature/ai-session-audit-list-pagination` |

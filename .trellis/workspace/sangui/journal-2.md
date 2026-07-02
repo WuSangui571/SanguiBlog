@@ -162,3 +162,63 @@ Result and boundaries:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 34: IP ban blacklist closeout and V2.3.7 release prep
+
+**Date**: 2026-07-02
+**Task**: IP ban blacklist closeout and V2.3.7 release prep
+**Branch**: `feature/ip-ban-blacklist`
+
+### Summary
+
+Archived the IP ban blacklist task after manual acceptance, documented the V2.3.7 SQL migration deployment boundary, and prepared the site version bump.
+
+### Main Changes
+
+Completed task: IP ban blacklist.
+
+Commit evidence:
+- c20d84e feat: IP ban blacklist implementation.
+- 300f91a fix: require IP ban reasons after manual QA.
+
+Main changed modules:
+- Backend: IP ban entities, repositories, DTOs, admin/internal controllers, IpBanService, ClientIpResolver, analytics ban status, security/BotGuard routing, application config.
+- Frontend: admin analytics ban action, required ban reason dialog, settings IP ban list, active-ban filter default, frontend API wrappers and static tests.
+- Infra/DB: docker/nginx auth_request integration, .env trusted proxy notes, sanguiblog_db.sql, docs/sql/2026-07-02-add-banned-ips.sql.
+- Release docs/version follow-up in this session: V2.3.6 -> V2.3.7 in site.version and homepage fallbacks; README/README.zh-CN redeploy notes now call out the V2.3.7 SQL migration.
+
+Verification evidence:
+- User manual testing passed before record-session request.
+- Earlier QA evidence: targeted backend tests and compile passed; targeted frontend IP-ban tests, lint, build, compose config, and Trellis validate passed.
+- This session re-verified: rg found no V2.3.6 in active version files; cmd /c npm run lint passed; mvn -q -DskipTests compile passed; docker compose -f docker-compose.prod.yml config --quiet passed; python ./.trellis/scripts/task.py validate .trellis/tasks/07-02-ip-ban-blacklist passed before archive; git diff --check passed; cmd /c npm run build passed.
+
+Deployment boundary:
+- The proposed production pull/up flow is acceptable only with the added existing-DB migration step before backend restart: apply docs/sql/2026-07-02-add-banned-ips.sql once against the production MySQL volume.
+- Production should review SANGUI_IMAGE_TAG and prefer the immutable sha tag for the image built from the merged main commit.
+- After deployment, verify docker compose ps and curl -i http://localhost:8090/api/site/meta; manual smoke should also cover /, /admin, /api/posts, /api/ai/chat/stream, uploads, sitemap, robots, and a banned-IP 403 path when feasible.
+
+Result:
+- Archived task 07-02-ip-ban-blacklist with --no-commit.
+- No agent-side git commit or push was performed.
+- Version/README changes and Trellis archive/journal metadata remain for the user to commit manually.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c20d84e` | (see git log) |
+| `300f91a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

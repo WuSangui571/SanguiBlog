@@ -4,7 +4,7 @@
 
 A decoupled personal blog system built with Spring Boot 3 + MySQL (backend) and React 19 + Vite (frontend SPA), deployed via Docker Compose with GHCR images.
 
-> Current version: **V2.3.6**
+> Current version: **V2.3.7**
 
 ## Quick Start (Docker Production Deployment)
 
@@ -58,6 +58,8 @@ git pull origin main
 vim .env                    # review config and SANGUI_IMAGE_TAG if needed
 sudo docker compose -f docker-compose.prod.yml pull
 # For existing production databases, apply release SQL once before restarting if needed.
+# V2.3.7: docs/sql/2026-07-02-add-banned-ips.sql
+# sudo docker compose -f docker-compose.prod.yml exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < docs/sql/2026-07-02-add-banned-ips.sql
 # V2.3.5: docs/sql/2026-06-30-add-analytics-detail-json.sql
 # V2.3.4: no database migration required.
 # V2.3.3: docs/sql/2026-06-27-add-analytics-visit-duration.sql
